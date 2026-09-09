@@ -1,0 +1,194 @@
+// ---------------------------------------------------------------------------
+// Content: pages, articles, authors, navigation, redirects, SEO plumbing.
+//
+// Article.kind maps to a URL prefix, so the growth plan's content clusters are
+// first-class rows rather than a tag convention:
+//   POST -> /blog, GUIDE -> /guides, COMPARISON -> /compare, GLOSSARY -> /glossary
+//
+// Redirect and NotFoundLog exist from day one because the cutover rewrites
+// every product and category URL and the old ones must keep resolving.
+// ---------------------------------------------------------------------------
+
+model Page {
+  id       String        @id @default(cuid())
+  slug     String
+  locale   Locale
+  template PageTemplate  @default(GENERIC)
+  status   PublishStatus @default(DRAFT)
+
+  title String
+  /// Block document: hero, product-grid, faq, comparison-table, steps,
+  /// testimonials, cta, rich-text.
+  blocks Json @default("[]")
+  /// { title, description, ogImageAssetId, robots, canonicalOverride }
+  seo    Json @default("{}")
+
+  publishAt   DateTime?
+  publishedAt DateTime?
+  version     Int       @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  versions PageVersion[]
+
+  @@unique([slug, locale])
+  @@index([status, publishedAt])
+  @@schema("public")
+}
+
+/// Full snapshot per save, so an edit can be previewed, diffed and rolled back.
+model PageVersion {
+  id      String @id @default(cuid())
+  page    Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  pageId  String
+  version Int
+
+  title  String
+  blocks Json
+  seo    Json
+
+  createdBy   StaffUser? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime   @default(now())
+
+  @@unique([pageId, version])
+  @@schema("public")
+}
+
+model Article {
+  id     String        @id @default(cuid())
+  slug   String
+  kind   ArticleKind   @default(POST)
+  locale Locale
+  status PublishStatus @default(DRAFT)
+
+  title   String
+  /// The answer-first summary. Rendered as the opening paragraph and reused as
+  /// the meta description fallback — it is also the passage most likely to be
+  /// quoted by an AI answer engine.
+  summary String?
+  blocks  Json    @default("[]")
+  seo     Json    @default("{}")
+
+  hero      Asset?  @relation(fields: [heroAssetId], references: [id], onDelete: SetNull)
+  heroAssetId String?
+
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String?
+  /// Staff member who last edited, separate from the by-line author.
+  editor   StaffUser? @relation(fields: [editorId], references: [id], onDelete: SetNull)
+  editorId String?
+
+  readingMinutes Int @default(0)
+  /// Products this article should link to and be linked from. Keeps the
+  /// category -> product -> guide -> comparison -> brand loop intact.
+  relatedProductIds String[]
+  relatedCategoryIds String[]
+
+  publishAt   DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([kind, slug, locale])
+  @@index([kind, status, publishedAt])
+  @@schema("public")
+}
+
+/// Real by-lines with credentials. Article structured data needs a named author
+/// with a stable identity for E-E-A-T, and so does an AI engine deciding
+/// whether to cite the page.
+model Author {
+  id     String @id @default(cuid())
+  slug   String @unique
+  name   String
+  /// Per-locale bio: { ar, en }
+  bio    Json?
+  credentials String?
+  avatar   Asset?  @relation(fields: [avatarAssetId], references: [id], onDelete: SetNull)
+  avatarAssetId String?
+  /// Profile URLs emitted as schema.org `sameAs`.
+  sameAs String[]
+  createdAt DateTime @default(now())
+
+  articles Article[]
+
+  @@schema("public")
+}
+
+model Navigation {
+  id     String @id @default(cuid())
+  /// "header" | "footer-1" | "footer-2" | "announcement" | "mobile"
+  key    String
+  locale Locale
+  /// [{ label, href, children?, badge? }]
+  items  Json   @default("[]")
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale])
+  @@schema("public")
+}
+
+model Redirect {
+  id   String @id @default(cuid())
+  /// Path only, no host, normalised and lower-cased. The legacy percent-encoded
+  /// Arabic paths are stored exactly as Google has them indexed.
+  from String @unique
+  to   String
+  code Int    @default(301)
+
+  hits        Int       @default(0)
+  lastHitAt   DateTime?
+  isActive    Boolean   @default(true)
+  /// "migration" for the generated cutover map, "manual" for later edits.
+  source      String    @default("manual")
+
+  createdBy   StaffUser? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime   @default(now())
+
+  @@index([isActive])
+  @@schema("public")
+}
+
+/// Fed by the 404 handler. The legacy log showed visitors asking for /about,
+/// /contact, /team, /shop and /blog — all of which 404'd.
+model NotFoundLog {
+  id         String   @id @default(cuid())
+  path       String   @unique
+  hits       Int      @default(1)
+  referer    String?
+  userAgent  String?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([hits])
+  @@schema("public")
+}
+
+/// Site-wide SEO values that belong to an editor, not to a deploy: the
+/// Organization block, sameAs profiles, default OG image, verification tokens.
+model SeoSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}
+
+model Experiment {
+  id       String    @id @default(cuid())
+  key      String    @unique
+  /// [{ id, name, weight }]
+  variants Json
+  isActive Boolean   @default(false)
+  startedAt DateTime?
+  endedAt   DateTime?
+  /// { variantId: { views, addToCart, orders, revenueUsd } }
+  results  Json      @default("{}")
+  createdAt DateTime @default(now())
+
+  @@schema("public")
+}

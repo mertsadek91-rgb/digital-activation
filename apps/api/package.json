@@ -1,0 +1,47 @@
+{
+  "name": "@da/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rimraf dist .turbo"
+  },
+  "dependencies": {
+    "@da/contracts": "workspace:*",
+    "@da/db": "workspace:*",
+    "@da/i18n": "workspace:*",
+    "@da/seo": "workspace:*",
+    "@nestjs/common": "catalog:",
+    "@nestjs/config": "catalog:",
+    "@nestjs/core": "catalog:",
+    "@nestjs/jwt": "catalog:",
+    "@nestjs/platform-fastify": "catalog:",
+    "@nestjs/schedule": "catalog:",
+    "@nestjs/swagger": "catalog:",
+    "@nestjs/throttler": "catalog:",
+    "argon2": "catalog:",
+    "bullmq": "catalog:",
+    "fastify": "catalog:",
+    "ioredis": "catalog:",
+    "meilisearch": "catalog:",
+    "nestjs-pino": "catalog:",
+    "otplib": "catalog:",
+    "pino": "catalog:",
+    "reflect-metadata": "catalog:",
+    "rxjs": "catalog:",
+    "stripe": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "catalog:",
+    "@types/node": "catalog:",
+    "pino-pretty": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,993 @@
+<title>خطة منصة التفعيل الرقمي</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600&family=Tajawal:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ground:#F6F8F7; --surface:#FFFFFF; --surface-2:#ECF2F0; --surface-3:#E3EBE8;
+  --ink:#101F1D; --ink-2:#3F5150; --ink-3:#6B7C7A; --line:#DBE5E2; --line-2:#C7D5D1;
+  --brand:#0F7368; --brand-ink:#0A544B; --brand-soft:#E1F0ED;
+  --accent:#B87100; --accent-soft:#FAEFDA;
+  --crit:#AE3229; --crit-soft:#F9E6E3;
+  --warn:#8E6300; --warn-soft:#FAF0D9;
+  --ok:#116554; --ok-soft:#DFEFEA;
+  --shadow:0 1px 2px rgba(16,31,29,.05), 0 8px 24px -16px rgba(16,31,29,.18);
+  --f-disp:"Readex Pro","Tajawal",system-ui,sans-serif;
+  --f-body:"Tajawal","Readex Pro",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0A1312; --surface:#101C1A; --surface-2:#16241F; --surface-3:#1D2E29;
+    --ink:#E8EFED; --ink-2:#B2C1BE; --ink-3:#84938F; --line:#24352F; --line-2:#2F433C;
+    --brand:#52C0AF; --brand-ink:#7BD3C4; --brand-soft:#0F312C;
+    --accent:#E5A43C; --accent-soft:#31250F;
+    --crit:#EE8579; --crit-soft:#391A16;
+    --warn:#D7A63F; --warn-soft:#2E2510;
+    --ok:#57C1A8; --ok-soft:#0E2F27;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0A1312; --surface:#101C1A; --surface-2:#16241F; --surface-3:#1D2E29;
+  --ink:#E8EFED; --ink-2:#B2C1BE; --ink-3:#84938F; --line:#24352F; --line-2:#2F433C;
+  --brand:#52C0AF; --brand-ink:#7BD3C4; --brand-soft:#0F312C;
+  --accent:#E5A43C; --accent-soft:#31250F;
+  --crit:#EE8579; --crit-soft:#391A16;
+  --warn:#D7A63F; --warn-soft:#2E2510;
+  --ok:#57C1A8; --ok-soft:#0E2F27;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{direction:rtl;background:var(--ground);color:var(--ink-2);font-family:var(--f-body);font-size:1.0625rem;line-height:1.75;-webkit-font-smoothing:antialiased}
+.shell{max-width:1240px;margin:0 auto;padding:0 clamp(1rem,3vw,2.5rem) 6rem;display:grid;grid-template-columns:minmax(0,1fr) 15.5rem;gap:clamp(1.5rem,4vw,3.5rem);align-items:start}
+@media (max-width:1080px){.shell{grid-template-columns:minmax(0,1fr)}.toc{display:none}}
+
+/* ---- masthead ---- */
+.mast{grid-column:1/-1;padding:clamp(2.5rem,6vw,4.5rem) 0 clamp(1.75rem,4vw,2.75rem);border-bottom:1px solid var(--line)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+.eyebrow span{color:var(--ink-3)}
+h1{font-family:var(--f-disp);font-weight:600;font-size:clamp(2rem,5.5vw,3.15rem);line-height:1.18;color:var(--ink);margin:1rem 0 .65rem;text-wrap:balance;letter-spacing:-.01em}
+.lede{font-size:clamp(1.05rem,2.2vw,1.2rem);max-width:62ch;color:var(--ink-2)}
+.mast-meta{display:flex;flex-wrap:wrap;gap:.5rem .5rem;margin-top:1.6rem}
+.tag{font-family:var(--f-mono);font-size:.75rem;padding:.3rem .6rem;border:1px solid var(--line-2);border-radius:3px;color:var(--ink-3);background:var(--surface)}
+
+/* ---- toc ---- */
+.toc{position:sticky;top:1.25rem;padding-top:clamp(2.5rem,6vw,4.5rem)}
+.toc-t{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.85rem}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.1rem;counter-reset:t}
+.toc a{counter-increment:t;display:grid;grid-template-columns:1.6rem 1fr;gap:.4rem;text-decoration:none;color:var(--ink-3);font-size:.875rem;padding:.3rem .45rem;border-radius:4px;line-height:1.4}
+.toc a::before{content:counter(t,decimal-leading-zero);font-family:var(--f-mono);font-size:.7rem;color:var(--line-2);padding-top:.25em}
+.toc a:hover,.toc a:focus-visible{background:var(--surface-2);color:var(--ink)}
+.toc a:hover::before{color:var(--brand)}
+
+/* ---- sections ---- */
+main{grid-column:1;min-width:0}
+section{padding:clamp(2.5rem,5vw,3.75rem) 0;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:0}
+.sn{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;color:var(--brand);text-transform:uppercase}
+h2{font-family:var(--f-disp);font-weight:600;font-size:clamp(1.4rem,3.4vw,1.9rem);line-height:1.25;color:var(--ink);margin:.5rem 0 .5rem;text-wrap:balance;letter-spacing:-.005em}
+h3{font-family:var(--f-disp);font-weight:500;font-size:1.16rem;color:var(--ink);margin:2.25rem 0 .6rem;line-height:1.4}
+h4{font-family:var(--f-body);font-weight:700;font-size:1rem;color:var(--ink);margin:1.5rem 0 .35rem}
+p{margin:0 0 1rem;max-width:70ch}
+.sub{color:var(--ink-3);max-width:66ch;margin-bottom:1.75rem}
+ul,ol{margin:0 0 1.15rem;padding-inline-start:1.15rem;max-width:70ch}
+li{margin-bottom:.4rem}
+li::marker{color:var(--brand)}
+strong{color:var(--ink);font-weight:700}
+code{font-family:var(--f-mono);font-size:.855em;background:var(--surface-2);padding:.12em .38em;border-radius:3px;color:var(--ink);direction:ltr;display:inline-block}
+a{color:var(--brand-ink)}
+
+/* ---- metric tiles ---- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0 0 2rem}
+.tile{background:var(--surface);padding:1.15rem 1.15rem 1.25rem}
+.tile-k{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.tile-v{font-family:var(--f-disp);font-weight:600;font-size:1.85rem;color:var(--ink);line-height:1.1;margin:.5rem 0 .2rem;font-variant-numeric:tabular-nums;direction:ltr;text-align:right}
+.tile-n{font-size:.83rem;color:var(--ink-3);line-height:1.5}
+.tile.bad .tile-v{color:var(--crit)}
+
+/* ---- tables ---- */
+.tw{overflow-x:auto;margin:0 0 1.75rem;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:34rem}
+th,td{text-align:start;padding:.6rem .85rem;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{background:var(--surface-2);font-family:var(--f-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);font-weight:400;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;direction:ltr;text-align:start;white-space:nowrap}
+td b{color:var(--ink)}
+caption{caption-side:bottom;text-align:start;padding:.6rem .85rem;font-size:.8rem;color:var(--ink-3);border-top:1px solid var(--line)}
+
+/* ---- findings ---- */
+.finds{display:flex;flex-direction:column;gap:.5rem;margin:0 0 1.5rem}
+.find{background:var(--surface);border:1px solid var(--line);border-inline-start:3px solid var(--line-2);border-radius:0 5px 5px 0;padding:.95rem 1.1rem}
+.find.c1{border-inline-start-color:var(--crit)}
+.find.c2{border-inline-start-color:var(--accent)}
+.find.c3{border-inline-start-color:var(--ink-3)}
+.find-h{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.3rem}
+.find-h b{font-family:var(--f-disp);font-weight:500;font-size:1.02rem;color:var(--ink)}
+.find-h .id{font-family:var(--f-mono);font-size:.72rem;color:var(--ink-3);padding-top:.15em}
+.find p{margin:0 0 .55rem;font-size:.94rem;max-width:74ch}
+.find p:last-child{margin-bottom:0}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;padding:.18rem .45rem;border-radius:3px;text-transform:uppercase;white-space:nowrap}
+.p-crit{background:var(--crit-soft);color:var(--crit)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-med{background:var(--surface-2);color:var(--ink-3)}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.ev{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.5rem}
+.ev span{font-family:var(--f-mono);font-size:.72rem;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-2);padding:.16rem .45rem;border-radius:3px;direction:ltr}
+
+/* ---- share bar chart ---- */
+.bar{margin:0 0 .6rem;border:1px solid var(--line);border-radius:5px;overflow:hidden;display:flex;height:2.1rem;background:var(--surface)}
+.bar i{display:block;height:100%}
+.bl{display:flex;flex-wrap:wrap;gap:1rem 1.6rem;font-size:.83rem;color:var(--ink-3);margin-bottom:1.75rem}
+.bl b{display:inline-flex;align-items:center;gap:.4rem;color:var(--ink);font-weight:500}
+.bl i{width:.7rem;height:.7rem;border-radius:2px;display:inline-block}
+.bl em{font-family:var(--f-mono);font-style:normal;font-variant-numeric:tabular-nums;color:var(--ink-3);direction:ltr}
+
+/* ---- callout ---- */
+.call{background:var(--brand-soft);border:1px solid transparent;border-radius:6px;padding:1.1rem 1.25rem;margin:0 0 1.75rem}
+.call.warn{background:var(--crit-soft)}
+.call.acc{background:var(--accent-soft)}
+.call-t{font-family:var(--f-disp);font-weight:500;color:var(--ink);margin-bottom:.3rem;font-size:1rem}
+.call p{margin:0;font-size:.94rem;max-width:72ch}
+.call p+p{margin-top:.6rem}
+
+/* ---- module grid ---- */
+.mods{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:0 0 1.75rem}
+.mod{background:var(--surface);padding:1.1rem 1.15rem 1.2rem;display:flex;flex-direction:column;gap:.45rem}
+.mod h4{margin:0;font-family:var(--f-disp);font-weight:500;font-size:1rem;display:flex;gap:.5rem;align-items:baseline}
+.mod h4 code{font-size:.72rem;background:var(--brand-soft);color:var(--brand-ink);padding:.1em .4em}
+.mod ul{margin:0;padding-inline-start:1rem;font-size:.88rem;max-width:none}
+.mod li{margin-bottom:.28rem;color:var(--ink-2)}
+
+/* ---- flow timeline ---- */
+.flow{list-style:none;margin:0 0 1.75rem;padding:0;position:relative}
+.flow::before{content:"";position:absolute;inset-block:.9rem;inset-inline-start:3.9rem;width:1px;background:var(--line-2)}
+.flow li{display:grid;grid-template-columns:4.6rem 1fr;gap:1rem;padding-bottom:1.15rem;margin:0;position:relative}
+.flow li:last-child{padding-bottom:0}
+.flow .t{font-family:var(--f-mono);font-size:.78rem;color:var(--brand);text-align:start;padding-top:.15rem;direction:ltr}
+.flow .b{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:.75rem .95rem}
+.flow .b b{display:block;color:var(--ink);font-family:var(--f-disp);font-weight:500;font-size:.98rem;margin-bottom:.15rem}
+.flow .b span{font-size:.9rem;color:var(--ink-2)}
+
+/* ---- phases ---- */
+.ph{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1.2rem 1.3rem;margin:0 0 .85rem}
+.ph-h{display:flex;gap:.85rem;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:.7rem;margin-bottom:.85rem}
+.ph-n{font-family:var(--f-mono);font-size:1.5rem;font-weight:500;color:var(--line-2);line-height:1}
+.ph-h b{font-family:var(--f-disp);font-weight:600;font-size:1.1rem;color:var(--ink)}
+.ph-w{font-family:var(--f-mono);font-size:.75rem;color:var(--brand);background:var(--brand-soft);padding:.2rem .5rem;border-radius:3px;direction:ltr;margin-inline-start:auto}
+.ph-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:1.2rem}
+.ph-cols h5{margin:0 0 .4rem;font-family:var(--f-mono);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);font-weight:400}
+.ph-cols ul{margin:0;padding-inline-start:1rem;font-size:.89rem;max-width:none}
+.ph-cols li{margin-bottom:.3rem}
+.acc-c{margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--line-2);font-size:.88rem;color:var(--ink-2)}
+.acc-c b{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ok);font-weight:400;display:block;margin-bottom:.25rem}
+
+/* ---- url map ---- */
+.urls{font-family:var(--f-mono);font-size:.82rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow-x:auto;margin:0 0 1.75rem}
+.urls div{display:grid;grid-template-columns:minmax(13rem,1fr) minmax(13rem,1fr);gap:.5rem;padding:.5rem .85rem;border-bottom:1px solid var(--line);direction:ltr;text-align:left}
+.urls div:last-child{border-bottom:0}
+.urls div:first-child{background:var(--surface-2);color:var(--ink-3);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase}
+.urls s{color:var(--ink-3);text-decoration-color:var(--crit)}
+.urls b{color:var(--brand-ink);font-weight:500}
+
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.9rem 1.05rem;overflow-x:auto;font-family:var(--f-mono);font-size:.8rem;line-height:1.65;direction:ltr;text-align:left;color:var(--ink-2);margin:0 0 1.75rem}
+pre b{color:var(--brand-ink);font-weight:500}
+pre i{color:var(--crit);font-style:normal}
+pre u{color:var(--ink-3);text-decoration:none}
+.urls.rtl div{direction:rtl;text-align:start}
+
+footer{grid-column:1/-1;padding:2.5rem 0 0;border-top:1px solid var(--line);color:var(--ink-3);font-size:.85rem}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="shell" dir="rtl" lang="ar">
+
+<header class="mast">
+  <div class="eyebrow">خطة العمل · الإصدار 1.0 <span>9 سبتمبر 2026</span></div>
+  <h1>من ووردبريس إلى منصة Node.js: خطة إعادة بناء متجر التفعيل الرقمي</h1>
+  <p class="lede">الموقع الحالي يجلب <b>1.3 زيارة عضوية في اليوم</b>. هذه الخطة تشرح السبب الحقيقي بالأرقام المستخرجة من قاعدة بياناتك، ثم تحدّد المنصة الجديدة ونظمها وجدولها الزمني ومعايير القبول لكل مرحلة.</p>
+  <div class="mast-meta">
+    <span class="tag">Next.js 16 + NestJS</span>
+    <span class="tag">PostgreSQL · Prisma · Redis</span>
+    <span class="tag">Stripe + PayPal</span>
+    <span class="tag">ar / en · hreflang</span>
+    <span class="tag">101 منتج · 16 تصنيف · 185 طلب</span>
+  </div>
+</header>
+
+<nav class="toc" aria-label="فهرس المستند">
+  <div class="toc-t">المحتويات</div>
+  <ol>
+    <li><a href="#s1">الملخّص التنفيذي</a></li>
+    <li><a href="#s2">جرد الموقع الحالي</a></li>
+    <li><a href="#s3">التشخيص: 15 سبباً</a></li>
+    <li><a href="#s4">المنافسون والدروس</a></li>
+    <li><a href="#s5">القرارات المعتمدة</a></li>
+    <li><a href="#s6">معمارية المنصة</a></li>
+    <li><a href="#s7">نموذج البيانات</a></li>
+    <li><a href="#s8">الأنظمة الإدارية</a></li>
+    <li><a href="#s9">خزنة المفاتيح والحماية</a></li>
+    <li><a href="#s10">الأتمتة التسويقية</a></li>
+    <li><a href="#s11">معمارية SEO و GEO</a></li>
+    <li><a href="#s12">التصميم والتجربة</a></li>
+    <li><a href="#s13">الترحيل والتحويل</a></li>
+    <li><a href="#s14">الجدول الزمني</a></li>
+    <li><a href="#s15">مؤشرات النجاح</a></li>
+    <li><a href="#s16">المخاطر</a></li>
+    <li><a href="#s17">أول سبعة أيام</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sn">01 — الملخّص التنفيذي</div>
+  <h2>المشكلة ليست ووردبريس. المشكلة أن المتجر لا يملك صفحات تستحق الترتيب</h2>
+  <p class="sub">هذه الأرقام مستخرجة من جدول <code>wp_rank_math_analytics_gsc</code> داخل نسختك الاحتياطية — أي من Google Search Console نفسه، لا من تقدير.</p>
+
+  <div class="tiles">
+    <div class="tile bad"><div class="tile-k">نقرات عضوية</div><div class="tile-v">233</div><div class="tile-n">في 178 يوماً (13 مارس – 6 سبتمبر 2026) = 1.3 نقرة/يوم</div></div>
+    <div class="tile"><div class="tile-k">مرات الظهور</div><div class="tile-v">15,359</div><div class="tile-n">معدّل النقر 1.52% — منخفض جداً لمتجر</div></div>
+    <div class="tile bad"><div class="tile-k">صفحات لها ظهور</div><div class="tile-v">54</div><div class="tile-n">من أصل ~105 روابط قابلة للفهرسة</div></div>
+    <div class="tile bad"><div class="tile-k">ظهور التصنيفات</div><div class="tile-v">0</div><div class="tile-n">لا صفحة تصنيف واحدة ظهرت في 178 يوماً</div></div>
+  </div>
+
+  <h3>كيف تتوزّع مرات الظهور فعلياً</h3>
+  <div class="bar" role="img" aria-label="الصفحة الرئيسية 69.6 بالمئة، صفحات المنتجات 23.5 بالمئة، صفحات أخرى 6.9 بالمئة، التصنيفات صفر بالمئة">
+    <i style="width:69.6%;background:var(--brand)"></i>
+    <i style="width:23.5%;background:var(--accent)"></i>
+    <i style="width:6.9%;background:var(--line-2)"></i>
+  </div>
+  <div class="bl">
+    <b><i style="background:var(--brand)"></i> الصفحة الرئيسية <em>69.6% — 10,683</em></b>
+    <b><i style="background:var(--accent)"></i> صفحات المنتجات <em>23.5% — 3,613</em></b>
+    <b><i style="background:var(--line-2)"></i> صفحات أخرى <em>6.9% — 1,063</em></b>
+    <b><i style="background:var(--crit)"></i> صفحات التصنيفات <em>0% — 0</em></b>
+  </div>
+
+  <p>سبعون بالمئة من كل ظهورك يأتي من صفحة واحدة، على كلمات ملاحية عامة (<b>«التنشيط الرقمي»</b> 4,576 ظهور، <b>«التفعيل»</b> 3,033 ظهور) — وهي كلمات لا نيّة شرائية فيها. أمّا الكلمات التي تجلب المال فعلياً فترتيبها خارج الوجود: <code>مفتاح ويندوز 10</code> بالمركز 57.8، <code>windows 10 pro key</code> بالمركز 69.6، <code>اشتراك ادوبي كلاود</code> بالمركز 52.2.</p>
+
+  <div class="call">
+    <div class="call-t">الخلاصة في سطر واحد</div>
+    <p>المتجر يملك منتجات جيّدة وهوية بصرية محترمة، لكنه لا يملك <b>بنية صفحات</b> تُرتّب: التصنيفات غير مُرسَلة لجوجل ولا محتوى فيها، 30% من الكتالوج غير منشور، أقوى منتج عضوي «غير متوفر»، البيانات المنظّمة متضاربة والأسعار فيها بعملة خاطئة، والصفحة تحمّل 104 ملفات CSS و93 ملف JS. المنصة الجديدة ليست ترقية تقنية — هي إعادة بناء البنية التي تجلب الزيارات وتُتم البيع.</p>
+  </div>
+
+  <h3>الجانب الآخر: التحويل والتشغيل</h3>
+  <div class="tiles">
+    <div class="tile bad"><div class="tile-k">طلبات ملغاة</div><div class="tile-v">31.9%</div><div class="tile-n">59 من 185 طلباً — لأن الدفع يدوي فقط</div></div>
+    <div class="tile"><div class="tile-k">إيراد إجمالي</div><div class="tile-v">$4,641</div><div class="tile-n">124 طلباً مدفوعاً · متوسط السلة $37.43</div></div>
+    <div class="tile bad"><div class="tile-k">زمن تحميل الصفحة</div><div class="tile-v">17.4s</div><div class="tile-n">226 طلب شبكة · TTFB 1.22 ثانية</div></div>
+    <div class="tile bad"><div class="tile-k">مراجعات وهمية</div><div class="tile-v">565</div><div class="tile-n">مُولَّدة بإضافة وتُغذّي AggregateRating</div></div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sn">02 — جرد الموقع الحالي</div>
+  <h2>ما نملكه فعلاً قبل الترحيل</h2>
+  <p class="sub">مستخرج من <code>WordPress.2026-09-09.xml</code> و<code>u532516840_da_main.sql</code>.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>العنصر</th><th class="num">العدد</th><th>ملاحظة تؤثّر على الترحيل</th></tr></thead>
+      <tbody>
+        <tr><td><b>المنتجات</b></td><td class="num">101</td><td>71 منشور + <b>30 مسودّة</b> (Norton 360، Nitro PDF، Parallels، VMware، Office 2024 — خطوط كاملة معطّلة). كلها <code>simple</code>، بلا متغيّرات.</td></tr>
+        <tr><td>منها نافد المخزون</td><td class="num">12</td><td>يتضمّن Windows 10 Pro و Windows 11 Pro — أعلى منتجَين في الظهور العضوي.</td></tr>
+        <tr><td><b>تصنيفات المنتجات</b></td><td class="num">16</td><td>على <code>/collections/</code>، بلا وصف Meta، ~295 كلمة، وغير موجودة في أي خريطة موقع.</td></tr>
+        <tr><td>الوسوم (product_tag)</td><td class="num">501</td><td>مضبوطة <code>noindex</code> (سليم). تُدمج إلى ~60 وسماً ذا معنى.</td></tr>
+        <tr><td>العلامات التجارية</td><td class="num">11</td><td>Microsoft, Adobe, ESET, Autodesk, Norton, McAfee, CorelDRAW, CCleaner, Elementor, Office 365, Windows — لا صفحة مركزية لأي منها.</td></tr>
+        <tr><td>الصفحات</td><td class="num">15</td><td>«مبيعات الشركات» مسودّة — وهي أعلى قيمة تجارية غير مستغلّة. <b>لا صفحة «من نحن» ولا «اتصل بنا»</b>.</td></tr>
+        <tr><td>المقالات</td><td class="num">7</td><td>أفضلها <code>/office-365-vs-office-2021</code> — الرابط الوحيد النظيف في الموقع.</td></tr>
+        <tr><td>الوسائط</td><td class="num">192</td><td>مزيج webp/png/jpg/svg، 14 صورة من 36 في صفحة منتج واحدة بلا <code>alt</code>.</td></tr>
+        <tr><td>العملاء / المستخدمون</td><td class="num">224 / 218</td><td>يُرحَّلون مع إعادة تعيين كلمات المرور إجبارياً (لا نرحّل تجزئات ووردبريس).</td></tr>
+        <tr><td>الطلبات</td><td class="num">185</td><td>124 مكتمل، 59 ملغى، 2 مسترد. عملة واحدة USD، بوابة واحدة يدوية.</td></tr>
+        <tr><td>الكوبونات</td><td class="num">7</td><td>واحد فقط استُخدم بكثافة (<code>Claude</code>، 53 من 100).</td></tr>
+        <tr><td>مفاتيح مخزّنة</td><td class="num">55</td><td>في <code>wc_ld_license_codes</code>. الباقي يُسلَّم <b>يدوياً بلصقه في ملاحظات الطلب</b>.</td></tr>
+        <tr><td>مراجعات وهمية</td><td class="num">565</td><td>تحمل <code>wvr_virtual_review</code> — <b>لا تُرحَّل</b> (تفصيل في التشخيص 06).</td></tr>
+        <tr><td>إضافات ووردبريس نشطة</td><td class="num">33</td><td>WooCommerce، Woodmart، Elementor Pro، CheckoutWC، Rank Math Pro، Jetpack، Multi-Currency… وهي مصدر الـ 197 ملف CSS/JS.</td></tr>
+      </tbody>
+      <caption>الكيان مسجّل في إستنبول (TR34)، البيع عالمي بالدولار مع عرض أسعار بعملات محلية.</caption>
+    </table>
+  </div>
+
+  <div class="call warn">
+    <div class="call-t">تنبيه أمني يجب معالجته قبل أي شيء آخر</div>
+    <p>ملاحظات الطلبات في قاعدة البيانات تحتوي <b>مفاتيح تفعيل ونصوص حسابات Office 365 و Adobe بكلمات مرورها بشكل صريح غير مشفّر</b> — أمثلة حقيقية موجودة داخل <code>wp_comments</code>. ونسخة الـ <code>.sql.gz</code> على قرصك تحملها كذلك.</p>
+    <p>الإجراء: تُرحَّل هذه القيم إلى الخزنة المشفّرة، ثم تُمسح من الملاحظات، وتُعامل النسخ الاحتياطية القديمة كأصول سرّية (تشفير القرص + إتلاف بعد الترحيل). أي عميل تسرّبت بياناته يُبلَّغ ويُعاد إصدار وصوله.</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sn">03 — التشخيص</div>
+  <h2>خمسة عشر سبباً لعدم ظهورك في محركات البحث — كل واحد بدليله</h2>
+  <p class="sub">مرتّبة بالأثر. كل بند مذكور هنا يُغلَق بشكل بنيوي في المنصة الجديدة، لا بترقيع.</p>
+
+  <div class="finds">
+
+    <div class="find c1"><div class="find-h"><span class="id">01</span><b>صفحات التصنيفات غائبة تماماً عن خرائط الموقع</b><span class="pill p-crit">حاد</span></div>
+      <p>فهرس الخرائط يحتوي 5 خرائط فقط: <code>post</code>، <code>page</code>، <code>product</code>، <code>category</code> (تصنيفات المدونة)، <code>local</code>. لا توجد خريطة لـ <code>product_cat</code> — أي أن 16 صفحة تصنيف لم تُقدَّم لجوجل قط. في أي متجر، صفحات التصنيف هي محرّك الزيارات الأساسي لكلمات «شراء / سعر / مفتاح X».</p>
+      <div class="ev"><span>0 impressions / 178 days</span><span>16 categories unsubmitted</span><span>sitemap_index.xml → 5 maps</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">02</span><b>ثلاثون بالمئة من الكتالوج غير منشور</b><span class="pill p-crit">حاد</span></div>
+      <p>30 منتجاً بحالة <code>draft</code>، وبينها خطوط منتجات كاملة عليها طلب بحثي حقيقي: Norton 360 (6 منتجات)، Nitro PDF (3)، Parallels Desktop (3)، VMware (2)، Office 2024 (7). لا يمكن ترتيب صفحة غير موجودة.</p>
+      <div class="ev"><span>30 / 101 = 29.7% draft</span><span>21 of them are complete product lines</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">03</span><b>أقوى صفحة منتج عضوية «غير متوفرة في المخزون»</b><span class="pill p-crit">حاد</span></div>
+      <p>صفحة <code>Windows 10 Pro</code> تجمع 1,166 ظهوراً — 7.6% من ظهور الموقع كله — وتُعرض بحالة <code>OutOfStock</code> ورسالة «غير متوفر». وكذلك <code>Windows 11 Pro</code> (166 ظهوراً). جوجل يخفض ترتيب صفحات المنتج النافد، والزائر يغادر بلا بديل ولا تنبيه توفّر.</p>
+      <div class="ev"><span>1,166 impressions · 9 clicks</span><span>schema availability = OutOfStock</span><span>12 products out of stock</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">04</span><b>بيانات منظّمة مكرّرة ومتضاربة على نفس الصفحة</b><span class="pill p-crit">حاد</span></div>
+      <p>صفحة المنتج تُصدِر كتلتَي <code>JSON-LD</code> كلٌّ منهما يحتوي كياناً من نوع <code>Product</code>، ببيانات متعارضة. عندما يجد جوجل تعارضاً كهذا فهو يتجاهل التوصيف بالكامل — فتخسر النتائج الغنية (السعر، التوفّر، التقييم) في نتائج البحث.</p>
+      <pre><u>// نفس الصفحة، كتلتان:</u>
+<b>Product A</b>  name: "Windows 10 Pro Retail Online Activation Key"
+          sku:  "windows-10-pro-retail-key"
+          price: "9.90"  currency: "USD"  availability: <b>InStock</b>
+
+<b>Product B</b>  name: "Windows 10 Pro مفتاح تفعيل ويندوز 10 برو"
+          sku:  10765
+          price: <i>"36.36"</i>  currency: <i>"USD"</i>  availability: <b>OutOfStock</b>
+          aggregateRating: 4.57 / 7 reviews</pre>
+      <div class="ev"><span>2 × Product entity</span><span>2 conflicting prices</span><span>2 conflicting availabilities</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">05</span><b>عملة خاطئة داخل التوصيف — سبب مباشر لرفض المنتجات</b><span class="pill p-crit">حاد</span></div>
+      <p>السعر المعروض للزائر هو <code>د.إ36.36</code> (درهم إماراتي)، لكن التوصيف يصرّح <code>"price":"36.36","priceCurrency":"USD"</code>. أي أن الرقم المحلي يُرسَل موسوماً بالدولار. هذا تعارض بين الصفحة والتوصيف يُفعِّل رفض العناصر في Google Merchant Center وكتم النتائج الغنية.</p>
+      <div class="ev"><span>visible: AED 36.36</span><span>schema: USD 36.36</span><span>base price: USD 9.90</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">06</span><b>565 مراجعة وهمية تُغذّي تقييم الصفحة</b><span class="pill p-crit">حاد</span></div>
+      <p>الإضافة <code>faview-virtual-reviews-for-woocommerce</code> تولّد مراجعات موسومة <code>wvr_virtual_review</code> و<code>verified</code>، وتُبنى منها <code>AggregateRating</code> في التوصيف. هذا يخالف سياسة مقاطع المراجعة في جوجل (خطر إجراء يدوي)، ويخالف قوانين حماية المستهلك في الاتحاد الأوروبي وبريطانيا وقواعد FTC، وأخطر من ذلك: يجعل 81 منتجاً بتقييم 5 نجوم — وهو نمط يقرأه الزائر الذكي كإشارة عدم ثقة.</p>
+      <p><b>القرار:</b> لا تُرحَّل أي مراجعة وهمية. النظام الجديد يقبل المراجعات من <b>مشترٍ موثّق فقط</b>، وتُجمع بدعوة تلقائية بعد التسليم. نبدأ من صفر مراجعات حقيقية، وهذا أسلم تجارياً وقانونياً من 565 مراجعة مصطنعة.</p>
+      <div class="ev"><span>565 wvr_virtual_review</span><span>81 products rated 5.0</span><span>AggregateRating emitted</span></div></div>
+
+    <div class="find c1"><div class="find-h"><span class="id">07</span><b>وزن الصفحة كارثي: 104 ملف CSS و93 ملف JS</b><span class="pill p-crit">حاد</span></div>
+      <p>قياس مباشر على صفحة منتج حقيقية: 226 طلب شبكة، 591 كيلوبايت منقولة، HTML بحجم 350 كيلوبايت، <code>TTFB 1,222ms</code>، <code>DOMContentLoaded 15,970ms</code>، <code>load 17,430ms</code>. هذا فشل مؤكّد في Core Web Vitals، وهو يضرب الترتيب والتحويل معاً — خصوصاً على شبكات الجوّال في الخليج.</p>
+      <div class="ev"><span>104 stylesheets</span><span>93 scripts</span><span>226 requests</span><span>load 17.4s</span><span>12 third-party hosts</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">08</span><b>محتوى المنتجات ضعيف — وأفضله محبوس داخل الصور</b><span class="pill p-warn">مرتفع</span></div>
+      <p>وسيط طول وصف المنتج 300 كلمة (الأدنى 76)، و50 منتجاً تحت 300 كلمة. والأسوأ: أقوى صفحاتك التسويقية تضع كامل عرض القيمة داخل صورة PNG واحدة (صفحة حزمة Claude Skills مثالاً) — نصّ لا يقرأه محرّك بحث ولا محرّك ذكاء اصطناعي.</p>
+      <div class="ev"><span>median 300 words</span><span>50 products &lt; 300 words</span><span>value prop inside PNG</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">09</span><b>حقول السيو ناقصة على نصف الكتالوج</b><span class="pill p-warn">مرتفع</span></div>
+      <p>43 منتجاً من 101 بلا عنوان SEO ولا وصف Meta، 42 بلا كلمة مفتاحية مستهدفة، 28 بلا صورة بارزة، و46 فقط تملك <code>SKU</code>. صفحات التصنيف بلا وصف Meta إطلاقاً وعناوينها نمط واحد عام: «اسم التصنيف - متجر التفعيل الرقمي».</p>
+      <div class="ev"><span>43 missing title+description</span><span>28 missing featured image</span><span>46/101 have SKU</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">10</span><b>لا سلطة موضوعية: سبع مقالات ولا عناقيد محتوى</b><span class="pill p-warn">مرتفع</span></div>
+      <p>7 مقالات فقط، بلا صفحات مقارنة، بلا أدلة تفعيل، بلا مسرد مصطلحات، بلا صفحات علامات تجارية، وبلا معمارية ربط داخلي. الطلب البحثي موجود وكبير — <code>تفعيل</code> وحدها 3,033 ظهوراً و<code>كود التفعيل</code> 141 — لكن لا صفحة عندك تستحق أن تجيب عليه.</p>
+      <div class="ev"><span>7 posts total</span><span>0 comparison pages</span><span>0 guides</span><span>0 glossary</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">11</span><b>لا نسخة إنجليزية ولا hreflang</b><span class="pill p-warn">مرتفع</span></div>
+      <p>الموقع عربي فقط بلا أي <code>link rel="alternate" hreflang</code>، مع أن Search Console يسجّل طلباً إنجليزياً حقيقياً يضيع كاملاً: <code>digital activation</code> 221 ظهوراً، <code>windows 10 pro key</code> 207، <code>windows 10 pro product key</code> 83، <code>activation windows 10 pro</code> 71.</p>
+      <div class="ev"><span>hreflang: []</span><span>~600 English impressions lost</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">12</span><b>اسم علامتك يُنقر لمنافس</b><span class="pill p-warn">مرتفع</span></div>
+      <p>«التنشيط الرقمي» تجمع 4,576 ظهوراً بمتوسط مركز <b>3.6</b> — ومع ذلك 56 نقرة فقط، أي 1.2% معدّل نقر. عند المركز الثالث المتوقّع يفوق 15%. السبب: نطاق منافس اسمه <code>digital-activate.com</code> يحمل ذات التسمية «التنشيط الرقمي»، وعنوانك ووصفك في نتائج البحث لا يفوزان بالنقرة حتى وأنت مرتّب.</p>
+      <div class="ev"><span>pos 3.6 · CTR 1.2%</span><span>expected CTR &gt; 15%</span><span>4,520 lost impressions</span></div></div>
+
+    <div class="find c2"><div class="find-h"><span class="id">13</span><b>أخطاء محتوى تُلغي صلة الصفحة بكلمتها</b><span class="pill p-warn">مرتفع</span></div>
+      <p>صفحة <code>Windows 10 Pro</code> عناوينها الفرعية عن ويندوز 11: «طريقة تحميل وتفعيل نسخة ويندوز 11 برو»، «مزايا شراء مفتاح تفعيل ويندوز 11 أصلي»، «المواصفات المطلوبة لتثبيت ويندوز 11 برو». الصفحة تنافس نفسها على الكلمة الخطأ.</p>
+      <div class="ev"><span>3 of 4 H2 reference the wrong product</span></div></div>
+
+    <div class="find c3"><div class="find-h"><span class="id">14</span><b>«التسليم الفوري» وعد غير مُؤتمت</b><span class="pill p-med">متوسط — تشغيلي</span></div>
+      <p>الجدول يحتوي 55 مفتاحاً فقط، والتسليم الفعلي يجري بلصق المفتاح يدوياً في ملاحظة الطلب. ملاحظات حقيقية في قاعدة بياناتك: «سوف يتم إرسال الاشتراك غداً صباحاً»، «جاري العمل على إنشاء كود التفعيل، الرجاء الانتظار». المنافس يوعد بالتسليم في <b>15 ثانية</b> عبر رسالة نصية. هذه الفجوة تفسّر جزءاً من الـ 32% إلغاءً وغياب الشراء المتكرّر.</p>
+      <div class="ev"><span>59/185 cancelled</span><span>manual fulfilment</span><span>competitor SLA: 15s</span></div></div>
+
+    <div class="find c3"><div class="find-h"><span class="id">15</span><b>روابط سبام في التعليقات وصفحات ثقة مفقودة</b><span class="pill p-med">متوسط</span></div>
+      <p>تعليقات سبام تركية وفيتنامية بروابط خارجية على المقالات (29 موسومة سبام والبقية مرّت). وسجل الأخطاء يُظهر زوّاراً يطلبون <code>/about</code>، <code>/about-us</code>، <code>/contact</code>، <code>/team</code>، <code>/shop</code>، <code>/blog</code> — كلها 404. متجر يبيع تراخيص بلا صفحة «من نحن» ولا «اتصل بنا» يخسر في تقييم E-E-A-T وفي ثقة المشتري.</p>
+      <div class="ev"><span>29 spam comments</span><span>/about → 404</span><span>/contact → 404</span></div></div>
+
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sn">04 — المنافسون</div>
+  <h2>ما يفعله المنافسون العرب، وما لا يفعله أحد منهم</h2>
+  <p class="sub">فحصت صفحات منتج مباشرة لدى أقرب المنافسين على كلمة «مفتاح تفعيل ويندوز 11 برو». معظمهم على منصّة سلة، وهذا يعني قيوداً تقنية نستفيد منها.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>المنافس</th><th>المنصّة</th><th>أقوى ما يملك</th><th>الفجوة التي نستغلّها</th></tr></thead>
+      <tbody>
+        <tr><td><b>mftaah.com</b></td><td>سلة</td><td>«منذ 2015»، +16,000 مراجعة، +60,000 عميل، 8,186 عملية شراء لمنتج واحد، تسليم في 15 ثانية برسالة نصية، عربي + إنجليزي</td><td>لا FAQ، لا أدلة، لا مقارنات، صفحة المنتج نصف فارغة، والمنتج المفحوص نفسه نافد</td></tr>
+        <tr><td><b>d7ecode.com</b></td><td>سلة</td><td>«بيع أكثر من 1,706 مرة»، 4.98/5 من 70 مراجعة، عدّاد مخزون «بقي 5»، كود خصم معروض داخل الصفحة، تثبيت سعري 42%، خطوات تفعيل في 3 مراحل، روابط تحميل رسمية، FAQ</td><td>محتوى سطحي، بلا مدونة مقارنات، بلا مسرد، بلا نسخة إنجليزية كاملة</td></tr>
+        <tr><td><b>digital-activate.com</b></td><td>—</td><td>يحمل تسمية «التنشيط الرقمي» — نفس مصطلح علامتك الأعلى ظهوراً</td><td>نطاق أقصر لكن بلا عمق محتوى؛ نستعيد الكلمة بصفحة علامة + محتوى + مقاطع غنية</td></tr>
+        <tr><td>volcanstore · noud.digital · 7lle · digital-plus3 · stotre5 · mohtaway</td><td>سلة / زد</td><td>تسليم فوري، دعم عربي، روابط منتج قصيرة رقمية</td><td>جميعهم بلا سلطة موضوعية، بلا أدوات مجانية، وبلا محفظة تراخيص للعميل</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>النقاط التسويقية التي نبنيها لأنها تعمل عندهم</h3>
+  <ul>
+    <li><b>دليل اجتماعي بالأرقام لا بالنجوم:</b> «تم بيعه 1,706 مرة» أقوى من «5 نجوم». نعرض عدد المبيعات الحقيقي، وعدد المشترين هذا الشهر، وآخر عملية شراء («اشتراه أحمد من الرياض قبل 12 دقيقة») — كلها من بيانات حقيقية.</li>
+    <li><b>عدّاد مخزون صادق:</b> «بقي 5 مفاتيح» — يعمل لأنه صحيح عندنا فعلاً (نبيع مخزون مفاتيح محدود).</li>
+    <li><b>كود خصم داخل صفحة المنتج:</b> يرفع التحويل مباشرة ويقلّل مغادرة الباحث عن كوبون إلى مواقع خارجية.</li>
+    <li><b>تعهّد تسليم بالثواني:</b> «مفتاحك في بريدك خلال 30 ثانية أو نُعيد المبلغ» — قابل للوعد فقط بعد أتمتة الخزنة.</li>
+    <li><b>خطوات التفعيل + رابط التحميل الرسمي داخل الصفحة:</b> يقلّل تذاكر الدعم ويجلب زيارات «كيف أفعّل…».</li>
+    <li><b>تثبيت سعري بنسبة التوفير وتاريخ انتهاء العرض.</b></li>
+  </ul>
+
+  <h3>ما لا يملكه أي منافس — وهنا نفوز</h3>
+  <ul>
+    <li><b>عمق محتوى حقيقي:</b> عناقيد أدلة تفعيل + مقارنات + مسرد مصطلحات (Retail / OEM / Volume MAK / KMS / Bind Key) — وهو تحديداً مصدر حيرة كل مشترٍ في هذا السوق.</li>
+    <li><b>محفظة تراخيص للعميل:</b> «مفاتيحي» مع تعليمات لكل منتج، إعادة إرسال، سجل التفعيل، وعدّاد انتهاء الاشتراك مع تنبيه تجديد — يخلق إيراداً متكرّراً لا يملكه أحد.</li>
+    <li><b>أدوات مجانية</b> (فاحص صيغة المفتاح، «أي إصدار ويندوز يناسبك؟»، حاسبة تراخيص RDS CAL) — مغناطيس روابط وكلمات ملاحية.</li>
+    <li><b>الضمان الذهبي:</b> أصل تمتلكه أصلاً (170 ظهوراً عضوياً و96 على «الضمان الذهبي») ولا يُبرَز — يصبح ركيزة تفاضل مركزية.</li>
+    <li><b>قناة B2B / مبيعات الشركات:</b> صفحتك مسودّة اليوم؛ تراخيص Server و RDS CAL و Autodesk هي أعلى متوسط سلة في السوق ولا أحد يخاطبها بمسار مخصّص.</li>
+    <li><b>موقع أسرع بعشرين ضعفاً</b> من أي متجر سلة مثقل بالإضافات.</li>
+  </ul>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sn">05 — القرارات المعتمدة</div>
+  <h2>ما اتّفقنا عليه، وما يعنيه عملياً</h2>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>القرار</th><th>الاختيار</th><th>الأثر على الخطة</th></tr></thead>
+      <tbody>
+        <tr><td>المحرّك التجاري</td><td><b>NestJS مخصّص بالكامل</b> + Prisma + PostgreSQL</td><td>تحكّم مطلق في خزنة المفاتيح والحماية والأتمتة. يعني بناء منطق السلة والدفع والمخزون والعروض بأنفسنا — لذلك قسّمنا العمل إلى إصدارات، والإصدار الأول يستبدل ووردبريس كاملاً قبل بناء أنظمة التسويق.</td></tr>
+        <tr><td>الدفع</td><td><b>Stripe</b> + <b>PayPal</b> + تحويل بنكي/كريبتو كاحتياط</td><td>الإصلاح الأكبر للتحويل: 32% إلغاء اليوم سببه غياب الدفع بالبطاقة. Stripe يجلب Apple Pay و Google Pay و 3DS. التحويل اليدوي يبقى خياراً ثالثاً لا افتراضياً. <b>يجب التحقق مبكراً</b> من قبول Stripe للكيان التركي — إن رفض، البديل الجاهز هو Paddle أو Lemon Squeezy كـ Merchant of Record.</td></tr>
+        <tr><td>اللغات</td><td><b>عربي (افتراضي) + إنجليزي</b></td><td>العربية على الجذر <code>/</code> للحفاظ على 10,683 ظهوراً موجودة، والإنجليزية تحت <code>/en/</code>، مع <code>hreflang</code> متبادل و<code>x-default=ar</code>. كل حقل محتوى وSEO يُصمَّم مترجَماً من اليوم الأول.</td></tr>
+        <tr><td>الموقع الحالي</td><td><b>لا إصلاحات — تركيز 100% على الجديد</b></td><td>هذا يعني أن الزيارات لن تتحسّن قبل الإطلاق. لذلك ضغطنا الإصدار الأول إلى <b>10 أسابيع</b> ليشمل أساس السيو كاملاً ويتم التحويل مبكراً، بدل انتظار 24 أسبوعاً لمنصة مكتملة.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="call acc">
+    <div class="call-t">قرار تقني إضافي أتّخذه ضمن الخطة</div>
+    <p>الروابط الجديدة <b>لاتينية قصيرة وثابتة</b> (<code>/store/windows-11-pro-key</code>) بدل الروابط العربية المُرمَّزة الحالية (<code>/product/%d9%88%d9%8a...</code> بطول يفوق 300 حرف). السبب: الروابط الحالية تنكسر في التحليلات والإعلانات والاقتباس من محركات الذكاء الاصطناعي، والمنافسون يرتّبون بروابط رقمية بحتة — أي أن لغة الرابط ليست عامل ترتيب. والأهم أن حقوق الروابط الحالية شبه معدومة (233 نقرة في 178 يوماً)، فتكلفة التحويل الآن أقل ما ستكون على الإطلاق. الكلمات العربية تبقى في العنوان و<code>H1</code> والمحتوى حيث تُحسب فعلاً.</p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sn">06 — المعمارية</div>
+  <h2>ثلاث تطبيقات، واجهة برمجية واحدة، قاعدة بيانات واحدة</h2>
+
+  <pre>digital-activation/                    <u>pnpm workspace + Turborepo</u>
+├─ apps/
+│  ├─ <b>storefront</b>     Next.js 16 (App Router, RSC)   → digital-activation.com
+│  │                    ar على الجذر · en تحت /en · ISR + edge cache
+│  ├─ <b>admin</b>          Next.js 16 (SPA-ish, RTL أولاً)  → admin.digital-activation.com
+│  └─ <b>api</b>            NestJS 11 (REST + OpenAPI)      → api.digital-activation.com
+├─ packages/
+│  ├─ <b>db</b>             Prisma schema + migrations + seed
+│  ├─ <b>contracts</b>      zod schemas + أنواع مشتركة (مصدر حقيقة واحد للـ DTOs)
+│  ├─ <b>ui</b>             مكوّنات مشتركة + design tokens (RTL/LTR logical properties)
+│  ├─ <b>seo</b>            مولّدات JSON-LD · sitemap · hreflang · canonical
+│  └─ <b>i18n</b>           قواميس ar/en + تنسيق العملة والتاريخ
+└─ workers/
+   └─ <b>jobs</b>           BullMQ: تسليم المفاتيح · البريد · الإشعارات · أسعار الصرف
+                        السلات المتروكة · دعوات المراجعات · تجديد الـ sitemap</pre>
+
+  <h3>البنية التحتية</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>الطبقة</th><th>الاختيار</th><th>السبب</th></tr></thead>
+      <tbody>
+        <tr><td>الواجهة</td><td>Next.js 16 على Vercel (أو Docker + Cloudflare)</td><td>SSR/ISR على الحافة، تحكّم كامل بالوسوم والـ schema، تحسين صور أصلي</td></tr>
+        <tr><td>الواجهة البرمجية</td><td>NestJS 11 + Fastify adapter، حاوية Docker</td><td>وحدات واضحة، حرّاس صلاحيات، OpenAPI تلقائي، اختبارات قابلة للعزل</td></tr>
+        <tr><td>قاعدة البيانات</td><td>PostgreSQL 17 (Neon أو RDS) + PgBouncer</td><td>معاملات ذرّية لازمة لتخصيص المفاتيح، PITR، مخطّطات منفصلة للخزنة</td></tr>
+        <tr><td>الكاش والطوابير</td><td>Redis 7 + BullMQ</td><td>حجز المخزون بمدّة صلاحية، تحديد المعدّل، الوظائف المؤجّلة للسلات المتروكة</td></tr>
+        <tr><td>البحث</td><td>Meilisearch (مع تطبيع عربي)</td><td>يجب أن يجد «اوفيس» و«أوفيس» و«Office» نفس النتيجة — والهمزة والتاء المربوطة والتشكيل</td></tr>
+        <tr><td>الأسرار</td><td>Doppler أو HashiCorp Vault + KMS</td><td>مفتاح تشفير الخزنة (KEK) لا يسكن متغيّرات البيئة أبداً</td></tr>
+        <tr><td>الملفات</td><td>S3/R2 + معالجة صور عند الطلب</td><td>AVIF/WebP تلقائي وأحجام متعدّدة</td></tr>
+        <tr><td>البريد</td><td>Resend أو Amazon SES — نطاقان منفصلان</td><td>فصل البريد المعاملاتي عن التسويقي حتى لا تُسقط حملةٌ إيصال المفاتيح</td></tr>
+        <tr><td>المراقبة</td><td>Sentry + OpenTelemetry + Better Stack</td><td>تتبّع الأخطاء والأداء وتنبيهات SLA التسليم</td></tr>
+        <tr><td>التكامل المستمر</td><td>GitHub Actions: lint · typecheck · tests · <b>Lighthouse CI</b> · <b>bundle-size gate</b></td><td>ميزانية الأداء تُفرَض في الـ CI — أي PR يخرقها يفشل. هكذا لا نعود إلى 104 ملفات CSS.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>ميزانية الأداء المفروضة في الـ CI</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>المؤشر</th><th class="num">الحالي</th><th class="num">الهدف</th></tr></thead>
+      <tbody>
+        <tr><td>LCP (جوّال 4G)</td><td class="num">—</td><td class="num">≤ 1.8s</td></tr>
+        <tr><td>INP</td><td class="num">—</td><td class="num">≤ 200ms</td></tr>
+        <tr><td>CLS</td><td class="num">—</td><td class="num">≤ 0.05</td></tr>
+        <tr><td>TTFB (مُكاش)</td><td class="num">1,222ms</td><td class="num">≤ 200ms</td></tr>
+        <tr><td>حجم HTML</td><td class="num">350 KB</td><td class="num">≤ 60 KB</td></tr>
+        <tr><td>ملفات CSS</td><td class="num">104</td><td class="num">1</td></tr>
+        <tr><td>ملفات JS</td><td class="num">93</td><td class="num">≤ 6</td></tr>
+        <tr><td>طلبات الشبكة</td><td class="num">226</td><td class="num">≤ 35</td></tr>
+        <tr><td>سكربتات طرف ثالث قبل التفاعل</td><td class="num">12 نطاقاً</td><td class="num">0</td></tr>
+      </tbody>
+      <caption>الخط الأساسي مقيس فعلياً على <code>/product/windows-10-professional…</code> بتاريخ 9 سبتمبر 2026.</caption>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sn">07 — نموذج البيانات</div>
+  <h2>الكيانات الأساسية</h2>
+  <p class="sub">مبنيّة على واقع كتالوجك: منتج رقمي، بلا شحن، بمواصفات ترخيص (مدّة، عدد أجهزة، طريقة تفعيل، لغات) — وهي الحقول الموجودة عندك اليوم في ACF ونحوّلها إلى متغيّرات حقيقية.</p>
+
+  <pre><b>Product</b>            slug · brandId · categoryIds · type(key|account|panel|bundle|service)
+                  status · publishedAt · badges · relatedIds · crossSellIds
+<b>ProductTranslation</b> productId · locale(ar|en) · name · shortDesc · body(blocks)
+                  seoTitle · seoDescription · faq[] · activationSteps[] · downloadUrl
+<b>Variant</b>            productId · sku · licensePeriod · deviceCount · platform
+                  activationMethod · deliverySla · priceUsd · compareAtUsd · costUsd
+<b>Inventory</b>          variantId · onHand · reserved · lowStockThreshold · backorderPolicy
+<b>StockReservation</b>   variantId · cartId · qty · expiresAt        <u>(TTL في Redis + مرآة في DB)</u>
+
+<i>--- مخطّط منفصل بصلاحيات مقيّدة ---</i>
+<b>LicenseKey</b>         variantId · state(available|reserved|assigned|delivered|revoked)
+                  <i>ciphertext</i> · iv · authTag · <i>wrappedDek</i> · fingerprint(sha256)
+                  supplierId · costUsd · expiresAt · orderId · deliveredAt
+<b>KeyAccessLog</b>       keyId · actorId · action(reveal|export|resend) · ip · ua · at
+
+<b>Cart</b>               token · customerId? · currency · items[] · couponCode?
+                  email? · lastActivityAt · recoveryStage · recoveredOrderId?
+<b>Order</b>              number · customerId · status · currency · fxRate · subtotal
+                  discount · tax · total · paymentIntentId · riskScore · notes[]
+<b>OrderItem</b>          orderId · variantId · qty · unitPriceUsd · assignedKeyIds[]
+<b>Payment</b>            orderId · provider(stripe|paypal|manual) · state · rawEventId
+
+<b>Customer</b>           email · phone · locale · currency · groupId(retail|b2b|vip)
+                  totalSpent · orderCount · lastOrderAt · pushSubscriptions[]
+<b>Review</b>             productId · orderId <u>(إجباري — لا مراجعة بلا شراء)</u>
+                  rating · body · locale · status · storeReply
+<b>Promotion</b>          code? · type(percent|fixed|freeItem|bundle) · value · scope
+                  rules(minTotal, products, categories, firstOrderOnly, perCustomer)
+                  startsAt · endsAt · usageLimit · usageCount · singleUse · issuedTo?
+<b>Page</b>               slug · template · locale · blocks[] · status · version
+                  seo{title,description,ogImage,robots} · publishAt
+<b>Redirect</b>           from · to · code(301|302) · hits · lastHitAt
+<b>AuditLog</b>           actorId · entity · entityId · action · before · after · ip · hashPrev</pre>
+
+  <div class="call">
+    <div class="call-t">لماذا المتغيّرات (Variants) مهمّة هنا</div>
+    <p>اليوم كل منتج <code>simple</code> منفصل، فصار لديك 7 صفحات ESET Internet Security و6 صفحات Autodesk تتنافس على نفس الكلمة وتُقسّم قوّتها. في النموذج الجديد يصبح ESET Internet Security <b>منتجاً واحداً</b> بمتغيّرات (سنة/3 سنوات × 1/2/3/5 أجهزة) — صفحة واحدة قويّة تجمع كل الروابط والمراجعات، مع اختيار المتغيّر داخل الصفحة. هذا وحده يرفع فرص الترتيب على «اشتراك نود 32» بدل تشتيتها على سبع صفحات.</p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <div class="sn">08 — الأنظمة الإدارية</div>
+  <h2>كل نظام طلبته، وما يفعله بالضبط</h2>
+
+  <div class="mods">
+    <div class="mod"><h4>إدارة الصفحات <code>pages</code></h4><ul>
+      <li>محرّر بالكتل: هيرو، شبكة منتجات، FAQ، جدول مقارنة، خطوات، شهادات، CTA، نص غني</li>
+      <li>مسودّة / معاينة برابط سرّي / نشر / نشر مُجدوَل</li>
+      <li>إصدارات وتاريخ تغييرات مع استرجاع</li>
+      <li>حقول SEO لكل لغة + صورة OG تُولَّد تلقائياً</li>
+      <li>قوالب: صفحة هبوط، دليل، مقارنة، مسرد، صفحة علامة</li>
+    </ul></div>
+
+    <div class="mod"><h4>إدارة المنتجات <code>catalog</code></h4><ul>
+      <li>منتج + متغيّرات + مواصفات ترخيص كحقول منظّمة (لا نص حر)</li>
+      <li>تحرير جماعي، استيراد/تصدير CSV، نسخ منتج</li>
+      <li>ترجمة عربي/إنجليزي جنباً إلى جنب</li>
+      <li><b>فاحص جاهزية النشر:</b> يمنع النشر بلا عنوان SEO ووصف وصورة و<code>alt</code> و120 كلمة وصفاً — الحاجز الذي منع 43 منتجاً من الظهور</li>
+      <li>معاينة مباشرة لمقطع نتائج البحث و<code>JSON-LD</code></li>
+    </ul></div>
+
+    <div class="mod"><h4>إدارة العروض <code>promotions</code></h4><ul>
+      <li>كوبونات: نسبة، مبلغ ثابت، منتج مجاني، خصم حزمة</li>
+      <li>قواعد: حد أدنى، نطاق منتج/تصنيف، أول طلب فقط، حد لكل عميل، قابلية التجميع</li>
+      <li>أكواد مفردة تُولَّد آلياً وتنتهي بموعد</li>
+      <li>عروض مؤقّتة بجدول زمني + عدّاد تنازلي في الواجهة</li>
+      <li>تقرير: إيراد لكل كوبون، وربحية بعد الخصم من <code>costUsd</code></li>
+    </ul></div>
+
+    <div class="mod"><h4>إدارة المخزون <code>inventory</code></h4><ul>
+      <li>مخزون لكل متغيّر + حجز بمدّة صلاحية أثناء الدفع</li>
+      <li>تنبيه انخفاض المخزون بالبريد والإشعار</li>
+      <li>تتبّع كلفة الشراء والمورّد وهامش الربح لكل مفتاح</li>
+      <li>سياسة النفاد: إخفاء، أو «تنبيهني عند التوفّر»، أو طلب مسبَق بSLA</li>
+      <li>عدّاد «بقي N» في الواجهة — صادق لأنه من المخزون الحقيقي</li>
+    </ul></div>
+
+    <div class="mod"><h4>إدارة الحسابات <code>auth · rbac</code></h4><ul>
+      <li>أدوار: مالك، مدير، محرّر كتالوج، تسويق، دعم، تنفيذ طلبات، قراءة فقط</li>
+      <li>صلاحيات دقيقة على مستوى الحقل (من يرى المفتاح، من يرى الكلفة)</li>
+      <li>مصادقة ثنائية <b>إجبارية</b> لكل حساب إداري</li>
+      <li>سجل جلسات وأجهزة مع إلغاء فوري</li>
+      <li>سجل تدقيق غير قابل للتعديل لكل إجراء</li>
+    </ul></div>
+
+    <div class="mod"><h4>إدارة العملاء <code>crm</code></h4><ul>
+      <li>ملف عميل: الطلبات، المفاتيح، التذاكر، القيمة الكلية، آخر نشاط</li>
+      <li>مجموعات: تجزئة، شركات B2B، VIP — بأسعار وشروط مختلفة</li>
+      <li>شرائح تلقائية: اشترى تصنيف X، خامل 90 يوماً، اشتراكه ينتهي خلال 30 يوماً</li>
+      <li>ملاحظات داخلية + سجل مراسلات</li>
+      <li>تصدير/حذف البيانات (GDPR و PDPL السعودي)</li>
+    </ul></div>
+
+    <div class="mod"><h4>حساب العميل <code>portal</code></h4><ul>
+      <li><b>مفاتيحي:</b> كل تراخيصه، مقنّعة مع كشف بنقرة، تعليمات لكل منتج</li>
+      <li>إعادة إرسال المفتاح، روابط التحميل الرسمية، سجل التفعيل</li>
+      <li>عدّاد انتهاء الاشتراك + تنبيه تجديد بخصم — إيراد متكرّر</li>
+      <li>الطلبات والفواتير PDF، تذاكر الدعم، قائمة الأمنيات</li>
+      <li>تفضيلات الإشعارات ولوحة الإحالة</li>
+    </ul></div>
+
+    <div class="mod"><h4>المراجعات <code>reviews</code></h4><ul>
+      <li><b>مشترٍ موثّق فقط</b> — <code>orderId</code> إجباري في النموذج</li>
+      <li>دعوة تلقائية بعد التسليم (يوم 3 ويوم 10)</li>
+      <li>إشراف + ردّ باسم المتجر</li>
+      <li><code>AggregateRating</code> تُصدَر من المراجعات الحقيقية فقط</li>
+      <li>عرض «تم بيعه N مرة» من بيانات الطلبات الفعلية</li>
+    </ul></div>
+
+    <div class="mod"><h4>الدفع والطلبات <code>payments · orders</code></h4><ul>
+      <li>Stripe Payment Element + Apple/Google Pay + 3DS، PayPal، تحويل يدوي مع رفع إثبات</li>
+      <li>Webhooks بتحقّق توقيع ومفاتيح idempotency</li>
+      <li>آلة حالات الطلب مع سجل كامل</li>
+      <li>تسعير متعدّد العملات: أساس USD + أسعار صرف يومية + قواعد تدوير — <b>والعملة المعروضة هي نفسها في التوصيف</b></li>
+      <li>مكافحة الاحتيال: قواعد سرعة، تقييم البريد المؤقّت/VPN، Stripe Radar، وطابور مراجعة يدوية <b>يحجب تسليم المفتاح</b> على الطلبات عالية الخطورة</li>
+    </ul></div>
+
+    <div class="mod"><h4>الإشعارات <code>notifications</code></h4><ul>
+      <li>Web Push (VAPID) مع تسجيل موافقة صريحة وشرائح</li>
+      <li>بريد معاملاتي وبريد تسويقي بنطاقين منفصلين (SPF/DKIM/DMARC)</li>
+      <li>WhatsApp Business API — القناة التي يستخدمها عملاؤك أصلاً</li>
+      <li>مركز تفضيلات + إلغاء اشتراك بنقرة واحدة</li>
+      <li>قوالب بالعربية والإنجليزية RTL/LTR</li>
+    </ul></div>
+
+    <div class="mod"><h4>السيو والتحويلات <code>seo</code></h4><ul>
+      <li>حقول SEO لكل كيان ولكل لغة + canonical و robots</li>
+      <li>مدير تحويلات 301/302 بعدّاد إصابات + مراقب 404</li>
+      <li>خرائط موقع مُولَّدة: منتجات، <b>تصنيفات</b>، علامات، صفحات، مقالات، أدلة، مقارنات، صور</li>
+      <li>توصيف تلقائي لكل قالب — كتلة <code>JSON-LD</code> واحدة، بلا تكرار</li>
+      <li>لوحة صحّة: صفحات بلا وصف، بلا <code>alt</code>، بلا ربط داخلي، يتيمة</li>
+    </ul></div>
+
+    <div class="mod"><h4>التحليلات <code>analytics</code></h4><ul>
+      <li>مخزن أحداث خاص + GA4 وMeta CAPI وPinterest من الخادم</li>
+      <li>قمع كامل: عرض منتج → إضافة للسلة → بدء الدفع → شراء</li>
+      <li>إيراد مُنسَب لكل قناة وكوبون وحملة استعادة</li>
+      <li>لوحة SLA التسليم: نسبة الطلبات المسلَّمة تحت 60 ثانية</li>
+      <li>اختبارات A/B على صفحات المنتج وصفحات الهبوط</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <div class="sn">09 — الحماية</div>
+  <h2>خزنة المفاتيح: التصميم الأمني بالتفصيل</h2>
+  <p class="sub">هذا أهم نظام في المنصّة. المفتاح هو المنتج نفسه — تسريبه يعني خسارة مباشرة، ولا يمكن استرجاعه.</p>
+
+  <h3>التشفير</h3>
+  <ul>
+    <li><b>تشفير مُغلَّف (Envelope Encryption):</b> كل مفتاح يُشفَّر بمفتاح بيانات خاص (DEK) بخوارزمية <code>AES-256-GCM</code>، والـ DEK نفسه يُغلَّف بمفتاح رئيسي (KEK) محفوظ في KMS أو Vault. الـ KEK <b>لا يوجد في متغيّرات البيئة ولا في المستودع</b>.</li>
+    <li>تُخزَّن الخزنة في <b>مخطّط PostgreSQL منفصل</b> بدور قاعدة بيانات مقيّد لا تملكه بقية التطبيق.</li>
+    <li>بصمة <code>sha256</code> لكل مفتاح تُستخدم لكشف التكرار عند الاستيراد بلا فكّ تشفير.</li>
+    <li>المفتاح <b>لا يُسجَّل في أي log</b>، ولا يظهر في تتبّع الأخطاء (Sentry scrubbing)، ولا في ردود واجهات القوائم — القائمة تُعيد الحالة والبصمة فقط.</li>
+    <li>النسخ الاحتياطية مشفّرة، والاستعادة الزمنية (PITR) مفعّلة.</li>
+  </ul>
+
+  <h3>الكشف والوصول</h3>
+  <ul>
+    <li>عرض المفتاح للإداري يتطلّب <b>إعادة مصادقة بـ 2FA</b>، ويخضع لتحديد معدّل، ويُسجَّل في <code>KeyAccessLog</code> بالمُنفِّذ والوقت وعنوان IP.</li>
+    <li>التصدير الجماعي يحتاج <b>موافقة مزدوجة</b> (شخصان) — الحاجز الذي يمنع سرقة المخزون كاملاً بحساب واحد مخترَق.</li>
+    <li>العميل يرى مفتاحه في حسابه وفي بريد واحد لمرّة واحدة؛ وأحداث النسخ تُسجَّل.</li>
+    <li>حالات المفتاح: <code>available → reserved → assigned → delivered</code>، مع <code>revoked</code> عند الاسترجاع أو النزاع.</li>
+  </ul>
+
+  <div class="urls rtl">
+    <div><span>حالة المفتاح</span><span>ما يظهر في الواجهة</span></div>
+    <div><b>available</b><span>••••• ••••• ••••• ••••• &nbsp;(البصمة فقط)</span></div>
+    <div><b>assigned</b><span>••••• ••••• ••••• ••••• &nbsp;+ رقم الطلب</span></div>
+    <div><b>delivered</b><span>XXXXX-XXXXX-XXXXX-XXXXX &nbsp;(كشف بـ 2FA + سجل)</span></div>
+    <div><b>revoked</b><span>محجوب نهائياً + سبب الإلغاء</span></div>
+  </div>
+
+  <h3>حماية المنصّة عموماً</h3>
+  <ul>
+    <li><b>حجب الفهرسة والاستخراج:</b> تحديد معدّل ومكافحة روبوتات على الدفع وتسجيل الدخول <b>وتحقّق الكوبونات</b> — لمنع تخمين أكواد الخصم بالقوّة، وهي ثغرة شائعة تكلّف مباشرة.</li>
+    <li>رؤوس أمنية كاملة: CSP، HSTS، كوكيز <code>HttpOnly · Secure · SameSite</code>، حماية CSRF.</li>
+    <li>تحقّق من كل مُدخَل بـ zod على الحدود، وسياسة تبعيات مع Dependabot وSnyk، وجدار WAF على الحافة.</li>
+    <li><b>سجل تدقيق غير قابل للتعديل</b> (append-only مع تسلسل تجزئة) لكل تغيير سعر أو مخزون أو كوبون أو صلاحية.</li>
+    <li>تقليل البيانات الشخصية + سياسة احتفاظ + نقاط تصدير وحذف للامتثال.</li>
+  </ul>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <div class="sn">10 — الأتمتة التسويقية</div>
+  <h2>مسار استعادة السلة المتروكة كما طلبته</h2>
+  <p class="sub">السلات تُحفَظ على الخادم من لحظة إدخال البريد (أو من تسجيل الدخول)، فتصبح كل سلة قابلة للاستعادة والقياس.</p>
+
+  <ol class="flow">
+    <li><div class="t">+1 ساعة</div><div class="b"><b>تنبيه لطيف</b><span>بريد + إشعار Push لمن وافق: «سلّتك محفوظة» مع صورة المنتج ورابط استكمال بنقرة واحدة يُعيد بناء السلة كما كانت.</span></div></li>
+    <li><div class="t">+24 ساعة</div><div class="b"><b>تذكير النسيان</b><span>البريد الذي طلبته تحديداً: «نسيت شراء المنتج». يتضمّن مواصفات الترخيص، تعهّد التسليم بالثواني، والضمان الذهبي — بلا خصم في هذه المرحلة، حفاظاً على الهامش.</span></div></li>
+    <li><div class="t">+72 ساعة</div><div class="b"><b>دليل اجتماعي وإلحاح صادق</b><span>«تم بيعه N مرة هذا الشهر» + «بقي N مفتاحاً في المخزون» — أرقام حقيقية من قاعدة البيانات، لا عدّاد مزيّف.</span></div></li>
+    <li><div class="t">+7 أيام</div><div class="b"><b>طابور «فرص الاستعادة» في لوحة الإدارة</b><span>السلة تظهر للمدير مع قيمتها وهامشها وسجل العميل. المدير يحدّد نسبة الخصم، فيولّد النظام <b>كوبوناً مفرداً بموعد انتهاء ومرتبطاً بهذا العميل</b> ويرسله بالبريد والإشعار وواتساب. لا يُعاد استخدامه ولا يُشارَك.</span></div></li>
+    <li><div class="t">+14 يوماً</div><div class="b"><b>إنهاء</b><span>يُحرَّر حجز المخزون، وتُنقل السلة إلى شريحة «مهتم غير مشترٍ» لحملات لاحقة، ويُقاس السبب.</span></div></li>
+  </ol>
+
+  <h3>باقي المحرّكات التسويقية</h3>
+  <div class="mods">
+    <div class="mod"><h4>بيع متقاطع في الدفع</h4><ul>
+      <li>«أضِف الآن ووفّر X%» على منتجات مرتبطة — الخصم مشروط بالشراء في نفس العملية</li>
+      <li>حزم جاهزة: ويندوز + أوفيس + حماية (لديك منها اثنتان أصلاً)</li>
+      <li>الهدف المباشر: رفع متوسط السلة من $37.43 إلى $55</li>
+    </ul></div>
+    <div class="mod"><h4>تنبيه التوفّر</h4><ul>
+      <li>«نبّهني عند التوفّر» على كل منتج نافد — 12 منتجاً اليوم عليها طلب عضوي حقيقي</li>
+      <li>إشعار فوري لحظة إدخال المخزون، بترتيب أولوية زمنية</li>
+      <li>يحوّل نفاد المخزون من خسارة إلى قائمة انتظار</li>
+    </ul></div>
+    <div class="mod"><h4>تجديد الاشتراكات</h4><ul>
+      <li>Adobe و Office 365 و ESET و Autodesk اشتراكات سنوية بتاريخ انتهاء معروف</li>
+      <li>تنبيه قبل 30 و7 أيام بخصم تجديد</li>
+      <li>أقوى مصدر إيراد متكرّر متاح لك، وغير مستغلّ إطلاقاً اليوم</li>
+    </ul></div>
+    <div class="mod"><h4>الولاء والإحالة</h4><ul>
+      <li>نقاط على كل شراء تُستبدل خصماً</li>
+      <li>كود إحالة لكل عميل: خصم للطرفين</li>
+      <li>لا يملكه أي منافس عربي في هذا القطاع</li>
+    </ul></div>
+    <div class="mod"><h4>الحملات والشرائح</h4><ul>
+      <li>شرائح: اشترى ويندوز ولم يشترِ حماية، خامل 90 يوماً، قيمة عالية</li>
+      <li>حملات بريد وPush مُجدوَلة بالعربية والإنجليزية</li>
+      <li>إيراد مُنسَب لكل حملة</li>
+    </ul></div>
+    <div class="mod"><h4>مسار الشركات B2B</h4><ul>
+      <li>إحياء صفحة «مبيعات الشركات» المسودّة كصفحة هبوط كاملة</li>
+      <li>نموذج عرض سعر → عرض PDF → فاتورة بتحويل بنكي مع رقم ضريبي</li>
+      <li>مستهدَف: Windows Server و RDS CAL و Autodesk — أعلى متوسط سلة عندك</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="s11">
+  <div class="sn">11 — SEO و GEO</div>
+  <h2>معمارية الظهور في محركات البحث ومحركات الذكاء الاصطناعي</h2>
+
+  <h3>خريطة الروابط</h3>
+  <div class="urls">
+    <div><span>القديم</span><span>الجديد</span></div>
+    <div><s>/product/%d9%88%d9%8a%d9%86…-10-%d8%a8%d8%b1%d9%88/</s><span><b>/store/windows-10-pro-key</b></span></div>
+    <div><s>/collections/%d9%88%d9%8a%d9%86%d8%af%d9%88%d8%b2-windows/</s><span><b>/collections/windows</b></span></div>
+    <div><s>/%d8%a7%d9%84%d9%85%d8%aa%d8%ac%d8%b1/</s><span><b>/store</b></span></div>
+    <div><s>/%d8%a7%d9%84%d9%85%d8%af%d9%88%d9%86%d8%a9/</s><span><b>/blog</b></span></div>
+    <div><s>/office-365-vs-office-2021/</s><span><b>/compare/office-365-vs-office-2021</b></span></div>
+    <div><s>/%d8%a7%d9%84%d8%b9%d8%b1%d9%88%d8%b6-…/</s><span><b>/deals</b></span></div>
+    <div><s>/%d8%a7%d9%84%d8%b6%d9%85%d8%a7%d9%86-…/</s><span><b>/golden-warranty</b></span></div>
+    <div><s>—</s><span><b>/brands/microsoft</b> · <b>/guides/activate-windows-11</b></span></div>
+    <div><s>—</s><span><b>/glossary/retail-vs-oem-vs-volume</b> · <b>/tools/key-checker</b></span></div>
+    <div><s>—</s><span><b>/about</b> · <b>/contact</b> · <b>/business</b> &nbsp;<u>(404 اليوم)</u></span></div>
+    <div><s>—</s><span><b>/en/…</b> &nbsp;<u>نسخة إنجليزية كاملة</u></span></div>
+  </div>
+  <p><code>/</code> يبقى الصفحة الرئيسية العربية — لا نمسّه، لأنه يحمل 10,683 ظهوراً وهو أقوى أصل عضوي عندك.</p>
+
+  <h3>أنواع الصفحات التي تصنع النمو</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>النوع</th><th class="num">العدد المستهدف</th><th>الوظيفة والكلمات</th></tr></thead>
+      <tbody>
+        <tr><td><b>تصنيفات (Collections)</b></td><td class="num">16 → 24</td><td>محرّك الزيارات التجارية. كل صفحة: 500–800 كلمة، جدول مقارنة، FAQ، <code>ItemList</code>. تستهدف «شراء / سعر / أرخص / أصلي + X».</td></tr>
+        <tr><td>صفحات منتج مدمجة</td><td class="num">101 → ~55</td><td>دمج المتغيّرات يوقف تنافس صفحاتك مع نفسها (7 صفحات ESET → صفحة واحدة).</td></tr>
+        <tr><td><b>أدلة التفعيل</b></td><td class="num">30</td><td>الطلب الأكبر المهمَل: <code>تفعيل</code> 3,033 ظهوراً، <code>كود التفعيل</code> 141، <code>تفعيل ويندوز</code> 51. كل دليل يُختم بـ CTA للمنتج.</td></tr>
+        <tr><td><b>مقارنات</b></td><td class="num">20</td><td>Office 365 vs 2021 · Win 10 vs 11 · ESET vs Norton vs McAfee (لديك ثلاثة أصلاً وهي أفضل محتواك) · Retail vs OEM · Standard vs Datacenter.</td></tr>
+        <tr><td>صفحات العلامات</td><td class="num">11</td><td>مركز لكل علامة يجمع منتجاتها وأدلّتها — يبني الكيان (Entity) الذي تحتاجه محركات الذكاء الاصطناعي.</td></tr>
+        <tr><td>مسرد المصطلحات</td><td class="num">25</td><td>Retail / OEM / Volume MAK / KMS / Bind Key / CAL / RDS — إجابات قصيرة قابلة للاقتباس، وهي وقود الـ AEO.</td></tr>
+        <tr><td>أدوات مجانية</td><td class="num">4</td><td>فاحص صيغة المفتاح · «أي إصدار ويندوز يناسبك؟» · حاسبة RDS CAL · مقارن الأسعار — مغناطيس روابط.</td></tr>
+      </tbody>
+      <caption>الهدف: من 54 رابطاً له ظهور إلى أكثر من 400 رابط قابل للترتيب.</caption>
+    </table>
+  </div>
+
+  <h3>الأساسات التقنية</h3>
+  <ul>
+    <li><b>ثنائية اللغة:</b> <code>hreflang</code> متبادل بين <code>ar</code> و<code>en</code> مع <code>x-default=ar</code> على كل صفحة، و<code>canonical</code> ذاتي لكل لغة.</li>
+    <li><b>توصيف واحد نظيف لكل صفحة:</b> كتلة <code>JSON-LD</code> واحدة فقط — <code>Product + Offer + AggregateRating</code> (من مراجعات حقيقية) على المنتج، <code>ItemList + BreadcrumbList</code> على التصنيف، <code>FAQPage</code> حيث توجد أسئلة فعلية، <code>Article + Author</code> على الأدلة، <code>Organization + sameAs</code> عاماً. <b>السعر والعملة في التوصيف مطابقان حرفياً للمعروض.</b></li>
+    <li><b>خرائط موقع كاملة</b> مقسّمة بـ <code>lastmod</code> صحيح، وتشمل التصنيفات والعلامات والأدلة والمقارنات والصور — كلها مفقودة اليوم.</li>
+    <li><b>تحويلات 301</b> لكل رابط قديم، مُولَّدة من الـ XML وخرائط الموقع، ومُختبَرة بزاحف قبل التحويل.</li>
+    <li><b>ربط داخلي منهجي:</b> تصنيف ← منتج ← دليل ← مقارنة ← علامة، وتقرير صفحات يتيمة يمنع تكرار «صفحة بلا روابط داخلية».</li>
+    <li><b>خطّ Tajawal مستضاف محلياً</b> بمجموعة محارف مختصرة (عربي + لاتيني) مع <code>preload</code> — لا استدعاء من Google Fonts.</li>
+  </ul>
+
+  <h3>الظهور في محركات الذكاء الاصطناعي</h3>
+  <ul>
+    <li><b>النص نصّ، لا صورة.</b> ننقل كل عرض قيمة محبوس في PNG إلى HTML دلالي مع جداول مواصفات — الجداول تحديداً هي ما تقتبسه النماذج.</li>
+    <li><b>إجابة أولاً:</b> كل دليل ومقارنة يبدأ بفقرة «الخلاصة» في 40–60 كلمة تجيب على السؤال مباشرة، ثم التفصيل.</li>
+    <li><code>llms.txt</code> + <code>robots.txt</code> يسمح لـ <code>GPTBot</code> و<code>ClaudeBot</code> و<code>PerplexityBot</code> و<code>Google-Extended</code> — نريد الاقتباس، لا الحجب.</li>
+    <li><b>اتساق الكيان:</b> <code>Organization</code> مع <code>sameAs</code> إلى Trustpilot ومنصات التواصل، بيانات الشركة التركية الحقيقية في <code>/about</code>، ومؤلّف حقيقي بسيرة على كل دليل (E-E-A-T).</li>
+    <li><b>اقتباسات خارجية:</b> Trustpilot، Google Business Profile، أدلّة البرمجيات — النماذج تعتمد الذكر الخارجي لا ما تقوله عن نفسك.</li>
+  </ul>
+</section>
+
+<!-- ============ 12 ============ -->
+<section id="s12">
+  <div class="sn">12 — التصميم</div>
+  <h2>نبقي الهوية، ونعيد بناء ما يبيع</h2>
+  <p class="sub">الشكل الحالي جيّد وأنت راضٍ عنه — لذلك نحفظ نظامه اللوني والخطّي كما هو مستخرَج من الموقع، ونعيد النظر في الترتيب والتسلسل فقط.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>الرمز</th><th class="num">القيمة</th><th>الاستخدام</th></tr></thead>
+      <tbody>
+        <tr><td>الأساس (Brand)</td><td class="num">#148576</td><td>الهيدر، أزرار الشراء، البادجات — الأخضر المزرق الحالي</td></tr>
+        <tr><td>الإبراز (Accent)</td><td class="num">#faa21b</td><td>العروض، الخصومات، الإلحاح — يُقيَّد للحالات التجارية فقط</td></tr>
+        <tr><td>التحذير</td><td class="num">#eb3c00 / #fa0f00</td><td>نفاد المخزون، انتهاء العرض</td></tr>
+        <tr><td>الخلفية / السطح</td><td class="num">#ffffff / #f6f6f6</td><td>كما هو</td></tr>
+        <tr><td>الخط</td><td class="num">Tajawal 400/500/700</td><td>مستضاف محلياً، مجموعة محارف مختصرة</td></tr>
+        <tr><td>وحدة التباعد</td><td class="num">15px</td><td>شبكة الموقع الحالية — نحفظها كـ <code>--space</code> ومضاعفاتها</td></tr>
+      </tbody>
+      <caption>نصلح نقطة واحدة: نص الجسم الحالي <code>#777777</code> على أبيض لا يجتاز تباين WCAG AA للنصوص الصغيرة — نخفضه إلى <code>#4a4a4a</code> بنفس الشخصية.</caption>
+    </table>
+  </div>
+
+  <h3>ما نغيّره في تجربة الشراء</h3>
+  <ul>
+    <li><b>صفحة المنتج:</b> ترتيب جديد — السعر والتوفّر وتعهّد التسليم أعلى الصفحة (Above the fold)، ثم شارات المواصفات الست، ثم اختيار المتغيّر (مدّة × أجهزة)، ثم زر شراء واحد واضح، ثم خطوات التفعيل ورابط التحميل، ثم FAQ، ثم المراجعات الموثّقة، ثم المنتجات المرتبطة. زر شراء ثابت في الأسفل على الجوّال (موجود عندك وهو صحيح — نحفظه).</li>
+    <li><b>حقل البريد داخل صفحة المنتج</b> موجود حالياً ويكسر التدفّق — ينتقل إلى الدفع حيث مكانه، وهذا يقلّل الاحتكاك قبل الالتزام.</li>
+    <li><b>الدفع:</b> خطوة واحدة، البريد أولاً، بطاقة + Apple/Google Pay ظاهرة فوراً، ملخّص سلة دائم، وعرض بيع متقاطع واحد فقط (أكثر من ذلك يخفض التحويل).</li>
+    <li><b>التصنيفات:</b> نصّ تعريفي أعلى الصفحة، مرشّحات حقيقية (المدّة، عدد الأجهزة، المنصّة، النطاق السعري)، وجدول مقارنة سريع — بدل شبكة منتجات صامتة.</li>
+    <li><b>شارات الثقة:</b> الضمان الذهبي، تعهّد التسليم بالثواني، عدد المبيعات الحقيقي، طرق الدفع — في الهيدر وصفحة المنتج والدفع.</li>
+    <li><b>لوحة الإدارة:</b> RTL أولاً بالعربية، بنفس نظام الرموز، مبنية للاستخدام اليومي السريع لا للاستعراض.</li>
+  </ul>
+</section>
+
+<!-- ============ 13 ============ -->
+<section id="s13">
+  <div class="sn">13 — الترحيل</div>
+  <h2>من ووردبريس إلى الجديد، بلا فقدان بيانات ولا يوم توقّف</h2>
+
+  <h3>ما يُرحَّل وما لا يُرحَّل</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>البيانات</th><th>القرار</th><th>التفصيل</th></tr></thead>
+      <tbody>
+        <tr><td>101 منتج</td><td class="pill p-ok">يُرحَّل</td><td>مع دمج المتغيّرات إلى ~55 منتجاً، وتنظيف 43 حقل SEO ناقصاً، ونشر الـ 30 مسودّة كجزء من الإطلاق</td></tr>
+        <tr><td>16 تصنيفاً</td><td class="pill p-ok">يُرحَّل + يُثرى</td><td>تُكتب لكل تصنيف 500–800 كلمة و FAQ ووصف Meta — لم تكن موجودة</td></tr>
+        <tr><td>501 وسم</td><td class="pill p-warn">يُدمَج</td><td>إلى ~60 وسماً ذا معنى؛ الباقي يُحوَّل 301 إلى التصنيف الأقرب</td></tr>
+        <tr><td>15 صفحة · 7 مقالات · 192 وسيطاً</td><td class="pill p-ok">يُرحَّل</td><td>الصور تُعالَج إلى AVIF/WebP و<code>alt</code> إجباري لكل لغة</td></tr>
+        <tr><td>224 عميلاً · 185 طلباً</td><td class="pill p-ok">يُرحَّل</td><td>السجل التجاري كامل. كلمات المرور <b>لا تُرحَّل</b> — إعادة تعيين إجبارية عند أول دخول</td></tr>
+        <tr><td>55 مفتاحاً + مفاتيح الملاحظات</td><td class="pill p-crit">يُرحَّل مشفَّراً ثم يُمسح المصدر</td><td>تُستخرج من الجدول <b>ومن ملاحظات الطلبات</b>، تُدخل الخزنة، ثم تُنقَّى الملاحظات</td></tr>
+        <tr><td>7 كوبونات</td><td class="pill p-ok">يُرحَّل</td><td>النشطة فقط</td></tr>
+        <tr><td>565 مراجعة وهمية</td><td class="pill p-crit">لا تُرحَّل</td><td>قرار مبدئي — نبدأ بمراجعات موثّقة حقيقية</td></tr>
+        <tr><td>تعليقات السبام</td><td class="pill p-crit">لا تُرحَّل</td><td>29 موسومة + المشتبه بها بروابط خارجية</td></tr>
+        <tr><td>بيانات Search Console</td><td class="pill p-ok">يُحفَظ</td><td>نفس الـ Property يستمر؛ نصدّر 5,133 صفاً كخط أساس للمقارنة بعد الإطلاق</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>دفتر تشغيل التحويل (يوم الإطلاق)</h3>
+  <ol>
+    <li>تجميد المحتوى على ووردبريس · مزامنة نهائية للطلبات والعملاء والمفاتيح.</li>
+    <li>تشغيل توليد خريطة التحويلات 301 من الـ XML وخرائط الموقع · <b>زحف كامل للتحقّق من صفر روابط مكسورة</b> على بيئة التجربة.</li>
+    <li>اختبار الدفع الحقيقي: Stripe و PayPal بمبالغ صغيرة فعلية · تأكيد وصول المفتاح آلياً خلال أقل من 60 ثانية.</li>
+    <li>تحويل الـ DNS بمدّة TTL قصيرة · ووردبريس يبقى قائماً على نطاق فرعي مغلق للفهرسة كخطّة رجوع.</li>
+    <li>تقديم خرائط الموقع الجديدة في Search Console · طلب فهرسة الصفحات الأعلى قيمة · تفعيل مراقب 404.</li>
+    <li>مراقبة مكثّفة 72 ساعة: الأخطاء، الترتيب، معدّل التحويل، SLA التسليم، سجل الـ 404.</li>
+  </ol>
+
+  <div class="call warn">
+    <div class="call-t">نقطة انتباه: هبوط مؤقّت متوقّع</div>
+    <p>تغيير كل الروابط يسبّب عادةً هبوطاً في الظهور لمدّة <b>2 إلى 6 أسابيع</b> حتى يعيد جوجل معالجة التحويلات. الخطر هنا منخفض بشكل استثنائي لأن قاعدة الزيارات الحالية 1.3 نقرة/يوم — فالخسارة القصوى ضئيلة، والمكسب البنيوي كبير. لكن يجب توقّعه وعدم تفسيره كفشل في الإطلاق.</p>
+  </div>
+</section>
+
+<!-- ============ 14 ============ -->
+<section id="s14">
+  <div class="sn">14 — الجدول الزمني</div>
+  <h2>أربع مراحل، والإصدار الأول يستبدل ووردبريس في عشرة أسابيع</h2>
+  <p class="sub">لأننا لن نصلح الموقع الحالي، الأولوية القصوى هي إطلاق منصّة تحمل أساس السيو كاملاً بأسرع ما يمكن — ثم نبني أنظمة التسويق فوقها وهي تعمل.</p>
+
+  <div class="ph">
+    <div class="ph-h"><span class="ph-n">0</span><b>الأساس</b><span class="ph-w">أسبوع 1–2</span></div>
+    <div class="ph-cols">
+      <div><h5>البناء</h5><ul><li>المستودع والـ monorepo والـ CI/CD</li><li>مخطّط Prisma كاملاً + الهجرات</li><li>هيكل NestJS والوحدات والحرّاس</li><li>حزمة الرموز التصميمية RTL/LTR</li><li>المصادقة والصلاحيات وسجل التدقيق</li></ul></div>
+      <div><h5>بالتوازي</h5><ul><li><b>التحقّق من قبول Stripe للكيان التركي</b></li><li>حساب PayPal Business + تجربة sandbox</li><li>إعداد النطاقات وسجلات SPF/DKIM/DMARC</li><li>تجهيز KMS/Vault ومفتاح KEK</li></ul></div>
+    </div>
+    <div class="acc-c"><b>معيار القبول</b>«hello world» يمرّ من الواجهة إلى الـ API إلى قاعدة البيانات، وينشر آلياً، ويرفض أي PR يخرق ميزانية الأداء.</div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="ph-n">1</span><b>المتجر الحيّ — استبدال ووردبريس</b><span class="ph-w">أسبوع 3–10</span></div>
+    <div class="ph-cols">
+      <div><h5>الكتالوج والواجهة</h5><ul><li>منتجات ومتغيّرات وتصنيفات وعلامات</li><li>ترجمة ar/en لكل حقل</li><li>صفحة منتج · تصنيف · متجر · بحث Meilisearch</li><li>نظام الصفحات بالكتل + المدونة</li><li>ISR وتحسين الصور وميزانية الأداء</li></ul></div>
+      <div><h5>التجارة والتسليم</h5><ul><li>سلة على الخادم + حجز مخزون</li><li>دفع بخطوة واحدة · Stripe · PayPal · تحويل يدوي</li><li>آلة حالات الطلب والفواتير</li><li><b>خزنة المفاتيح المشفّرة + التسليم الآلي</b></li><li>بوابة العميل: الطلبات و«مفاتيحي»</li></ul></div>
+      <div><h5>السيو والإدارة</h5><ul><li>توصيف واحد نظيف لكل قالب</li><li>خرائط موقع كاملة + hreflang + canonical</li><li>مدير التحويلات 301 ومراقب 404</li><li>لوحة إدارة: كتالوج · طلبات · مخزون · صفحات · عملاء</li><li>ترحيل البيانات + تنقية المفاتيح من الملاحظات</li></ul></div>
+    </div>
+    <div class="acc-c"><b>معيار القبول</b>طلب حقيقي بالبطاقة يصل مفتاحه آلياً في أقل من 60 ثانية · 0 روابط مكسورة في زحف كامل · LCP ≤ 1.8s على الجوّال · كل التصنيفات والمنتجات في خرائط الموقع · التحويل مُنجَز والـ DNS مُحوَّل.</div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="ph-n">2</span><b>محرّك التسويق</b><span class="ph-w">أسبوع 11–16</span></div>
+    <div class="ph-cols">
+      <div><h5>الأتمتة</h5><ul><li>مسار السلة المتروكة الخمسي كاملاً</li><li>طابور «فرص الاستعادة» وتوليد الكوبون المفرد</li><li>Web Push + WhatsApp + الحملات والشرائح</li><li>تنبيه التوفّر وتنبيه التجديد</li></ul></div>
+      <div><h5>التحويل</h5><ul><li>محرّك العروض الكامل بالقواعد</li><li>بيع متقاطع في الدفع + الحزم</li><li>مراجعات المشترين الموثّقين + دعواتها</li><li>الولاء والإحالة</li><li>مكافحة الاحتيال وطابور المراجعة اليدوية</li></ul></div>
+    </div>
+    <div class="acc-c"><b>معيار القبول</b>استعادة 12%+ من السلات المتروكة · متوسط سلة $45+ · نسبة الإلغاء تحت 10% · أول 50 مراجعة حقيقية موثّقة.</div>
+  </div>
+
+  <div class="ph">
+    <div class="ph-h"><span class="ph-n">3</span><b>محرّك النمو والمحتوى</b><span class="ph-w">أسبوع 13–24 (متوازي)</span></div>
+    <div class="ph-cols">
+      <div><h5>المحتوى</h5><ul><li>16–24 صفحة تصنيف بمحتوى كامل</li><li>30 دليل تفعيل · 20 مقارنة · 25 مصطلحاً</li><li>11 صفحة علامة تجارية</li><li>4 أدوات مجانية</li><li>النسخة الإنجليزية كاملة</li></ul></div>
+      <div><h5>النمو</h5><ul><li>صفحات /about و/contact و/business</li><li>مسار B2B وعروض الأسعار</li><li>اختبارات A/B على صفحات المنتج</li><li>لوحات التحليلات والقمع</li><li>Trustpilot و Google Business Profile والاقتباسات الخارجية</li></ul></div>
+    </div>
+    <div class="acc-c"><b>معيار القبول</b>400+ رابطاً قابلاً للترتيب · 150+ رابطاً له ظهور فعلي · ترتيب في الصفحة الأولى على 20 كلمة تجارية · اقتباس المتجر في إجابات محركات الذكاء الاصطناعي على أسئلة التفعيل.</div>
+  </div>
+</section>
+
+<!-- ============ 15 ============ -->
+<section id="s15">
+  <div class="sn">15 — المؤشرات</div>
+  <h2>ما نقيسه، ومن أين نبدأ</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th>المؤشر</th><th class="num">اليوم</th><th class="num">شهر 3</th><th class="num">شهر 6</th><th class="num">شهر 12</th></tr></thead>
+      <tbody>
+        <tr><td>نقرات عضوية / يوم</td><td class="num">1.3</td><td class="num">8</td><td class="num">40</td><td class="num">150</td></tr>
+        <tr><td>مرات الظهور / شهر</td><td class="num">2,590</td><td class="num">15,000</td><td class="num">60,000</td><td class="num">250,000</td></tr>
+        <tr><td>معدّل النقر</td><td class="num">1.52%</td><td class="num">2.2%</td><td class="num">3.0%</td><td class="num">3.5%</td></tr>
+        <tr><td>روابط لها ظهور</td><td class="num">54</td><td class="num">120</td><td class="num">260</td><td class="num">400+</td></tr>
+        <tr><td>ظهور من غير الرئيسية</td><td class="num">30.4%</td><td class="num">55%</td><td class="num">72%</td><td class="num">85%</td></tr>
+        <tr><td>نسبة إلغاء الطلبات</td><td class="num">31.9%</td><td class="num">12%</td><td class="num">8%</td><td class="num">&lt; 6%</td></tr>
+        <tr><td>متوسط قيمة السلة</td><td class="num">$37.43</td><td class="num">$42</td><td class="num">$50</td><td class="num">$55</td></tr>
+        <tr><td>استعادة السلات المتروكة</td><td class="num">0%</td><td class="num">8%</td><td class="num">14%</td><td class="num">18%</td></tr>
+        <tr><td>نسبة الشراء المتكرّر</td><td class="num">~0%</td><td class="num">5%</td><td class="num">10%</td><td class="num">18%</td></tr>
+        <tr><td>تسليم تحت 60 ثانية</td><td class="num">يدوي</td><td class="num">85%</td><td class="num">95%</td><td class="num">98%</td></tr>
+        <tr><td>LCP جوّال</td><td class="num">—</td><td class="num">≤1.8s</td><td class="num">≤1.5s</td><td class="num">≤1.3s</td></tr>
+        <tr><td>مراجعات موثّقة</td><td class="num">0 حقيقية</td><td class="num">50</td><td class="num">200</td><td class="num">600</td></tr>
+      </tbody>
+      <caption>«اليوم» مقيس على 178 يوماً حتى 6 سبتمبر 2026. أهداف الشهر الثالث تبدأ من الإطلاق لا من اليوم.</caption>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 16 ============ -->
+<section id="s16">
+  <div class="sn">16 — المخاطر</div>
+  <h2>ما يمكن أن يخطئ، وكيف نحتاط</h2>
+  <div class="tw">
+    <table>
+      <thead><tr><th>الخطر</th><th>الأثر</th><th>الاحتياط</th></tr></thead>
+      <tbody>
+        <tr><td><b>Stripe لا يقبل الكيان التركي</b></td><td class="pill p-crit">حاد</td><td>يُتحقَّق في <b>الأسبوع الأول</b> لا قبل الإطلاق. البديل الجاهز: Paddle أو Lemon Squeezy كـ Merchant of Record (يتولّى البطاقات والضرائب عالمياً). طبقة الدفع تُبنى بواجهة مجرّدة تقبل مزوّداً بديلاً بلا إعادة كتابة.</td></tr>
+        <tr><td>هبوط الظهور بعد تغيير الروابط</td><td class="pill p-warn">مرتفع</td><td>خريطة 301 مُختبَرة بزاحف كامل قبل التحويل، والصفحة الرئيسية تبقى على <code>/</code>. الأثر محدود لأن القاعدة الحالية 1.3 نقرة/يوم.</td></tr>
+        <tr><td>تسريب مخزون المفاتيح</td><td class="pill p-crit">حاد</td><td>تشفير مُغلَّف، مخطّط منفصل بدور مقيّد، 2FA إجبارية، موافقة مزدوجة للتصدير الجماعي، وسجل وصول لكل كشف.</td></tr>
+        <tr><td>احتيال البطاقات على منتج رقمي</td><td class="pill p-warn">مرتفع</td><td>Stripe Radar + قواعد سرعة + تقييم البريد المؤقّت، وحجب تسليم المفتاح على الطلبات عالية الخطورة حتى المراجعة اليدوية. المفتاح المسلَّم لا يُسترجَع — لذلك الحجب قبل التسليم لا بعده.</td></tr>
+        <tr><td>سقوط الشهادة الاجتماعية إلى الصفر</td><td class="pill p-warn">مرتفع</td><td>نتيجة مباشرة لحذف 565 مراجعة وهمية. نعوّضها بـ «تم بيعه N مرة» من بيانات حقيقية، وTrustpilot، ودعوات مراجعة مؤتمتة بعد التسليم، وضمانٍ صريح — لا بأرقام مصطنعة.</td></tr>
+        <tr><td>اتساع النطاق (Scope creep)</td><td class="pill p-warn">مرتفع</td><td>الإصدار الأول مقفل على «استبدال ووردبريس بأساس سيو أفضل». كل ما هو تسويقي يذهب للإصدار الثاني. الإطلاق المتأخّر هو أغلى بند في هذه الخطة.</td></tr>
+        <tr><td>نضوب المحتوى</td><td class="pill p-med">متوسط</td><td>75+ صفحة محتوى تحتاج كاتباً مخصّصاً — لا تُكتب في وقت فراغ المطوّر. يُحدَّد المورد في المرحلة صفر.</td></tr>
+        <tr><td>ملاحقة قانونية بسبب المراجعات الوهمية القائمة</td><td class="pill p-med">متوسط</td><td>تُزال من الموقع الحالي قبل التحويل أيضاً — لا تُترك منشورة حتى يوم الإطلاق.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 17 ============ -->
+<section id="s17">
+  <div class="sn">17 — البداية</div>
+  <h2>أول سبعة أيام</h2>
+  <p class="sub">هذه هي المهام التي أبدأ بها فور موافقتك، مرتّبة بحيث لا تنتظر إحداها الأخرى.</p>
+  <ol>
+    <li><b>التحقّق من الدفع (يوم 1 — الأولوية المطلقة).</b> فتح ملف Stripe للكيان التركي والتأكّد من قبول «مفاتيح البرمجيات» كفئة منتج. الجواب هنا يحدّد معمارية طبقة الدفع كلها، ولا يجوز أن يتأخّر.</li>
+    <li><b>تصفير المخاطر الأمنية.</b> تشفير النسخة الاحتياطية على قرصك، جرد كل المفاتيح وبيانات الحسابات الظاهرة في ملاحظات الطلبات، وإعداد KMS ومفتاح KEK.</li>
+    <li><b>إزالة المراجعات الوهمية من الموقع الحالي</b> — الإجراء الوحيد الذي نلمس فيه ووردبريس، لأن إبقاءها منشورة خطر قانوني وليس مجرّد مسألة سيو.</li>
+    <li><b>تهيئة المستودع.</b> monorepo وثلاث تطبيقات وحزم مشتركة وCI/CD مع بوّابة ميزانية الأداء من أول commit.</li>
+    <li><b>مخطّط قاعدة البيانات كاملاً</b> ومراجعته معك — خصوصاً دمج المنتجات إلى متغيّرات، لأنه يغيّر شكل الكتالوج وخريطة الروابط.</li>
+    <li><b>خريطة الروابط والتحويلات 301</b> مُولَّدة من الـ XML وخرائط الموقع، للمراجعة والاعتماد قبل بناء الواجهة.</li>
+    <li><b>حزمة الرموز التصميمية</b> من نظامك الحالي (Tajawal، ‎#148576، ‎#faa21b، شبكة 15px) كحزمة <code>ui</code> مشتركة، مع تصحيح تباين النص.</li>
+  </ol>
+
+  <div class="call">
+    <div class="call-t">القرار المطلوب منك الآن</div>
+    <p>الموافقة على <b>نطاق الإصدار الأول</b> كما هو محدّد في المرحلة 1: كتالوج ومتجر ودفع وخزنة مفاتيح وبوابة عميل ولوحة إدارة وأساس سيو كامل، ثم التحويل — بلا أنظمة تسويق. كل ما هو تسويقي يُبنى في المرحلة 2 على منصّة حيّة تجلب زيارات، لا على منصّة لم تُطلق بعد.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  خطة العمل — منصة التفعيل الرقمي الجديدة · الإصدار 1.0 · 9 سبتمبر 2026<br>
+  كل الأرقام في هذا المستند مستخرجة من <code>WordPress.2026-09-09.xml</code> و<code>u532516840_da_main…sql</code> وقياس مباشر على الموقع المباشر بتاريخ 9 سبتمبر 2026.
+</footer>
+
+</div>

@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@import '@da/ui/tokens.css';
+
+/*
+ * Tajawal, self-hosted and subset to Arabic + Latin. The legacy site made
+ * three requests to fonts.googleapis.com before it could paint any text.
+ * Drop the .woff2 files into public/fonts/ during Release 1.
+ */
+@font-face {
+  font-family: 'Tajawal';
+  src: url('/fonts/tajawal-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tajawal';
+  src: url('/fonts/tajawal-500.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tajawal';
+  src: url('/fonts/tajawal-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink-body);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-ink);
+  line-height: var(--leading-tight);
+  text-wrap: balance;
+}

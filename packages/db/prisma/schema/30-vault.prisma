@@ -1,0 +1,108 @@
+// ---------------------------------------------------------------------------
+// The licence vault. This is the most sensitive data in the business: a key is
+// the product itself, and a leaked key cannot be recovered.
+//
+// Design rules enforced elsewhere in the stack, recorded here so the schema is
+// not read in isolation:
+//
+//   1. Lives in its own Postgres schema (`vault`) owned by the `da_vault` role.
+//      The application role has no grants on it (prisma/init/01-roles.sql).
+//   2. Envelope encryption. The key string is AES-256-GCM encrypted under a
+//      per-row data key (DEK); the DEK is itself wrapped by a KEK that lives in
+//      KMS and never in an environment variable.
+//   3. `fingerprint` is a salted SHA-256 of the plaintext. It exists so imports
+//      can detect duplicates without decrypting anything.
+//   4. No list endpoint ever returns plaintext. Revealing one row requires a
+//      fresh 2FA challenge and writes a KeyAccessLog row. Bulk export requires
+//      two different staff approvals.
+//   5. Plaintext is never logged. Sentry scrubbing and the pino redact list
+//      both cover these fields.
+//
+// The migration also has to pull keys and Office 365 / Adobe credentials out of
+// legacy WooCommerce order notes, where staff pasted them in cleartext, and
+// then scrub the source rows.
+// ---------------------------------------------------------------------------
+
+model LicenseKey {
+  id        String          @id @default(cuid())
+  /// Not a relation: the vault schema deliberately holds no foreign keys into
+  /// `public`, so the vault role needs no visibility of the catalog.
+  variantId String
+  state     LicenseKeyState @default(AVAILABLE)
+
+  // --- envelope-encrypted payload ---
+  ciphertext Bytes
+  iv         Bytes
+  authTag    Bytes
+  /// The DEK, wrapped by the KEK held in KMS.
+  wrappedDek Bytes
+  /// Which KEK generation wrapped this row, so keys can be rotated in place.
+  kekVersion Int    @default(1)
+  /// Salted SHA-256 of the plaintext. Duplicate detection without decryption.
+  fingerprint String @unique
+
+  /// Some products ship several strings together (key + account + panel URL).
+  /// Stored as one encrypted JSON document rather than the legacy five
+  /// `license_code1..5` columns.
+  fieldCount Int @default(1)
+
+  supplierId String?
+  costUsd    Decimal? @db.Decimal(12, 2)
+  /// For time-limited stock (a key that must be activated within N days).
+  expiresAt  DateTime?
+
+  /// Set when the key is bound to a paid order item. Not a foreign key, by rule 1.
+  orderItemId String?   @unique
+  reservedAt  DateTime?
+  assignedAt  DateTime?
+  deliveredAt DateTime?
+  revokedAt   DateTime?
+  revokedReason String?
+
+  importBatchId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accessLogs KeyAccessLog[]
+
+  @@index([variantId, state])
+  @@index([state, createdAt])
+  @@index([expiresAt])
+  @@schema("vault")
+}
+
+/// Every touch of a key by a human. Append-only; there is no update path.
+model KeyAccessLog {
+  id           String          @id @default(cuid())
+  licenseKey   LicenseKey      @relation(fields: [licenseKeyId], references: [id], onDelete: Cascade)
+  licenseKeyId String
+  action       KeyAccessAction
+  actorId      String?
+  actorType    ActorType       @default(STAFF)
+  ip           String?
+  userAgent    String?
+  /// For EXPORT: the id of the second staff member who approved it.
+  approvedById String?
+  createdAt    DateTime        @default(now())
+
+  @@index([licenseKeyId, createdAt])
+  @@index([actorId, createdAt])
+  @@schema("vault")
+}
+
+/// One row per bulk import, so a bad batch can be traced and rolled back.
+model KeyImportBatch {
+  id         String    @id @default(cuid())
+  variantId  String
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierId String?
+  actorId    String
+  imported   Int       @default(0)
+  duplicatesSkipped Int @default(0)
+  invalidSkipped    Int @default(0)
+  note       String?
+  createdAt  DateTime  @default(now())
+
+  @@index([variantId, createdAt])
+  @@schema("public")
+}

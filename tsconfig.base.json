@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    // Explicit rather than relying on automatic @types discovery, which does
+    // not fire reliably for the ESM workspace packages under NodeNext.
+    "types": ["node"],
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+    "forceConsistentCasingInFileNames": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    // No `paths` mapping: workspace packages resolve through the pnpm
+    // symlink and their own `exports`, i.e. to built declarations. Mapping
+    // them back to source makes every consumer recompile its dependency
+    // and breaks `rootDir` on emit.
+    "noEmitOnError": true
+  },
+  "exclude": ["node_modules", "dist", ".next", ".turbo"]
+}

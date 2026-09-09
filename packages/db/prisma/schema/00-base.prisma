@@ -1,0 +1,321 @@
+// ---------------------------------------------------------------------------
+// Digital Activation — datasource, generator and shared enums.
+//
+// Two Postgres schemas:
+//   public — everything the application role may read and write.
+//   vault  — encrypted licence keys and their access log. A separate Postgres
+//            role owns it; the application role has no grants on it at all.
+//            See prisma/init/01-roles.sql.
+// ---------------------------------------------------------------------------
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/prisma"
+}
+
+// Prisma 7 no longer accepts `url` here. The migration URL lives in
+// prisma.config.ts and the runtime URL is handed to PrismaClient through a
+// driver adapter (see src/index.ts) — which is what lets us run the ordinary
+// client and the vault client on two different Postgres roles.
+datasource db {
+  provider = "postgresql"
+  schemas  = ["public", "vault"]
+}
+
+// --- shared -----------------------------------------------------------------
+
+enum Locale {
+  AR
+  EN
+
+  @@schema("public")
+}
+
+enum PublishStatus {
+  DRAFT
+  IN_REVIEW
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+
+  @@schema("public")
+}
+
+// --- catalog ----------------------------------------------------------------
+
+/// What the customer actually receives. Drives the fulfilment path and the
+/// activation instructions shown on the product page.
+enum ProductKind {
+  KEY /// a licence key string
+  ACCOUNT /// pre-made account credentials (Office 365, Canva, Adobe)
+  PANEL /// access to a reseller panel / team invite
+  BUNDLE /// several products sold together
+  SERVICE /// human-delivered work (e.g. SEO content writing)
+
+  @@schema("public")
+}
+
+enum Platform {
+  WINDOWS
+  MAC
+  LINUX
+  CROSS_PLATFORM
+
+  @@schema("public")
+}
+
+/// Mirrors the real vocabulary used in the legacy `activation_method` field.
+/// The distinction matters commercially: phone activation generates support
+/// tickets, online activation does not.
+enum ActivationMethod {
+  RETAIL_ONLINE
+  RETAIL_PHONE
+  VOLUME_MAK
+  KMS
+  BIND_MICROSOFT_ACCOUNT
+  REDEEM_CODE
+  ACCOUNT_CREDENTIALS
+  PANEL_INVITE
+  CAL_KEY
+
+  @@schema("public")
+}
+
+enum LicensePeriodUnit {
+  DAY
+  MONTH
+  YEAR
+  LIFETIME
+
+  @@schema("public")
+}
+
+enum ProductRelationKind {
+  RELATED
+  CROSS_SELL /// offered at checkout, optionally with a bundle discount
+  UPGRADE
+  ACCESSORY
+
+  @@schema("public")
+}
+
+// --- inventory --------------------------------------------------------------
+
+enum BackorderPolicy {
+  DENY /// hide the buy button
+  NOTIFY_ONLY /// show "notify me when available"
+  ALLOW_WITH_SLA /// sell with a stated delivery window
+
+  @@schema("public")
+}
+
+enum StockReservationState {
+  ACTIVE
+  RELEASED
+  CONSUMED
+
+  @@schema("public")
+}
+
+enum StockMovementReason {
+  IMPORT
+  SALE
+  REFUND
+  MANUAL_ADJUSTMENT
+  REVOKED
+  EXPIRED
+
+  @@schema("public")
+}
+
+// --- vault ------------------------------------------------------------------
+
+enum LicenseKeyState {
+  AVAILABLE
+  RESERVED /// held for an in-flight cart
+  ASSIGNED /// bound to a paid order item, not yet sent
+  DELIVERED
+  REVOKED
+  EXPIRED
+
+  @@schema("vault")
+}
+
+enum KeyAccessAction {
+  IMPORT
+  REVEAL
+  EXPORT
+  RESEND
+  REVOKE
+
+  @@schema("vault")
+}
+
+// --- commerce ---------------------------------------------------------------
+
+/// Stage in the abandoned-cart recovery ladder. MANAGER_QUEUE is the day-7
+/// state where a human decides the discount before any coupon is issued.
+enum CartStage {
+  ACTIVE
+  NUDGE_1H
+  REMINDER_24H
+  URGENCY_72H
+  MANAGER_QUEUE
+  OFFER_SENT
+  RECOVERED
+  CLOSED
+
+  @@schema("public")
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_REVIEW /// held by the fraud rules; no key is released in this state
+  PAID
+  FULFILLING
+  FULFILLED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  FAILED
+
+  @@schema("public")
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+  CRYPTO
+
+  @@schema("public")
+}
+
+enum PaymentState {
+  REQUIRES_ACTION
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+
+  @@schema("public")
+}
+
+enum FulfillmentState {
+  PENDING
+  AUTO_ASSIGNED
+  MANUAL_QUEUE
+  DELIVERED
+  FAILED
+
+  @@schema("public")
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  BLOCKED
+
+  @@schema("public")
+}
+
+// --- customers & staff ------------------------------------------------------
+
+enum CustomerGroupKind {
+  RETAIL
+  B2B
+  VIP
+  RESELLER
+
+  @@schema("public")
+}
+
+enum StaffRole {
+  OWNER
+  ADMIN
+  CATALOG
+  MARKETING
+  SUPPORT
+  FULFILLMENT
+  READONLY
+
+  @@schema("public")
+}
+
+enum ActorType {
+  STAFF
+  CUSTOMER
+  SYSTEM
+
+  @@schema("public")
+}
+
+// --- marketing --------------------------------------------------------------
+
+enum PromotionType {
+  PERCENT
+  FIXED
+  FREE_ITEM
+  BUNDLE_DISCOUNT
+
+  @@schema("public")
+}
+
+enum PromotionScope {
+  CART
+  PRODUCT
+  CATEGORY
+  BRAND
+
+  @@schema("public")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@schema("public")
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  WHATSAPP
+  SMS
+  IN_APP
+
+  @@schema("public")
+}
+
+enum StockAlertKind {
+  BACK_IN_STOCK
+  PRICE_DROP
+  RENEWAL_DUE
+
+  @@schema("public")
+}
+
+// --- content ----------------------------------------------------------------
+
+enum PageTemplate {
+  LANDING
+  LEGAL
+  TOOL
+  GENERIC
+
+  @@schema("public")
+}
+
+/// Article kinds map 1:1 to URL prefixes: /blog, /guides, /compare, /glossary.
+enum ArticleKind {
+  POST
+  GUIDE
+  COMPARISON
+  GLOSSARY
+
+  @@schema("public")
+}

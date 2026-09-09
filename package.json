@@ -1,0 +1,40 @@
+{
+  "name": "digital-activation",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Digital Activation store \u2014 Next.js storefront + admin, NestJS API, PostgreSQL",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=9.15.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:generate": "pnpm --filter @da/db generate",
+    "db:migrate": "pnpm --filter @da/db migrate",
+    "db:validate": "pnpm --filter @da/db validate",
+    "db:format": "pnpm --filter @da/db format",
+    "db:studio": "pnpm --filter @da/db studio",
+    "db:seed": "pnpm --filter @da/db seed",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "catalog:",
+    "eslint": "catalog:",
+    "globals": "catalog:",
+    "prettier": "catalog:",
+    "rimraf": "catalog:",
+    "turbo": "^2.10.12",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
+  }
+}

@@ -1,0 +1,110 @@
+/*
+ * Design tokens, carried over from the existing store.
+ *
+ * The brand system is kept deliberately: the owner likes the current look, and
+ * these values were extracted from the live site — teal #148576 for the header
+ * and buy buttons, amber #faa21b for offers, a 15px spacing grid, Tajawal
+ * throughout.
+ *
+ * One value is corrected rather than copied: body text was #777777 on white,
+ * which is 4.48:1 and fails WCAG AA for normal-size text. It becomes #4a4a4a
+ * (8.6:1) with the same neutral character.
+ *
+ * All layout properties are logical (inline-start / inline-end), so one
+ * stylesheet serves the Arabic RTL storefront and the English LTR one.
+ */
+
+@theme {
+  /* --- brand ------------------------------------------------------------- */
+  --color-brand: #148576;
+  --color-brand-hover: #0f6a5e;
+  --color-brand-soft: #e1f0ed;
+  --color-brand-ink: #0a544b;
+
+  /* Offers, discounts and urgency only. Not a general-purpose accent. */
+  --color-accent: #faa21b;
+  --color-accent-hover: #e08f0d;
+  --color-accent-soft: #fdf1dc;
+
+  /* --- semantic ---------------------------------------------------------- */
+  --color-danger: #d93a12;
+  --color-danger-soft: #fdeae4;
+  --color-warning: #b8860b;
+  --color-success: #147d5f;
+  --color-success-soft: #e0f0ea;
+
+  /* --- surfaces ---------------------------------------------------------- */
+  --color-bg: #ffffff;
+  --color-surface: #f6f6f6;
+  --color-surface-2: #eeefef;
+  --color-border: #e2e5e4;
+  --color-border-strong: #cbd2d0;
+
+  /* --- text -------------------------------------------------------------- */
+  --color-ink: #1c2422;
+  --color-ink-body: #4a4a4a; /* was #777777 — failed contrast */
+  --color-ink-muted: #6b7472;
+  --color-ink-inverse: #ffffff;
+
+  /* --- type -------------------------------------------------------------- */
+  /* Self-hosted, subset to Arabic + Latin, preloaded. Not fetched from
+     Google Fonts: the legacy site made three separate requests to
+     fonts.googleapis.com before it could paint text. */
+  --font-sans: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.6;
+
+  /* --- spacing: the existing 15px grid ----------------------------------- */
+  --spacing-unit: 15px;
+  --spacing-half: 7.5px;
+  --spacing-1: 15px;
+  --spacing-2: 30px;
+  --spacing-3: 45px;
+  --spacing-4: 60px;
+  --spacing-5: 90px;
+
+  /* --- radii & elevation ------------------------------------------------- */
+  --radius-sm: 5px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 0 10px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 12px 32px -12px rgb(0 0 0 / 0.18);
+
+  /* --- layout ------------------------------------------------------------ */
+  --container-max: 1400px;
+  --header-height: 72px;
+  /* The mobile sticky buy bar the current store already has, and which works. */
+  --sticky-buy-height: 64px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Touch targets stay at 44px regardless of visual size. */
+@layer base {
+  :where(button, a[role='button'], [type='submit']) {
+    min-block-size: 44px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

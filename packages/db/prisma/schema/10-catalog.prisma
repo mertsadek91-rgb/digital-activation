@@ -1,0 +1,314 @@
+// ---------------------------------------------------------------------------
+// Catalog: brands, categories, products, variants, media.
+//
+// The single most important change from the legacy WooCommerce catalog is that
+// every "one product per licence duration / device count" row collapses into a
+// Product with Variants. The legacy store had 7 separate ESET Internet Security
+// products and 6 Autodesk products competing with each other for the same
+// keyword; here they are one page each with a variant picker.
+// ---------------------------------------------------------------------------
+
+model Brand {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  website   String?
+  logo      Asset?   @relation(fields: [logoId], references: [id], onDelete: SetNull)
+  logoId    String?
+  position  Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations BrandTranslation[]
+  products     Product[]
+
+  @@schema("public")
+}
+
+model BrandTranslation {
+  id      String @id @default(cuid())
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId String
+  locale  Locale
+
+  name           String
+  /// Brand hub copy — the /brands/<slug> page body.
+  intro          Json?
+  seoTitle       String?
+  seoDescription String?
+
+  @@unique([brandId, locale])
+  @@schema("public")
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  parent   Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  parentId String?
+  children Category[] @relation("CategoryTree")
+
+  image    Asset?  @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  imageId  String?
+  position Int     @default(0)
+  status   PublishStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations CategoryTranslation[]
+  products     ProductCategory[]
+
+  @@index([parentId, position])
+  @@schema("public")
+}
+
+model CategoryTranslation {
+  id         String   @id @default(cuid())
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  locale     Locale
+
+  name     String
+  /// Short line under the H1.
+  headline String?
+  /// Block-based body. Category pages carry 500–800 words in the new store;
+  /// in the legacy store they had ~295 words and no meta description at all,
+  /// and not one of them ever received a search impression.
+  body     Json?
+  /// [{ q, a }] — rendered as an FAQ block and as FAQPage structured data.
+  faq      Json?
+
+  seoTitle       String?
+  seoDescription String?
+
+  @@unique([categoryId, locale])
+  @@schema("public")
+}
+
+model Product {
+  id     String      @id @default(cuid())
+  slug   String      @unique
+  kind   ProductKind @default(KEY)
+  status PublishStatus @default(DRAFT)
+
+  brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  brandId String?
+
+  /// Denormalised for breadcrumbs, canonical category and `ItemList` position.
+  primaryCategoryId String?
+
+  publishedAt DateTime?
+  /// Set by the publish-readiness check. A product cannot move to PUBLISHED
+  /// while this is false: SEO title, meta description, hero image with alt in
+  /// both locales, and >= 120 words of body are all required. 43 of the 101
+  /// legacy products shipped with no SEO title or description at all.
+  seoReady    Boolean   @default(false)
+
+  /// Aggregates, refreshed by a job. `salesCount` is shown on the product page
+  /// as real social proof ("sold N times") instead of synthetic star ratings.
+  salesCount  Int     @default(0)
+  ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
+  ratingCount Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations ProductTranslation[]
+  variants     Variant[]
+  categories   ProductCategory[]
+  tags         ProductTag[]
+  media        ProductMedia[]
+  reviews      Review[]
+  stockAlerts  StockAlert[]
+
+  relationsFrom ProductRelation[] @relation("RelationSource")
+  relationsTo   ProductRelation[] @relation("RelationTarget")
+
+  @@index([status, publishedAt])
+  @@index([brandId])
+  @@schema("public")
+}
+
+model ProductTranslation {
+  id        String  @id @default(cuid())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  locale    Locale
+
+  name      String
+  /// The "⚡ يصلك في ثواني" style line above the price.
+  shortDesc String?
+  /// Block-based body. Replaces the legacy pattern of burying the entire value
+  /// proposition inside a single PNG, which no crawler or LLM can read.
+  body      Json?
+
+  /// [{ q, a }] — FAQ block + FAQPage structured data.
+  faq              Json?
+  /// [{ step, text, image? }] — the 3-step activation instructions that cut
+  /// support tickets and rank for "كيف أفعّل …" queries.
+  activationSteps  Json?
+  /// Official vendor download link, shown next to the activation steps.
+  downloadUrl      String?
+  /// Free-text notes: regional restrictions, "not for Windows 10 Home", etc.
+  warnings         Json?
+
+  seoTitle       String?
+  seoDescription String?
+
+  @@unique([productId, locale])
+  @@schema("public")
+}
+
+/// A buyable configuration: duration x device count x platform x activation
+/// method. Price and stock live here, never on Product.
+model Variant {
+  id        String  @id @default(cuid())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  sku       String  @unique
+
+  licensePeriodValue Int? /// null when unit is LIFETIME
+  licensePeriodUnit  LicensePeriodUnit @default(LIFETIME)
+  deviceCount        Int               @default(1)
+  platform           Platform          @default(WINDOWS)
+  activationMethod   ActivationMethod  @default(RETAIL_ONLINE)
+
+  /// Delivery promise in seconds, shown verbatim on the product page. Anything
+  /// that cannot be auto-fulfilled must state an honest window instead.
+  deliverySlaSeconds Int @default(60)
+
+  /// All money is stored in USD, the base currency. Display currencies are
+  /// derived at render time via FxRate — and the schema.org price emitted for
+  /// a page always uses the same currency shown on that page. The legacy store
+  /// printed AED 36.36 while its JSON-LD claimed "36.36 USD".
+  priceUsd     Decimal  @db.Decimal(12, 2)
+  compareAtUsd Decimal? @db.Decimal(12, 2)
+  /// Purchase cost, admin-only. Never exposed by any storefront endpoint.
+  costUsd      Decimal? @db.Decimal(12, 2)
+
+  isDefault Boolean       @default(false)
+  position  Int           @default(0)
+  status    PublishStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventory      InventoryLevel?
+  reservations   StockReservation[]
+  movements      StockMovement[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  stockAlerts    StockAlert[]
+  media          ProductMedia[]
+
+  @@index([productId, position])
+  @@schema("public")
+}
+
+model ProductCategory {
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId String
+  isPrimary  Boolean  @default(false)
+  position   Int      @default(0)
+
+  @@id([productId, categoryId])
+  @@index([categoryId, position])
+  @@schema("public")
+}
+
+model Tag {
+  id       String @id @default(cuid())
+  slug     String @unique
+  name     String
+  /// Tag archives stay noindex, as they were in the legacy store. The 501
+  /// legacy tags consolidate to roughly 60 that carry real meaning.
+  isActive Boolean @default(true)
+
+  products ProductTag[]
+
+  @@schema("public")
+}
+
+model ProductTag {
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId     String
+
+  @@id([productId, tagId])
+  @@schema("public")
+}
+
+model ProductRelation {
+  id        String              @id @default(cuid())
+  source    Product             @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId  String
+  target    Product             @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  targetId  String
+  kind      ProductRelationKind @default(RELATED)
+  position  Int                 @default(0)
+  /// Extra discount applied only when the cross-sell is accepted during the
+  /// same checkout. Drives "add now and save X%".
+  bundleDiscountPercent Decimal? @db.Decimal(5, 2)
+
+  @@unique([sourceId, targetId, kind])
+  @@schema("public")
+}
+
+// --- media ------------------------------------------------------------------
+
+model Asset {
+  id        String   @id @default(cuid())
+  /// Object storage key. Rendered through the image pipeline as AVIF/WebP.
+  key       String   @unique
+  mime      String
+  bytes     Int
+  width     Int?
+  height    Int?
+  checksum  String?
+  createdAt DateTime @default(now())
+
+  alts         AssetAlt[]
+  productMedia ProductMedia[]
+  brands       Brand[]
+  categories   Category[]
+  articles     Article[]
+  authors      Author[]
+  invoices     Invoice[]
+
+  @@schema("public")
+}
+
+/// Alt text is per locale and required before a product can be published.
+/// 14 of 36 images on a single legacy product page had no alt attribute.
+model AssetAlt {
+  id      String @id @default(cuid())
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId String
+  locale  Locale
+  alt     String
+
+  @@unique([assetId, locale])
+  @@schema("public")
+}
+
+model ProductMedia {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  /// When set, this image is shown only for that variant.
+  variant   Variant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String?
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  assetId   String
+  position  Int      @default(0)
+  isHero    Boolean  @default(false)
+
+  @@unique([productId, assetId, variantId])
+  @@index([productId, position])
+  @@schema("public")
+}

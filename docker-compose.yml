@@ -1,0 +1,59 @@
+name: digital-activation
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: da
+      POSTGRES_PASSWORD: da_local_dev
+      POSTGRES_DB: da_main
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/db/prisma/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U da -d da_main']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.13
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: da_local_dev_master_key
+      MEILI_ENV: development
+    ports:
+      - '7700:7700'
+    volumes:
+      - meilidata:/meili_data
+
+  # Catches every outbound email in development so no real customer is ever
+  # mailed from a dev machine, and so license-delivery templates are reviewable.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+
+volumes:
+  pgdata:
+  redisdata:
+  meilidata:

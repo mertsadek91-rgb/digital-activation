@@ -1,0 +1,282 @@
+// ---------------------------------------------------------------------------
+// Marketing: promotions, reviews, loyalty, referral, notifications, alerts.
+//
+// The review model is the deliberate break from the legacy store. `orderItemId`
+// is required and unique, so a review cannot exist without a matching paid
+// purchase and a buyer cannot review the same line twice. The 565 synthetic
+// `wvr_virtual_review` rows are not migrated, and AggregateRating is emitted
+// only from rows that pass through here.
+// ---------------------------------------------------------------------------
+
+model Promotion {
+  id    String         @id @default(cuid())
+  /// Null for automatic promotions that need no code.
+  code  String?        @unique
+  type  PromotionType
+  scope PromotionScope @default(CART)
+  /// Percent (0–100) or a fixed USD amount, depending on `type`.
+  value Decimal        @db.Decimal(12, 2)
+
+  name        String
+  description String?
+
+  /// Structured conditions, validated by a zod schema in @da/contracts:
+  /// { minTotalUsd?, productIds?, categoryIds?, brandIds?, firstOrderOnly?,
+  ///   customerGroupIds?, excludeDiscounted?, stackable? }
+  rules Json @default("{}")
+
+  startsAt DateTime?
+  endsAt   DateTime?
+
+  usageLimit      Int? /// total redemptions allowed
+  usageCount      Int  @default(0)
+  perCustomerLimit Int? @default(1)
+  /// True for codes minted by the day-7 recovery flow: one use, one customer,
+  /// hard expiry. They cannot be shared or scraped into a coupon site.
+  singleUse       Boolean @default(false)
+
+  issuedTo   Customer? @relation("PromotionIssuedTo", fields: [issuedToId], references: [id], onDelete: SetNull)
+  issuedToId String?
+
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaignId String?
+
+  createdBy   StaffUser? @relation("PromotionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  usages         PromotionUsage[]
+  orders         Order[]
+  recoveryEvents CartRecoveryEvent[]
+  referrals      Referral[]
+
+  @@index([isActive, startsAt, endsAt])
+  @@index([issuedToId])
+  @@schema("public")
+}
+
+/// Redemption ledger. Enforces per-customer limits and lets us report revenue
+/// and margin after discount per code.
+model PromotionUsage {
+  id          String   @id @default(cuid())
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  promotionId String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     String
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId  String?
+  discountUsd Decimal   @db.Decimal(12, 2)
+  createdAt   DateTime  @default(now())
+
+  @@unique([promotionId, orderId])
+  @@index([customerId, promotionId])
+  @@schema("public")
+}
+
+model Segment {
+  id   String @id @default(cuid())
+  name String @unique
+  /// Declarative definition compiled to a Prisma query, e.g.
+  /// { boughtCategoryId, notBoughtCategoryId, dormantDays, minTotalSpentUsd,
+  ///   renewalDueWithinDays }
+  definition Json
+  cachedCount Int      @default(0)
+  refreshedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  campaigns Campaign[]
+
+  @@schema("public")
+}
+
+model Campaign {
+  id      String              @id @default(cuid())
+  name    String
+  channel NotificationChannel @default(EMAIL)
+
+  segment   Segment? @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  segmentId String?
+
+  locale  Locale  @default(AR)
+  subject String?
+  body    Json?
+
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  /// { sent, delivered, opened, clicked, unsubscribed, revenueUsd }
+  stats       Json      @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  promotions    Promotion[]
+  notifications NotificationLog[]
+
+  @@index([scheduledAt])
+  @@schema("public")
+}
+
+model Review {
+  id        String  @id @default(cuid())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  /// Required and unique: no purchase, no review; one review per bought line.
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId String    @unique
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String
+
+  rating Int /// 1–5, range enforced by a check constraint in the migration
+  title  String?
+  body   String
+  locale Locale       @default(AR)
+  status ReviewStatus @default(PENDING)
+
+  storeReply String?
+  repliedAt  DateTime?
+  moderatedById String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId, status, createdAt])
+  @@index([customerId])
+  @@schema("public")
+}
+
+/// Post-delivery review invitations, sent on day 3 and day 10. This is how the
+/// store accumulates genuine ratings instead of generating them.
+model ReviewInvite {
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String
+  stage      Int      @default(1)
+  sentAt     DateTime @default(now())
+  respondedAt DateTime?
+
+  @@unique([orderId, stage])
+  @@schema("public")
+}
+
+// --- retention --------------------------------------------------------------
+
+model LoyaltyAccount {
+  id         String   @id @default(cuid())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String   @unique
+  points     Int      @default(0)
+  lifetimePoints Int  @default(0)
+  updatedAt  DateTime @updatedAt
+
+  transactions LoyaltyTransaction[]
+
+  @@schema("public")
+}
+
+model LoyaltyTransaction {
+  id        String         @id @default(cuid())
+  account   LoyaltyAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId String
+  delta     Int
+  reason    String
+  order     Order?         @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId   String?
+  createdAt DateTime       @default(now())
+
+  @@index([accountId, createdAt])
+  @@schema("public")
+}
+
+model Referral {
+  id         String   @id @default(cuid())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String   @unique
+  code       String   @unique
+  uses       Int      @default(0)
+  /// The promotion handed to the referred friend.
+  rewardPromotion   Promotion? @relation(fields: [rewardPromotionId], references: [id], onDelete: SetNull)
+  rewardPromotionId String?
+  createdAt  DateTime @default(now())
+
+  @@schema("public")
+}
+
+// --- notifications ----------------------------------------------------------
+
+model PushSubscription {
+  id         String    @id @default(cuid())
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  locale     Locale    @default(AR)
+  /// Opt-in topics: ["deals", "back_in_stock", "renewals"]. Consent is per
+  /// topic, not one blanket yes.
+  topics     String[]
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([customerId])
+  @@schema("public")
+}
+
+/// Every outbound message. Doubles as the suppression source (a hard bounce
+/// here stops future sends) and as the open/click attribution record.
+model NotificationLog {
+  id         String              @id @default(cuid())
+  customer   Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+  campaign   Campaign?           @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  campaignId String?
+  channel    NotificationChannel
+  template   String
+  locale     Locale              @default(AR)
+  toAddress  String
+  /// Template variables only. Never a licence key, never credentials.
+  payload    Json?
+
+  sentAt      DateTime  @default(now())
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
+  error       String?
+
+  @@index([customerId, sentAt])
+  @@index([channel, template, sentAt])
+  @@schema("public")
+}
+
+/// Back-in-stock, price-drop and renewal watchers. Turns the twelve
+/// out-of-stock products that still attract search traffic into a queue of
+/// buyers instead of a bounce.
+model StockAlert {
+  id         String         @id @default(cuid())
+  kind       StockAlertKind @default(BACK_IN_STOCK)
+  product    Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId  String?
+  variant    Variant?       @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId  String?
+  customer   Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+  email      String
+  locale     Locale         @default(AR)
+  /// For RENEWAL_DUE: when the customer's licence expires.
+  dueAt      DateTime?
+  createdAt  DateTime       @default(now())
+  notifiedAt DateTime?
+
+  @@unique([kind, email, variantId])
+  @@index([variantId, notifiedAt])
+  @@index([kind, dueAt])
+  @@schema("public")
+}

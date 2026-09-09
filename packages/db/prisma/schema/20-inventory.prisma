@@ -1,0 +1,84 @@
+// ---------------------------------------------------------------------------
+// Inventory: stock levels, timed reservations, movement audit, suppliers.
+//
+// Stock is real and scarce here — we resell a finite pool of licence keys — so
+// the "only N left" counter shown on the product page reads from onHand and is
+// therefore honest, unlike a decorative countdown.
+//
+// Twelve legacy products sat OutOfStock while still ranking, including the two
+// highest-impression product pages in the whole store. BackorderPolicy exists
+// so that state converts into a waiting list instead of a lost visit.
+// ---------------------------------------------------------------------------
+
+model InventoryLevel {
+  id        String  @id @default(cuid())
+  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String  @unique
+
+  /// Physical count of keys/accounts available in the vault for this variant.
+  /// Kept in step with the vault by the key-import and fulfilment services.
+  onHand   Int @default(0)
+  /// Sum of ACTIVE reservations. Sellable = onHand - reserved.
+  reserved Int @default(0)
+
+  lowStockThreshold Int             @default(3)
+  backorderPolicy   BackorderPolicy @default(NOTIFY_ONLY)
+  /// Only meaningful for ALLOW_WITH_SLA — the honest window we promise instead
+  /// of a delivery time we cannot keep.
+  restockEtaHours   Int?
+
+  lowStockNotifiedAt DateTime?
+  updatedAt          DateTime  @updatedAt
+
+  @@index([onHand])
+  @@schema("public")
+}
+
+/// Holds stock for an in-flight cart so two buyers cannot be sold the same key.
+/// Mirrored in Redis with the same TTL; this table is the durable record.
+model StockReservation {
+  id        String                @id @default(cuid())
+  variant   Variant               @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String
+  cart      Cart?                 @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  cartId    String?
+  qty       Int                   @default(1)
+  state     StockReservationState @default(ACTIVE)
+  expiresAt DateTime
+  createdAt DateTime              @default(now())
+
+  @@index([state, expiresAt])
+  @@index([variantId, state])
+  @@schema("public")
+}
+
+/// Append-only ledger of every stock change. Lets us answer "where did this
+/// key go" without trusting a mutable counter.
+model StockMovement {
+  id        String              @id @default(cuid())
+  variant   Variant             @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId String
+  delta     Int
+  reason    StockMovementReason
+  orderId   String?
+  actorId   String?
+  actorType ActorType           @default(SYSTEM)
+  note      String?
+  createdAt DateTime            @default(now())
+
+  @@index([variantId, createdAt])
+  @@schema("public")
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  contact   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  importBatches KeyImportBatch[]
+
+  @@schema("public")
+}

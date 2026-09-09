@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------------------
+# NEVER COMMIT: the legacy WordPress export.
+# It contains plaintext customer license keys and Office 365 / Adobe account
+# passwords inside wp_comments (order notes), plus a 346 MB site tarball.
+# Treat it as a secret asset. See docs/plan.html section 02.
+# ---------------------------------------------------------------------------
+Old Website/
+*.sql
+*.sql.gz
+*.tar.gz
+*.wpress
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# deps & build
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+
+# prisma generated client
+packages/db/generated/
+
+# test & tooling output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+.lighthouseci/
+
+# editors & os
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.log

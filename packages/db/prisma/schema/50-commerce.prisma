@@ -1,0 +1,298 @@
+// ---------------------------------------------------------------------------
+// Commerce: carts, orders, payments, invoices, currency.
+//
+// Carts are server-side and persist from the moment we know an email (or a
+// login). That is what makes the abandoned-cart ladder possible at all — the
+// legacy store had no durable cart, so nothing could be recovered.
+//
+// Every amount is stored in USD. `fxRate` on the cart and order records the
+// rate actually used at the time of purchase, so an old order can be re-rendered
+// in the currency the customer saw.
+// ---------------------------------------------------------------------------
+
+model Cart {
+  id    String @id @default(cuid())
+  /// Opaque cookie value for guests.
+  token String @unique
+
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+  /// Captured at checkout step one. Presence of an email is what promotes a
+  /// cart from anonymous to recoverable.
+  email      String?
+
+  locale   Locale  @default(AR)
+  currency String  @default("USD")
+  fxRate   Decimal @default(1) @db.Decimal(18, 8)
+
+  couponCode String?
+
+  subtotalUsd Decimal @default(0) @db.Decimal(12, 2)
+  discountUsd Decimal @default(0) @db.Decimal(12, 2)
+  totalUsd    Decimal @default(0) @db.Decimal(12, 2)
+
+  stage          CartStage @default(ACTIVE)
+  lastActivityAt DateTime  @default(now())
+  /// Set when a recovery email/push converts, so recovered revenue is
+  /// attributable to the exact step that earned it.
+  recoveredOrderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items          CartItem[]
+  reservations   StockReservation[]
+  recoveryEvents CartRecoveryEvent[]
+  orders         Order[]
+
+  @@index([stage, lastActivityAt])
+  @@index([customerId])
+  @@index([email])
+  @@schema("public")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId    String
+  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  variantId String
+  qty       Int     @default(1)
+  /// Snapshot so a price change mid-session cannot silently alter the cart.
+  unitPriceUsd Decimal @db.Decimal(12, 2)
+  /// True when the line was added from a checkout cross-sell offer.
+  fromCrossSell Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, variantId])
+  @@schema("public")
+}
+
+/// One row per recovery touch, so each rung of the ladder can be measured
+/// separately instead of crediting all recovered revenue to "email".
+model CartRecoveryEvent {
+  id      String              @id @default(cuid())
+  cart    Cart                @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId  String
+  stage   CartStage
+  channel NotificationChannel
+
+  /// Set only at the MANAGER_QUEUE stage, where a human chooses the discount
+  /// and the system issues a single-use, customer-bound, expiring coupon.
+  promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  promotionId String?
+
+  sentAt    DateTime  @default(now())
+  openedAt  DateTime?
+  clickedAt DateTime?
+
+  @@index([cartId, stage])
+  @@index([stage, sentAt])
+  @@schema("public")
+}
+
+model Order {
+  id     String      @id @default(cuid())
+  /// Human-facing sequential reference, e.g. "DA-2026-00187".
+  number String      @unique
+  status OrderStatus @default(PENDING_PAYMENT)
+
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+  /// Kept even for guests, and immutable once the order is placed.
+  email      String
+
+  cart   Cart?   @relation(fields: [cartId], references: [id], onDelete: SetNull)
+  cartId String?
+
+  locale   Locale  @default(AR)
+  currency String  @default("USD")
+  fxRate   Decimal @default(1) @db.Decimal(18, 8)
+
+  subtotalUsd Decimal @db.Decimal(12, 2)
+  discountUsd Decimal @default(0) @db.Decimal(12, 2)
+  taxUsd      Decimal @default(0) @db.Decimal(12, 2)
+  totalUsd    Decimal @db.Decimal(12, 2)
+
+  promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  promotionId String?
+  couponCode  String?
+
+  /// Fraud screening. A digital key cannot be clawed back once sent, so a HIGH
+  /// score holds the order in PAYMENT_REVIEW and blocks fulfilment until a
+  /// human clears it — the block is before delivery, never after.
+  riskScore Int       @default(0)
+  riskLevel RiskLevel @default(LOW)
+
+  billingName    String?
+  billingCompany String?
+  billingVat     String?
+  billingCountry String?
+  billingJson    Json?
+
+  ip        String?
+  userAgent String?
+
+  placedAt    DateTime  @default(now())
+  paidAt      DateTime?
+  fulfilledAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items          OrderItem[]
+  payments       Payment[]
+  notes          OrderNote[]
+  invoice        Invoice?
+  reviewInvites  ReviewInvite[]
+  promotionUses  PromotionUsage[]
+  loyaltyTxns    LoyaltyTransaction[]
+
+  @@index([status, placedAt])
+  @@index([customerId, placedAt])
+  @@index([email])
+  @@index([riskLevel, status])
+  @@schema("public")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  variantId String
+
+  /// Snapshots. A product can be renamed or repriced later; an invoice must not
+  /// change retroactively.
+  productNameSnapshot String
+  skuSnapshot         String
+  variantSpecSnapshot Json?
+
+  qty          Int     @default(1)
+  unitPriceUsd Decimal @db.Decimal(12, 2)
+  lineTotalUsd Decimal @db.Decimal(12, 2)
+
+  fulfillmentState FulfillmentState @default(PENDING)
+  deliveredAt      DateTime?
+  /// Vault key ids bound to this line. Ids only — no plaintext ever reaches
+  /// the `public` schema.
+  assignedKeyIds   String[]
+
+  reviews Review[]
+
+  @@index([orderId])
+  @@index([fulfillmentState])
+  @@schema("public")
+}
+
+/// Internal and customer-visible notes. Policy: secrets never go here. The
+/// legacy store used order notes as its delivery mechanism, which is exactly
+/// how plaintext keys and Office 365 passwords ended up in the database.
+model OrderNote {
+  id       String     @id @default(cuid())
+  order    Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  String
+  author   StaffUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId String?
+  body     String
+  isCustomerVisible Boolean @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([orderId, createdAt])
+  @@schema("public")
+}
+
+model Payment {
+  id      String          @id @default(cuid())
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+  provider PaymentProvider
+  state    PaymentState    @default(PROCESSING)
+
+  /// Provider-side identifier (Stripe PaymentIntent, PayPal capture id).
+  providerRef String?
+  /// What the customer was actually charged, in the currency they were charged.
+  amountCharged Decimal @db.Decimal(12, 2)
+  chargedCurrency String
+  /// Same amount normalised to USD for reporting.
+  amountUsd     Decimal @db.Decimal(12, 2)
+
+  /// For BANK_TRANSFER / CRYPTO: the proof-of-payment upload awaiting approval.
+  proofAssetId String?
+  approvedById String?
+  approvedAt   DateTime?
+
+  failureCode    String?
+  failureMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refunds Refund[]
+
+  @@unique([provider, providerRef])
+  @@index([orderId])
+  @@index([state, createdAt])
+  @@schema("public")
+}
+
+model Refund {
+  id          String   @id @default(cuid())
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId   String
+  amountUsd   Decimal  @db.Decimal(12, 2)
+  reason      String?
+  providerRef String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([paymentId])
+  @@schema("public")
+}
+
+model Invoice {
+  id       String   @id @default(cuid())
+  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  String   @unique
+  number   String   @unique
+  pdfAsset Asset?   @relation(fields: [pdfAssetId], references: [id], onDelete: SetNull)
+  pdfAssetId String?
+  issuedAt DateTime @default(now())
+
+  @@schema("public")
+}
+
+// --- currency ---------------------------------------------------------------
+
+model Currency {
+  code     String  @id /// ISO 4217, e.g. "USD", "SAR", "AED", "TRY"
+  symbol   String
+  /// Which side of the amount the symbol sits on: "left" | "right".
+  symbolPosition String @default("left")
+  decimals Int     @default(2)
+  /// e.g. "none" | "nearest_0_95" — psychological rounding after conversion,
+  /// so a converted price still reads like a price.
+  roundingRule String @default("none")
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  rates FxRate[]
+
+  @@schema("public")
+}
+
+model FxRate {
+  id           String   @id @default(cuid())
+  currency     Currency @relation(fields: [currencyCode], references: [code], onDelete: Cascade)
+  currencyCode String
+  /// Units of `currencyCode` per 1 USD.
+  rate         Decimal  @db.Decimal(18, 8)
+  source       String
+  fetchedAt    DateTime @default(now())
+
+  @@unique([currencyCode, fetchedAt])
+  @@index([currencyCode, fetchedAt])
+  @@schema("public")
+}

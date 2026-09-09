@@ -1,0 +1,8 @@
+Old Website/
+packages/db/generated/
+packages/db/prisma/migrations/
+dist/
+.next/
+.turbo/
+pnpm-lock.yaml
+docs/plan.html

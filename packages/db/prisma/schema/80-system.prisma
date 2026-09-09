@@ -1,0 +1,67 @@
+// ---------------------------------------------------------------------------
+// System: settings, webhook idempotency, request idempotency, migration map.
+// ---------------------------------------------------------------------------
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@schema("public")
+}
+
+/// Every provider webhook is recorded before it is acted on. Stripe and PayPal
+/// both retry, and a licence key must not be issued twice for one payment.
+model WebhookEvent {
+  id       String          @id @default(cuid())
+  provider PaymentProvider
+  /// Provider event id. The unique constraint is the idempotency guarantee.
+  eventId  String
+  type     String
+  payload  Json
+  signatureVerified Boolean @default(false)
+
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  attempts    Int       @default(0)
+  error       String?
+
+  @@unique([provider, eventId])
+  @@index([processedAt])
+  @@schema("public")
+}
+
+/// Client-supplied idempotency keys for mutating storefront endpoints, so a
+/// double-tapped "pay" button creates one order rather than two.
+model IdempotencyKey {
+  key       String   @id
+  scope     String
+  /// Hash of the stored response, replayed on a repeat request.
+  responseHash String?
+  response  Json?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
+  @@schema("public")
+}
+
+/// Maps every legacy WordPress row to its new id. Written by the migration and
+/// kept afterwards: it is what lets us generate the 301 map, re-run a partial
+/// import safely, and answer "which product was post 10765?".
+model LegacyMap {
+  id         String   @id @default(cuid())
+  /// "product" | "product_cat" | "product_tag" | "page" | "post" | "attachment"
+  /// | "customer" | "order" | "coupon" | "license_code"
+  legacyType String
+  legacyId   String
+  legacyUrl  String?
+  entity     String
+  entityId   String
+  importedAt DateTime @default(now())
+
+  @@unique([legacyType, legacyId])
+  @@index([entity, entityId])
+  @@index([legacyUrl])
+  @@schema("public")
+}
