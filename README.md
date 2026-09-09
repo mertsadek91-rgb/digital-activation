@@ -53,6 +53,7 @@ cp .env.example .env          # then fill in the blanks
 pnpm infra:up                 # postgres, redis, meilisearch, mailpit
 pnpm db:migrate               # applies prisma/migrations
 pnpm db:seed                  # currencies, groups, brands, category tree
+pnpm db:doctor                # asserts the setup, including vault isolation
 pnpm dev                      # all three apps + the worker
 ```
 
@@ -108,15 +109,18 @@ generated and a partial import can be safely re-run.
 
 ## Commands
 
-| Command                        | What it does                           |
-| ------------------------------ | -------------------------------------- |
-| `pnpm dev`                     | every app and the worker in watch mode |
-| `pnpm build`                   | build all                              |
-| `pnpm typecheck`               | strict typecheck across the workspace  |
-| `pnpm db:validate`             | validate the Prisma schema             |
-| `pnpm db:migrate`              | create and apply a migration           |
-| `pnpm db:studio`               | Prisma Studio                          |
-| `pnpm infra:up` / `infra:down` | local services                         |
+| Command                        | What it does                                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                     | every app and the worker in watch mode                                                                |
+| `pnpm build`                   | build all                                                                                             |
+| `pnpm typecheck`               | strict typecheck across the workspace                                                                 |
+| `pnpm db:validate`             | validate the Prisma schema                                                                            |
+| `pnpm db:doctor`               | prove a real database is wired correctly, including that the vault is actually denied to the app role |
+| `pnpm db:migrate`              | create and apply a migration                                                                          |
+| `pnpm db:studio`               | Prisma Studio                                                                                         |
+| `pnpm infra:up` / `infra:down` | local services                                                                                        |
+
+Deploying to Coolify: see [`docs/deployment.md`](docs/deployment.md).
 
 CI runs typecheck, lint, tests, a **schema-drift check** (committed migrations
 must reproduce the schema exactly), Lighthouse CI against the performance budget,
