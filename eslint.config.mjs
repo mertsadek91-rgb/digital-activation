@@ -22,6 +22,7 @@ export default tseslint.config(
     languageOptions: {
       globals: { ...globals.node },
       parserOptions: {
+        // Root-level scripts are covered by the root tsconfig.json.
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },

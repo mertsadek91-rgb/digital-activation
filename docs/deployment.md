@@ -9,7 +9,7 @@ admin.digital-activation.com  →  admin        (Next.js, port 3001)
 api.digital-activation.com    →  api          (NestJS,  port 4000)
                                  jobs         (worker, no public port)
 
-postgres 17 · redis 7 · meilisearch      (internal network only)
+postgres 18 · redis 7 · meilisearch      (internal network only)
 ```
 
 Only the three web containers get a public domain. Postgres, Redis, Meilisearch
@@ -19,8 +19,9 @@ and the worker stay on Coolify's internal network with no published port.
 
 ## 1. Postgres
 
-Create a **PostgreSQL 17** resource in Coolify. Nothing else on this list can
-be done first.
+Create a **PostgreSQL 18** resource in Coolify (`postgres:18-alpine`). Nothing
+else on this list can be done first. The local docker-compose runs the same
+major version, so a behaviour difference cannot hide between the two.
 
 Coolify generates a database name, a user and a password. That user is the
 database owner — it is used **only** for migrations, never by the running

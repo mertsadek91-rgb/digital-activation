@@ -18,7 +18,7 @@ missing from every sitemap. That is a structural problem, not a hosting one.
 | Storefront     | Next.js 16 App Router, React 19, Tailwind 4, next-intl  |
 | Admin          | Next.js 16, RTL-first Arabic                            |
 | API            | NestJS 12 on Fastify                                    |
-| Database       | PostgreSQL 17, Prisma 7 (pg driver adapter)             |
+| Database       | PostgreSQL 18, Prisma 7 (pg driver adapter)             |
 | Cache / queues | Redis 7, BullMQ                                         |
 | Search         | Meilisearch, with Arabic folding                        |
 | Payments       | Stripe + PayPal, bank transfer / crypto as a fallback   |

@@ -12,7 +12,8 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "eslint .",
-    "typecheck": "turbo run typecheck",
+    "typecheck": "turbo run typecheck && tsc -p tsconfig.json",
+    "env:check": "tsx scripts/env-check.ts",
     "test": "turbo run test",
     "clean": "turbo run clean && rimraf node_modules",
     "db:generate": "pnpm --filter @da/db run generate",
@@ -30,10 +31,12 @@
   },
   "devDependencies": {
     "@eslint/js": "catalog:",
+    "@types/node": "catalog:",
     "eslint": "catalog:",
     "globals": "catalog:",
     "prettier": "catalog:",
     "rimraf": "catalog:",
+    "tsx": "catalog:",
     "turbo": "^2.10.12",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
