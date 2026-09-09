@@ -136,21 +136,74 @@ It connects with all three strings and asserts, rather than assumes:
 
 Non-zero exit on any failure, so it can gate the deploy.
 
-## 5. Secrets that must not sit in Coolify's environment editor
+## 5. AWS KMS — the vault key
 
-Most values are fine as Coolify environment variables. Two are not.
+Decided 2026-09-09. The KEK is the single key that unwraps every licence key in
+the vault, so it must not be recoverable from the machine that holds the
+ciphertext. `validateEnv` refuses to boot in production with any other provider.
 
-**`KEK_LOCAL_BASE64`** — the key that unwraps every licence key in the vault.
-`validateEnv` refuses to boot with `KEK_PROVIDER=local` when `NODE_ENV=production`,
-deliberately: a single environment variable that decrypts the entire product
-inventory is not a key-management strategy. Production needs a real KMS. This is
-an open decision, and it blocks the vault module.
+One key and one narrowly-scoped user:
 
-**Payment secrets** — `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
-`PAYPAL_CLIENT_SECRET`. Scope them to the API resource only; the storefront and
-admin never need them.
+1. **KMS → Create key** — symmetric, `ENCRYPT_DECRYPT`, in the region nearest
+   the Coolify host. Give it the alias `alias/digital-activation-vault`.
+   Enable automatic annual rotation.
+2. **IAM → Create user**, programmatic access only, with this inline policy and
+   nothing else. The resource is the one key ARN; a wildcard here would undo the
+   point of the exercise.
 
-## 6. DNS
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt",
+        "kms:GenerateDataKey",
+        "kms:DescribeKey"
+      ],
+      "Resource": "arn:aws:kms:<region>:<account>:key/<key-id>"
+    }
+  ]
+}
+```
+
+3. Fill `AWS_KMS_KEY_ID`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`,
+   `AWS_SECRET_ACCESS_KEY` — **scoped to the API resource only.** The storefront
+   and the admin never touch the vault and must not carry these.
+
+Cost is roughly $1/month for the key plus $0.03 per 10,000 requests. At this
+order volume the request charge is pennies: a data key is wrapped once per
+imported licence and unwrapped once per delivery, not once per page view.
+
+`kekVersion` on every row records which generation wrapped it, so a rotation
+re-wraps incrementally instead of forcing a re-encrypt of the whole vault.
+
+## 6. Cloudflare R2 — media
+
+Decided 2026-09-09. S3-compatible with no egress fees, and images are the
+largest outbound cost in a store. Keeping them off the server disk also means a
+redeploy or a host migration cannot lose them.
+
+1. Create the bucket `digital-activation-media`.
+2. Create an **R2 API token** scoped to _Object Read & Write_ on that bucket.
+3. Bind a **custom domain** — `cdn.digital-activation.com`. The `r2.dev`
+   development URL is rate-limited and not meant for production traffic.
+4. Fill `S3_ENDPOINT` (`https://<account-id>.r2.cloudflarestorage.com`),
+   `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION=auto`,
+   `S3_PUBLIC_BASE_URL=https://cdn.digital-activation.com`.
+
+The storefront reads `S3_PUBLIC_BASE_URL` at build time to allowlist that
+hostname for `next/image`. Miss it and images silently fail to optimise rather
+than erroring, which is easy not to notice.
+
+## 7. Payment secrets
+
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_SECRET` — API
+resource only, for the same reason as the KMS credentials.
+
+## 8. DNS
 
 | Record                                 | Purpose                                                                                                        |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |

@@ -10,6 +10,17 @@ const config: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ['image/avif', 'image/webp'],
+    // Media is served from the R2 bucket's custom domain. Next/Image refuses to
+    // optimise a remote host that is not listed here, and the failure is a
+    // broken image rather than an error, so it is easy to miss.
+    remotePatterns: process.env.S3_PUBLIC_BASE_URL
+      ? [
+          {
+            protocol: 'https',
+            hostname: new URL(process.env.S3_PUBLIC_BASE_URL).hostname,
+          },
+        ]
+      : [],
   },
   experimental: {
     optimizePackageImports: ['@da/ui', '@da/seo', '@da/i18n'],

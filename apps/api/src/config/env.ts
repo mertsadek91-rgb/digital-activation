@@ -25,11 +25,21 @@ const envSchema = z.object({
   JWT_REFRESH_TTL: z.string().default('30d'),
   TOTP_ISSUER: z.string().default('Digital Activation'),
 
-  KEK_PROVIDER: z.enum(['local', 'aws-kms', 'vault']).default('local'),
+  KEK_PROVIDER: z.enum(['local', 'aws-kms']).default('local'),
   KEK_LOCAL_BASE64: z.string().optional(),
   AWS_KMS_KEY_ID: z.string().optional(),
   AWS_REGION: z.string().optional(),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
   VAULT_KEY_VERSION: z.coerce.number().int().min(1).default(1),
+
+  // Cloudflare R2, through the S3 API.
+  S3_ENDPOINT: z.string().url().optional(),
+  S3_BUCKET: z.string().optional(),
+  S3_ACCESS_KEY_ID: z.string().optional(),
+  S3_SECRET_ACCESS_KEY: z.string().optional(),
+  S3_REGION: z.string().default('auto'),
+  S3_PUBLIC_BASE_URL: z.string().url().optional(),
 
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
@@ -63,22 +73,45 @@ export function validateEnv(raw: Record<string, unknown>): Env {
 
   const env = parsed.data;
 
+  const missing: string[] = [];
+
   // A local KEK is a development convenience and must never reach production:
-  // it would put the key that unwraps every licence in an environment variable.
+  // it would put the one key that unwraps every licence into an environment
+  // variable, on the same host as the ciphertext.
   if (env.NODE_ENV === 'production') {
-    if (env.KEK_PROVIDER === 'local') {
-      throw new Error('KEK_PROVIDER=local is not allowed in production. Use aws-kms or vault.');
+    if (env.KEK_PROVIDER !== 'aws-kms') {
+      throw new Error(
+        `KEK_PROVIDER=${env.KEK_PROVIDER} is not allowed in production. Use aws-kms — the KEK must not be recoverable from a compromised host.`,
+      );
     }
-    if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET) {
-      throw new Error('Stripe credentials are required in production.');
-    }
+    if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
+    if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
+    // Media lives in R2; without it, uploads would silently fall back to a
+    // container filesystem that vanishes on the next deploy.
+    if (!env.S3_ENDPOINT) missing.push('S3_ENDPOINT');
+    if (!env.S3_BUCKET) missing.push('S3_BUCKET');
+    if (!env.S3_ACCESS_KEY_ID) missing.push('S3_ACCESS_KEY_ID');
+    if (!env.S3_SECRET_ACCESS_KEY) missing.push('S3_SECRET_ACCESS_KEY');
+    if (!env.S3_PUBLIC_BASE_URL) missing.push('S3_PUBLIC_BASE_URL');
   }
 
   if (env.KEK_PROVIDER === 'local' && !env.KEK_LOCAL_BASE64) {
-    throw new Error('KEK_PROVIDER=local requires KEK_LOCAL_BASE64 (32 raw bytes, base64).');
+    missing.push('KEK_LOCAL_BASE64 (32 raw bytes, base64) — required by KEK_PROVIDER=local');
   }
-  if (env.KEK_PROVIDER === 'aws-kms' && !env.AWS_KMS_KEY_ID) {
-    throw new Error('KEK_PROVIDER=aws-kms requires AWS_KMS_KEY_ID.');
+
+  if (env.KEK_PROVIDER === 'aws-kms') {
+    if (!env.AWS_KMS_KEY_ID) missing.push('AWS_KMS_KEY_ID');
+    if (!env.AWS_REGION) missing.push('AWS_REGION');
+    // Explicit credentials, or an instance role if one is attached. Coolify
+    // hosts have no instance role, so on this deployment they are required.
+    if (!env.AWS_ACCESS_KEY_ID) missing.push('AWS_ACCESS_KEY_ID');
+    if (!env.AWS_SECRET_ACCESS_KEY) missing.push('AWS_SECRET_ACCESS_KEY');
+  }
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Invalid environment configuration — missing:\n${missing.map((m) => `  ${m}`).join('\n')}`,
+    );
   }
 
   return env;
