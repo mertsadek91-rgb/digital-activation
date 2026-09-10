@@ -70,8 +70,34 @@ the service name, and TLS is unnecessary:
 postgresql://da_app:<encoded>@<service-name>:5432/<db>?schema=public&sslmode=disable
 ```
 
-Publish a port temporarily only when you need to run migrations from your own
-machine, and add `?sslmode=require` for that; then close it again.
+### Reaching it from a laptop, without exposing it
+
+Nothing outside Coolify legitimately needs Postgres, Redis or Meilisearch: the
+API, the worker and the storefront all run inside that network, and a
+development machine runs its own stack via `pnpm infra:up`. So none of the three
+gets a public port.
+
+The one real exception is the first migration, before any application is
+deployed to run it. Do not publish the port to the internet for that. Bind it
+to the server's loopback interface instead —
+
+```
+127.0.0.1:5432:5432
+```
+
+— which makes it reachable from the VPS itself and nowhere else, then tunnel
+over SSH from the laptop:
+
+```bash
+ssh -N -L 5432:127.0.0.1:5432 <user>@<server-ip>
+```
+
+`localhost:5432` on the laptop now reaches the production database through an
+encrypted channel with zero public exposure. The same works for Redis (6379) and
+Meilisearch (7700) whenever one needs inspecting.
+
+Once the API is deployed, migrations run as its release command from inside the
+network and the tunnel stops being needed at all.
 
 **Do not put a pooler in front of it yet.** At this volume the API's own pool is
 ample, and PgBouncer in transaction mode adds prepared-statement failure modes
@@ -86,13 +112,22 @@ backup.
 
 ## 2. Redis and Meilisearch
 
-Both as Coolify resources, internal only.
+Both as Coolify resources, **internal only** — no published port, no domain.
 
 Redis carries BullMQ: licence delivery, transactional mail, the abandoned-cart
 ladder, FX refresh, sitemap regeneration. Enable persistence (`appendonly yes`)
 so a restart does not drop queued key deliveries.
 
-Meilisearch needs a master key; the app reads it as `MEILI_MASTER_KEY`.
+Meilisearch needs a master key, which the app reads as `MEILI_MASTER_KEY`. Two
+reasons it must not have a public domain: the master key grants full read and
+write on the index, and Coolify's generated `*.sslip.io` domain serves plain
+HTTP, which would put that key on the wire in cleartext on every request.
+`pnpm env:check` fails on both conditions.
+
+If client-side instant search is ever wanted, that is a different arrangement,
+not a relaxation of this one: expose Meilisearch over HTTPS with a **search-only
+key**, and keep the master key server-side. Until then search goes through the
+API, which is also where Arabic folding has to happen.
 
 ## 3. Applications
 
