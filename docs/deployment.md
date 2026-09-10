@@ -27,20 +27,24 @@ Coolify generates a database name, a user and a password. That user is the
 database owner — it is used **only** for migrations, never by the running
 application.
 
-Then create the two application roles once, as the owner:
+Then create the vault schema and the two application roles once:
 
 ```bash
-psql "$DATABASE_URL_MIGRATE" \
-  -v ON_ERROR_STOP=1 \
-  -v owner_role="$PGUSER" \
-  -v app_password="$DA_APP_PASSWORD" \
-  -v vault_password="$DA_VAULT_PASSWORD" \
-  -f packages/db/prisma/init/roles.prod.sql
+pnpm secrets:generate     # if the two role passwords are not in .env yet
+pnpm db:roles             # creates the vault schema and both roles
 ```
 
-Generate those two passwords yourself (`openssl rand -base64 32`), keep them in
-`.env`, and use them to build `DATABASE_URL` and `DATABASE_URL_VAULT`. The
-script is idempotent, so re-running it after a restore or a rotation is safe.
+`db:roles` connects as the owner via `DATABASE_URL_MIGRATE` and needs no `psql`
+on PATH, which Windows machines generally do not have. It is idempotent, so
+re-running it after a restore or a password rotation is safe, and it refuses to
+report success if `da_app` ends up with USAGE on the vault.
+
+Use the two generated passwords to build `DATABASE_URL` and
+`DATABASE_URL_VAULT`. They are generated in the base64url alphabet, so they
+need no percent-encoding in a connection string.
+
+`prisma/init/roles.prod.sql` does the same work in plain SQL, for applying by
+hand on a server that has `psql`. Keep the two in step.
 
 ### Three connection strings, on purpose
 
