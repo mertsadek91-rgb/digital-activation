@@ -26,6 +26,7 @@
     "db:format": "pnpm --filter @da/db run format",
     "db:studio": "pnpm --filter @da/db run studio",
     "db:seed": "pnpm --filter @da/db run seed",
+    "db:import": "pnpm --filter @da/db run import",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "tunnel": "tsx scripts/tunnel.ts",

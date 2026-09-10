@@ -77,6 +77,8 @@ enum ActivationMethod {
   ACCOUNT_CREDENTIALS
   PANEL_INVITE
   CAL_KEY
+  /// Human-delivered work — an SEO writing service has nothing to activate.
+  NOT_APPLICABLE
 
   @@schema("public")
 }

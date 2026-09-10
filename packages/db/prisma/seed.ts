@@ -248,6 +248,15 @@ const CATEGORIES: CategorySeed[] = [
     headlineAr: 'إضافات وقوالب ووردبريس بتراخيص سنوية',
     headlineEn: 'WordPress plugins and themes with annual licences',
   },
+  {
+    // 16 legacy products sit here — the second-largest category in the store,
+    // and one the original taxonomy buried.
+    slug: 'seo-tools',
+    ar: 'أدوات سيو',
+    en: 'SEO Tools',
+    headlineAr: 'حزم مهارات وأتمتة وأدوات تحسين محركات البحث',
+    headlineEn: 'Skill packs, automation bundles and search-optimisation tools',
+  },
 ];
 
 async function seedCategory(node: CategorySeed, parentId: string | null, position: number) {

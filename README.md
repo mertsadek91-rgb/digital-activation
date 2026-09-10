@@ -119,6 +119,7 @@ generated and a partial import can be safely re-run.
 | `pnpm secrets:generate`        | generate the local secrets into .env; `--print` for a set to paste into Coolify                       |
 | `pnpm env:check`               | diff .env against .env.example and flag unsafe values, without printing any                           |
 | `pnpm db:roles`                | create the vault schema and the two application roles (no psql needed)                                |
+| `pnpm db:import`               | dry-run the WordPress catalog import and report what needs attention; `--apply` to write              |
 | `pnpm db:validate`             | validate the Prisma schema                                                                            |
 | `pnpm db:doctor`               | prove a real database is wired correctly, including that the vault is actually denied to the app role |
 | `pnpm db:migrate`              | create and apply a migration                                                                          |

@@ -23,7 +23,8 @@
     "clean": "rimraf dist generated .turbo",
     "build": "tsc -p tsconfig.build.json",
     "doctor": "tsx scripts/db-doctor.ts",
-    "roles": "tsx scripts/setup-roles.ts"
+    "roles": "tsx scripts/setup-roles.ts",
+    "import": "tsx scripts/import/index.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "catalog:",
@@ -34,6 +35,7 @@
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "dotenv": "catalog:",
+    "fast-xml-parser": "^5.11.1",
     "prisma": "catalog:",
     "rimraf": "catalog:",
     "tsx": "catalog:",

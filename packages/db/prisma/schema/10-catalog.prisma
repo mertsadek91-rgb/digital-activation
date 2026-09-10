@@ -106,6 +106,12 @@ model Product {
   /// legacy products shipped with no SEO title or description at all.
   seoReady    Boolean   @default(false)
 
+  /// The Golden Warranty, carried by 45 of the 101 legacy products. Modelled as
+  /// a column rather than a badge string because it is a real commercial
+  /// promise the customer can filter on — and one of the few pages that earned
+  /// organic impressions on its own name in the legacy store.
+  hasGoldenWarranty Boolean @default(false)
+
   /// Aggregates, refreshed by a job. `salesCount` is shown on the product page
   /// as real social proof ("sold N times") instead of synthetic star ratings.
   salesCount  Int     @default(0)
