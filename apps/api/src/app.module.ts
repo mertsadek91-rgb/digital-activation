@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
+import { AdminModule } from './admin/admin.module.js';
+import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
@@ -10,8 +12,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
 /**
  * Release 1 modules land here as they are built, in this order:
  *
- *   auth        customers + staff, JWT, mandatory TOTP for staff
- *   rbac        role and field-level guards
+ *   auth        staff, JWT in httpOnly cookies, mandatory TOTP   [done]
+ *   rbac        role guard                                    [done]
  *   catalog     products, variants, categories, brands, media   [done]
  *   inventory   stock levels, timed reservations, movements
  *   vault       encrypted licence keys — the only importer of vaultPrisma
@@ -38,6 +40,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
     CatalogModule,
+    AuthModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

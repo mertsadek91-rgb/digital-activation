@@ -24,12 +24,14 @@
     "build": "tsc -p tsconfig.build.json",
     "doctor": "tsx scripts/db-doctor.ts",
     "roles": "tsx scripts/setup-roles.ts",
-    "import": "tsx scripts/import/index.ts"
+    "import": "tsx scripts/import/index.ts",
+    "staff": "tsx scripts/create-staff.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "catalog:",
     "@prisma/client": "catalog:",
     "@prisma/client-runtime-utils": "catalog:",
+    "argon2": "catalog:",
     "pg": "catalog:"
   },
   "devDependencies": {

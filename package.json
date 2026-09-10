@@ -27,6 +27,7 @@
     "db:studio": "pnpm --filter @da/db run studio",
     "db:seed": "pnpm --filter @da/db run seed",
     "db:import": "pnpm --filter @da/db run import",
+    "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
     "tunnel": "tsx scripts/tunnel.ts",
@@ -46,5 +47,10 @@
     "turbo": "^2.10.12",
     "typescript": "catalog:",
     "typescript-eslint": "catalog:"
+  },
+  "pnpm": {
+    "overrides": {
+      "fastify": "5.12.3"
+    }
   }
 }

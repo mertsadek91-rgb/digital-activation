@@ -1,3 +1,4 @@
+import fastifyCookie from '@fastify/cookie';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -21,9 +22,18 @@ async function bootstrap(): Promise<void> {
   // Routes validate with ZodPipe against those same schemas, so there is one
   // definition per shape and the storefront types against it too.
 
+  // The admin holds its session in httpOnly cookies rather than in JavaScript's
+  // reach, so the server has to be able to read and set them.
+  await app.register(fastifyCookie);
+
   app.enableCors({
     origin: [process.env.STOREFRONT_URL, process.env.ADMIN_URL].filter(Boolean) as string[],
     credentials: true,
+    // @fastify/cors advertises only GET, HEAD and POST unless told otherwise —
+    // unlike the Express middleware most examples assume. Left at the default,
+    // the browser blocks every PATCH from the admin panel at preflight, so
+    // publishing and stock edits fail in the UI while passing from curl.
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE'],
   });
 
   app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
