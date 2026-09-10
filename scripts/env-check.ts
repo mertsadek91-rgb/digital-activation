@@ -33,6 +33,28 @@ interface Finding {
 
 const findings: Finding[] = [];
 
+/**
+ * Mirrors dotenv's value handling, which is asymmetric in a way that matters:
+ *
+ *   KEY="value" # note   ->  value      (quoted, trailing comment discarded)
+ *   KEY=value   # note   ->  value      (unquoted, cut at the '#')
+ *   KEY=pa#ssword        ->  pa         (unquoted, cut at the '#' — silently)
+ *   KEY=        # note    ->  ''         (empty, not the note)
+ */
+function unquote(rawValue: string): string {
+  const value = rawValue.trim();
+  const quote = value.startsWith('"') ? '"' : value.startsWith("'") ? "'" : null;
+
+  if (quote) {
+    const closing = value.indexOf(quote, 1);
+    if (closing !== -1) return value.slice(1, closing);
+    return value.slice(1);
+  }
+
+  const hash = value.indexOf('#');
+  return (hash === -1 ? value : value.slice(0, hash)).trim();
+}
+
 function parseEnvFile(file: string): Map<string, string> {
   const out = new Map<string, string>();
   if (!fs.existsSync(file)) return out;
@@ -43,17 +65,9 @@ function parseEnvFile(file: string): Map<string, string> {
 
     const eq = line.indexOf('=');
     const key = line.slice(0, eq).trim();
-    let value = line.slice(eq + 1).trim();
+    const value = line.slice(eq + 1).trim();
 
-    // Mirror dotenv: quoted values keep everything inside the quotes,
-    // unquoted values end at an inline comment.
-    if (/^"(.*)"$/.test(value) || /^'(.*)'$/.test(value)) {
-      value = value.slice(1, -1);
-    } else {
-      const hash = value.indexOf(' #');
-      if (hash !== -1) value = value.slice(0, hash).trim();
-    }
-    out.set(key, value);
+    out.set(key, unquote(value));
   }
   return out;
 }
@@ -140,7 +154,40 @@ function describeUrl(key: string, value: string): void {
   }
 }
 
+/**
+ * dotenv truncates an unquoted value at its first '#'. A Coolify password
+ * containing one therefore arrives silently shortened, and the only symptom is
+ * an authentication failure that looks like a wrong password.
+ */
+function checkForTruncation(): void {
+  const file = path.join(ROOT, '.env');
+  if (!fs.existsSync(file)) return;
+
+  for (const raw of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#') || !line.includes('=')) continue;
+
+    const key = line.slice(0, line.indexOf('=')).trim();
+    const value = line.slice(line.indexOf('=') + 1).trim();
+    if (value.startsWith('"') || value.startsWith("'")) continue;
+
+    // A comment is written with whitespace before the '#'. A '#' pressed
+    // straight up against the value is part of the value the author meant —
+    // and is the case dotenv silently truncates.
+    const hash = value.indexOf('#');
+    if (hash > 0 && !/\s/.test(value[hash - 1] ?? '')) {
+      findings.push({
+        severity: 'error',
+        key,
+        message:
+          "value contains '#' with no space before it, so dotenv truncates it there. Wrap the whole value in double quotes.",
+      });
+    }
+  }
+}
+
 function main(): void {
+  checkForTruncation();
   const example = parseEnvFile(path.join(ROOT, '.env.example'));
   const actual = parseEnvFile(path.join(ROOT, '.env'));
 

@@ -49,7 +49,9 @@ workers/
 
 ```bash
 pnpm install
-cp .env.example .env          # then fill in the blanks
+cp .env.example .env
+pnpm secrets:generate         # fills every empty secret with real randomness
+pnpm env:check                # then fill in the rest, and verify
 pnpm infra:up                 # postgres, redis, meilisearch, mailpit
 pnpm db:migrate               # applies prisma/migrations
 pnpm db:seed                  # currencies, groups, brands, category tree
@@ -114,6 +116,8 @@ generated and a partial import can be safely re-run.
 | `pnpm dev`                     | every app and the worker in watch mode                                                                |
 | `pnpm build`                   | build all                                                                                             |
 | `pnpm typecheck`               | strict typecheck across the workspace                                                                 |
+| `pnpm secrets:generate`        | generate the local secrets into .env; `--print` for a set to paste into Coolify                       |
+| `pnpm env:check`               | diff .env against .env.example and flag unsafe values, without printing any                           |
 | `pnpm db:validate`             | validate the Prisma schema                                                                            |
 | `pnpm db:doctor`               | prove a real database is wired correctly, including that the vault is actually denied to the app role |
 | `pnpm db:migrate`              | create and apply a migration                                                                          |
