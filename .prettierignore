@@ -1,4 +1,9 @@
 Old Website/
+# Extracted legacy uploads and the media import's output.
+.cache/
+# Git worktrees the agent tooling creates for background tasks. Formatting
+# them from here edits another session's working tree.
+.claude/
 packages/db/generated/
 packages/db/prisma/migrations/
 dist/

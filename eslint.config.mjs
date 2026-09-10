@@ -10,6 +10,11 @@ export default tseslint.config(
       // Old Website/ — it is backup content, and it carries a decade of theme
       // JavaScript that has no place in this project's type-aware lint.
       '.cache/**',
+      // Git worktrees the agent tooling creates for background tasks. They are
+      // copies of this repo with their own tsconfig context, so linting them
+      // from here reports thousands of parse errors for code that is already
+      // linted in its own tree.
+      '.claude/**',
       '**/dist/**',
       '**/.next/**',
       '**/.turbo/**',

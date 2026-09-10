@@ -113,7 +113,13 @@ enum BackorderPolicy {
 
 enum StockReservationState {
   ACTIVE
+  /// The shopper removed the line, or the cart was emptied.
   RELEASED
+  /// The hold ran out of time. Kept distinct from RELEASED because the two
+  /// answer different questions: one says the shopper changed their mind, the
+  /// other says they walked away — and only the second is an abandoned cart.
+  EXPIRED
+  /// The hold became a sale; on-hand came down instead.
   CONSUMED
 
   @@schema("public")
