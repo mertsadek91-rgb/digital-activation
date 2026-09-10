@@ -6,6 +6,10 @@ export default tseslint.config(
   {
     ignores: [
       'Old Website/**',
+      // Extracted legacy uploads and the media import's output. Same reason as
+      // Old Website/ — it is backup content, and it carries a decade of theme
+      // JavaScript that has no place in this project's type-aware lint.
+      '.cache/**',
       '**/dist/**',
       '**/.next/**',
       '**/.turbo/**',

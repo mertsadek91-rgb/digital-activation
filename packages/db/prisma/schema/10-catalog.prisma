@@ -314,6 +314,11 @@ model ProductMedia {
   position  Int      @default(0)
   isHero    Boolean  @default(false)
 
+  /// This does NOT constrain product-level images: Postgres treats NULLs as
+  /// distinct, and a product-level row is the one whose variantId is NULL. A
+  /// partial unique index over (productId, assetId) WHERE variantId IS NULL
+  /// covers that case and lives in the migration, since Prisma cannot express
+  /// a partial index.
   @@unique([productId, assetId, variantId])
   @@index([productId, position])
   @@schema("public")

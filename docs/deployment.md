@@ -244,7 +244,34 @@ redeploy or a host migration cannot lose them.
 
 The storefront reads `S3_PUBLIC_BASE_URL` at build time to allowlist that
 hostname for `next/image`. Miss it and images silently fail to optimise rather
-than erroring, which is easy not to notice.
+than erroring, which is easy not to notice. If the value carries a path it needs
+a trailing slash — object keys resolve against it as relative URLs, so
+`.../media` drops the segment and every image 404s from the bucket root.
+
+Public read access is also required, and it is not the API token's job: the
+token lets this project write, the custom domain lets browsers read. Binding
+the domain under R2 → the bucket → Settings → Custom Domains is what makes the
+objects reachable; a bucket with a token and no public domain uploads fine and
+serves nothing.
+
+### Loading the media
+
+Once those five values are set:
+
+```
+pnpm db:media              # report only
+pnpm db:media -- --apply   # upload, then record
+```
+
+The dry run extracts `wp-content/uploads` out of the site tarball into
+`.cache/`, converts every image, writes the results and a `manifest.json` to
+`.cache/media-out/` for inspection, and touches neither R2 nor the database.
+`--apply` does the same work, refuses up front if a credential is missing, and
+verifies each object with a `HeadObject` before recording it.
+
+Keys are the SHA-256 of the converted bytes, so re-running is idempotent: the
+same image lands on the same key, and a partial unique index stops a product
+collecting the same picture twice.
 
 ## 7. Payment secrets
 

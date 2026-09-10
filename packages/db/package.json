@@ -25,6 +25,7 @@
     "doctor": "tsx scripts/db-doctor.ts",
     "roles": "tsx scripts/setup-roles.ts",
     "import": "tsx scripts/import/index.ts",
+    "media": "tsx scripts/media/index.ts",
     "staff": "tsx scripts/create-staff.ts"
   },
   "dependencies": {
@@ -35,12 +36,14 @@
     "pg": "catalog:"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "catalog:",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
     "dotenv": "catalog:",
-    "fast-xml-parser": "^5.11.1",
+    "fast-xml-parser": "catalog:",
     "prisma": "catalog:",
     "rimraf": "catalog:",
+    "sharp": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

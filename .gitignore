@@ -10,6 +10,10 @@ Old Website/
 *.tar.gz
 *.wpress
 
+# Extracted legacy uploads and the media import's processed output. Same rule
+# as Old Website/ — it comes out of the backup, so it never goes in the repo.
+.cache/
+
 # secrets
 .env
 .env.*
