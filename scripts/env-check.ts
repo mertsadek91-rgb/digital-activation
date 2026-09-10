@@ -189,10 +189,46 @@ function checkForTruncation(): void {
   }
 }
 
+/**
+ * The three database URLs describe one database reached by three roles. They
+ * must therefore agree on host, port and database name and differ only in
+ * credentials. Updating one and forgetting the others is the easy mistake, and
+ * it fails confusingly: the app connects while migrations hit a dead localhost.
+ */
+function checkDatabaseUrlsAgree(env: Map<string, string>): void {
+  const keys = ['DATABASE_URL', 'DATABASE_URL_MIGRATE', 'DATABASE_URL_VAULT'] as const;
+  const targets = new Map<string, string[]>();
+
+  for (const key of keys) {
+    const value = env.get(key);
+    if (!value) continue;
+    try {
+      const url = new URL(value);
+      const target = `${url.hostname}:${url.port || '5432'}${url.pathname}`;
+      targets.set(target, [...(targets.get(target) ?? []), key]);
+    } catch {
+      // describeUrl already reports an unparseable URL.
+    }
+  }
+
+  if (targets.size <= 1) return;
+
+  const summary = [...targets.entries()]
+    .map(([target, owners]) => `${target} (${owners.join(', ')})`)
+    .join(' vs ');
+
+  findings.push({
+    severity: 'error',
+    key: 'DATABASE_URL*',
+    message: `the three database URLs point at different databases: ${summary}. They should differ only in the role and password.`,
+  });
+}
+
 function main(): void {
   checkForTruncation();
   const example = parseEnvFile(path.join(ROOT, '.env.example'));
   const actual = parseEnvFile(path.join(ROOT, '.env'));
+  checkDatabaseUrlsAgree(actual);
 
   if (actual.size === 0) {
     console.error('No .env found at the repo root. Start with: cp .env.example .env');
