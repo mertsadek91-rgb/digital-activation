@@ -40,13 +40,49 @@ function createClient(envVar: 'DATABASE_URL' | 'DATABASE_URL_VAULT'): PrismaClie
   });
 }
 
-export const prisma: PrismaClient = globalThis.__daPrisma ?? createClient('DATABASE_URL');
+/**
+ * Constructed on first use, not on import.
+ *
+ * Importing this package must not require the environment to be loaded yet.
+ * ES module imports are hoisted, so a script that calls `dotenv` before its
+ * `import { prisma }` line still evaluates this module first — and eager
+ * construction turned that into "DATABASE_URL is not set" from a file that had
+ * just set it. Deferring also means a process that imports the package but
+ * never touches the database opens no connection.
+ */
+function lazyClient(
+  envVar: 'DATABASE_URL' | 'DATABASE_URL_VAULT',
+  cacheKey: '__daPrisma' | '__daVaultPrisma',
+): PrismaClient {
+  let instance: PrismaClient | undefined;
+
+  const resolve = (): PrismaClient => {
+    instance ??= globalThis[cacheKey] ?? createClient(envVar);
+    // Reused across dev hot reloads so we do not exhaust the connection pool.
+    if (!isProd) globalThis[cacheKey] = instance;
+    return instance;
+  };
+
+  return new Proxy({} as PrismaClient, {
+    get(_target, property, receiver): unknown {
+      const client = resolve();
+      const value: unknown = Reflect.get(client, property, receiver);
+      // Methods must keep the real client as their receiver, or `this` would be
+      // the empty proxy target.
+      return typeof value === 'function'
+        ? (value as (...args: never[]) => unknown).bind(client)
+        : value;
+    },
+    has(_target, property) {
+      return Reflect.has(resolve(), property);
+    },
+    getPrototypeOf() {
+      return Reflect.getPrototypeOf(resolve());
+    },
+  });
+}
+
+export const prisma: PrismaClient = lazyClient('DATABASE_URL', '__daPrisma');
 
 /** Do not import outside the licence-vault module. */
-export const vaultPrisma: PrismaClient =
-  globalThis.__daVaultPrisma ?? createClient('DATABASE_URL_VAULT');
-
-if (!isProd) {
-  globalThis.__daPrisma = prisma;
-  globalThis.__daVaultPrisma = vaultPrisma;
-}
+export const vaultPrisma: PrismaClient = lazyClient('DATABASE_URL_VAULT', '__daVaultPrisma');

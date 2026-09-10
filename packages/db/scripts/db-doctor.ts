@@ -169,15 +169,18 @@ async function main(): Promise<void> {
           : `${m?.total ?? 0} applied, latest ${m?.latest ?? 'none'}`,
       );
 
+      // Prisma's own bookkeeping table is not part of the model.
       const tables = await migrate.query<{ n: string }>(
         `SELECT count(*)::text AS n FROM information_schema.tables
-          WHERE table_schema IN ('public','vault') AND table_type = 'BASE TABLE'`,
+          WHERE table_schema IN ('public','vault')
+            AND table_type = 'BASE TABLE'
+            AND table_name <> '_prisma_migrations'`,
       );
       const n = Number(tables.rows[0]?.n ?? 0);
       record(
-        'table count',
-        n >= 64 ? 'pass' : 'warn',
-        `${n} tables (expected 64 after the init migration)`,
+        'model tables',
+        n === 64 ? 'pass' : 'warn',
+        `${n} of 64 — ${n === 64 ? 'complete' : 'the schema and the database disagree'}`,
       );
     } catch {
       record(

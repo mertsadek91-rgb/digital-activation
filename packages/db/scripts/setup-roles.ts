@@ -24,21 +24,23 @@ import { Client } from 'pg';
 loadEnv({ path: path.join(__dirname, '..', '..', '..', '.env'), quiet: true });
 
 /**
- * Builds DDL server-side with format(%L / %I) and then executes it.
- *
  * CREATE ROLE takes no bind parameters for a password, so the value has to be
- * interpolated. Having Postgres do the quoting is the difference between that
- * being safe and being an injection point.
+ * interpolated into the statement text. The quoting is therefore what stands
+ * between this and an injection point, and it is done by `pg`'s own
+ * `escapeLiteral` / `escapeIdentifier` rather than by hand.
+ *
+ * An earlier version had Postgres build the DDL with `format(%L, %I)` over a
+ * round trip. That looked tidier but hung: `format` is VARIADIC "any", and
+ * Postgres cannot infer the type of an untyped bind parameter in that position,
+ * which left the client waiting on a statement the server had already parked.
+ * Escaping client-side is both correct and one round trip instead of two.
  */
-async function execFormatted(client: Client, template: string, args: unknown[]): Promise<void> {
-  const placeholders = args.map((_, i) => `$${i + 2}`).join(', ');
-  const { rows } = await client.query<{ ddl: string }>(
-    `SELECT format($1${placeholders ? `, ${placeholders}` : ''}) AS ddl`,
-    [template, ...args],
-  );
-  const ddl = rows[0]?.ddl;
-  if (!ddl) throw new Error(`format() returned nothing for: ${template}`);
-  await client.query(ddl);
+function ident(client: Client, value: string): string {
+  return client.escapeIdentifier(value);
+}
+
+function literal(client: Client, value: string): string {
+  return client.escapeLiteral(value);
 }
 
 async function roleExists(client: Client, role: string): Promise<boolean> {
@@ -81,35 +83,44 @@ async function main(): Promise<void> {
     `connected to ${whoami[0]?.db ?? '?'} as ${owner} (Postgres ${whoami[0]?.version ?? '?'})`,
   );
 
+  const ownerId = ident(client, owner);
+
   await client.query('CREATE SCHEMA IF NOT EXISTS vault');
 
   for (const role of ROLES) {
     const password = process.env[role.passwordEnv] ?? '';
     const exists = await roleExists(client, role.name);
 
+    const roleId = ident(client, role.name);
+
     if (exists) {
-      await execFormatted(client, 'ALTER ROLE %I PASSWORD %L', [role.name, password]);
+      await client.query(`ALTER ROLE ${roleId} PASSWORD ${literal(client, password)}`);
       console.log(`role ${role.name}: existed, password synced`);
     } else {
-      await execFormatted(client, 'CREATE ROLE %I LOGIN PASSWORD %L', [role.name, password]);
+      await client.query(`CREATE ROLE ${roleId} LOGIN PASSWORD ${literal(client, password)}`);
       console.log(`role ${role.name}: created`);
     }
 
-    await execFormatted(client, 'ALTER ROLE %I NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS', [
-      role.name,
-    ]);
-    await execFormatted(client, 'ALTER ROLE %I CONNECTION LIMIT %s', [
-      role.name,
-      role.connectionLimit,
-    ]);
+    await client.query(`ALTER ROLE ${roleId} NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`);
+    await client.query(`ALTER ROLE ${roleId} CONNECTION LIMIT ${role.connectionLimit}`);
   }
 
   // Nothing is granted by default.
   await client.query('REVOKE ALL ON SCHEMA public FROM PUBLIC');
   await client.query('REVOKE ALL ON SCHEMA vault FROM PUBLIC');
-  await execFormatted(client, 'REVOKE ALL ON DATABASE %I FROM PUBLIC', [
-    whoami[0]?.db ?? 'postgres',
-  ]);
+
+  // Database-level CONNECT is left alone on the default maintenance database.
+  // Coolify's Postgres resource came up as postgres/postgres — its Username and
+  // Initial Database fields never applied — and revoking PUBLIC's rights on the
+  // maintenance database is the kind of change that surprises platform tooling
+  // later. The schema-level revokes above are what the vault isolation rests
+  // on; this one is only hygiene.
+  const dbName = whoami[0]?.db ?? '';
+  if (!['postgres', 'template0', 'template1'].includes(dbName)) {
+    await client.query(`REVOKE ALL ON DATABASE ${ident(client, dbName)} FROM PUBLIC`);
+  } else {
+    console.log(`database ${dbName}: skipping database-level REVOKE (maintenance database)`);
+  }
 
   // --- da_app: public only, and explicitly denied the vault -----------------
   const appStatements = [
@@ -122,15 +133,11 @@ async function main(): Promise<void> {
   ];
   for (const statement of appStatements) await client.query(statement);
 
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO da_app',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO da_app`,
   );
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO da_app',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO da_app`,
   );
   console.log('da_app: granted public, denied vault');
 
@@ -147,25 +154,17 @@ async function main(): Promise<void> {
   ];
   for (const statement of vaultStatements) await client.query(statement);
 
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA vault GRANT SELECT, INSERT, UPDATE ON TABLES TO da_vault',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA vault GRANT SELECT, INSERT, UPDATE ON TABLES TO da_vault`,
   );
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA vault REVOKE DELETE ON TABLES FROM da_vault',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA vault REVOKE DELETE ON TABLES FROM da_vault`,
   );
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA vault GRANT USAGE, SELECT ON SEQUENCES TO da_vault',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA vault GRANT USAGE, SELECT ON SEQUENCES TO da_vault`,
   );
-  await execFormatted(
-    client,
-    'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA public GRANT SELECT ON TABLES TO da_vault',
-    [owner],
+  await client.query(
+    `ALTER DEFAULT PRIVILEGES FOR ROLE ${ownerId} IN SCHEMA public GRANT SELECT ON TABLES TO da_vault`,
   );
   console.log('da_vault: granted vault (no DELETE) and read-only public');
 
