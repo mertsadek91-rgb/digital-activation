@@ -2,13 +2,18 @@ import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply } from 'fastify';
-import { type StaffLoginResult, type StaffMe, staffLoginSchema } from '@da/contracts';
+import {
+  changePasswordSchema,
+  type StaffLoginResult,
+  type StaffMe,
+  staffLoginSchema,
+} from '@da/contracts';
 import { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { AuthService, type SessionResult } from './auth.service.js';
-import { StaffGuard, type StaffRequest } from './staff.guard.js';
+import { StaffGuard, StalePasswordOk, type StaffRequest } from './staff.guard.js';
 
 const ACCESS_COOKIE = 'da_access';
 const REFRESH_COOKIE = 'da_refresh';
@@ -109,8 +114,35 @@ export class AuthController {
   }
 
   @UseGuards(StaffGuard)
+  @StalePasswordOk()
   @Get('me')
   me(@Req() request: StaffRequest): Promise<StaffMe> {
     return this.auth.me(request.staff?.sub ?? '');
+  }
+
+  /**
+   * Reachable while the account is still on its generated password — that is
+   * the whole point of it. Throttled like the login routes, because it takes a
+   * password as input and so is a guessing target in its own right.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseGuards(StaffGuard)
+  @StalePasswordOk()
+  @Post('password')
+  @ApiOperation({ summary: 'Set a new password; revokes every other session' })
+  async changePassword(
+    @Body(new ZodPipe(changePasswordSchema)) body: z.infer<typeof changePasswordSchema>,
+    @Req() request: StaffRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ staff: StaffMe }> {
+    const session = await this.auth.changePassword(
+      request.staff?.sub ?? '',
+      body.currentPassword,
+      body.newPassword,
+      { ip: request.ip, userAgent: request.headers['user-agent'] },
+    );
+    // The old cookies point at a session that was just revoked.
+    this.setCookies(reply, session);
+    return { staff: session.staff };
   }
 }

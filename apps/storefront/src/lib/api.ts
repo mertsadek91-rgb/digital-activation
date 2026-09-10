@@ -13,8 +13,10 @@
 import {
   type CatalogCollection,
   type CatalogProduct,
+  type Home,
   catalogCollectionSchema,
   catalogProductSchema,
+  homeSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
@@ -86,6 +88,10 @@ async function request<T>(
     return null;
   }
   return parsed.data;
+}
+
+export function getHome(options: FetchOptions): Promise<Home | null> {
+  return request('/catalog/home', options, homeSchema);
 }
 
 export function getCollections(options: FetchOptions): Promise<CollectionSummary[] | null> {

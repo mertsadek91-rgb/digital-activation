@@ -9,6 +9,7 @@ import { AuditService } from './audit.service.js';
 import {
   decryptSecret,
   encryptSecret,
+  hashPassword,
   hashToken,
   newRefreshToken,
   verifyPassword,
@@ -18,6 +19,13 @@ import { createEnrollment, verifyTotp } from './totp.js';
 export interface AccessClaims {
   sub: string;
   role: StaffRole;
+  /**
+   * True while the account is still on the password the create-staff script
+   * printed. Carried in the token so StaffGuard needs no database read, and
+   * cleared by issuing a fresh session — which is what changing a password
+   * should do anyway.
+   */
+  mustChange: boolean;
   /** When the session last cleared a TOTP challenge, as a unix timestamp.
    *  Step-up actions — revealing a licence key, bulk export — require a recent
    *  one, so a long-lived session cannot be used to walk the vault. */
@@ -68,6 +76,7 @@ export class AuthService {
       name: staff.name,
       role: staff.role,
       totpEnrolled: staff.totpEnabledAt !== null,
+      mustChangePassword: staff.mustChangePassword,
     };
   }
 
@@ -225,6 +234,7 @@ export class AuthService {
     const claims: AccessClaims = {
       sub: staff.id,
       role: staff.role,
+      mustChange: staff.mustChangePassword,
       totpAt: Math.floor(Date.now() / 1000),
     };
 
@@ -270,6 +280,7 @@ export class AuthService {
     const claims: AccessClaims = {
       sub: session.staff.id,
       role: session.staff.role,
+      mustChange: session.staff.mustChangePassword,
       totpAt: Math.floor((session.totpVerifiedAt ?? session.createdAt).getTime() / 1000),
     };
 
@@ -302,6 +313,63 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Your session has expired.');
     }
+  }
+
+  /**
+   * Sets a password of the account holder's own.
+   *
+   * Every other session is revoked, not just refreshed. If the printed password
+   * did leak, this is the moment that closes the leak — leaving other sessions
+   * alive would make the change cosmetic.
+   */
+  async changePassword(
+    staffId: string,
+    currentPassword: string,
+    newPassword: string,
+    context: RequestContext,
+  ): Promise<SessionResult> {
+    const staff = await this.prisma.client.staffUser.findUnique({ where: { id: staffId } });
+    if (!staff?.isActive) throw new UnauthorizedException('This account is no longer active.');
+
+    if (!(await verifyPassword(staff.passwordHash, currentPassword))) {
+      await this.audit.record({
+        actorId: staff.id,
+        entity: 'StaffUser',
+        entityId: staff.id,
+        action: 'password.change.failed',
+        ip: context.ip,
+        userAgent: context.userAgent,
+      });
+      throw new UnauthorizedException('The current password is incorrect.');
+    }
+
+    const updated = await this.prisma.client.staffUser.update({
+      where: { id: staff.id },
+      data: {
+        passwordHash: await hashPassword(newPassword),
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+      },
+    });
+
+    await this.prisma.client.staffSession.updateMany({
+      where: { staffId: staff.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    await this.audit.record({
+      actorId: staff.id,
+      entity: 'StaffUser',
+      entityId: staff.id,
+      action: 'password.changed',
+      // The password itself is never an audit value, hashed or otherwise.
+      before: { mustChangePassword: staff.mustChangePassword },
+      after: { mustChangePassword: false },
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    return this.issueSession(updated, context);
   }
 
   async me(staffId: string): Promise<StaffMe> {

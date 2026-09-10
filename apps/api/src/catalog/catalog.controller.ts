@@ -4,6 +4,7 @@ import {
   type CatalogCollection,
   type CatalogProduct,
   type CatalogQuery,
+  type Home,
   catalogQuerySchema,
 } from '@da/contracts';
 
@@ -15,6 +16,12 @@ import { CatalogService } from './catalog.service.js';
 @Controller('catalog')
 export class CatalogController {
   constructor(private readonly catalog: CatalogService) {}
+
+  @Get('home')
+  @ApiOperation({ summary: 'Everything the home page renders, in one response' })
+  home(@Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery): Promise<Home> {
+    return this.catalog.home(query);
+  }
 
   @Get('collections')
   @ApiOperation({ summary: 'Every collection with its published product count' })

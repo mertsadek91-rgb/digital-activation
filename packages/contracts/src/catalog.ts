@@ -150,6 +150,52 @@ export const catalogCollectionSchema = z.object({
 });
 export type CatalogCollection = z.infer<typeof catalogCollectionSchema>;
 
+// --- home -------------------------------------------------------------------
+
+/**
+ * The home page, in one response.
+ *
+ * Composed on the server rather than assembled from six storefront requests.
+ * The home page is the most-linked page on the site and the one an AI crawler
+ * fetches first, so it has to answer in a single round trip — and every number
+ * on it has to come from the catalog rather than from a copywriter, or the page
+ * starts claiming a range it does not stock.
+ */
+export const homeLinkSchema = z.object({
+  slug: slugSchema,
+  name: z.string(),
+  headline: z.string().nullable(),
+  href: z.string(),
+  productCount: z.number().int().min(0),
+});
+
+export const homeRailSchema = homeLinkSchema.extend({
+  products: z.array(catalogCardSchema),
+});
+export type HomeRail = z.infer<typeof homeRailSchema>;
+
+export const homeSchema = z.object({
+  locale: localeSchema,
+  currency: z.string().length(3),
+  /** Shop-by-category grid. Top-level categories that actually hold stock. */
+  categories: z.array(homeLinkSchema),
+  /** One row per category with enough products to be worth a row. */
+  rails: z.array(homeRailSchema),
+  bestSellers: z.array(catalogCardSchema),
+  newest: z.array(catalogCardSchema),
+  brands: z.array(homeLinkSchema),
+  /** Real catalog size, for the hero. Not a rounded boast. */
+  productCount: z.number().int().min(0),
+  /** True when the response includes drafts, i.e. this is a preview host. */
+  isPreview: z.boolean(),
+});
+export type Home = z.infer<typeof homeSchema>;
+
+/** A rail below this is a ragged row, so it is dropped rather than padded. */
+export const RAIL_MIN_PRODUCTS = 3;
+/** Cards per rail. Four fills the row at desktop and scrolls on mobile. */
+export const RAIL_SIZE = 4;
+
 // --- request contracts ------------------------------------------------------
 
 export const catalogQuerySchema = paginationSchema.extend({

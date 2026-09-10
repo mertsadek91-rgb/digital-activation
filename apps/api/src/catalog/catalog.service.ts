@@ -5,8 +5,12 @@ import {
   type CatalogProduct,
   type CatalogQuery,
   type CatalogVariant,
+  type Home,
+  type HomeRail,
   blockDocumentSchema,
   faqItemsSchema,
+  RAIL_MIN_PRODUCTS,
+  RAIL_SIZE,
   ROUTES,
   SALES_PROOF_THRESHOLD,
 } from '@da/contracts';
@@ -189,6 +193,104 @@ export class CatalogService {
       total,
       page: query.page,
       perPage: query.perPage,
+    };
+  }
+
+  // --- home -----------------------------------------------------------------
+
+  /**
+   * Everything the home page renders, in one query pass.
+   *
+   * Two rules hold this together. Nothing is padded: a category with fewer
+   * than RAIL_MIN_PRODUCTS products is dropped rather than shown as a ragged
+   * row, because a row with one card in it reads as a broken page. And nothing
+   * is invented: the counts, the brands and the "best selling" order all come
+   * out of the catalog, so the page cannot advertise a range that is not there.
+   */
+  async home(query: CatalogQuery): Promise<Home> {
+    const locale = this.localeFor(query);
+    const status = this.statusFilter(query);
+    const fx = await this.fxTable();
+
+    const [categories, brands, productCount, bestSellers, newest] = await Promise.all([
+      this.prisma.client.category.findMany({
+        // Top level only. A rail per leaf category would be forty rows.
+        where: { parentId: null },
+        orderBy: [{ position: 'asc' }, { slug: 'asc' }],
+        include: {
+          translations: { where: { locale } },
+          products: {
+            where: { product: status },
+            orderBy: [{ position: 'asc' }],
+            include: this.cardInclude(locale),
+          },
+        },
+      }),
+      this.prisma.client.brand.findMany({
+        orderBy: [{ position: 'asc' }, { slug: 'asc' }],
+        include: {
+          translations: { where: { locale } },
+          _count: { select: { products: { where: status } } },
+        },
+      }),
+      this.prisma.client.product.count({ where: status }),
+      this.prisma.client.product.findMany({
+        where: { ...status, salesCount: { gte: SALES_PROOF_THRESHOLD } },
+        orderBy: { salesCount: 'desc' },
+        take: RAIL_SIZE * 2,
+        include: this.cardInclude(locale).product.include,
+      }),
+      this.prisma.client.product.findMany({
+        where: status,
+        // A draft has no publishedAt, so preview falls back to creation order.
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        take: RAIL_SIZE * 2,
+        include: this.cardInclude(locale).product.include,
+      }),
+    ]);
+
+    const links = categories.map((category) => ({
+      slug: category.slug,
+      name: category.translations[0]?.name ?? category.slug,
+      headline: category.translations[0]?.headline ?? null,
+      href: ROUTES.collection(category.slug),
+      productCount: category.products.length,
+    }));
+
+    const rails: HomeRail[] = categories
+      .map((category, index) => ({
+        ...links[index],
+        slug: category.slug,
+        name: category.translations[0]?.name ?? category.slug,
+        headline: category.translations[0]?.headline ?? null,
+        href: ROUTES.collection(category.slug),
+        productCount: category.products.length,
+        products: category.products
+          .slice(0, RAIL_SIZE)
+          .map((link) => this.toCard(link.product, query.currency, fx)),
+      }))
+      .filter((rail) => rail.products.length >= RAIL_MIN_PRODUCTS);
+
+    return {
+      locale: query.locale,
+      currency: query.currency,
+      categories: links.filter((link) => link.productCount > 0),
+      rails,
+      bestSellers: bestSellers
+        .slice(0, RAIL_SIZE)
+        .map((product) => this.toCard(product, query.currency, fx)),
+      newest: newest.slice(0, RAIL_SIZE).map((product) => this.toCard(product, query.currency, fx)),
+      brands: brands
+        .filter((brand) => brand._count.products > 0)
+        .map((brand) => ({
+          slug: brand.slug,
+          name: brand.translations[0]?.name ?? brand.name,
+          headline: null,
+          href: ROUTES.brand(brand.slug),
+          productCount: brand._count.products,
+        })),
+      productCount,
+      isPreview: status.status === undefined,
     };
   }
 

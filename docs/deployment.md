@@ -242,6 +242,13 @@ redeploy or a host migration cannot lose them.
    `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION=auto`,
    `S3_PUBLIC_BASE_URL=https://cdn.digital-activation.com`.
 
+`S3_ENDPOINT` is the account endpoint and nothing more. The bucket's _S3 API_
+field in the dashboard shows that endpoint with the bucket name appended, and
+copying it whole doubles the segment: under `forcePathStyle` the SDK adds the
+bucket itself from `S3_BUCKET`, so every request goes to
+`/digital-activation-media/digital-activation-media/...` and fails as
+`NoSuchBucket` — naming a bucket that plainly does exist.
+
 The storefront reads `S3_PUBLIC_BASE_URL` at build time to allowlist that
 hostname for `next/image`. Miss it and images silently fail to optimise rather
 than erroring, which is easy not to notice. If the value carries a path it needs

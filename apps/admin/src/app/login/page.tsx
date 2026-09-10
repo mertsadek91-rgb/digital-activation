@@ -35,15 +35,15 @@ export default function LoginPage() {
 
     try {
       if (stage.kind === 'enroll') {
-        await api.enroll(email, password, totp);
-        router.push('/products');
+        const enrolled = await api.enroll(email, password, totp);
+        router.push(enrolled.staff.mustChangePassword ? '/password' : '/products');
         return;
       }
 
       const result = await api.login(email, password, stage.kind === 'code' ? totp : undefined);
 
       if (result.outcome === 'ok') {
-        router.push('/products');
+        router.push(result.staff.mustChangePassword ? '/password' : '/products');
       } else if (result.outcome === 'totp_required') {
         setStage({ kind: 'code' });
       } else {

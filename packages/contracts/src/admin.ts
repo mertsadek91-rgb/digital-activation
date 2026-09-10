@@ -139,7 +139,34 @@ export const staffMeSchema = z.object({
   name: z.string(),
   role: z.enum(['OWNER', 'ADMIN', 'CATALOG', 'MARKETING', 'SUPPORT', 'FULFILLMENT', 'READONLY']),
   totpEnrolled: z.boolean(),
+  /**
+   * True while the account is still on the password pnpm db:staff generated
+   * and printed. The session exists, and every route but the change-password
+   * one refuses, so the panel routes straight there.
+   */
+  mustChangePassword: z.boolean(),
 });
+
+/**
+ * Setting a password of one's own.
+ *
+ * The current password is required even though the session already proves who
+ * this is: it stops a borrowed screen becoming a permanent takeover, and it is
+ * the one thing an attacker holding a session cookie does not have.
+ */
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    // Length over composition rules. A 12-character passphrase beats an
+    // 8-character one with a digit and a symbol bolted on, and the rules only
+    // ever teach people to write Password1!.
+    newPassword: z.string().min(12).max(200),
+  })
+  .refine((value) => value.newPassword !== value.currentPassword, {
+    message: 'The new password must differ from the current one.',
+    path: ['newPassword'],
+  });
+export type ChangePassword = z.infer<typeof changePasswordSchema>;
 export type StaffMe = z.infer<typeof staffMeSchema>;
 
 /**

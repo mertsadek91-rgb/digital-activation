@@ -129,6 +129,13 @@ model StaffUser {
   passwordHash String
   role         StaffRole @default(READONLY)
 
+  /// Set when an account is created or reset by pnpm db:staff, which prints
+  /// the generated password to a terminal. A password that has been on a
+  /// screen is not the owner's password yet, so the session is issued but
+  /// every route except "change my password" refuses until this clears.
+  mustChangePassword Boolean   @default(false)
+  passwordChangedAt  DateTime?
+
   /// TOTP is mandatory: the API refuses privileged routes while
   /// totpEnabledAt is null. Secret is encrypted at the application layer.
   totpSecret     Bytes?

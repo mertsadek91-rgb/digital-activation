@@ -66,6 +66,12 @@ export const api = {
 
   logout: () => request<{ ok: true }>('/auth/staff/logout', { method: 'POST' }),
 
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ staff: StaffMe }>('/auth/staff/password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
+
   products: (params: { status?: string; q?: string; page?: number; perPage?: number }) => {
     const search = new URLSearchParams();
     if (params.status && params.status !== 'all') search.set('status', params.status);

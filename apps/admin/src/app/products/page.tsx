@@ -75,7 +75,14 @@ export default function ProductsPage() {
   useEffect(() => {
     void (async () => {
       try {
-        setMe(await api.me());
+        const staff = await api.me();
+        // Nothing else on this page would load anyway: the API refuses every
+        // route while the account is on its generated password.
+        if (staff.mustChangePassword) {
+          router.push('/password');
+          return;
+        }
+        setMe(staff);
       } catch {
         router.push('/login');
       }
@@ -129,15 +136,20 @@ export default function ProductsPage() {
             {me.totpEnrolled ? '' : ' · المصادقة الثنائية غير مسجّلة'}
           </p>
         </div>
-        <button
-          type="button"
-          className="ghost"
-          onClick={() => {
-            void api.logout().then(() => router.push('/login'));
-          }}
-        >
-          خروج
-        </button>
+        <div className="actions">
+          <button type="button" className="ghost" onClick={() => router.push('/password')}>
+            كلمة المرور
+          </button>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => {
+              void api.logout().then(() => router.push('/login'));
+            }}
+          >
+            خروج
+          </button>
+        </div>
       </header>
 
       <nav className="chips">
