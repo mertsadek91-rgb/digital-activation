@@ -18,6 +18,7 @@
     "test": "turbo run test",
     "clean": "turbo run clean && rimraf node_modules",
     "db:generate": "pnpm --filter @da/db run generate",
+    "db:roles": "pnpm --filter @da/db run roles",
     "db:migrate": "pnpm --filter @da/db run migrate",
     "db:validate": "pnpm --filter @da/db run validate",
     "db:doctor": "pnpm --filter @da/db run doctor",
