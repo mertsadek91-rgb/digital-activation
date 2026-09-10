@@ -9,12 +9,17 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
-      // Stripe and PayPal webhook signatures are computed over the raw body,
-      // so it has to survive JSON parsing intact.
       bodyLimit: 2 * 1024 * 1024,
       trustProxy: true,
     }),
-    { bufferLogs: true },
+    {
+      bufferLogs: true,
+      // Webhook signatures are computed over the exact bytes the provider
+      // sent, so the raw body has to survive JSON parsing. Without this the
+      // Stripe webhook cannot verify anything and every event is rejected —
+      // which looks like a Stripe problem and is not one.
+      rawBody: true,
+    },
   );
 
   // No global ValidationPipe: it is built on class-validator, which would mean

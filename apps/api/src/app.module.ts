@@ -6,6 +6,7 @@ import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
+import { CheckoutModule } from './checkout/checkout.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -42,6 +43,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PrismaModule,
     CatalogModule,
     CartModule,
+    CheckoutModule,
     AuthModule,
     AdminModule,
   ],
