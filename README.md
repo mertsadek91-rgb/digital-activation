@@ -123,6 +123,7 @@ generated and a partial import can be safely re-run.
 | `pnpm db:migrate`              | create and apply a migration                                                                          |
 | `pnpm db:studio`               | Prisma Studio                                                                                         |
 | `pnpm infra:up` / `infra:down` | local services                                                                                        |
+| `pnpm tunnel`                  | forward the Coolify postgres/redis/meilisearch to localhost over SSH, to develop against real data    |
 
 Deploying to Coolify: see [`docs/deployment.md`](docs/deployment.md).
 

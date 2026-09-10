@@ -77,24 +77,32 @@ API, the worker and the storefront all run inside that network, and a
 development machine runs its own stack via `pnpm infra:up`. So none of the three
 gets a public port.
 
-The one real exception is the first migration, before any application is
-deployed to run it. Do not publish the port to the internet for that. Bind it
-to the server's loopback interface instead —
+Two cases do need reaching it from a laptop: the first migration, before any
+application is deployed to run it, and developing against the real services
+rather than a local Docker stack. Neither needs a public port.
+
+Bind each resource to the server's loopback interface — in Ports Mappings:
 
 ```
-127.0.0.1:5432:5432
+127.0.0.1:5432:5432     postgres
+127.0.0.1:6379:6379     redis
+127.0.0.1:7700:7700     meilisearch
 ```
 
-— which makes it reachable from the VPS itself and nowhere else, then tunnel
-over SSH from the laptop:
+That makes them reachable from the VPS itself and nowhere else. Then:
 
 ```bash
-ssh -N -L 5432:127.0.0.1:5432 <user>@<server-ip>
+pnpm tunnel
 ```
 
-`localhost:5432` on the laptop now reaches the production database through an
-encrypted channel with zero public exposure. The same works for Redis (6379) and
-Meilisearch (7700) whenever one needs inspecting.
+which forwards all three to the same ports locally over SSH. It needs
+`TUNNEL_SSH_HOST` in `.env`.
+
+The reason to prefer this over a published port is not only exposure. Every URL
+in `.env` stays on `localhost`, so **the same file works whether you are
+tunnelled to Coolify or running `pnpm infra:up` locally** — there is no
+configuration to remember to change at deploy time, which is exactly where that
+kind of thing gets forgotten.
 
 Once the API is deployed, migrations run as its release command from inside the
 network and the tunnel stops being needed at all.

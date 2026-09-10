@@ -26,6 +26,7 @@
     "db:seed": "pnpm --filter @da/db run seed",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
+    "tunnel": "tsx scripts/tunnel.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
     "lint:fix": "eslint . --fix"
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@eslint/js": "catalog:",
     "@types/node": "catalog:",
+    "dotenv": "catalog:",
     "eslint": "catalog:",
     "globals": "catalog:",
     "prettier": "catalog:",
