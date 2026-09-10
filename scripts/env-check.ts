@@ -137,19 +137,22 @@ function describeUrl(key: string, value: string): void {
     message: `${scheme}://${host}${port}${hasCredential ? ' (credentials present)' : ''}`,
   });
 
-  if (INTERNAL_ONLY.includes(key) && isPublicHost(host)) {
-    findings.push({
-      severity: 'error',
-      key,
-      message: `reachable on a public address (${host}${port}). Backing services belong on the internal network only — a published port here is scanned continuously.`,
-    });
-  }
+  // Graded, because these are not equally bad. A credential crossing the
+  // public internet in cleartext is a different problem from a service that is
+  // merely reachable behind TLS and a strong password.
+  const encrypted = scheme === 'https' || scheme === 'rediss' || value.includes('sslmode=require');
 
-  if (SECRET_BEARING_URLS.includes(key) && scheme === 'http' && isPublicHost(host)) {
+  if (SECRET_BEARING_URLS.includes(key) && isPublicHost(host) && !encrypted) {
     findings.push({
       severity: 'error',
       key,
-      message: `plain http:// over a public host — the credential in this URL travels in cleartext. Use the internal hostname, or https.`,
+      message: `credential crosses the public internet unencrypted (${scheme}://${host}${port}). Use https/rediss, sslmode=require, or \`pnpm tunnel\`.`,
+    });
+  } else if (INTERNAL_ONLY.includes(key) && isPublicHost(host)) {
+    findings.push({
+      severity: 'warn',
+      key,
+      message: `publicly reachable, though encrypted. Acceptable while building; close it before launch — a strong password is then the only thing in front of it.`,
     });
   }
 }

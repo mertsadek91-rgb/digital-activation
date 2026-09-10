@@ -5,6 +5,8 @@ import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 import { alternates } from '@da/seo';
+
+import { robotsMeta } from '../../lib/seo';
 import { DIRECTION } from '@da/ui';
 
 import { routing } from '../../i18n/routing';
@@ -27,6 +29,11 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
+    // Derived, not configured: noindex on anything that is not the production
+    // apex. While the rebuild sits on new.digital-activation.com and the legacy
+    // site holds the apex, letting both into the index would set them competing
+    // over the same content.
+    robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     // Reciprocal hreflang on every page, including x-default -> Arabic.
     // The legacy site emitted none at all while English demand went unanswered.
     alternates: {
