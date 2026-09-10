@@ -134,3 +134,47 @@ export function variantSuffix(input: {
 
   return parts.join('-');
 }
+
+/**
+ * The Arabic product name for a grouped product.
+ *
+ * After grouping, taking the first member's title verbatim leaves variant text
+ * in the product name: the eight-variant ESET product came out as
+ * "… انترنت سيكورتي سنة واحدة لـ جهاز واحد" — one variant's term and device
+ * count standing in for all eight.
+ *
+ * The phrases to remove are not guesswork: they are the keys of the very
+ * normalisation tables the import already matched against, so the two cannot
+ * drift. Connectors left stranded by the removal ("لـ", "لمدة") go too.
+ */
+export function arabicProductName(
+  title: string,
+  periodPhrases: readonly string[],
+  devicePhrases: readonly string[],
+): string {
+  let name = title;
+
+  // Longest first, so "3 سنوات (36 شهر)" is removed before "3 سنوات".
+  const phrases = [...periodPhrases, ...devicePhrases].sort((a, b) => b.length - a.length);
+  for (const phrase of phrases) {
+    if (phrase.length < 3) continue;
+    name = name.split(phrase).join(' ');
+  }
+
+  // These titles are bilingual, so the same variant information appears twice:
+  // "اوتوديسك الحزمة الكاملة سنة واحدة - Autodesk All Apps 1 Year 1 Device".
+  // Removing only the Arabic half leaves the Latin half behind.
+  for (const pattern of VARIANT_TOKENS) name = name.replace(pattern, ' ');
+
+  return (
+    name
+      .replace(/\s+(لـ|لمدة|عبر|من)\s*(?=\s|$|[-–—])/g, ' ')
+      // Brackets emptied by the removal — "Office 2021 Pro Plus ( )" is what is
+      // left of "Retail (Online Activation)".
+      .replace(/[([]\s*[)\]]/g, ' ')
+      .replace(/\s*[-–—]\s*(?=[-–—]|$)/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^[\s\-–—]+|[\s\-–—]+$/g, '')
+      .trim()
+  );
+}

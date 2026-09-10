@@ -24,6 +24,7 @@ const envSchema = z.object({
   JWT_ACCESS_TTL: z.string().default('15m'),
   JWT_REFRESH_TTL: z.string().default('30d'),
   TOTP_ISSUER: z.string().default('Digital Activation'),
+  PREVIEW_TOKEN: z.string().optional(),
 
   KEK_PROVIDER: z.enum(['local', 'aws-kms']).default('local'),
   KEK_LOCAL_BASE64: z.string().optional(),
@@ -62,7 +63,16 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function validateEnv(raw: Record<string, unknown>): Env {
-  const parsed = envSchema.safeParse(raw);
+  // An unset variable in a .env file is written `KEY=`, which dotenv hands over
+  // as an empty string — not undefined. `.optional()` only admits undefined, so
+  // without this every blank optional URL fails validation as a malformed one.
+  const cleaned: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof value === 'string' && value.trim() === '') continue;
+    cleaned[key] = value;
+  }
+
+  const parsed = envSchema.safeParse(cleaned);
 
   if (!parsed.success) {
     const issues = parsed.error.issues

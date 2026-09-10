@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
+import { CatalogModule } from './catalog/catalog.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -11,7 +12,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
  *
  *   auth        customers + staff, JWT, mandatory TOTP for staff
  *   rbac        role and field-level guards
- *   catalog     products, variants, categories, brands, media
+ *   catalog     products, variants, categories, brands, media   [done]
  *   inventory   stock levels, timed reservations, movements
  *   vault       encrypted licence keys — the only importer of vaultPrisma
  *   fulfilment  assign a key on payment, deliver, retry, manual queue
@@ -36,6 +37,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     // validation matters as much as login: guessable codes are money.
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     PrismaModule,
+    CatalogModule,
   ],
   controllers: [HealthController],
 })

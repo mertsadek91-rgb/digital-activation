@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -17,15 +16,10 @@ async function bootstrap(): Promise<void> {
     { bufferLogs: true },
   );
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      // Reject unknown properties rather than silently dropping them: a typo in
-      // a price or discount field must fail loudly.
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  // No global ValidationPipe: it is built on class-validator, which would mean
+  // a second definition of every shape @da/contracts already describes in zod.
+  // Routes validate with ZodPipe against those same schemas, so there is one
+  // definition per shape and the storefront types against it too.
 
   app.enableCors({
     origin: [process.env.STOREFRONT_URL, process.env.ADMIN_URL].filter(Boolean) as string[],

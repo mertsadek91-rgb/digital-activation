@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@da/ui/tokens.css';
+@import './catalog.css';
 
 /*
  * Tajawal, self-hosted and subset to Arabic + Latin. The legacy site made

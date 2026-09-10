@@ -53,7 +53,13 @@ import {
   LICENSE_PERIOD,
   refineActivationFromTitle,
 } from './normalize.js';
-import { groupSlug, NAME_OVERRIDES_EN, productName, variantSuffix } from './naming.js';
+import {
+  arabicProductName,
+  groupSlug,
+  NAME_OVERRIDES_EN,
+  productName,
+  variantSuffix,
+} from './naming.js';
 
 const XML_PATH = path.join(
   __dirname,
@@ -370,7 +376,16 @@ async function main(): Promise<void> {
     const primary = normalized[0];
     if (!primary) continue;
 
-    const nameAr = primary.legacy.title.trim();
+    // A single-variant product keeps its full title; a grouped one must not
+    // wear one variant's term and device count as the product name.
+    const nameAr =
+      normalized.length > 1
+        ? arabicProductName(
+            primary.legacy.title,
+            Object.keys(LICENSE_PERIOD),
+            Object.keys(DEVICE_COUNT),
+          )
+        : primary.legacy.title.trim();
     const nameEn =
       NAME_OVERRIDES_EN[primary.legacy.id] ?? productName(primary.legacy.title) ?? slug;
 

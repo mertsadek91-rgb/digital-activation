@@ -1,0 +1,174 @@
+import { z } from 'zod';
+
+import { blockDocumentSchema, faqItemsSchema } from './blocks.js';
+import { localeSchema, moneySchema, paginationSchema, slugSchema } from './primitives.js';
+
+/**
+ * Catalog read contracts.
+ *
+ * One definition, used by the API to build responses and by the storefront to
+ * consume them, so a field rename cannot pass typecheck on one side only.
+ *
+ * The shape is deliberately flat and render-ready: the storefront should not
+ * have to reduce a variant list to work out what price to show, because that is
+ * exactly the kind of duplicated logic that lets the visible price and the
+ * structured-data price drift apart — the defect that cost the legacy store its
+ * rich results.
+ */
+
+export const licensePeriodUnitSchema = z.enum(['DAY', 'MONTH', 'YEAR', 'LIFETIME']);
+export const platformSchema = z.enum(['WINDOWS', 'MAC', 'LINUX', 'CROSS_PLATFORM']);
+export const activationMethodSchema = z.enum([
+  'RETAIL_ONLINE',
+  'RETAIL_PHONE',
+  'VOLUME_MAK',
+  'KMS',
+  'BIND_MICROSOFT_ACCOUNT',
+  'REDEEM_CODE',
+  'ACCOUNT_CREDENTIALS',
+  'PANEL_INVITE',
+  'CAL_KEY',
+  'NOT_APPLICABLE',
+]);
+export const productKindSchema = z.enum(['KEY', 'ACCOUNT', 'PANEL', 'BUNDLE', 'SERVICE']);
+
+/**
+ * The price as the visitor sees it. Both fields travel together and are handed
+ * to the structured-data builder unchanged, so the markup cannot claim a
+ * currency the page did not render.
+ */
+export const displayPriceSchema = z.object({
+  amount: moneySchema,
+  currency: z.string().length(3),
+  /** Strike-through price, when there is a genuine one. */
+  compareAt: moneySchema.nullable(),
+  /** Whole percent off, for the badge. Null when not on offer. */
+  discountPercent: z.number().int().min(1).max(99).nullable(),
+});
+export type DisplayPrice = z.infer<typeof displayPriceSchema>;
+
+export const catalogVariantSchema = z.object({
+  id: z.string(),
+  sku: z.string(),
+  licensePeriodValue: z.number().int().nullable(),
+  licensePeriodUnit: licensePeriodUnitSchema,
+  /** 0 means unlimited. */
+  deviceCount: z.number().int().min(0),
+  platform: platformSchema,
+  activationMethod: activationMethodSchema,
+  deliverySlaSeconds: z.number().int().min(0),
+  price: displayPriceSchema,
+  /** Sellable count: on hand minus reservations. */
+  available: z.number().int().min(0),
+  inStock: z.boolean(),
+  isDefault: z.boolean(),
+});
+export type CatalogVariant = z.infer<typeof catalogVariantSchema>;
+
+export const catalogImageSchema = z.object({
+  url: z.string(),
+  alt: z.string(),
+  width: z.number().int().nullable(),
+  height: z.number().int().nullable(),
+});
+
+export const catalogBreadcrumbSchema = z.object({
+  name: z.string(),
+  href: z.string(),
+});
+
+export const catalogProductSchema = z.object({
+  slug: slugSchema,
+  kind: productKindSchema,
+  locale: localeSchema,
+  name: z.string(),
+  shortDesc: z.string().nullable(),
+  body: blockDocumentSchema,
+  faq: faqItemsSchema.nullable(),
+  activationSteps: z
+    .array(z.object({ step: z.number().int(), text: z.string(), assetId: z.string().optional() }))
+    .nullable(),
+  downloadUrl: z.string().nullable(),
+
+  brand: z.object({ slug: slugSchema, name: z.string() }).nullable(),
+  breadcrumbs: z.array(catalogBreadcrumbSchema),
+  images: z.array(catalogImageSchema),
+
+  hasGoldenWarranty: z.boolean(),
+  /** Real orders, not a synthetic counter. Shown only above a floor. */
+  salesCount: z.number().int().min(0),
+  rating: z.object({ value: z.string(), count: z.number().int().min(1) }).nullable(),
+
+  variants: z.array(catalogVariantSchema).min(1),
+  /** The variant the page opens on — the cheapest in stock, else the default. */
+  selectedVariantId: z.string(),
+
+  seo: z.object({
+    title: z.string().nullable(),
+    description: z.string().nullable(),
+  }),
+
+  /** True when this product is not published; only reachable in preview. */
+  isDraft: z.boolean(),
+});
+export type CatalogProduct = z.infer<typeof catalogProductSchema>;
+
+/** Grid card. Deliberately small — a collection page renders many of these. */
+export const catalogCardSchema = z.object({
+  slug: slugSchema,
+  name: z.string(),
+  shortDesc: z.string().nullable(),
+  image: catalogImageSchema.nullable(),
+  price: displayPriceSchema,
+  inStock: z.boolean(),
+  /** Lowest sellable stock across variants, for the "only N left" line. */
+  available: z.number().int().min(0),
+  variantCount: z.number().int().min(1),
+  hasGoldenWarranty: z.boolean(),
+  salesCount: z.number().int().min(0),
+  brand: z.string().nullable(),
+  isDraft: z.boolean(),
+});
+export type CatalogCard = z.infer<typeof catalogCardSchema>;
+
+export const catalogCollectionSchema = z.object({
+  slug: slugSchema,
+  locale: localeSchema,
+  name: z.string(),
+  headline: z.string().nullable(),
+  body: blockDocumentSchema,
+  faq: faqItemsSchema.nullable(),
+  breadcrumbs: z.array(catalogBreadcrumbSchema),
+  children: z.array(
+    z.object({ slug: slugSchema, name: z.string(), productCount: z.number().int() }),
+  ),
+  seo: z.object({ title: z.string().nullable(), description: z.string().nullable() }),
+  products: z.array(catalogCardSchema),
+  total: z.number().int().min(0),
+  page: z.number().int().min(1),
+  perPage: z.number().int().min(1),
+});
+export type CatalogCollection = z.infer<typeof catalogCollectionSchema>;
+
+// --- request contracts ------------------------------------------------------
+
+export const catalogQuerySchema = paginationSchema.extend({
+  locale: localeSchema.default('ar'),
+  currency: z.string().length(3).default('USD'),
+  /**
+   * Draft products are visible only with the preview token, and the storefront
+   * only sends it while it is running on a non-indexable host. A staging site
+   * showing drafts is what staging is for; production shows published only.
+   */
+  preview: z.string().optional(),
+  sort: z
+    .enum(['position', 'price-asc', 'price-desc', 'newest', 'best-selling'])
+    .default('position'),
+});
+export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
+
+/** Floor below which a sales count is noise rather than proof. */
+export const SALES_PROOF_THRESHOLD = 5;
+
+/** Below this, the storefront shows "only N left" instead of a plain badge. */
+export const LOW_STOCK_THRESHOLD = 5;

@@ -1,6 +1,14 @@
-import createNextIntlPlugin from 'next-intl/plugin';
+import path from 'node:path';
+
+import { config as loadEnv } from 'dotenv';
 import type { NextConfig } from 'next';
 
+// Next reads .env from the app directory, not the workspace root, so a monorepo
+// app starts with no environment at all. Loading it here covers both the build
+// and the running server, and keeps one .env for every app.
+loadEnv({ path: path.join(import.meta.dirname, '..', '..', '.env'), quiet: true });
+
+import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const config: NextConfig = {

@@ -13,6 +13,7 @@
     "@da/contracts": "workspace:*",
     "@da/i18n": "workspace:*",
     "@da/ui": "workspace:*",
+    "dotenv": "catalog:",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"

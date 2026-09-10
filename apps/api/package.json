@@ -15,6 +15,7 @@
     "@da/db": "workspace:*",
     "@da/i18n": "workspace:*",
     "@da/seo": "workspace:*",
+    "@fastify/static": "catalog:",
     "@nestjs/common": "catalog:",
     "@nestjs/config": "catalog:",
     "@nestjs/core": "catalog:",

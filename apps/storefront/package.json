@@ -14,10 +14,12 @@
     "@da/i18n": "workspace:*",
     "@da/seo": "workspace:*",
     "@da/ui": "workspace:*",
+    "dotenv": "catalog:",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "catalog:",
