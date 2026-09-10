@@ -10,6 +10,13 @@ Old Website/
 *.tar.gz
 *.wpress
 
+# ...but not the project's own SQL. The *.sql rule above is aimed at the legacy
+# database dump, and it was quietly taking the schema's entire history with it:
+# every Prisma migration and the role bootstrap that docker-compose mounts into
+# a fresh Postgres. A clone of this repo could not build its own database.
+!packages/db/prisma/migrations/**/*.sql
+!packages/db/prisma/init/*.sql
+
 # Extracted legacy uploads and the media import's processed output. Same rule
 # as Old Website/ — it comes out of the backup, so it never goes in the repo.
 .cache/
