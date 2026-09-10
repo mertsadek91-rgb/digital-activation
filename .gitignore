@@ -21,6 +21,11 @@ Old Website/
 # as Old Website/ — it comes out of the backup, so it never goes in the repo.
 .cache/
 
+# One-off scratch scripts. These get written next to a package so its own
+# dependencies resolve, and then they get committed by accident.
+code.mjs
+check.mts
+
 # secrets
 .env
 .env.*
