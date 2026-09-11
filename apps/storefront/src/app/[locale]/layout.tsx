@@ -9,6 +9,7 @@ import { alternates } from '@da/seo';
 import { robotsMeta } from '../../lib/seo';
 import { DIRECTION } from '@da/ui';
 
+import { SiteHeader } from '../../components/site-header';
 import { routing } from '../../i18n/routing';
 
 import '../globals.css';
@@ -59,7 +60,10 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} dir={DIRECTION[locale]}>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <SiteHeader locale={locale} />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

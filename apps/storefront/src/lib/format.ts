@@ -1,5 +1,8 @@
 import type { CatalogVariant, DisplayPrice, FulfillmentMode } from '@da/contracts';
 
+/** The part of a variant that describes its term. A cart line carries it too. */
+type LicenceTerm = Pick<CatalogVariant, 'licensePeriodValue' | 'licensePeriodUnit'>;
+
 /**
  * Presentation helpers.
  *
@@ -31,7 +34,14 @@ const PERIOD_EN: Record<string, [string, string]> = {
   YEAR: ['year', 'years'],
 };
 
-export function formatLicensePeriod(variant: CatalogVariant, locale: string): string {
+/**
+ * The licence term in words.
+ *
+ * Takes only the two fields it reads, not a whole variant. A cart line carries
+ * the same two and nothing else, and there is no reason for the cart to be
+ * unable to describe its own contents.
+ */
+export function formatLicensePeriod(variant: LicenceTerm, locale: string): string {
   if (variant.licensePeriodUnit === 'LIFETIME') {
     return locale === 'ar' ? 'مدى الحياة' : 'Lifetime';
   }
@@ -147,7 +157,10 @@ export function formatActivation(method: string, locale: string): string {
   return table[method] ?? method;
 }
 
-/** Short label for a variant picker button. */
-export function variantLabel(variant: CatalogVariant, locale: string): string {
+/** Short label for a variant picker button, or for a cart line. */
+export function variantLabel(
+  variant: LicenceTerm & { deviceCount: number },
+  locale: string,
+): string {
   return `${formatLicensePeriod(variant, locale)} · ${formatDevices(variant.deviceCount, locale)}`;
 }

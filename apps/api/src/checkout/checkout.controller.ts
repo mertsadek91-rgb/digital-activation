@@ -55,12 +55,13 @@ export class CheckoutController {
   }
 
   @Get('orders/:number')
-  @ApiOperation({ summary: 'One order, by its human-facing number' })
+  @ApiOperation({ summary: 'One order, for the cart that placed it' })
   order(
     @Param('number') number: string,
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
+    @Req() request: FastifyRequest,
   ): Promise<Order> {
-    return this.checkout.renderOrder(number, query);
+    return this.checkout.renderOrder(number, query, { cartToken: request.cookies?.da_cart });
   }
 
   /**
@@ -77,8 +78,11 @@ export class CheckoutController {
     @Param('number') number: string,
     @Body(new ZodPipe(startPaymentSchema)) body: z.infer<typeof startPaymentSchema>,
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
+    @Req() request: FastifyRequest,
   ): Promise<PaymentSession> {
-    const order = await this.checkout.renderOrder(number, query);
+    const order = await this.checkout.renderOrder(number, query, {
+      cartToken: request.cookies?.da_cart,
+    });
     if (order.status !== 'PENDING_PAYMENT') {
       throw new BadRequestException('هذا الطلب لم يعد في انتظار الدفع.');
     }

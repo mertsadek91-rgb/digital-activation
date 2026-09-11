@@ -205,7 +205,7 @@ export class CheckoutService {
     });
 
     return {
-      order: await this.renderOrder(order.number, query),
+      order: await this.renderOrder(order.number, query, { skipOwnerCheck: true }),
       cart: rendered,
       crossSell: await this.crossSellFor(
         fresh.items.map((item) => item.variantId),
@@ -475,14 +475,41 @@ export class CheckoutService {
 
   // --- reading --------------------------------------------------------------
 
-  async renderOrder(number: string, query: CartQuery): Promise<Order> {
+  /**
+   * One order, by its number — for whoever placed it.
+   *
+   * `cartToken` is not optional in practice. Order numbers are sequential by
+   * design, so DA-2026-00001 tells a guesser that DA-2026-00002 exists; with
+   * no check the confirmation route hands any passer-by somebody else's email,
+   * items and total by counting upwards. The cart that placed the order is the
+   * proof of ownership a guest has, and guest checkout is most of this store.
+   *
+   * `skipOwnerCheck` is for a caller that has already established who is
+   * asking — the checkout, rendering an order it just drafted.
+   */
+  async renderOrder(
+    number: string,
+    query: CartQuery,
+    access?: { cartToken?: string | undefined; skipOwnerCheck?: boolean },
+  ): Promise<Order> {
     const order = await this.prisma.client.order.findUnique({
       where: { number },
       include: {
+        cart: { select: { token: true } },
         items: { include: { variant: { select: { product: { select: { slug: true } } } } } },
       },
     });
     if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${number}`);
+
+    if (access?.skipOwnerCheck !== true) {
+      const token = access?.cartToken;
+      if (!token || order.cart?.token !== token) {
+        // The same answer as a missing order, deliberately. Telling a guesser
+        // that DA-2026-00042 exists but is not theirs still tells them how
+        // many orders the store has taken.
+        throw new NotFoundException(`لا يوجد طلب بالرقم ${number}`);
+      }
+    }
 
     const fx = await this.fxTable();
     const price = (usd: Prisma.Decimal) => displayPrice(usd, null, query.currency, fx);

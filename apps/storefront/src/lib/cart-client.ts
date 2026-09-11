@@ -1,0 +1,172 @@
+'use client';
+
+/**
+ * Cart and checkout, from the browser.
+ *
+ * The rest of the storefront talks to the API from the server, which is right
+ * for the catalog: it caches, it keeps the API off the public internet, and the
+ * pages are identical for everyone. The cart cannot work that way. It is
+ * identified by an httpOnly cookie the API sets, so the request has to come
+ * from the browser that holds it — `credentials: 'include'`, and the API and
+ * the storefront on the same registrable domain so a SameSite=strict cookie
+ * still travels.
+ *
+ * Nothing here is cached. A cart read from a cache is a cart that lies about
+ * what is in it.
+ */
+import {
+  type Cart,
+  type Checkout,
+  type Order,
+  type PaymentSession,
+  cartSchema,
+  checkoutSchema,
+  orderSchema,
+  paymentSessionSchema,
+} from '@da/contracts';
+import type { z } from 'zod';
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+export class CartError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'CartError';
+  }
+}
+
+async function request<T>(
+  path: string,
+  schema: z.ZodType<T>,
+  init?: RequestInit & { locale: string; currency?: string },
+): Promise<T> {
+  const url = new URL(`/v1${path}`, API);
+  url.searchParams.set('locale', init?.locale ?? 'ar');
+  url.searchParams.set('currency', init?.currency ?? 'USD');
+
+  const response = await fetch(url, {
+    ...init,
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { 'content-type': 'application/json', ...init?.headers },
+  });
+
+  const payload: unknown = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const record = (payload ?? {}) as Record<string, unknown>;
+    throw new CartError(
+      typeof record.message === 'string' ? record.message : 'تعذّر الاتصال بالخدمة.',
+      response.status,
+    );
+  }
+
+  // Parsed against the same schema the API built it from, so a shape change
+  // surfaces here with a readable path rather than as `undefined` three
+  // components deep in a checkout.
+  const parsed = schema.safeParse(payload);
+  if (!parsed.success) {
+    throw new CartError('استجابة غير متوقّعة من الخدمة.', 500);
+  }
+  return parsed.data;
+}
+
+interface Options {
+  locale: string;
+  currency?: string;
+}
+
+/**
+ * How the header hears about a change.
+ *
+ * The cart badge lives in a client component that is a sibling of the page, not
+ * an ancestor or a descendant, so neither props nor `router.refresh()` can
+ * reach it — refresh re-renders server components, and the header's effect
+ * depends on the pathname, which does not change when you add to the cart from
+ * a product page. The result was a shopper adding an item and watching the
+ * header stay empty.
+ *
+ * A DOM event is the smallest thing that works here: one dispatch, one
+ * listener, no store and no context threaded through a tree that spans the
+ * server/client boundary.
+ */
+export const CART_EVENT = 'da:cart';
+
+export interface CartEventDetail {
+  cart: Cart;
+}
+
+function announce(cart: Cart): Cart {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent<CartEventDetail>(CART_EVENT, { detail: { cart } }));
+  }
+  return cart;
+}
+
+export const cartApi = {
+  get: (options: Options): Promise<Cart> => request('/cart', cartSchema, { ...options }),
+
+  add: (variantId: string, qty: number, options: Options): Promise<Cart> =>
+    request('/cart/items', cartSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ variantId, qty }),
+    }).then(announce),
+
+  addCrossSell: (variantId: string, options: Options): Promise<Cart> =>
+    request('/cart/items', cartSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ variantId, qty: 1, fromCrossSell: true }),
+    }).then(announce),
+
+  setQty: (variantId: string, qty: number, options: Options): Promise<Cart> =>
+    request(`/cart/items/${encodeURIComponent(variantId)}`, cartSchema, {
+      ...options,
+      method: 'PATCH',
+      body: JSON.stringify({ qty }),
+    }).then(announce),
+
+  applyCoupon: (code: string, options: Options): Promise<Cart> =>
+    request('/cart/coupon', cartSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }).then(announce),
+
+  removeCoupon: (options: Options): Promise<Cart> =>
+    request('/cart/coupon', cartSchema, { ...options, method: 'DELETE' }).then(announce),
+
+  startCheckout: (
+    body: {
+      email: string;
+      name?: string;
+      country?: string;
+      activationEmail?: string;
+      marketingOptIn: boolean;
+    },
+    options: Options,
+  ): Promise<Checkout> =>
+    request('/checkout', checkoutSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  order: (number: string, options: Options): Promise<Order> =>
+    request(`/orders/${encodeURIComponent(number)}`, orderSchema, { ...options }),
+
+  pay: (
+    number: string,
+    provider: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER' | 'CRYPTO',
+    options: Options,
+  ): Promise<PaymentSession> =>
+    request(`/orders/${encodeURIComponent(number)}/pay`, paymentSessionSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ provider }),
+    }),
+};

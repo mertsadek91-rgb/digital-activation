@@ -2,6 +2,7 @@
 @import '@da/ui/tokens.css';
 @import './catalog.css';
 @import './home.css';
+@import './cart.css';
 
 /*
  * Tajawal, self-hosted and subset to Arabic + Latin. The legacy site made

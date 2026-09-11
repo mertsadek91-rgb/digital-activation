@@ -4,20 +4,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
-import { LOW_STOCK_THRESHOLD, ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { BuyBox } from '../../../../components/buy-box';
 import { getProduct } from '../../../../lib/api';
-import {
-  formatActivation,
-  formatDelivery,
-  formatFulfillment,
-  formatDevices,
-  formatLicensePeriod,
-  formatPrice,
-  variantLabel,
-} from '../../../../lib/format';
 import { robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -66,8 +58,6 @@ export default async function ProductPage({ params }: Props) {
 
   const prefix = ar ? '' : `/${locale}`;
   const pageUrl = new URL(`${prefix}${ROUTES.product(slug)}`, SITE_URL).toString();
-  const lowStock =
-    selected.inStock && selected.available !== null && selected.available <= LOW_STOCK_THRESHOLD;
 
   /**
    * The price handed to the structured data is the same object the page
@@ -152,129 +142,22 @@ export default async function ProductPage({ params }: Props) {
             </p>
           ) : null}
 
-          <p className="price">
-            <strong>{formatPrice(selected.price)}</strong>
-            {selected.price.compareAt ? (
-              <>
-                <s>
-                  {formatPrice({
-                    amount: selected.price.compareAt,
-                    currency: selected.price.currency,
-                  })}
-                </s>
-                {selected.price.discountPercent ? (
-                  <span className="badge badge-accent">
-                    {ar
-                      ? `خصم ${String(selected.price.discountPercent)}%`
-                      : `${String(selected.price.discountPercent)}% off`}
-                  </span>
-                ) : null}
-              </>
-            ) : null}
-          </p>
+          {/* The price, the picker, the specification table and the buy
+              button move together. They all describe the selected variant, and
+              a page where choosing "3 years" leaves the 1-year price on screen
+              is worse than one with no picker. */}
+          <BuyBox product={product} locale={locale} />
 
-          {product.variants.length > 1 ? (
-            <fieldset className="variants">
-              <legend>{ar ? 'اختر الترخيص' : 'Choose your licence'}</legend>
-              <div className="variant-list">
-                {product.variants.map((variant) => (
-                  <label
-                    key={variant.id}
-                    className={`variant${variant.id === selected.id ? ' is-selected' : ''}${
-                      variant.inStock ? '' : ' is-out'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="variant"
-                      value={variant.id}
-                      defaultChecked={variant.id === selected.id}
-                      disabled={!variant.inStock}
-                    />
-                    <span className="variant-label">{variantLabel(variant, locale)}</span>
-                    <span className="variant-price">{formatPrice(variant.price)}</span>
-                    {!variant.inStock ? (
-                      <span className="variant-out">{ar ? 'نافد' : 'Sold out'}</span>
-                    ) : null}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          ) : null}
-
-          <dl className="specs">
-            <div>
-              <dt>{ar ? 'مدّة الترخيص' : 'Licence term'}</dt>
-              <dd>{formatLicensePeriod(selected, locale)}</dd>
-            </div>
-            <div>
-              <dt>{ar ? 'عدد الأجهزة' : 'Devices'}</dt>
-              <dd>{formatDevices(selected.deviceCount, locale)}</dd>
-            </div>
-            <div>
-              <dt>{ar ? 'طريقة التفعيل' : 'Activation'}</dt>
-              <dd>{formatActivation(selected.activationMethod, locale)}</dd>
-            </div>
-            <div>
-              <dt>{ar ? 'التسليم' : 'Delivery'}</dt>
-              <dd>
-                {formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode)}
-              </dd>
-            </div>
-            {/* How the licence is supplied, said plainly. Most of this catalog
-                is ordered from a supplier after purchase, and the reason —
-                that a code's term starts the moment it is bought — is the
-                reason a buyer should prefer it, not something to hide. */}
-            <div>
-              <dt>{ar ? 'طريقة التوريد' : 'How it is supplied'}</dt>
-              <dd>{formatFulfillment(selected.fulfillmentMode, locale)}</dd>
-            </div>
-            {selected.requiresActivationEmail ? (
-              <div>
-                <dt>{ar ? 'مطلوب منك' : 'We will need'}</dt>
-                <dd>
-                  {ar
-                    ? 'البريد الإلكتروني الذي تريد تفعيل الترخيص عليه — نطلبه عند الدفع'
-                    : 'The email address the licence should be activated on — asked at checkout'}
-                </dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>{ar ? 'المنصّة' : 'Platform'}</dt>
-              <dd>{selected.platform.replace('_', ' ').toLowerCase()}</dd>
-            </div>
-            {product.hasGoldenWarranty ? (
-              <div>
-                <dt>{ar ? 'الضمان' : 'Warranty'}</dt>
-                <dd>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</dd>
-              </div>
-            ) : null}
-          </dl>
-
-          {selected.inStock ? (
-            <>
-              {lowStock ? (
-                <p className="stock stock-low">
-                  {ar
-                    ? `بقي ${String(selected.available ?? 0)} فقط`
-                    : `Only ${String(selected.available ?? 0)} left`}
-                </p>
-              ) : null}
-              <button type="button" className="buy">
-                {ar ? 'أضف إلى السلة' : 'Add to cart'}
-              </button>
-            </>
-          ) : (
+          {!selected.inStock ? (
             <div className="oos">
-              <p className="stock stock-out">{ar ? 'غير متوفر حالياً' : 'Out of stock'}</p>
               {/* The legacy store greeted its highest-traffic product page with
-                  "غير متوفر" and offered nothing else. A waiting list turns that
-                  visit into a queued buyer. */}
+                  "غير متوفر" and offered nothing else. A waiting list turns
+                  that visit into a queued buyer. */}
               <button type="button" className="notify">
                 {ar ? 'نبّهني عند التوفّر' : 'Notify me when available'}
               </button>
             </div>
-          )}
+          ) : null}
 
           {product.isDraft ? (
             <p className="draft-flag">
