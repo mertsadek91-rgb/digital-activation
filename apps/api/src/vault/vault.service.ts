@@ -6,8 +6,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+import type { CredentialKind, SecretInput } from '@da/contracts';
 import { KeyAccessAction, LicenseKeyState, Prisma } from '@da/db';
 
+import { type ParsedSecret, canonical, fieldCount, parse } from './credential.js';
 import { KekService, fingerprint, open, seal } from './kek.js';
 import { VaultPrismaService } from './vault-prisma.service.js';
 
@@ -75,7 +77,10 @@ export class VaultService {
    */
   async importKeys(input: {
     variantId: string;
-    plaintexts: string[];
+    kind: CredentialKind;
+    secrets: SecretInput[];
+    /** Lines the caller could not read at all, reported straight through. */
+    invalidSkipped?: number;
     supplierId?: string | undefined;
     costUsd?: string | undefined;
     expiresAt?: Date | undefined;
@@ -84,9 +89,17 @@ export class VaultService {
   }): Promise<{ imported: number; duplicatesSkipped: number; invalidSkipped: number }> {
     this.requireFreshTotp(input.actor);
 
-    const cleaned = input.plaintexts.map((value) => value.trim());
-    const invalid = cleaned.filter((value) => value.length < 4).length;
-    const candidates = cleaned.filter((value) => value.length >= 4);
+    let invalid = input.invalidSkipped ?? 0;
+    const candidates: string[] = [];
+    for (const secret of input.secrets) {
+      // A secret this module cannot lay out is counted, not stored. The
+      // alternative is a row whose payload does not match its own `kind`.
+      try {
+        candidates.push(canonical(secret));
+      } catch {
+        invalid += 1;
+      }
+    }
 
     // Within the batch as well as against the vault: a pasted list often
     // repeats a line, and the unique index would abort the whole import.
@@ -127,6 +140,8 @@ export class VaultService {
           wrappedDek: sealed.wrappedDek,
           kekVersion: sealed.kekVersion,
           fingerprint: sealed.fingerprint,
+          kind: input.kind,
+          fieldCount: fieldCount(input.kind),
           supplierId: input.supplierId ?? null,
           costUsd: input.costUsd ?? null,
           expiresAt: input.expiresAt ?? null,
@@ -254,15 +269,14 @@ export class VaultService {
   async fulfilManually(input: {
     orderItemId: string;
     variantId: string;
-    plaintext: string;
+    secret: SecretInput;
     supplierId?: string | undefined;
     costUsd?: string | undefined;
     actor: Actor;
   }): Promise<{ licenseKeyId: string }> {
     this.requireFreshTotp(input.actor);
 
-    const value = input.plaintext.trim();
-    if (value.length < 4) throw new BadRequestException('الكود قصير جداً.');
+    const value = canonical(input.secret);
 
     const taken = await this.vault.client.licenseKey.findUnique({
       where: { orderItemId: input.orderItemId },
@@ -298,6 +312,8 @@ export class VaultService {
         wrappedDek: sealed.wrappedDek,
         kekVersion: sealed.kekVersion,
         fingerprint: sealed.fingerprint,
+        kind: input.secret.kind,
+        fieldCount: fieldCount(input.secret.kind),
         supplierId: input.supplierId ?? null,
         costUsd: input.costUsd ?? null,
         orderItemId: input.orderItemId,
@@ -323,7 +339,7 @@ export class VaultService {
   async openForDelivery(input: {
     orderItemId: string;
     actor: Actor;
-  }): Promise<{ licenseKeyId: string; plaintext: string }[]> {
+  }): Promise<{ licenseKeyId: string; secret: ParsedSecret }[]> {
     const rows = await this.vault.client.licenseKey.findMany({
       where: { orderItemId: input.orderItemId },
     });
@@ -331,12 +347,36 @@ export class VaultService {
       throw new NotFoundException('لا يوجد مفتاح مرتبط بهذا السطر.');
     }
 
-    const opened: { licenseKeyId: string; plaintext: string }[] = [];
+    const opened: { licenseKeyId: string; secret: ParsedSecret }[] = [];
     for (const row of rows) {
       await this.log(row.id, KeyAccessAction.RESEND, input.actor);
-      opened.push({ licenseKeyId: row.id, plaintext: await open(row, this.kek) });
+      // Split here rather than in the mail module: the row's own `kind` is the
+      // only trustworthy answer to what it holds, and it is readable only
+      // from inside the vault.
+      opened.push({ licenseKeyId: row.id, secret: parse(row.kind, await open(row, this.kek)) });
     }
     return opened;
+  }
+
+  /**
+   * The keys on one order line — ids and states, never plaintext.
+   *
+   * This is what a complaint is answered from: it says a key exists, when it
+   * went, and gives the id that a deliberate reveal needs. Opening it is a
+   * separate call with its own challenge and its own audit row.
+   */
+  async keysForOrderItem(
+    orderItemId: string,
+  ): Promise<{ licenseKeyId: string; state: string; deliveredAt: Date | null }[]> {
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: { orderItemId },
+      select: { id: true, state: true, deliveredAt: true },
+    });
+    return rows.map((row) => ({
+      licenseKeyId: row.id,
+      state: row.state,
+      deliveredAt: row.deliveredAt,
+    }));
   }
 
   /** Whether a line already has a key bound to it, without opening anything. */
@@ -365,7 +405,7 @@ export class VaultService {
    * riskier act and therefore the one that needs a fresh TOTP challenge and a
    * REVEAL row with a name attached to it.
    */
-  async reveal(input: { licenseKeyId: string; actor: Actor }): Promise<{ plaintext: string }> {
+  async reveal(input: { licenseKeyId: string; actor: Actor }): Promise<ParsedSecret> {
     this.requireFreshTotp(input.actor);
 
     const row = await this.vault.client.licenseKey.findUnique({
@@ -374,7 +414,7 @@ export class VaultService {
     if (!row) throw new NotFoundException('لا يوجد مفتاح بهذا المعرّف.');
 
     await this.log(row.id, KeyAccessAction.REVEAL, input.actor);
-    return { plaintext: await open(row, this.kek) };
+    return parse(row.kind, await open(row, this.kek));
   }
 
   /**

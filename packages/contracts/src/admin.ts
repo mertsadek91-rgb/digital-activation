@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { credentialKindSchema } from './catalog.js';
 import { localeSchema, moneySchema, slugSchema } from './primitives.js';
 
 /**
@@ -83,6 +84,14 @@ export const adminProductRowSchema = z.object({
   hasGoldenWarranty: z.boolean(),
   salesCount: z.number().int().min(0),
   imageCount: z.number().int().min(0),
+  /**
+   * How many activation steps are written, per locale.
+   *
+   * A count rather than the text: the list is a list. Zero is the number worth
+   * seeing — a product with no steps delivers a licence with no instructions,
+   * which is the support ticket this field exists to prevent.
+   */
+  activationSteps: z.object({ ar: z.number().int().min(0), en: z.number().int().min(0) }),
   /** Counts only, so the list stays cheap; the detail view explains them. */
   blockers: z.number().int().min(0),
   warnings: z.number().int().min(0),
@@ -120,6 +129,31 @@ export const setStatusSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']),
   /** The locale whose readiness is checked when publishing. */
   locale: localeSchema.default('ar'),
+});
+
+/**
+ * How a variant is delivered.
+ *
+ * The owner's choice, not something derived: the activation method describes
+ * how a licence is used, which is a different question from what arrives in
+ * the customer's inbox. Changing it changes the import box, the supplier paste
+ * box, the licence email and the order page together.
+ */
+export const setCredentialKindSchema = z.object({
+  credentialKind: credentialKindSchema,
+});
+
+/**
+ * The activation how-to, as plain lines.
+ *
+ * One step per line rather than a rich editor: it is delivered in an email
+ * body and on an order page, and both of those need text that cannot carry
+ * markup. Empty means "no steps", which is honest — a product with no
+ * instructions should show none rather than a heading with nothing under it.
+ */
+export const setActivationStepsSchema = z.object({
+  locale: localeSchema.default('ar'),
+  steps: z.array(z.string().trim().min(3).max(500)).max(12),
 });
 
 export const setInventorySchema = z.object({
@@ -162,6 +196,19 @@ export const staffMeSchema = z.object({
  * this is: it stops a borrowed screen becoming a permanent takeover, and it is
  * the one thing an attacker holding a session cookie does not have.
  */
+/**
+ * Re-clearing the TOTP challenge on a live session.
+ *
+ * No password: the session already proves identity, and what a step-up asks is
+ * whether the person is at the keyboard right now.
+ */
+export const stepUpSchema = z.object({
+  totp: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, 'six digits'),
+});
+
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1),

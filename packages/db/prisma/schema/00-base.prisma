@@ -83,6 +83,27 @@ enum ActivationMethod {
   @@schema("public")
 }
 
+/// What the vault actually holds for a variant, and therefore what the
+/// customer is sent.
+///
+/// Two shapes, because the business has two. Most lines are a string the
+/// customer types into the product; a real minority — the Office 365 and Canva
+/// subscriptions, the Adobe panels — are an account, and an account is a pair.
+/// Sealing a pair as one blob and hoping the reader splits it correctly is how
+/// a password ends up in the "key" field of an email.
+///
+/// This is the owner's choice per variant rather than something derived from
+/// `activationMethod`: the activation method describes how a licence is used,
+/// which is a different question from what arrives in the inbox.
+enum CredentialKind {
+  /// One string. A serial, a MAK, a redeem code.
+  ACTIVATION_KEY
+  /// A username (usually an email) and a password, sealed and sent together.
+  ACCOUNT_CREDENTIALS
+
+  @@schema("public")
+}
+
 enum LicensePeriodUnit {
   DAY
   MONTH

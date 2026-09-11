@@ -5,6 +5,8 @@ import {
   type AdminProductQuery,
   type Readiness,
   adminProductQuerySchema,
+  setActivationStepsSchema,
+  setCredentialKindSchema,
   setInventorySchema,
   setStatusSchema,
 } from '@da/contracts';
@@ -72,6 +74,47 @@ export class AdminController {
       request.staff?.sub ?? '',
       { ip: request.ip, userAgent: request.headers['user-agent'] },
     );
+  }
+
+  /**
+   * Which of the two shapes a variant is delivered in.
+   *
+   * FULFILLMENT is not on this route: it changes how every future key for the
+   * line is stored and labelled, which is a catalog decision rather than a
+   * queue one.
+   */
+  @Roles('ADMIN', 'CATALOG')
+  @Patch('variants/:sku/credential-kind')
+  @ApiOperation({ summary: 'Deliver this variant as a key or as an account' })
+  setCredentialKind(
+    @Param('sku') sku: string,
+    @Body(new ZodPipe(setCredentialKindSchema)) body: z.infer<typeof setCredentialKindSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.admin.setCredentialKind(sku, body.credentialKind, request.staff?.sub ?? '', {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+  }
+
+  @Get('products/:slug/activation-steps')
+  @ApiOperation({ summary: 'The activation how-to as it stands' })
+  activationSteps(@Param('slug') slug: string, @Query('locale') locale = 'ar') {
+    return this.admin.activationSteps(slug, locale);
+  }
+
+  @Roles('ADMIN', 'CATALOG')
+  @Patch('products/:slug/activation-steps')
+  @ApiOperation({ summary: 'The activation how-to sent with the licence email' })
+  setActivationSteps(
+    @Param('slug') slug: string,
+    @Body(new ZodPipe(setActivationStepsSchema)) body: z.infer<typeof setActivationStepsSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.admin.setActivationSteps(slug, body.locale, body.steps, request.staff?.sub ?? '', {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
   }
 
   @Get('locales')

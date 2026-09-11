@@ -46,6 +46,18 @@ export const fulfillmentModeSchema = z.enum(['FROM_STOCK', 'ON_DEMAND', 'MANUAL_
 export type FulfillmentMode = z.infer<typeof fulfillmentModeSchema>;
 
 /**
+ * What the customer actually receives.
+ *
+ * Two shapes, because the business has two: a string to type into the product,
+ * or an account to sign in with. Everything downstream reads this one field —
+ * the import form, the supplier paste box, the licence email and the customer's
+ * order page — so that a password is never printed under a heading that says
+ * "activation key".
+ */
+export const credentialKindSchema = z.enum(['ACTIVATION_KEY', 'ACCOUNT_CREDENTIALS']);
+export type CredentialKind = z.infer<typeof credentialKindSchema>;
+
+/**
  * The price as the visitor sees it. Both fields travel together and are handed
  * to the structured-data builder unchanged, so the markup cannot claim a
  * currency the page did not render.

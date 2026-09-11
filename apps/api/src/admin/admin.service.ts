@@ -3,12 +3,15 @@ import {
   type AdminProductList,
   type AdminProductQuery,
   type AdminProductRow,
+  type CredentialKind,
   type Readiness,
 } from '@da/contracts';
 import { FulfillmentMode, Locale, type Prisma, PublishStatus, StockMovementReason } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { parseActivationSteps } from '../common/activation-steps.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { VaultService } from '../vault/vault.service.js';
 
 import { assessProduct } from './readiness.js';
 
@@ -28,6 +31,11 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    /**
+     * Only to count what the vault already holds before the delivery shape of
+     * a variant is changed underneath it. No plaintext crosses this boundary.
+     */
+    private readonly vault: VaultService,
   ) {}
 
   private localeFor(query: { locale: string }): Locale {
@@ -159,6 +167,10 @@ export class AdminService {
       hasGoldenWarranty: product.hasGoldenWarranty,
       salesCount: product.salesCount,
       imageCount: product.media.length,
+      activationSteps: {
+        ar: parseActivationSteps(ar?.activationSteps).length,
+        en: parseActivationSteps(en?.activationSteps).length,
+      },
       blockers: readiness.checks.filter((check) => check.severity === 'blocker' && !check.passed)
         .length,
       warnings: readiness.checks.filter((check) => check.severity === 'warning' && !check.passed)
@@ -296,5 +308,123 @@ export class AdminService {
     });
 
     return { sku: variant.sku, onHand: level.onHand, reserved: level.reserved };
+  }
+
+  /** The activation how-to as it stands, for the editor to load. */
+  async activationSteps(slug: string, locale: string): Promise<{ steps: string[] }> {
+    const target = locale.toUpperCase() === 'EN' ? Locale.EN : Locale.AR;
+    const translation = await this.prisma.client.productTranslation.findFirst({
+      where: { product: { slug }, locale: target },
+      select: { activationSteps: true },
+    });
+    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+    return { steps: parseActivationSteps(translation.activationSteps) };
+  }
+
+  /**
+   * Sets what a variant is delivered as.
+   *
+   * Refused once the vault holds keys for it under the other shape. Flipping
+   * the field alone would leave stored rows describing themselves one way and
+   * the variant claiming another, and the email would then label a password as
+   * an activation key. Emptying or revoking the stock first is the honest
+   * path, and it is a decision for a person, not a silent migration.
+   */
+  async setCredentialKind(
+    sku: string,
+    credentialKind: CredentialKind,
+    actorId: string,
+    context: { ip?: string | undefined; userAgent?: string | undefined },
+  ): Promise<{ sku: string; credentialKind: CredentialKind }> {
+    const variant = await this.prisma.client.variant.findUnique({
+      where: { sku },
+      select: { id: true, sku: true, credentialKind: true },
+    });
+    if (!variant) throw new NotFoundException(`لا يوجد متغيّر بالرمز "${sku}"`);
+    if (variant.credentialKind === credentialKind) {
+      return { sku: variant.sku, credentialKind };
+    }
+
+    const held = await this.vault.stockReport([variant.id]);
+    const live = held
+      .filter((row) => row.state === 'AVAILABLE' || row.state === 'ASSIGNED')
+      .reduce((sum, row) => sum + row.count, 0);
+    if (live > 0) {
+      throw new BadRequestException(
+        `الخزنة تحتفظ بـ${String(live)} مفتاحاً لهذا المتغيّر بالشكل الحالي. اسحبها أو ألغِها قبل تغيير نوع التسليم.`,
+      );
+    }
+
+    await this.prisma.client.variant.update({
+      where: { id: variant.id },
+      data: { credentialKind },
+    });
+
+    await this.audit.record({
+      actorId,
+      entity: 'Variant',
+      entityId: variant.id,
+      action: 'variant.credentialKind',
+      before: { credentialKind: variant.credentialKind },
+      after: { credentialKind },
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    return { sku: variant.sku, credentialKind };
+  }
+
+  /**
+   * Sets the activation how-to for one product in one locale.
+   *
+   * Stored as `[{ step, text }]`, which is the shape the product page, the
+   * licence email and the customer's order page already read. Plain lines in,
+   * numbered steps out — the text goes into an email body, so it must not
+   * carry markup.
+   */
+  async setActivationSteps(
+    slug: string,
+    locale: string,
+    steps: string[],
+    actorId: string,
+    context: { ip?: string | undefined; userAgent?: string | undefined },
+  ): Promise<{ slug: string; locale: string; steps: string[] }> {
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (!product) throw new NotFoundException(`لا يوجد منتج بالمُعرّف "${slug}"`);
+
+    const target = locale.toUpperCase() === 'EN' ? Locale.EN : Locale.AR;
+    const translation = await this.prisma.client.productTranslation.findUnique({
+      where: { productId_locale: { productId: product.id, locale: target } },
+      select: { id: true, activationSteps: true },
+    });
+    if (!translation) {
+      throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+    }
+
+    const payload = steps.map((text, index) => ({ step: index + 1, text }));
+    await this.prisma.client.productTranslation.update({
+      where: { id: translation.id },
+      data: { activationSteps: payload },
+    });
+
+    await this.audit.record({
+      actorId,
+      entity: 'ProductTranslation',
+      entityId: translation.id,
+      action: 'activationSteps.set',
+      // Counts, not the text: the audit table is read far more widely than
+      // the catalog is, and a step list is content that belongs in one place.
+      before: {
+        steps: Array.isArray(translation.activationSteps) ? translation.activationSteps.length : 0,
+      },
+      after: { steps: payload.length },
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    return { slug, locale: target.toLowerCase(), steps };
   }
 }

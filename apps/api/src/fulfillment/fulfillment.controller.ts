@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import {
   type ImportResult,
   type Queue,
+  type RevealResult,
   fulfilManuallySchema,
   importKeysSchema,
   markFailedSchema,
@@ -80,6 +81,7 @@ export class FulfillmentController {
           qty: row.qty,
           state: row.state,
           mode: row.mode,
+          credentialKind: row.credentialKind,
           deliverySlaSeconds: row.deliverySlaSeconds,
           requiresActivationEmail: row.requiresActivationEmail,
           hasKey: row.hasKey,
@@ -109,7 +111,7 @@ export class FulfillmentController {
   ) {
     return this.fulfillment.fulfilManually({
       orderItemId,
-      code: body.code,
+      secret: body.secret,
       supplierId: body.supplierId,
       costUsd: body.costUsd,
       actor: this.actor(request),
@@ -150,10 +152,12 @@ export class FulfillmentController {
     @Body(new ZodPipe(importKeysSchema)) body: z.infer<typeof importKeysSchema>,
     @Req() request: StaffRequest,
   ): Promise<ImportResult> {
-    return this.vault.importKeys({
+    // Through the fulfilment module, not straight into the vault: what a line
+    // in that block means depends on whether the variant is sold as a key or
+    // as an account, and only this side can read that.
+    return this.fulfillment.importKeys({
       variantId: body.variantId,
-      // One per line, which is how a supplier sends them.
-      plaintexts: body.codes.split(/\r?\n/).filter((line) => line.trim().length > 0),
+      block: body.codes,
       supplierId: body.supplierId,
       costUsd: body.costUsd,
       expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
@@ -162,10 +166,29 @@ export class FulfillmentController {
   }
 
   @Get('vault/stock')
-  @ApiOperation({ summary: 'Vault counts by variant and state. Never plaintext.' })
-  stock(@Query('variantIds') variantIds?: string) {
-    const ids = (variantIds ?? '').split(',').filter((id) => id.length > 0);
-    return this.vault.stockReport(ids);
+  @ApiOperation({ summary: 'Every variant with what the vault holds. Never plaintext.' })
+  stock() {
+    return this.fulfillment.vaultStock();
+  }
+
+  /**
+   * Where a complaint starts: an order number and nothing else.
+   *
+   * Returns ids and states so the person answering can see whether a key went
+   * out and when. Opening one is the separate route below.
+   */
+  @Get('orders/:number/keys')
+  @ApiOperation({ summary: 'The keys behind one order — ids and states only' })
+  async orderKeys(@Param('number') number: string) {
+    const lines = await this.fulfillment.keysForOrder(number);
+    return lines.map((line) => ({
+      ...line,
+      deliveredAt: line.deliveredAt?.toISOString() ?? null,
+      keys: line.keys.map((key) => ({
+        ...key,
+        deliveredAt: key.deliveredAt?.toISOString() ?? null,
+      })),
+    }));
   }
 
   /**
@@ -180,12 +203,20 @@ export class FulfillmentController {
   @Roles('ADMIN')
   @Post('vault/keys/:licenseKeyId/reveal')
   @ApiOperation({ summary: 'Show one licence to a named member of staff' })
-  reveal(
+  async reveal(
     @Param('licenseKeyId') licenseKeyId: string,
     @Body(new ZodPipe(revealSchema)) _body: z.infer<typeof revealSchema>,
     @Req() request: StaffRequest,
-  ) {
-    return this.vault.reveal({ licenseKeyId, actor: this.actor(request) });
+  ): Promise<RevealResult> {
+    const secret = await this.vault.reveal({ licenseKeyId, actor: this.actor(request) });
+    // Already split by the vault. Passed through field by field so the panel
+    // can label each part rather than printing one run-together string.
+    return {
+      kind: secret.kind,
+      key: secret.key,
+      username: secret.username,
+      password: secret.password,
+    };
   }
 
   @Roles('ADMIN')

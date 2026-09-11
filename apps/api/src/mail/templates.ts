@@ -189,6 +189,60 @@ ${button(input.orderUrl, 'Track your order')}`;
 }
 
 /**
+ * One delivered secret, in the shape the vault hands over.
+ *
+ * Mirrors the vault's own parsed form rather than re-deriving it: the one place
+ * that knows how an account payload is laid out is the vault, and a template
+ * that splits a string on a guessed separator is a template that eventually
+ * prints half a password.
+ */
+export type DeliveredSecret =
+  | { kind: 'ACTIVATION_KEY'; key: string | null }
+  | { kind: 'ACCOUNT_CREDENTIALS'; username: string | null; password: string | null };
+
+/**
+ * A secret as a block in the message body.
+ *
+ * An account is two labelled lines, not one string. A customer who is sent
+ * `user@example.com` and `hunter2` run together has to guess where one ends,
+ * and guessing wrong on a subscription account locks it after a few tries.
+ *
+ * No anchor wraps any of this: a link-tracking proxy rewrites hrefs, and a
+ * rewritten key is a key that does not work.
+ */
+function secretBlock(secret: DeliveredSecret, ar: boolean): string {
+  const frame = (inner: string): string =>
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 10px;background:#f6f6f6;border:1px dashed ${TEAL};border-radius:5px;"><tr><td style="padding:14px;">${inner}</td></tr></table>`;
+
+  const mono = (value: string): string =>
+    `<span dir="ltr" style="font:700 16px/1.6 'Courier New',Consolas,monospace;color:${INK};word-break:break-all;">${escape(value)}</span>`;
+
+  const label = (text: string): string =>
+    `<span style="display:inline-block;min-width:110px;font-size:13px;color:${MUTED};">${escape(text)}</span>`;
+
+  if (secret.kind === 'ACCOUNT_CREDENTIALS') {
+    return frame(
+      `<div style="margin:0 0 6px;">${label(ar ? 'اسم المستخدم' : 'Username')}${mono(secret.username ?? '')}</div>` +
+        `<div>${label(ar ? 'كلمة المرور' : 'Password')}${mono(secret.password ?? '')}</div>`,
+    );
+  }
+  return frame(
+    `<div>${label(ar ? 'مفتاح التفعيل' : 'Activation key')}${mono(secret.key ?? '')}</div>`,
+  );
+}
+
+/** The same thing for the plain-text alternative, which some clients show. */
+function secretLines(secret: DeliveredSecret, ar: boolean): string[] {
+  if (secret.kind === 'ACCOUNT_CREDENTIALS') {
+    return [
+      `${ar ? 'اسم المستخدم' : 'Username'}: ${secret.username ?? ''}`,
+      `${ar ? 'كلمة المرور' : 'Password'}: ${secret.password ?? ''}`,
+    ];
+  }
+  return [`${ar ? 'مفتاح التفعيل' : 'Activation key'}: ${secret.key ?? ''}`];
+}
+
+/**
  * The licence itself.
  *
  * This is the only message that carries the product. Two consequences run all
@@ -205,7 +259,7 @@ export function licenceDelivered(input: {
   locale: 'ar' | 'en';
   orderNumber: string;
   productName: string;
-  keys: string[];
+  secrets: DeliveredSecret[];
   activationSteps: string[];
   activationEmail: string | null;
   orderUrl: string;
@@ -214,12 +268,7 @@ export function licenceDelivered(input: {
 }): Rendered {
   const ar = input.locale === 'ar';
 
-  const keyBlocks = input.keys
-    .map(
-      (key) =>
-        `<p dir="ltr" style="margin:0 0 10px;padding:14px;background:#f6f6f6;border:1px dashed ${TEAL};border-radius:5px;font:700 16px/1.5 'Courier New',Consolas,monospace;color:${INK};word-break:break-all;text-align:left;">${escape(key)}</p>`,
-    )
-    .join('');
+  const keyBlocks = input.secrets.map((secret) => secretBlock(secret, ar)).join('');
 
   const steps =
     input.activationSteps.length > 0
@@ -239,7 +288,7 @@ export function licenceDelivered(input: {
 <p style="margin:0 0 16px;color:${MUTED};">${escape(input.productName)} — طلب <span dir="ltr">${escape(input.orderNumber)}</span></p>
 ${keyBlocks}
 ${activation}
-<p><strong>احفظ هذه الرسالة.</strong> الكود موجود أيضاً في صفحة طلبك.</p>
+<p><strong>احفظ هذه الرسالة.</strong> هذه هي النسخة التي تُسلَّم إليك؛ خطوات التفعيل موجودة أيضاً في صفحة طلبك.</p>
 ${steps}
 <p style="color:${MUTED};">${escape(input.warrantyNote)}</p>
 <p>إن لم يعمل الكود، راسِلنا على <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a> ولا تحاول تفعيله مراراً.</p>
@@ -248,7 +297,7 @@ ${button(input.orderUrl, 'صفحة الطلب')}`
 <p style="margin:0 0 16px;color:${MUTED};">${escape(input.productName)} — order <span dir="ltr">${escape(input.orderNumber)}</span></p>
 ${keyBlocks}
 ${activation}
-<p><strong>Keep this email.</strong> The code is also on your order page.</p>
+<p><strong>Keep this email.</strong> This is the copy that is delivered to you; the activation steps are also on your order page.</p>
 ${steps}
 <p style="color:${MUTED};">${escape(input.warrantyNote)}</p>
 <p>If the code does not work, write to <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a> rather than retrying the activation.</p>
@@ -259,7 +308,7 @@ ${button(input.orderUrl, 'Your order')}`;
         `ترخيصك جاهز — ${input.productName}`,
         `طلب ${input.orderNumber}`,
         '',
-        ...input.keys,
+        ...input.secrets.flatMap((secret) => secretLines(secret, true)),
         '',
         input.activationEmail ? `مُفعَّل على: ${input.activationEmail}` : '',
         ...input.activationSteps.map((step, index) => `${String(index + 1)}. ${step}`),
@@ -274,7 +323,7 @@ ${button(input.orderUrl, 'Your order')}`;
         `Your licence is ready — ${input.productName}`,
         `Order ${input.orderNumber}`,
         '',
-        ...input.keys,
+        ...input.secrets.flatMap((secret) => secretLines(secret, false)),
         '',
         input.activationEmail ? `Activated on: ${input.activationEmail}` : '',
         ...input.activationSteps.map((step, index) => `${String(index + 1)}. ${step}`),

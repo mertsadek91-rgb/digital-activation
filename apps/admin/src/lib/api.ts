@@ -11,11 +11,16 @@
  */
 import type {
   AdminProductList,
+  CredentialKind,
   ImportResult,
+  OrderKeysRow,
   Queue,
   Readiness,
+  RevealResult,
+  SecretInput,
   StaffLoginResult,
   StaffMe,
+  VaultStockRow,
 } from '@da/contracts';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
@@ -96,6 +101,23 @@ export const api = {
       body: JSON.stringify({ status, locale: 'ar' }),
     }),
 
+  activationSteps: (slug: string, locale: 'ar' | 'en') =>
+    request<{ steps: string[] }>(
+      `/admin/products/${encodeURIComponent(slug)}/activation-steps?locale=${locale}`,
+    ),
+
+  setCredentialKind: (sku: string, credentialKind: CredentialKind) =>
+    request<{ sku: string; credentialKind: CredentialKind }>(
+      `/admin/variants/${encodeURIComponent(sku)}/credential-kind`,
+      { method: 'PATCH', body: JSON.stringify({ credentialKind }) },
+    ),
+
+  setActivationSteps: (slug: string, locale: 'ar' | 'en', steps: string[]) =>
+    request<{ slug: string; locale: string; steps: string[] }>(
+      `/admin/products/${encodeURIComponent(slug)}/activation-steps`,
+      { method: 'PATCH', body: JSON.stringify({ locale, steps }) },
+    ),
+
   setInventory: (sku: string, onHand: number, reason: string, note?: string) =>
     request<{ sku: string; onHand: number; reserved: number }>(`/admin/variants/${sku}/inventory`, {
       method: 'PATCH',
@@ -114,10 +136,10 @@ export const api = {
    * not put in a URL, a query string or anything that would end up in an
    * access log.
    */
-  fulfil: (orderItemId: string, code: string, costUsd?: string) =>
+  fulfil: (orderItemId: string, secret: SecretInput, costUsd?: string) =>
     request<{ state: string; deliveredAt: string }>(
       `/admin/fulfillment/queue/${encodeURIComponent(orderItemId)}/fulfil`,
-      { method: 'POST', body: JSON.stringify({ code, ...(costUsd ? { costUsd } : {}) }) },
+      { method: 'POST', body: JSON.stringify({ secret, ...(costUsd ? { costUsd } : {}) }) },
     ),
 
   deliver: (orderItemId: string) =>
@@ -134,9 +156,51 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
-  importKeys: (variantId: string, codes: string, costUsd?: string) =>
+  importKeys: (variantId: string, codes: string, costUsd?: string, expiresAt?: string) =>
     request<ImportResult>('/admin/fulfillment/vault/import', {
       method: 'POST',
-      body: JSON.stringify({ variantId, codes, ...(costUsd ? { costUsd } : {}) }),
+      body: JSON.stringify({
+        variantId,
+        codes,
+        ...(costUsd ? { costUsd } : {}),
+        ...(expiresAt ? { expiresAt } : {}),
+      }),
+    }),
+
+  // --- vault ----------------------------------------------------------------
+
+  vaultStock: () => request<VaultStockRow[]>('/admin/fulfillment/vault/stock'),
+
+  orderKeys: (orderNumber: string) =>
+    request<OrderKeysRow[]>(`/admin/fulfillment/orders/${encodeURIComponent(orderNumber)}/keys`),
+
+  /**
+   * The one call that returns a licence in the clear.
+   *
+   * Refused with 403 when the session's TOTP challenge has gone stale, which
+   * the caller is expected to answer by stepping up rather than by giving up.
+   */
+  revealKey: (licenseKeyId: string, reason: string) =>
+    request<RevealResult>(
+      `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/reveal`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    ),
+
+  revokeKey: (licenseKeyId: string, reason: string) =>
+    request<{ state: string }>(
+      `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/revoke`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    ),
+
+  keyHistory: (licenseKeyId: string) =>
+    request<{ action: string; actorId: string | null; ip: string | null; createdAt: string }[]>(
+      `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/history`,
+    ),
+
+  /** Re-clears the TOTP challenge without signing out. */
+  stepUp: (totp: string) =>
+    request<{ staff: StaffMe }>('/auth/staff/step-up', {
+      method: 'POST',
+      body: JSON.stringify({ totp }),
     }),
 };

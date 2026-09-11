@@ -372,6 +372,81 @@ export class AuthService {
     return this.issueSession(updated, context);
   }
 
+  /**
+   * Re-clears the TOTP challenge on a live session.
+   *
+   * The vault refuses to open a licence for a session whose last challenge is
+   * more than fifteen minutes old, and without this the only way to satisfy
+   * that was to sign out and back in — so the honest answer to "show me this
+   * customer's key" was to destroy your session first. This asks for a code
+   * and stamps the session, which is what the step-up was meant to be.
+   *
+   * The password is not re-asked. The session already proves who this is; the
+   * question is whether they are at the keyboard now, and a code from their
+   * authenticator answers exactly that.
+   */
+  async stepUp(
+    staffId: string,
+    totp: string,
+    refreshToken: string | undefined,
+    context: RequestContext,
+  ): Promise<SessionResult> {
+    const staff = await this.prisma.client.staffUser.findUnique({ where: { id: staffId } });
+    if (!staff?.isActive) throw new UnauthorizedException('This account is no longer active.');
+    if (!staff.totpSecret || !staff.totpEnabledAt) {
+      throw new UnauthorizedException('لم تُسجَّل المصادقة الثنائية على هذا الحساب.');
+    }
+
+    const secret = decryptSecret(staff.totpSecret, this.kek());
+    if (!verifyTotp(totp, secret)) {
+      await this.audit.record({
+        actorId: staff.id,
+        entity: 'StaffUser',
+        entityId: staff.id,
+        action: 'totp.stepup.failed',
+        ip: context.ip,
+        userAgent: context.userAgent,
+      });
+      throw new UnauthorizedException('رمز المصادقة غير صحيح.');
+    }
+
+    // Stamped on the session as well as in the new token: `refresh` reads
+    // `totpVerifiedAt` to rebuild the claim, so without this the freshness
+    // would be lost the next time the access token rotated.
+    if (refreshToken) {
+      await this.prisma.client.staffSession.updateMany({
+        where: { tokenHash: hashToken(refreshToken), revokedAt: null },
+        data: { totpVerifiedAt: new Date(), lastSeenAt: new Date() },
+      });
+    }
+
+    await this.audit.record({
+      actorId: staff.id,
+      entity: 'StaffUser',
+      entityId: staff.id,
+      action: 'totp.stepup',
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    const claims: AccessClaims = {
+      sub: staff.id,
+      role: staff.role,
+      mustChange: staff.mustChangePassword,
+      totpAt: Math.floor(Date.now() / 1000),
+    };
+
+    return {
+      accessToken: await this.jwt.signAsync(
+        { ...claims },
+        { secret: this.accessSecret(), expiresIn: ttlSeconds(process.env.JWT_ACCESS_TTL, 15 * 60) },
+      ),
+      // The refresh token is untouched: this is the same session, re-attested.
+      refreshToken: refreshToken ?? '',
+      staff: this.toMe(staff),
+    };
+  }
+
   async me(staffId: string): Promise<StaffMe> {
     const staff = await this.prisma.client.staffUser.findUnique({ where: { id: staffId } });
     if (!staff?.isActive) throw new UnauthorizedException('This account is no longer active.');

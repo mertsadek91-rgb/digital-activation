@@ -7,6 +7,7 @@ import {
   type StaffLoginResult,
   type StaffMe,
   staffLoginSchema,
+  stepUpSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
@@ -118,6 +119,34 @@ export class AuthController {
   @Get('me')
   me(@Req() request: StaffRequest): Promise<StaffMe> {
     return this.auth.me(request.staff?.sub ?? '');
+  }
+
+  /**
+   * Re-clears the TOTP challenge on a live session.
+   *
+   * Needed because the vault refuses to open a licence for a session whose
+   * challenge is older than fifteen minutes, and the only alternative was to
+   * sign out and back in — making "show me this customer's key" cost the
+   * session. Throttled like the login routes: it takes a code, so it is a
+   * guessing target.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @UseGuards(StaffGuard)
+  @Post('step-up')
+  @ApiOperation({ summary: 'Re-verify TOTP without signing out' })
+  async stepUp(
+    @Body(new ZodPipe(stepUpSchema)) body: z.infer<typeof stepUpSchema>,
+    @Req() request: StaffRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ staff: StaffMe }> {
+    const session = await this.auth.stepUp(
+      request.staff?.sub ?? '',
+      body.totp,
+      request.cookies?.da_refresh,
+      { ip: request.ip, userAgent: request.headers['user-agent'] },
+    );
+    this.setCookies(reply, session);
+    return { staff: session.staff };
   }
 
   /**

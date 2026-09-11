@@ -41,6 +41,14 @@ model LicenseKey {
   /// Salted SHA-256 of the plaintext. Duplicate detection without decryption.
   fingerprint String @unique
 
+  /// What the sealed payload is, so a reader never has to infer it. An
+  /// ACCOUNT_CREDENTIALS row holds the username on the first line and the
+  /// password on the second; an ACTIVATION_KEY row holds the key verbatim.
+  /// Copied from the variant at import time rather than joined at read time:
+  /// the vault role has no visibility of the catalog by rule 1, and a row that
+  /// cannot say what it contains cannot be rendered safely.
+  kind CredentialKind @default(ACTIVATION_KEY)
+
   /// Some products ship several strings together (key + account + panel URL).
   /// Stored as one encrypted JSON document rather than the legacy five
   /// `license_code1..5` columns.

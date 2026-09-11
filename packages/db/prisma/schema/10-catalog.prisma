@@ -187,6 +187,12 @@ model Variant {
   /// is a state that cannot occur.
   fulfillmentMode FulfillmentMode @default(ON_DEMAND)
 
+  /// Whether this line is delivered as a single key or as an account pair.
+  /// Drives the import form, the manual paste box, the licence email and the
+  /// customer's own order page — all four read this one field rather than each
+  /// guessing from the activation method.
+  credentialKind CredentialKind @default(ACTIVATION_KEY)
+
   /// Delivery promise in seconds, shown verbatim on the product page. Anything
   /// that cannot be auto-fulfilled must state an honest window instead.
   deliverySlaSeconds Int @default(60)

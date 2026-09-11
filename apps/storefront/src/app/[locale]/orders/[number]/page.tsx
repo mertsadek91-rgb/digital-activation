@@ -139,6 +139,33 @@ export default function OrderPage() {
                 {line.sku} × {line.qty}
               </p>
               <p className="order-line-state">{states[line.fulfillmentState]}</p>
+
+              {/* What will land in the inbox, said before it lands. A customer
+                  expecting a key who receives a username and a password reads
+                  it as the wrong email. */}
+              <p className="order-line-kind">
+                {line.credentialKind === 'ACCOUNT_CREDENTIALS'
+                  ? ar
+                    ? 'يُسلَّم كاسم مستخدم وكلمة مرور على بريدك'
+                    : 'Delivered as a username and password to your email'
+                  : ar
+                    ? 'يُسلَّم كمفتاح تفعيل على بريدك'
+                    : 'Delivered as an activation key to your email'}
+              </p>
+
+              {/* The same steps the licence email carries. Here because the
+                  email is read on a phone and the activation happens at a
+                  machine — and because an email can be lost. */}
+              {line.activationSteps.length > 0 ? (
+                <details className="order-line-how">
+                  <summary>{ar ? 'طريقة التفعيل' : 'How to activate'}</summary>
+                  <ol>
+                    {line.activationSteps.map((step, index) => (
+                      <li key={index}>{step}</li>
+                    ))}
+                  </ol>
+                </details>
+              ) : null}
             </div>
             <p className="order-line-total">{formatPrice(line.lineTotal)}</p>
           </li>
@@ -162,10 +189,15 @@ export default function OrderPage() {
         </div>
       </dl>
 
+      {/* What this says has to be true today. It promised the key would also
+          be waiting in an account area that does not exist yet, which is the
+          kind of sentence that turns a delivered order into a support ticket —
+          so it says where the key actually is: the email, and only the email,
+          with the activation steps here. */}
       <p className="lede">
         {ar
-          ? 'سيصلك المفتاح على بريدك، وستجده أيضاً في حسابك. معظم منتجاتنا تُطلَب من المورّد بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
-          : 'Your key arrives by email and stays in your account. Most of our products are ordered from the supplier after payment, so your licence term does not start before you use it.'}
+          ? 'المفتاح يُرسَل إلى بريدك — احفظ تلك الرسالة. خطوات التفعيل موجودة هنا في صفحة طلبك. ومعظم منتجاتنا تُطلَب من المورّد بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
+          : 'Your key is sent to your email — keep that message. The activation steps stay here on your order page. And most of our products are ordered from the supplier after payment, so your licence term does not start before you use it.'}
       </p>
     </main>
   );

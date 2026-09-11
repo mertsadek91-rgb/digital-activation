@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { cartSchema } from './cart.js';
-import { catalogImageSchema, displayPriceSchema } from './catalog.js';
+import { catalogImageSchema, credentialKindSchema, displayPriceSchema } from './catalog.js';
 import { localeSchema, slugSchema } from './primitives.js';
 
 /**
@@ -82,6 +82,23 @@ export const orderLineSchema = z.object({
   unitPrice: displayPriceSchema,
   lineTotal: displayPriceSchema,
   fulfillmentState: z.enum(['PENDING', 'AUTO_ASSIGNED', 'MANUAL_QUEUE', 'DELIVERED', 'FAILED']),
+
+  /**
+   * Whether this line arrives as a key or as an account, so the page can say
+   * what to expect in the inbox instead of the customer finding out.
+   */
+  credentialKind: credentialKindSchema,
+
+  /**
+   * The activation how-to, in the order's own locale.
+   *
+   * The same lines the licence email carries. A customer who lost the email —
+   * or read it on a phone and is now at the machine they are activating —
+   * needs the steps without writing in for them. The licence itself is not
+   * here: it is in the email and in the vault, and an order page reachable
+   * with a cart cookie is not where a key belongs.
+   */
+  activationSteps: z.array(z.string()),
 });
 
 export const orderSchema = z.object({

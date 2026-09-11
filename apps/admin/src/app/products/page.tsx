@@ -237,6 +237,7 @@ function ProductRow({
   onError: (message: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [howTo, setHowTo] = useState(false);
 
   return (
     <>
@@ -276,6 +277,15 @@ function ProductRow({
               <button type="button" onClick={onPublish} disabled={busy || row.blockers > 0}>
                 {row.status === 'PUBLISHED' ? 'إلغاء النشر' : 'نشر'}
               </button>
+              {/* The count, on the button. Zero steps is the state worth
+                  noticing: the licence still goes out, with no instructions
+                  beside it, and that is where the support ticket comes from. */}
+              <button type="button" className="ghost" onClick={() => setHowTo(!howTo)}>
+                شرح التفعيل
+                <span className={`tab-count${row.activationSteps.ar === 0 ? ' is-late' : ''}`}>
+                  {row.activationSteps.ar}
+                </span>
+              </button>
               {row.stockedVariantCount === 0 ? null : row.variantCount === 1 ? (
                 <button type="button" className="ghost" onClick={() => setEditing(!editing)}>
                   مخزون
@@ -295,6 +305,21 @@ function ProductRow({
               slug={row.slug}
               onDone={() => {
                 setEditing(false);
+                onStockSaved();
+              }}
+              onError={onError}
+            />
+          </td>
+        </tr>
+      ) : null}
+
+      {howTo ? (
+        <tr className="drawer">
+          <td colSpan={7}>
+            <HowToForm
+              slug={row.slug}
+              onDone={() => {
+                setHowTo(false);
                 onStockSaved();
               }}
               onError={onError}
@@ -389,6 +414,104 @@ function StockForm({
       </label>
       <button type="submit" disabled={busy}>
         حفظ
+      </button>
+    </form>
+  );
+}
+
+/**
+ * The activation how-to, one step per line.
+ *
+ * This text is delivered twice: in the licence email, under the key, and on the
+ * customer's own order page. So it is plain lines rather than a rich editor —
+ * an email body cannot carry markup, and a step list that renders differently
+ * in the two places is a step list nobody trusts.
+ *
+ * Per locale, because it is content. The Arabic list is what most customers
+ * read; the English one is written separately rather than machine-translated,
+ * which is the sort of thing that produces instructions nobody can follow.
+ */
+function HowToForm({
+  slug,
+  onDone,
+  onError,
+}: {
+  slug: string;
+  onDone: () => void;
+  onError: (message: string) => void;
+}) {
+  const [locale, setLocale] = useState<'ar' | 'en'>('ar');
+  const [text, setText] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setText(null);
+    let cancelled = false;
+    void api
+      .activationSteps(slug, locale)
+      .then((result) => {
+        if (!cancelled) setText(result.steps.join('\n'));
+      })
+      .catch((caught: unknown) => {
+        if (cancelled) return;
+        // A missing translation is a real answer, not a failure: the product
+        // has no English row yet, and an empty box that cannot save is more
+        // honest than a red banner.
+        setText('');
+        onError(caught instanceof Error ? caught.message : 'تعذّر تحميل الشرح.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, locale, onError]);
+
+  const lines = (text ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return (
+    <form
+      className="paste-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        setBusy(true);
+        void api
+          .setActivationSteps(slug, locale, lines)
+          .then(onDone)
+          .catch((caught: unknown) => {
+            onError(caught instanceof Error ? caught.message : 'تعذّر حفظ الشرح.');
+          })
+          .finally(() => setBusy(false));
+      }}
+    >
+      <label>
+        اللغة
+        <select value={locale} onChange={(event) => setLocale(event.target.value as 'ar' | 'en')}>
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label className="grow">
+        خطوات التفعيل — خطوة في كل سطر
+        <textarea
+          value={text ?? ''}
+          onChange={(event) => setText(event.target.value)}
+          rows={6}
+          dir={locale === 'ar' ? 'rtl' : 'ltr'}
+          disabled={text === null}
+          placeholder={
+            'حمّل البرنامج من الموقع الرسمي\nافتح «تفعيل» وأدخل المفتاح\nأعد تشغيل البرنامج'
+          }
+        />
+        <small>
+          {lines.length > 0 ? `${String(lines.length)} خطوة. ` : ''}
+          تُرسَل مع المفتاح في البريد وتظهر في صفحة طلب العميل. نصّ فقط — بلا روابط منسّقة أو تنسيق،
+          لأن البريد لا يقرأه.
+        </small>
+      </label>
+      <button type="submit" disabled={busy || text === null}>
+        {busy ? '...' : 'حفظ'}
       </button>
     </form>
   );

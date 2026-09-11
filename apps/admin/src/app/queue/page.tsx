@@ -1,6 +1,6 @@
 'use client';
 
-import type { Queue, QueueRow, StaffMe } from '@da/contracts';
+import type { Queue, QueueRow, SecretInput, StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -129,8 +129,8 @@ export default function QueuePage() {
             key={row.orderItemId}
             row={row}
             canWork={canWork}
-            onFulfil={(code, cost) =>
-              void act(`سُلّم ${row.sku}`, () => api.fulfil(row.orderItemId, code, cost))
+            onFulfil={(secret, cost) =>
+              void act(`سُلّم ${row.sku}`, () => api.fulfil(row.orderItemId, secret, cost))
             }
             onDeliver={() => void act(`أُرسل ${row.sku}`, () => api.deliver(row.orderItemId))}
             onFail={(reason) =>
@@ -152,18 +152,23 @@ function QueueCard({
 }: {
   row: QueueRow;
   canWork: boolean;
-  onFulfil: (code: string, costUsd?: string) => void;
+  onFulfil: (secret: SecretInput, costUsd?: string) => void;
   onDeliver: () => void;
   onFail: (reason: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
+  // Account lines. Kept beside `code` rather than reusing it: a password typed
+  // into a field labelled "key" is the mistake this whole split exists to stop.
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [cost, setCost] = useState('');
   const [failing, setFailing] = useState(false);
   const [reason, setReason] = useState<string>(FAIL_REASONS[0]);
   const [copied, setCopied] = useState<string | null>(null);
 
   const settled = row.state === 'DELIVERED' || row.state === 'FAILED';
+  const isAccount = row.credentialKind === 'ACCOUNT_CREDENTIALS';
 
   async function copy(value: string, label: string): Promise<void> {
     try {
@@ -247,7 +252,7 @@ function QueueCard({
             </button>
           ) : (
             <button type="button" className="btn-primary" onClick={() => setOpen(!open)}>
-              {open ? 'إلغاء' : 'ألصق كود المورّد'}
+              {open ? 'إلغاء' : isAccount ? 'أدخل بيانات الحساب' : 'ألصق كود المورّد'}
             </button>
           )}
           <button type="button" className="ghost" onClick={() => setFailing(!failing)}>
@@ -261,32 +266,87 @@ function QueueCard({
           className="paste-form"
           onSubmit={(event) => {
             event.preventDefault();
-            onFulfil(code.trim(), cost.trim() || undefined);
+            onFulfil(
+              isAccount
+                ? {
+                    kind: 'ACCOUNT_CREDENTIALS',
+                    username: username.trim(),
+                    password: password.trim(),
+                  }
+                : { kind: 'ACTIVATION_KEY', key: code.trim() },
+              cost.trim() || undefined,
+            );
             setCode('');
+            setUsername('');
+            setPassword('');
             setCost('');
             setOpen(false);
           }}
         >
-          <label className="grow">
-            كود المورّد
-            <textarea
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              rows={3}
-              dir="ltr"
-              required
-              minLength={4}
-              // Nothing remembers this field. A browser that autofills a
-              // licence key into the next order is a licence sold twice.
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="الصق الكود كما ورد من المورّد"
-            />
-            <small>
-              يُشفّر في الخزنة ويُرسَل للعميل مباشرة. لن يُكتب في أي سجل، ولن يُعلَّم السطر
-              مُسلَّماً إلا إذا خرج البريد فعلاً.
-            </small>
-          </label>
+          {/* Two shapes, because the supplier sends two. An account pasted into
+              one box would have to be split by guesswork somewhere, and the
+              guess would be wrong on the passwords that contain a colon. */}
+          {isAccount ? (
+            <>
+              <label className="grow">
+                اسم المستخدم / البريد
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  dir="ltr"
+                  required
+                  minLength={3}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="account@example.com"
+                />
+              </label>
+              <label className="grow">
+                كلمة المرور
+                {/* type=text on purpose: the person pasting it has to be able
+                    to check it against what the supplier sent, and a masked
+                    field is where a transposed character survives to the
+                    customer. */}
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  dir="ltr"
+                  required
+                  minLength={4}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="كلمة المرور كما وردت"
+                />
+                <small>
+                  يُشفّران معاً في الخزنة ويُرسَلان للعميل بعنوانَين منفصلَين في البريد. لن يُكتبا
+                  في أي سجل.
+                </small>
+              </label>
+            </>
+          ) : (
+            <label className="grow">
+              كود المورّد
+              <textarea
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                rows={3}
+                dir="ltr"
+                required
+                minLength={4}
+                // Nothing remembers this field. A browser that autofills a
+                // licence key into the next order is a licence sold twice.
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="الصق الكود كما ورد من المورّد"
+              />
+              <small>
+                يُشفّر في الخزنة ويُرسَل للعميل مباشرة. لن يُكتب في أي سجل، ولن يُعلَّم السطر
+                مُسلَّماً إلا إذا خرج البريد فعلاً.
+              </small>
+            </label>
+          )}
           <label>
             التكلفة (اختياري)
             <input
@@ -298,7 +358,14 @@ function QueueCard({
               pattern="\d+(\.\d{1,2})?"
             />
           </label>
-          <button type="submit" disabled={code.trim().length < 4}>
+          <button
+            type="submit"
+            disabled={
+              isAccount
+                ? username.trim().length < 3 || password.trim().length < 4
+                : code.trim().length < 4
+            }
+          >
             حفظ وإرسال
           </button>
         </form>

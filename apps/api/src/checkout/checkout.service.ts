@@ -22,6 +22,7 @@ import {
 } from '@da/db';
 
 import { CartService } from '../cart/cart.service.js';
+import { parseActivationSteps } from '../common/activation-steps.js';
 import { displayPrice, type FxTable } from '../catalog/pricing.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -496,7 +497,24 @@ export class CheckoutService {
       where: { number },
       include: {
         cart: { select: { token: true } },
-        items: { include: { variant: { select: { product: { select: { slug: true } } } } } },
+        items: {
+          include: {
+            variant: {
+              select: {
+                credentialKind: true,
+                product: {
+                  select: {
+                    slug: true,
+                    // The order's own locale, with the other as the fallback:
+                    // a store that has written the steps in Arabic only should
+                    // still show them to an English order rather than nothing.
+                    translations: { select: { locale: true, activationSteps: true } },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
     if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${number}`);
@@ -529,6 +547,13 @@ export class CheckoutService {
         unitPrice: price(item.unitPriceUsd),
         lineTotal: price(item.lineTotalUsd),
         fulfillmentState: item.fulfillmentState,
+        credentialKind: item.variant.credentialKind,
+        activationSteps: parseActivationSteps(
+          (
+            item.variant.product.translations.find((entry) => entry.locale === order.locale) ??
+            item.variant.product.translations[0]
+          )?.activationSteps,
+        ),
       })),
       subtotal: price(order.subtotalUsd),
       discount: price(order.discountUsd),

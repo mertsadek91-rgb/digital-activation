@@ -612,3 +612,174 @@ tr.drawer td > * {
   color: var(--color-ink-muted);
   max-inline-size: 46ch;
 }
+
+/* --- vault ---------------------------------------------------------------- */
+
+.vault-section {
+  margin-block: var(--spacing-2);
+}
+.vault-section h2 {
+  margin: 0 0 4px;
+  font-size: var(--text-xl);
+}
+.lede-sm {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  max-inline-size: 70ch;
+}
+
+.vault-others {
+  margin-block-start: var(--spacing-1);
+  font-size: var(--text-sm);
+}
+.vault-others summary {
+  cursor: pointer;
+  color: var(--color-ink-muted);
+}
+.vault-other-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.vault-other-list li {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  padding: 4px 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.lookup-form {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-block-end: var(--spacing-1);
+}
+.lookup-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.lookup-form input {
+  font: inherit;
+  font-family: var(--font-mono);
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  min-block-size: 42px;
+  min-inline-size: 14rem;
+}
+
+.key-line {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-1);
+  margin-block-end: 10px;
+  background: var(--color-bg);
+}
+.key-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.key-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+.key-list .actions,
+.key-list button.ghost {
+  min-block-size: 34px;
+  font-size: var(--text-xs);
+}
+
+/*
+ * A revealed key. Deliberately conspicuous: it is the product, it is in the
+ * clear, and it is on somebody's screen — the styling should make that
+ * uncomfortable enough to hide it again.
+ */
+.revealed {
+  flex-basis: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px dashed var(--color-danger);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-soft);
+}
+.revealed-parts {
+  display: grid;
+  gap: 6px;
+}
+.revealed-parts p {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+/* The label, so nobody reads a password out as a username. */
+.revealed-parts span {
+  min-inline-size: 8rem;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.revealed-parts strong {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  word-break: break-all;
+  color: var(--color-ink);
+}
+
+.key-history {
+  flex-basis: 100%;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  display: grid;
+  gap: 2px;
+}
+
+.reason-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  max-inline-size: 44rem;
+}
+.reason-field input {
+  font: inherit;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  min-block-size: 42px;
+}
+
+.paste-form.stepup {
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-1);
+  border-block-start: 0;
+}

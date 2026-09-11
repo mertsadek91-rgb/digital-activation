@@ -29,7 +29,7 @@ export function Nav({
   overdue: givenOverdue,
 }: {
   me: StaffMe;
-  current: 'products' | 'queue';
+  current: 'products' | 'queue' | 'vault';
   waiting?: number;
   overdue?: number;
 }) {
@@ -71,6 +71,13 @@ export function Nav({
           onClick={() => router.push('/products')}
         >
           المنتجات
+        </button>
+        <button
+          type="button"
+          className={`tab${current === 'vault' ? ' is-active' : ''}`}
+          onClick={() => router.push('/vault')}
+        >
+          الخزنة
         </button>
         <button
           type="button"

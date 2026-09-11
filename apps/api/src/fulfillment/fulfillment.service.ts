@@ -1,8 +1,10 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import type { CredentialKind, SecretInput } from '@da/contracts';
 import { FulfillmentMode, FulfillmentState, Locale, OrderStatus, Prisma, RiskLevel } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { parseActivationSteps } from '../common/activation-steps.js';
 import { MailService } from '../mail/mail.service.js';
 import {
   fulfilmentFailed,
@@ -11,6 +13,7 @@ import {
   orderReceived,
 } from '../mail/templates.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { type ParsedSecret, canonical, parse, parseBlock } from '../vault/credential.js';
 import { type Actor, VaultService } from '../vault/vault.service.js';
 
 /**
@@ -31,21 +34,6 @@ import { type Actor, VaultService } from '../vault/vault.service.js';
  * and the risk check has cleared. A digital key cannot be clawed back, so the
  * block is always before delivery and never after.
  */
-/** Activation steps out of a Json column, without trusting its shape. */
-function parseSteps(value: Prisma.JsonValue | null): string[] {
-  if (!Array.isArray(value)) return [];
-  const steps: string[] = [];
-  for (const entry of value) {
-    if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
-      const text = (entry as Record<string, unknown>).text;
-      if (typeof text === 'string') steps.push(text);
-    } else if (typeof entry === 'string') {
-      steps.push(entry);
-    }
-  }
-  return steps;
-}
-
 @Injectable()
 export class FulfillmentService {
   private readonly logger = new Logger(FulfillmentService.name);
@@ -205,6 +193,7 @@ export class FulfillmentService {
       spec: Prisma.JsonValue;
       state: FulfillmentState;
       mode: FulfillmentMode;
+      credentialKind: CredentialKind;
       deliverySlaSeconds: number;
       requiresActivationEmail: boolean;
       hasKey: boolean;
@@ -252,6 +241,7 @@ export class FulfillmentService {
         variant: {
           select: {
             fulfillmentMode: true,
+            credentialKind: true,
             deliverySlaSeconds: true,
             requiresActivationEmail: true,
           },
@@ -272,10 +262,57 @@ export class FulfillmentService {
       spec: item.variantSpecSnapshot,
       state: item.fulfillmentState,
       mode: item.variant.fulfillmentMode,
+      credentialKind: item.variant.credentialKind,
       deliverySlaSeconds: item.variant.deliverySlaSeconds,
       requiresActivationEmail: item.variant.requiresActivationEmail,
       hasKey: item.assignedKeyIds.length > 0,
     }));
+  }
+
+  /**
+   * What a variant is sold as.
+   *
+   * Lives here rather than in the vault because the vault has no visibility of
+   * the catalog by design, and the answer is a catalog fact. Every caller that
+   * needs to seal or render a secret comes through this module for it.
+   */
+  async credentialKind(variantId: string): Promise<CredentialKind> {
+    const variant = await this.prisma.client.variant.findUnique({
+      where: { id: variantId },
+      select: { credentialKind: true },
+    });
+    if (!variant) throw new NotFoundException('لا يوجد هذا المتغيّر.');
+    return variant.credentialKind;
+  }
+
+  /**
+   * Takes in a pasted block of licences for one variant.
+   *
+   * The parsing happens here because it depends on what the variant is sold
+   * as: one key per line, or a username and password per line. The vault is
+   * handed secrets it can seal, and never a block it would have to interpret.
+   */
+  async importKeys(input: {
+    variantId: string;
+    block: string;
+    supplierId?: string | undefined;
+    costUsd?: string | undefined;
+    expiresAt?: Date | undefined;
+    actor: Actor;
+  }): Promise<{ imported: number; duplicatesSkipped: number; invalidSkipped: number }> {
+    const kind = await this.credentialKind(input.variantId);
+    const { secrets, invalid } = parseBlock(kind, input.block);
+
+    return this.vault.importKeys({
+      variantId: input.variantId,
+      kind,
+      secrets,
+      invalidSkipped: invalid,
+      supplierId: input.supplierId,
+      costUsd: input.costUsd,
+      expiresAt: input.expiresAt,
+      actor: input.actor,
+    });
   }
 
   /**
@@ -288,7 +325,7 @@ export class FulfillmentService {
    */
   async fulfilManually(input: {
     orderItemId: string;
-    code: string;
+    secret: SecretInput;
     supplierId?: string | undefined;
     costUsd?: string | undefined;
     actor: Actor;
@@ -311,10 +348,22 @@ export class FulfillmentService {
       throw new BadRequestException('هذا السطر مُسلَّم بالفعل.');
     }
 
+    // What the supplier sent must be the shape this line is sold as. A key
+    // pasted into an account line would be stored as a key and mailed under
+    // the wrong heading — and the customer would have no password to use.
+    const kind = await this.credentialKind(item.variantId);
+    if (input.secret.kind !== kind) {
+      throw new BadRequestException(
+        kind === 'ACCOUNT_CREDENTIALS'
+          ? 'هذا المنتج يُسلَّم باسم مستخدم وكلمة مرور، لا بمفتاح.'
+          : 'هذا المنتج يُسلَّم بمفتاح تفعيل، لا بحساب.',
+      );
+    }
+
     const { licenseKeyId } = await this.vault.fulfilManually({
       orderItemId: item.id,
       variantId: item.variantId,
-      plaintext: input.code,
+      secret: input.secret,
       supplierId: input.supplierId,
       costUsd: input.costUsd,
       actor: input.actor,
@@ -326,7 +375,7 @@ export class FulfillmentService {
     // again, with nothing in the system saying so.
     const sent = await this.emailLicence({
       orderItemId: item.id,
-      keys: [input.code],
+      secrets: [parse(input.secret.kind, canonical(input.secret))],
     });
     if (!sent.ok) {
       // The key is in the vault and bound to the line — that part is done and
@@ -404,7 +453,7 @@ export class FulfillmentService {
 
     const sent = await this.emailLicence({
       orderItemId: item.id,
-      keys: opened.map((entry) => entry.plaintext),
+      secrets: opened.map((entry) => entry.secret),
     });
     if (!sent.ok) {
       throw new BadRequestException(
@@ -589,7 +638,7 @@ export class FulfillmentService {
    */
   private async emailLicence(input: {
     orderItemId: string;
-    keys: string[];
+    secrets: ParsedSecret[];
   }): Promise<{ ok: boolean; error: string | null }> {
     const item = await this.prisma.client.orderItem.findUnique({
       where: { id: input.orderItemId },
@@ -624,7 +673,7 @@ export class FulfillmentService {
     const translation =
       item.variant.product.translations.find((entry) => entry.locale === locale) ??
       item.variant.product.translations[0];
-    const steps = parseSteps(translation?.activationSteps ?? null);
+    const steps = parseActivationSteps(translation?.activationSteps);
 
     const warranty = item.variant.warrantyDays
       ? ar
@@ -647,7 +696,7 @@ export class FulfillmentService {
         locale: this.lang(locale),
         orderNumber: item.order.number,
         productName: item.productNameSnapshot,
-        keys: input.keys,
+        secrets: input.secrets,
         activationSteps: steps,
         activationEmail: item.order.activationEmail,
         orderUrl: this.orderUrl(item.order.number, locale),
@@ -658,7 +707,7 @@ export class FulfillmentService {
       payload: {
         orderNumber: item.order.number,
         sku: item.skuSnapshot,
-        keyCount: input.keys.length,
+        keyCount: input.secrets.length,
       },
     });
 
@@ -689,6 +738,102 @@ export class FulfillmentService {
       }),
       payload: { orderNumber: item.order.number, sku: item.skuSnapshot },
     });
+  }
+
+  /**
+   * Every variant worth stocking, with what the vault actually holds.
+   *
+   * Joined here rather than in the admin module, because only this module can
+   * reach both the catalog and the vault — and the two halves are useless
+   * apart: a count with no sku is a number, and a sku with no count is a row
+   * nobody can act on.
+   *
+   * A made-to-order variant is listed too, greyed by its mode rather than
+   * hidden: the owner may decide to start holding stock of one, and a screen
+   * that omits it cannot be used to make that decision.
+   */
+  async vaultStock(): Promise<
+    {
+      variantId: string;
+      sku: string;
+      productName: string;
+      productSlug: string;
+      mode: FulfillmentMode;
+      credentialKind: CredentialKind;
+      counts: Record<string, number>;
+    }[]
+  > {
+    const variants = await this.prisma.client.variant.findMany({
+      orderBy: [{ fulfillmentMode: 'asc' }, { sku: 'asc' }],
+      select: {
+        id: true,
+        sku: true,
+        fulfillmentMode: true,
+        credentialKind: true,
+        product: {
+          select: {
+            slug: true,
+            translations: { where: { locale: Locale.AR }, select: { name: true } },
+          },
+        },
+      },
+    });
+
+    const report = await this.vault.stockReport(variants.map((variant) => variant.id));
+    const byVariant = new Map<string, Record<string, number>>();
+    for (const row of report) {
+      const counts = byVariant.get(row.variantId) ?? {};
+      counts[row.state] = row.count;
+      byVariant.set(row.variantId, counts);
+    }
+
+    return variants.map((variant) => ({
+      variantId: variant.id,
+      sku: variant.sku,
+      productName: variant.product.translations[0]?.name ?? variant.product.slug,
+      productSlug: variant.product.slug,
+      mode: variant.fulfillmentMode,
+      credentialKind: variant.credentialKind,
+      counts: byVariant.get(variant.id) ?? {},
+    }));
+  }
+
+  /**
+   * The keys behind one order, by its number.
+   *
+   * Where a complaint starts: a customer writes in, and the person answering
+   * has an order number and nothing else. Returns ids and states, never
+   * plaintext — revealing one is a separate, deliberate act with its own
+   * challenge and its own audit row.
+   */
+  async keysForOrder(orderNumber: string): Promise<
+    {
+      orderItemId: string;
+      sku: string;
+      productName: string;
+      state: FulfillmentState;
+      deliveredAt: Date | null;
+      keys: { licenseKeyId: string; state: string; deliveredAt: Date | null }[];
+    }[]
+  > {
+    const order = await this.prisma.client.order.findUnique({
+      where: { number: orderNumber },
+      include: { items: true },
+    });
+    if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${orderNumber}`);
+
+    const out = [];
+    for (const item of order.items) {
+      out.push({
+        orderItemId: item.id,
+        sku: item.skuSnapshot,
+        productName: item.productNameSnapshot,
+        state: item.fulfillmentState,
+        deliveredAt: item.deliveredAt,
+        keys: await this.vault.keysForOrderItem(item.id),
+      });
+    }
+    return out;
   }
 
   /** Queue depth and the oldest wait, for the admin's attention. */
