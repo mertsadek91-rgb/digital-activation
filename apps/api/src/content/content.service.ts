@@ -146,6 +146,11 @@ const PROBES = [
   /^\/(xmlrpc|wp-config|\.env|\.git)/,
   /^\/(vendor|phpunit|phpmyadmin|admin\.php|shell|cgi-bin)/,
   /\.(php|asp|aspx|jsp|cgi|sql|bak|old|zip|tar|gz)$/,
+  // A missing asset is a build problem, not a redirect somebody should write.
+  // The three Tajawal faces filled ten rows each within an hour of this log
+  // existing, which is how the missing `public/fonts` directory was found —
+  // useful once, noise every time after.
+  /\.(woff2?|ttf|otf|eot|css|m?js|map|png|jpe?g|gif|svg|webp|avif|ico|txt|xml|pdf)$/,
 ];
 
 /**

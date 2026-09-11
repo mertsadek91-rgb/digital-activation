@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { notFound, permanentRedirect, redirect } from 'next/navigation';
-import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
-import { getPage, getRedirect, reportNotFound } from '../../../lib/api';
+import { getPage } from '../../../lib/api';
+import { goneOrRedirect } from '../../../lib/gone';
 import { robotsMeta } from '../../../lib/seo';
 
 /**
@@ -26,43 +26,6 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation
 
 interface Props {
   params: Promise<{ locale: string; slug: string[] }>;
-}
-
-/**
- * The end of the line for a path nothing else claimed: a legacy URL, or a 404.
- *
- * This is where the ~95 URLs Google has indexed from the WordPress store land.
- * Every real route out-specifies this one, so by the time a request arrives
- * here it was going to be a 404 anyway — which makes the database lookup free
- * in the only sense that matters, and puts the redirect exactly where the
- * routing already gave up.
- *
- * `permanentRedirect` answers 308 rather than 301 and `redirect` answers 307
- * rather than 302, because a Server Component cannot choose its own status
- * code. Google documents the pairs as equivalent for ranking, and the
- * alternative — a proxy holding the whole map in memory — is the one thing
- * Next's own documentation tells you not to build there.
- *
- * Never returns: it either redirects or renders the 404.
- */
-async function legacyRedirect(segments: string[], locale: string): Promise<never> {
-  const pathname = `/${segments.join('/')}`;
-  const target = await getRedirect(pathname);
-  if (!target) {
-    // Recorded on the way past. The generated map covers what the export knew
-    // about; this is how the store finds out about the links it did not — an
-    // old forum post, a printed invoice, a partner's page.
-    reportNotFound(pathname, (await headers()).get('referer') ?? undefined);
-    notFound();
-  }
-
-  // The locale travels with the visitor. Somebody who followed an old link
-  // from an English result should not be dropped into Arabic.
-  const prefix = locale === 'ar' ? '' : `/${locale}`;
-  const destination = `${prefix}${target.to}`;
-
-  if (target.code === 301 || target.code === 308) permanentRedirect(destination);
-  redirect(destination);
 }
 
 /** `['golden-warranty']` → `golden-warranty`. Nested paths are not pages yet. */
@@ -96,10 +59,10 @@ export default async function ContentPage({ params }: Props) {
 
   const key = slugFor(slug);
   const page = key ? await getPage(key, { locale }) : null;
-  // Narrowed by hand: `legacyRedirect` never returns, but TypeScript cannot
+  // Narrowed by hand: `goneOrRedirect` never returns, but TypeScript cannot
   // see that through an awaited `Promise<never>`.
   if (!page) {
-    await legacyRedirect(slug, locale);
+    await goneOrRedirect(`/${slug.join('/')}`, locale);
     notFound();
   }
 

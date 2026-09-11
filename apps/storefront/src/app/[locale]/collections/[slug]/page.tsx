@@ -9,6 +9,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../../components/blocks';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
+import { goneOrRedirect } from '../../../../lib/gone';
 import { robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -55,7 +56,13 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const ar = locale === 'ar';
 
   const collection = await getCollection(slug, { locale, page, perPage: PER_PAGE });
-  if (!collection) notFound();
+  // Same as a product: a renamed collection is a redirect, not a dead end.
+  // Narrowed by hand: `goneOrRedirect` never returns, but TypeScript
+  // cannot see that through an awaited `Promise<never>`.
+  if (!collection) {
+    await goneOrRedirect(ROUTES.collection(slug), locale);
+    notFound();
+  }
 
   const pageUrl = new URL(ROUTES.collection(slug), SITE_URL).toString();
   const prefix = ar ? '' : `/${locale}`;

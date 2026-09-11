@@ -11,6 +11,7 @@ import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
 import { Reviews } from '../../../../components/reviews';
 import { getProduct, getProductReviews } from '../../../../lib/api';
+import { goneOrRedirect } from '../../../../lib/gone';
 import { robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -53,7 +54,14 @@ export default async function ProductPage({ params }: Props) {
     getProduct(slug, { locale }),
     getProductReviews(slug, { locale }),
   ]);
-  if (!product) notFound();
+  // A slug that no longer exists may have been renamed rather than removed —
+  // the redirect map is consulted before the 404, and the miss is recorded.
+  // Narrowed by hand: `goneOrRedirect` never returns, but TypeScript
+  // cannot see that through an awaited `Promise<never>`.
+  if (!product) {
+    await goneOrRedirect(ROUTES.product(slug), locale);
+    notFound();
+  }
 
   const selected =
     product.variants.find((variant) => variant.id === product.selectedVariantId) ??
