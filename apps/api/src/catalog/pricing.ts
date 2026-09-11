@@ -20,6 +20,19 @@ export interface FxTable {
   [currency: string]: { rate: Prisma.Decimal; decimals: number; roundingRule: string } | undefined;
 }
 
+/**
+ * The only implementation of these rules in the codebase.
+ *
+ * `@da/i18n` carried a second one that disagreed with this on both rules and
+ * was never imported; it is gone. If a display price needs computing anywhere
+ * else, it comes from here.
+ *
+ * One thing to know before changing it: `nearest_0_95` always rounds **up** to
+ * the next `.95`, so $9.90 at 3.75 shows as 37.95 rather than the nearer 36.95.
+ * That is a pricing decision — four of the seven seeded currencies use the
+ * rule — and it is recorded here rather than quietly corrected, because moving
+ * it moves every converted price in the store.
+ */
 function roundTo(value: number, decimals: number, rule: string): number {
   const plain = Number(value.toFixed(decimals));
   if (rule === 'none') return plain;
