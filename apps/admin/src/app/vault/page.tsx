@@ -71,6 +71,9 @@ export default function VaultPage() {
   if (!me) return <main className="shell">…</main>;
 
   const canStock = ['OWNER', 'ADMIN', 'FULFILLMENT'].includes(me.role);
+  // Not FULFILLMENT: changing the shape changes how every future key for the
+  // line is stored and labelled, which is a catalog decision, not a queue one.
+  const canEditKind = ['OWNER', 'ADMIN', 'CATALOG'].includes(me.role);
   const canReveal = ['OWNER', 'ADMIN'].includes(me.role);
   const stocked = (stock ?? []).filter((row) => row.mode === 'FROM_STOCK');
   const others = (stock ?? []).filter((row) => row.mode !== 'FROM_STOCK');
@@ -109,6 +112,9 @@ export default function VaultPage() {
                   key={row.variantId}
                   row={row}
                   canStock={canStock}
+                  canEditKind={canEditKind}
+                  onKindSaved={() => void load()}
+                  onNote={setNote}
                   onImported={(result) => {
                     setError(null);
                     setNote(
@@ -145,6 +151,16 @@ export default function VaultPage() {
                   <span className="meta">
                     {row.mode === 'ON_DEMAND' ? 'حسب الطلب' : 'تجهيز يدوي'}
                   </span>
+                  {/* Editable here too. These 92 never hold stock, but the
+                      supplier still sends back either a key or an account, and
+                      that is what the paste box has to ask for. */}
+                  <KindPicker
+                    row={row}
+                    canEdit={canEditKind}
+                    onSaved={() => void load()}
+                    onError={setError}
+                    onNote={setNote}
+                  />
                   {Object.keys(row.counts).length > 0 ? (
                     <span className="meta">
                       يحتوي{' '}
@@ -172,20 +188,90 @@ export default function VaultPage() {
   );
 }
 
+/**
+ * The delivery-shape picker.
+ *
+ * Saves on change rather than behind a save button: it is one field with two
+ * values, and a form around it would be three clicks for a decision that is
+ * one. The server refuses the change while the vault still holds keys under
+ * the other shape, and that refusal is the message shown — flipping the field
+ * alone would leave stored rows describing themselves one way and the variant
+ * claiming another, and the email would then label a password as a key.
+ */
+function KindPicker({
+  row,
+  canEdit,
+  onSaved,
+  onError,
+  onNote,
+}: {
+  row: VaultStockRow;
+  canEdit: boolean;
+  onSaved: () => void;
+  onError: (message: string | null) => void;
+  onNote: (message: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  if (!canEdit) {
+    return (
+      <span
+        className={`pill ${row.credentialKind === 'ACCOUNT_CREDENTIALS' ? 'pill-ready' : 'pill-published'}`}
+      >
+        {kindLabel(row.credentialKind)}
+      </span>
+    );
+  }
+
+  return (
+    <select
+      className="kind-picker"
+      value={row.credentialKind}
+      disabled={busy}
+      aria-label={`نوع التسليم لـ ${row.sku}`}
+      onChange={(event) => {
+        const next = event.target.value as CredentialKind;
+        if (next === row.credentialKind) return;
+        setBusy(true);
+        onError(null);
+        void api
+          .setCredentialKind(row.sku, next)
+          .then(() => {
+            onNote(`${row.sku}: يُسلَّم الآن كـ${kindLabel(next)}`);
+            onSaved();
+          })
+          .catch((caught: unknown) => {
+            onError(caught instanceof Error ? caught.message : 'تعذّر تغيير نوع التسليم.');
+          })
+          .finally(() => setBusy(false));
+      }}
+    >
+      <option value="ACTIVATION_KEY">مفتاح تفعيل</option>
+      <option value="ACCOUNT_CREDENTIALS">اسم مستخدم وكلمة مرور</option>
+    </select>
+  );
+}
+
 function StockRow({
   row,
   canStock,
+  canEditKind,
   onImported,
+  onKindSaved,
   onError,
+  onNote,
 }: {
   row: VaultStockRow;
   canStock: boolean;
+  canEditKind: boolean;
   onImported: (result: {
     imported: number;
     duplicatesSkipped: number;
     invalidSkipped: number;
   }) => void;
+  onKindSaved: () => void;
   onError: (message: string | null) => void;
+  onNote: (message: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [codes, setCodes] = useState('');
@@ -207,9 +293,13 @@ function StockRow({
           </span>
         </td>
         <td>
-          <span className={`pill ${isAccount ? 'pill-ready' : 'pill-published'}`}>
-            {kindLabel(row.credentialKind)}
-          </span>
+          <KindPicker
+            row={row}
+            canEdit={canEditKind}
+            onSaved={onKindSaved}
+            onError={onError}
+            onNote={onNote}
+          />
         </td>
         {/* Zero available on a stocked variant is a product that will sell and
             then sit in the manual queue, so it reads as a problem. */}
