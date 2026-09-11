@@ -9,7 +9,8 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
-import { getProduct } from '../../../../lib/api';
+import { Reviews } from '../../../../components/reviews';
+import { getProduct, getProductReviews } from '../../../../lib/api';
 import { robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -48,7 +49,10 @@ export default async function ProductPage({ params }: Props) {
   setRequestLocale(locale);
   const ar = locale === 'ar';
 
-  const product = await getProduct(slug, { locale });
+  const [product, reviews] = await Promise.all([
+    getProduct(slug, { locale }),
+    getProductReviews(slug, { locale }),
+  ]);
   if (!product) notFound();
 
   const selected =
@@ -66,6 +70,26 @@ export default async function ProductPage({ params }: Props) {
    * — the dirham figure labelled as dollars — and Google discards markup that
    * contradicts the page it sits on.
    */
+  /**
+   * The aggregate goes on the Product node that is already in the graph, never
+   * in a second one — `buildGraph` throws on two Product entities in one page,
+   * which is exactly the defect this store shipped for years.
+   *
+   * It is taken from the reviews response rather than the denormalised columns
+   * on Product, because that is the same arithmetic over the same rows the
+   * section below renders. The columns are the fast path for product cards and
+   * are rewritten on every moderation decision; if the reviews call failed,
+   * they are the fallback rather than emitting nothing.
+   *
+   * And when the count is zero, no rating is emitted at all. An AggregateRating
+   * with a count of zero is not neutral — Google treats an empty or invented
+   * rating as a reason to drop the whole rich result.
+   */
+  const rating =
+    reviews && reviews.aggregate.count > 0
+      ? { value: reviews.aggregate.average, count: reviews.aggregate.count }
+      : (product.rating ?? undefined);
+
   const graph = buildGraph([
     jsonld.breadcrumbs(
       product.breadcrumbs.map((crumb) => ({
@@ -82,10 +106,9 @@ export default async function ProductPage({ params }: Props) {
       imageUrls: product.images.map((image) => image.url),
       price: { amount: selected.price.amount, currency: selected.price.currency },
       inStock: selected.inStock,
-      // Emitted only from approved, verified-purchase reviews. There are none
-      // yet, and inventing one is what produced 565 synthetic reviews on the
-      // store this replaces.
-      ...(product.rating ? { rating: product.rating } : {}),
+      // Emitted only from approved, verified-purchase reviews. Inventing one
+      // is what produced 565 synthetic reviews on the store this replaces.
+      ...(rating ? { rating } : {}),
     }),
     product.faq ? jsonld.faqPage(product.faq) : null,
   ]);
@@ -131,6 +154,19 @@ export default async function ProductPage({ params }: Props) {
 
           <h1>{product.name}</h1>
           {product.shortDesc ? <p className="lede">{product.shortDesc}</p> : null}
+
+          {/* A link rather than a repeat: the stars belong to the section
+              below, and a rating printed twice on one page is two numbers that
+              can fall out of step. Absent entirely when nothing is published. */}
+          {reviews && reviews.aggregate.count > 0 ? (
+            <p className="proof">
+              <a href="#reviews">
+                {ar
+                  ? `${reviews.aggregate.average} من 5 — ${String(reviews.aggregate.count)} تقييماً من مشترين`
+                  : `${reviews.aggregate.average} out of 5 — ${String(reviews.aggregate.count)} verified reviews`}
+              </a>
+            </p>
+          ) : null}
 
           {/* Real orders only, and only above the floor where a count is proof
               rather than noise. */}
@@ -190,6 +226,12 @@ export default async function ProductPage({ params }: Props) {
           <Blocks blocks={product.body} />
         </section>
       ) : null}
+
+      {/* Rendered whether or not there are any, because "none yet, and here is
+          why" is a claim worth making on a store whose predecessor showed 4.6
+          stars on 81 products nobody had reviewed. Omitted only when the API
+          could not be reached, where an empty section would be a lie. */}
+      {reviews ? <Reviews reviews={reviews} locale={locale} /> : null}
 
       {product.faq ? (
         <section className="prose faq">

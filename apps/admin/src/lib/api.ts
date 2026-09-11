@@ -12,6 +12,7 @@
 import type {
   AdminOrderList,
   AdminProductList,
+  AdminReviewList,
   ContactList,
   CredentialKind,
   ImportResult,
@@ -207,6 +208,30 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     }),
+
+  // --- reviews ---------------------------------------------------------------
+
+  reviews: (status: 'PENDING' | 'APPROVED' | 'REJECTED') =>
+    request<AdminReviewList>(`/admin/reviews?status=${status}`),
+
+  /**
+   * Publishes a review, or refuses it.
+   *
+   * Both directions rewrite the product's cached rating on the server, which
+   * is why the screen reloads the list afterwards rather than patching the row
+   * it has: the counts in the header have changed too.
+   */
+  moderateReview: (id: string, status: 'APPROVED' | 'REJECTED') =>
+    request<{ id: string; status: string; ratingCount: number; ratingAvg: string }>(
+      `/admin/reviews/${encodeURIComponent(id)}/status`,
+      { method: 'PATCH', body: JSON.stringify({ status }) },
+    ),
+
+  replyToReview: (id: string, body: string) =>
+    request<{ id: string; storeReply: string; repliedAt: string }>(
+      `/admin/reviews/${encodeURIComponent(id)}/reply`,
+      { method: 'POST', body: JSON.stringify({ body }) },
+    ),
 
   // --- fulfilment ----------------------------------------------------------
 

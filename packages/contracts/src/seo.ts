@@ -70,6 +70,7 @@ export const ROUTES = {
   account: '/account',
   licenses: '/account/licenses',
   accountOrders: '/account/orders',
+  accountReviews: '/account/reviews',
   /** The confirmation page for one order, reachable by the cart that placed it. */
   order: (number: string) => `/orders/${number}`,
   cart: '/cart',

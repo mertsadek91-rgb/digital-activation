@@ -101,6 +101,11 @@ export default function LicensesPage() {
         <p className="who" dir="ltr">
           {me.email}
         </p>
+        {/* The only entry point to the review page other than the invitation
+            email, and a customer who has lost the email still has this. */}
+        <Link className="btn btn-ghost" href={`${prefix}${ROUTES.accountReviews}`}>
+          {ar ? 'تقييماتي' : 'My reviews'}
+        </Link>
         <button
           type="button"
           className="btn btn-ghost"

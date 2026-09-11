@@ -481,9 +481,11 @@ export class CatalogService {
       })),
       hasGoldenWarranty: product.hasGoldenWarranty,
       salesCount: product.salesCount,
-      // Emitted only from real, approved, verified-purchase reviews. There are
-      // none yet, and an invented rating is what earned the legacy store its
-      // 565 synthetic reviews.
+      // The denormalised pair, rewritten by the reviews module from approved
+      // rows on every moderation decision. Null below one, so a product with
+      // nothing published shows no stars rather than zero of them — an
+      // invented rating is what earned the legacy store its 565 synthetic
+      // reviews, and an empty one is a Google penalty rather than a neutral.
       rating:
         product.ratingCount > 0
           ? { value: product.ratingAvg.toFixed(2), count: product.ratingCount }
