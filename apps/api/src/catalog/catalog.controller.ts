@@ -4,6 +4,7 @@ import {
   type CatalogCollection,
   type CatalogProduct,
   type CatalogQuery,
+  type CatalogStore,
   type Home,
   type SitemapFeed,
   catalogQuerySchema,
@@ -22,6 +23,12 @@ export class CatalogController {
   @ApiOperation({ summary: 'Everything the home page renders, in one response' })
   home(@Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery): Promise<Home> {
     return this.catalog.home(query);
+  }
+
+  @Get('store')
+  @ApiOperation({ summary: 'Every published product, paginated, with the collections' })
+  store(@Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery): Promise<CatalogStore> {
+    return this.catalog.store(query);
   }
 
   /**

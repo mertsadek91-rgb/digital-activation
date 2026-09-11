@@ -65,6 +65,39 @@ h1 {
   font-size: var(--text-xs);
 }
 
+/* The count and the sorts share a line, and wrap to two on a phone. */
+.store-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  margin-block: var(--spacing-1);
+}
+.sorts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sorts a {
+  font-size: var(--text-sm);
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-ink-muted);
+  text-decoration: none;
+}
+.sorts a:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.sorts a.is-active {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand);
+  color: var(--color-brand-ink);
+  font-weight: 500;
+}
+
 .result-count {
   color: var(--color-ink-muted);
   font-size: var(--text-sm);
@@ -416,6 +449,48 @@ h1 {
   text-align: start;
   padding: 8px 10px;
   border-block-end: 1px solid var(--color-border);
+}
+
+/* A comparison table. Same rules as .spec, plus a header row. */
+.compare table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.compare th,
+.compare td {
+  text-align: start;
+  padding: 10px 12px;
+  border-block-end: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.compare thead th {
+  font-weight: 700;
+  color: var(--color-brand-ink);
+  background: var(--color-brand-soft);
+}
+.compare tbody th {
+  inline-size: 10rem;
+  color: var(--color-ink-muted);
+  font-weight: 500;
+}
+
+.cta {
+  margin-block: var(--spacing-2);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-soft);
+}
+.cta-accent {
+  background: var(--color-accent-soft);
+}
+.cta h2 {
+  margin: 0 0 6px;
+  font-size: var(--text-xl);
+}
+.cta p {
+  margin: 0 0 var(--spacing-1);
+  color: var(--color-ink-muted);
 }
 
 .pager {

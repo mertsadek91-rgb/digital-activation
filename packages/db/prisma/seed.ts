@@ -21,6 +21,8 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '.env'), quiet: true });
 
 import { prisma, Locale, PublishStatus, CustomerGroupKind } from '../src/index.js';
 
+import { PAGES } from './seed-pages.js';
+
 const CURRENCIES = [
   {
     code: 'USD',
@@ -259,6 +261,34 @@ const CATEGORIES: CategorySeed[] = [
   },
 ];
 
+/**
+ * Editorial pages, one row per locale.
+ *
+ * Left alone once they exist. This is content somebody will edit, and a seed
+ * that overwrites an edit every time it runs is a seed nobody dares run.
+ */
+async function seedPages(): Promise<void> {
+  for (const page of PAGES) {
+    for (const locale of [Locale.AR, Locale.EN] as const) {
+      const content = locale === Locale.AR ? page.ar : page.en;
+      await prisma.page.upsert({
+        where: { slug_locale: { slug: page.slug, locale } },
+        update: {},
+        create: {
+          slug: page.slug,
+          locale,
+          status: PublishStatus.PUBLISHED,
+          publishedAt: new Date(),
+          title: content.title,
+          blocks: content.blocks,
+          seo: content.seo,
+        },
+      });
+    }
+  }
+  console.log(`pages: ${String(await prisma.page.count())}`);
+}
+
 async function seedCategory(node: CategorySeed, parentId: string | null, position: number) {
   const category = await prisma.category.upsert({
     where: { slug: node.slug },
@@ -363,6 +393,8 @@ async function main(): Promise<void> {
       create: { key: 'header', locale, items: [] },
     });
   }
+
+  await seedPages();
 
   console.log('seed complete');
 }

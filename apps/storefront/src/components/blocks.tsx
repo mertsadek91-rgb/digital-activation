@@ -75,6 +75,51 @@ function BlockView({ block }: { block: Block }) {
           </div>
         </section>
       );
+    case 'comparison':
+      // A real table, because a table is what a skimming reader takes in and
+      // what an answer engine quotes. The first column is the row label, which
+      // makes it a header cell rather than a styling decision.
+      return (
+        <section className="compare">
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <td />
+                  {block.columns.map((column) => (
+                    <th key={column} scope="col">
+                      {column}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {block.rows.map((row, index) => (
+                  <tr key={index}>
+                    <th scope="row">{row.label}</th>
+                    {row.cells.map((cell, cellIndex) => (
+                      <td key={cellIndex}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      );
+    case 'cta':
+      return (
+        <aside className={`cta cta-${block.tone}`}>
+          <h2>{block.heading}</h2>
+          {block.body ? <p>{block.body}</p> : null}
+          {/* A plain anchor: the href comes from content and may be external,
+              and next/link on an external URL is a runtime error waiting for
+              the first editor who pastes one. */}
+          <a className="btn btn-primary" href={block.buttonHref}>
+            {block.buttonLabel}
+          </a>
+        </aside>
+      );
     default:
       // Blocks the storefront does not render yet are skipped rather than
       // crashing the page. The admin will not offer them until they do.

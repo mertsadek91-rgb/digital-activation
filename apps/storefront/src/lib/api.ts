@@ -13,9 +13,13 @@
 import {
   type CatalogCollection,
   type CatalogProduct,
+  type CatalogStore,
+  type ContentPage,
   type Home,
   catalogCollectionSchema,
   catalogProductSchema,
+  catalogStoreSchema,
+  contentPageSchema,
   homeSchema,
 } from '@da/contracts';
 import { z } from 'zod';
@@ -40,6 +44,8 @@ interface FetchOptions {
   perPage?: number;
   /** Seconds; the catalog changes rarely, so pages are cached and revalidated. */
   revalidate?: number;
+  /** One of the sorts the API implements. Anything else is ignored by it. */
+  sort?: string;
 }
 
 function buildUrl(pathname: string, options: FetchOptions): string {
@@ -48,6 +54,7 @@ function buildUrl(pathname: string, options: FetchOptions): string {
   url.searchParams.set('currency', options.currency ?? 'USD');
   if (options.page) url.searchParams.set('page', String(options.page));
   if (options.perPage) url.searchParams.set('perPage', String(options.perPage));
+  if (options.sort) url.searchParams.set('sort', options.sort);
 
   const token = process.env.PREVIEW_TOKEN;
   if (token && !indexingPolicy(process.env.NEXT_PUBLIC_SITE_URL).index) {
@@ -94,6 +101,10 @@ export function getHome(options: FetchOptions): Promise<Home | null> {
   return request('/catalog/home', options, homeSchema);
 }
 
+export function getStore(options: FetchOptions): Promise<CatalogStore | null> {
+  return request('/catalog/store', options, catalogStoreSchema);
+}
+
 export function getCollections(options: FetchOptions): Promise<CollectionSummary[] | null> {
   return request('/catalog/collections', options, z.array(collectionSummarySchema));
 }
@@ -107,6 +118,10 @@ export function getCollection(
     options,
     catalogCollectionSchema,
   );
+}
+
+export function getPage(slug: string, options: FetchOptions): Promise<ContentPage | null> {
+  return request(`/content/pages/${encodeURIComponent(slug)}`, options, contentPageSchema);
 }
 
 export function getProduct(slug: string, options: FetchOptions): Promise<CatalogProduct | null> {

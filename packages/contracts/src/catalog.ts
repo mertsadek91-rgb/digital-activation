@@ -172,6 +172,29 @@ export const catalogCardSchema = z.object({
 });
 export type CatalogCard = z.infer<typeof catalogCardSchema>;
 
+/**
+ * The store index: every published product, paginated.
+ *
+ * Carries the collection list beside the grid because it is the page a visitor
+ * lands on from the header with no idea what is sold here. Collections are the
+ * only navigation this catalog has — there are no brand pages yet — so a store
+ * page without them is a wall of 73 cards with no way in.
+ */
+export const catalogStoreSchema = z.object({
+  products: z.array(catalogCardSchema),
+  total: z.number().int().min(0),
+  page: z.number().int().min(1),
+  perPage: z.number().int().min(1),
+  collections: z.array(
+    z.object({
+      slug: slugSchema,
+      name: z.string(),
+      productCount: z.number().int().min(0),
+    }),
+  ),
+});
+export type CatalogStore = z.infer<typeof catalogStoreSchema>;
+
 export const catalogCollectionSchema = z.object({
   slug: slugSchema,
   locale: localeSchema,

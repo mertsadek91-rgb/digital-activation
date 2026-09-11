@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
+import { ContentModule } from './content/content.module.js';
 import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { validateEnv } from './config/env.js';
@@ -48,6 +49,7 @@ import { VaultModule } from './vault/vault.module.js';
     CatalogModule,
     CartModule,
     CheckoutModule,
+    ContentModule,
     VaultModule,
     MailModule,
     FulfillmentModule,

@@ -12,6 +12,7 @@ import {
   RAIL_MIN_PRODUCTS,
   RAIL_SIZE,
   ROUTES,
+  type CatalogStore,
   type SitemapFeed,
   SALES_PROOF_THRESHOLD,
 } from '@da/contracts';
@@ -137,6 +138,53 @@ export class CatalogService {
       productCount: category.products.length,
       children: category._count.children,
     }));
+  }
+
+  /**
+   * Everything on sale, paginated.
+   *
+   * The one page that has to work before a visitor knows any category name.
+   * Sorted by the same `cardOrder` the collection pages use, so "newest" means
+   * the same thing everywhere — a store whose sorts disagree with its category
+   * sorts is a store where a product appears to move when it has not.
+   */
+  async store(query: CatalogQuery): Promise<CatalogStore> {
+    const locale = this.localeFor(query);
+    const status = this.statusFilter(query);
+
+    const total = await this.prisma.client.product.count({ where: status });
+    const products = await this.prisma.client.product.findMany({
+      where: status,
+      orderBy: this.productOrder(query),
+      skip: (query.page - 1) * query.perPage,
+      take: query.perPage,
+      include: this.cardInclude(locale).product.include,
+    });
+
+    // Only the categories that actually hold something published: an empty
+    // filter chip is a dead end a visitor has to discover by clicking it.
+    const categories = await this.prisma.client.category.findMany({
+      where: { products: { some: { product: status } } },
+      orderBy: [{ position: 'asc' }, { slug: 'asc' }],
+      include: {
+        translations: { where: { locale } },
+        products: { where: { product: status }, select: { productId: true } },
+      },
+    });
+
+    const fx = await this.fxTable();
+
+    return {
+      products: products.map((product) => this.toCard(product, query.currency, fx)),
+      total,
+      page: query.page,
+      perPage: query.perPage,
+      collections: categories.map((category) => ({
+        slug: category.slug,
+        name: category.translations[0]?.name ?? category.slug,
+        productCount: category.products.length,
+      })),
+    };
   }
 
   async collection(slug: string, query: CatalogQuery): Promise<CatalogCollection> {
@@ -513,6 +561,26 @@ export class CatalogService {
   private assetUrl(key: string): string {
     const base = process.env.S3_PUBLIC_BASE_URL;
     return base ? new URL(key, base).toString() : `/media/${key}`;
+  }
+
+  /**
+   * The same sorts as `cardOrder`, expressed over Product rows.
+   *
+   * Price is missing from both on purpose: a product's price is the cheapest of
+   * its variants, which Postgres cannot order by without a join and an
+   * aggregate. Sorting a page of 24 in memory would order that page and not the
+   * catalog, which is worse than not offering it — so the storefront offers the
+   * three sorts that are real.
+   */
+  private productOrder(query: CatalogQuery): Prisma.ProductOrderByWithRelationInput[] {
+    switch (query.sort) {
+      case 'newest':
+        return [{ publishedAt: 'desc' }, { slug: 'asc' }];
+      case 'best-selling':
+        return [{ salesCount: 'desc' }, { slug: 'asc' }];
+      default:
+        return [{ salesCount: 'desc' }, { slug: 'asc' }];
+    }
   }
 
   private cardOrder(query: CatalogQuery): Prisma.ProductCategoryOrderByWithRelationInput[] {

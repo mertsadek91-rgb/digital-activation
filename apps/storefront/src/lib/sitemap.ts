@@ -1,5 +1,6 @@
 import { ROUTES, type SitemapEntry, type SitemapFeed, sitemapFeedSchema } from '@da/contracts';
 import { alternates, indexingPolicy, sitemapIndexXml, sitemapXml, type SitemapUrl } from '@da/seo';
+import { z } from 'zod';
 
 /**
  * The sitemap, assembled.
@@ -22,15 +23,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
 /**
- * Sections this storefront can actually serve today.
+ * The routes that exist in the app directory and are not editorial content.
  *
- * `pages` is the hand-written set: routes that exist in the app directory and
- * are not in NOINDEX_PREFIXES. It is deliberately short — `/store` and
- * `/golden-warranty` are linked from the header but have no page yet, and a
- * sitemap that lists a 404 is worse than one that omits it.
+ * Short by construction: everything else is either a catalog URL, which comes
+ * from the API, or an editorial page, which comes from the content API. A path
+ * belongs here only if a `page.tsx` renders it from nothing but code.
  */
 export const STATIC_PATHS: { path: string; changeFrequency: 'daily' | 'weekly' }[] = [
   { path: ROUTES.home, changeFrequency: 'daily' },
+  { path: ROUTES.store, changeFrequency: 'daily' },
 ];
 
 export type Section = 'pages' | 'products' | 'collections';
@@ -41,6 +42,29 @@ const CHANGE_FREQUENCY: Record<Section, 'daily' | 'weekly'> = {
   products: 'weekly',
   collections: 'weekly',
 };
+
+/**
+ * Editorial pages, from the content API.
+ *
+ * Fetched rather than listed, for the same reason the catalog is: the warranty
+ * page is a row somebody can edit and a second page will be added without
+ * anyone remembering this file exists.
+ */
+async function editorialPages(): Promise<{ slug: string; lastModified: string }[] | null> {
+  try {
+    const response = await fetch(new URL('/v1/content/pages', API_URL), {
+      headers: { accept: 'application/json' },
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) return null;
+    const parsed = z
+      .array(z.object({ slug: z.string(), lastModified: z.string() }))
+      .safeParse(await response.json());
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 async function feed(): Promise<SitemapFeed | null> {
   try {
@@ -77,14 +101,29 @@ function toUrls(entries: SitemapEntry[], section: Section): SitemapUrl[] {
 export async function sectionUrls(section: Section): Promise<SitemapUrl[] | null> {
   if (section === 'pages') {
     const now = new Date().toISOString();
-    return STATIC_PATHS.map((entry) => ({
+    const coded: SitemapUrl[] = STATIC_PATHS.map((entry) => ({
       loc: new URL(entry.path, SITE_URL).toString(),
-      // The home page renders live catalog data, so "now" is honest for it in
-      // a way it would not be for a static page with its own edit history.
+      // The home and store pages render live catalog data, so "now" is honest
+      // for them in a way it would not be for a page with its own edit history.
       lastmod: now,
       changefreq: entry.changeFrequency,
       alternates: alternates(SITE_URL, entry.path),
     }));
+
+    const editorial = await editorialPages();
+    if (editorial === null) return null;
+
+    return [
+      ...coded,
+      ...editorial.map((page) => ({
+        loc: new URL(`/${page.slug}`, SITE_URL).toString(),
+        // A real edit date: an editorial page changes when somebody changes it,
+        // and claiming otherwise is how a crawler learns to ignore the field.
+        lastmod: page.lastModified,
+        changefreq: 'monthly' as const,
+        alternates: alternates(SITE_URL, `/${page.slug}`),
+      })),
+    ];
   }
 
   const data = await feed();
