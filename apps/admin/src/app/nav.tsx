@@ -27,14 +27,32 @@ export function Nav({
    */
   waiting: given,
   overdue: givenOverdue,
+  /**
+   * The same arrangement for the inbox, and for the same reason: the messages
+   * screen changes this number by marking one answered, and a badge that
+   * fetched on mount goes on claiming the old count beside a page that has
+   * already updated.
+   */
+  messagesWaiting: givenMessages,
+  messagesOverdue: givenMessagesOverdue,
 }: {
   me: StaffMe;
-  current: 'products' | 'queue' | 'vault';
+  current: 'products' | 'queue' | 'vault' | 'messages';
   waiting?: number;
   overdue?: number;
+  messagesWaiting?: number;
+  messagesOverdue?: number;
 }) {
   const router = useRouter();
   const [fetched, setFetched] = useState<{ waiting: number; overdue: number } | null>(null);
+  /**
+   * Unanswered messages, always fetched here rather than passed in.
+   *
+   * Unlike the queue count, no screen owns this number: a message can arrive
+   * while somebody is working the vault, and the tab is the only place that
+   * would say so.
+   */
+  const [messages, setMessages] = useState<{ waiting: number; overdue: number } | null>(null);
 
   useEffect(() => {
     if (given !== undefined) return;
@@ -59,6 +77,25 @@ export function Nav({
     };
   }, [current, given]);
 
+  useEffect(() => {
+    if (givenMessages !== undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const inbox = await api.messages(false);
+        if (!cancelled) setMessages({ waiting: inbox.waiting, overdue: inbox.overdue });
+      } catch {
+        if (!cancelled) setMessages(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [current, givenMessages]);
+
+  const inboxWaiting = givenMessages ?? messages?.waiting ?? null;
+  const inboxOverdue = givenMessagesOverdue ?? messages?.overdue ?? 0;
   const waiting = given ?? fetched?.waiting ?? null;
   const overdue = givenOverdue ?? fetched?.overdue ?? 0;
 
@@ -78,6 +115,16 @@ export function Nav({
           onClick={() => router.push('/vault')}
         >
           الخزنة
+        </button>
+        <button
+          type="button"
+          className={`tab${current === 'messages' ? ' is-active' : ''}`}
+          onClick={() => router.push('/messages')}
+        >
+          الرسائل
+          {inboxWaiting !== null && inboxWaiting > 0 ? (
+            <span className={`tab-count${inboxOverdue > 0 ? ' is-late' : ''}`}>{inboxWaiting}</span>
+          ) : null}
         </button>
         <button
           type="button"

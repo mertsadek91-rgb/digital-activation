@@ -62,3 +62,51 @@ export const contactResultSchema = z.object({
 
 /** Longest a message can wait before the promise on the page stops being true. */
 export const CONTACT_REPLY_HOURS = 24;
+
+/**
+ * A message as the panel lists it.
+ *
+ * Carries the whole message rather than a preview. There are never many of
+ * them, a support inbox is read by opening things, and a list that shows the
+ * first forty characters is a list somebody clicks through one row at a time
+ * to find the one they are looking for.
+ */
+export const contactMessageRowSchema = z.object({
+  id: z.string(),
+  topic: contactTopicSchema,
+  status: z.enum(['NEW', 'HANDLED']),
+  name: z.string(),
+  email: z.string(),
+  phone: z.string().nullable(),
+  orderNumber: z.string().nullable(),
+  message: z.string(),
+  locale: localeSchema,
+  /** Set when the address belongs to a customer, with what they have bought. */
+  customer: z
+    .object({
+      id: z.string(),
+      orderCount: z.number().int().min(0),
+      totalSpentUsd: z.string(),
+    })
+    .nullable(),
+  createdAt: z.string(),
+  handledAt: z.string().nullable(),
+  handledBy: z.string().nullable(),
+  /** Seconds since it arrived, so lateness needs no arithmetic on the page. */
+  waitingSeconds: z.number().int().min(0),
+});
+export type ContactMessageRow = z.infer<typeof contactMessageRowSchema>;
+
+export const contactListSchema = z.object({
+  rows: z.array(contactMessageRowSchema),
+  /** Unanswered, across every page of the list. */
+  waiting: z.number().int().min(0),
+  /** Unanswered for longer than the reply the page promises. */
+  overdue: z.number().int().min(0),
+  total: z.number().int().min(0),
+});
+export type ContactList = z.infer<typeof contactListSchema>;
+
+export const setContactStatusSchema = z.object({
+  status: z.enum(['NEW', 'HANDLED']),
+});

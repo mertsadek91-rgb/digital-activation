@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { CONTACT_REPLY_HOURS, type ContactTopic } from '@da/contracts';
-import { ContactTopic as Topic, Locale } from '@da/db';
+import { CONTACT_REPLY_HOURS, type ContactList, type ContactTopic } from '@da/contracts';
+import { ContactStatus as Status, ContactTopic as Topic, Locale } from '@da/db';
 
 import { MailService } from '../mail/mail.service.js';
 import { contactAck, contactToStore } from '../mail/templates.js';
@@ -42,6 +42,101 @@ export class ContactService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
   ) {}
+
+  /**
+   * The inbox.
+   *
+   * Unanswered first and oldest first within that, because the only ordering a
+   * support queue can be worked by is the one that answers the person who has
+   * waited longest. `includeHandled` exists for looking something up again,
+   * not for working the list.
+   */
+  async list(input: { includeHandled: boolean; limit: number }): Promise<ContactList> {
+    const where = input.includeHandled ? {} : { status: Status.NEW };
+
+    const rows = await this.prisma.client.contactMessage.findMany({
+      where,
+      orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
+      take: input.limit,
+      include: {
+        customer: { select: { id: true, orderCount: true, totalSpentUsd: true } },
+        handledBy: { select: { name: true } },
+      },
+    });
+
+    const waiting = await this.prisma.client.contactMessage.count({
+      where: { status: Status.NEW },
+    });
+    const overdue = await this.prisma.client.contactMessage.count({
+      where: {
+        status: Status.NEW,
+        createdAt: { lt: new Date(Date.now() - CONTACT_REPLY_HOURS * 3600 * 1000) },
+      },
+    });
+    const total = await this.prisma.client.contactMessage.count({ where });
+
+    const now = Date.now();
+
+    return {
+      rows: rows.map((row) => ({
+        id: row.id,
+        topic: row.topic,
+        status: row.status,
+        name: row.name,
+        email: row.email,
+        phone: row.phone,
+        orderNumber: row.orderNumber,
+        message: row.message,
+        locale: row.locale === Locale.EN ? ('en' as const) : ('ar' as const),
+        customer: row.customer
+          ? {
+              id: row.customer.id,
+              orderCount: row.customer.orderCount,
+              totalSpentUsd: row.customer.totalSpentUsd.toFixed(2),
+            }
+          : null,
+        createdAt: row.createdAt.toISOString(),
+        handledAt: row.handledAt?.toISOString() ?? null,
+        handledBy: row.handledBy?.name ?? null,
+        waitingSeconds: Math.max(0, Math.floor((now - row.createdAt.getTime()) / 1000)),
+      })),
+      waiting,
+      overdue,
+      total,
+    };
+  }
+
+  /**
+   * Marks a message answered, or puts it back.
+   *
+   * The name is recorded with it. Two people answering the same customer is
+   * the failure mode of a shared inbox, and "who took this" is the only thing
+   * that prevents it.
+   */
+  async setStatus(input: {
+    id: string;
+    status: 'NEW' | 'HANDLED';
+    staffId: string;
+  }): Promise<{ id: string; status: 'NEW' | 'HANDLED' }> {
+    const existing = await this.prisma.client.contactMessage.findUnique({
+      where: { id: input.id },
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException('لا توجد رسالة بهذا المعرّف.');
+
+    const row = await this.prisma.client.contactMessage.update({
+      where: { id: input.id },
+      data:
+        input.status === 'HANDLED'
+          ? { status: Status.HANDLED, handledAt: new Date(), handledById: input.staffId }
+          : // Reopening clears the name as well as the timestamp: a message
+            // back in the queue has nobody on it, and leaving the old name
+            // there is how it gets skipped a second time.
+            { status: Status.NEW, handledAt: null, handledById: null },
+    });
+
+    return { id: row.id, status: row.status };
+  }
 
   async submit(input: {
     topic: ContactTopic;

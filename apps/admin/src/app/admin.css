@@ -613,6 +613,37 @@ tr.drawer td > * {
   max-inline-size: 46ch;
 }
 
+/* The message itself, whole. Pre-wrap because a customer's line breaks are
+   part of what they wrote — especially when they paste an error. */
+.message-body {
+  margin: var(--spacing-1) 0 0;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  border-inline-start: 3px solid var(--color-border-strong);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-inline-size: 80ch;
+}
+
+/* A link styled as the primary action, so "reply" sits where "deliver" sits
+   on the queue. Anchors do not inherit the button reset. */
+.queue-actions a.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: #fff;
+  font-weight: 500;
+  text-decoration: none;
+}
+.queue-actions a.btn-primary:hover {
+  background: var(--color-brand-hover);
+}
+
 /* --- vault ---------------------------------------------------------------- */
 
 .vault-section {

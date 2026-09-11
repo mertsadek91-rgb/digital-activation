@@ -11,6 +11,7 @@
  */
 import type {
   AdminProductList,
+  ContactList,
   CredentialKind,
   ImportResult,
   OrderKeysRow,
@@ -122,6 +123,17 @@ export const api = {
     request<{ sku: string; onHand: number; reserved: number }>(`/admin/variants/${sku}/inventory`, {
       method: 'PATCH',
       body: JSON.stringify({ onHand, reason, ...(note ? { note } : {}) }),
+    }),
+
+  // --- the inbox -------------------------------------------------------------
+
+  messages: (includeHandled: boolean) =>
+    request<ContactList>(`/admin/contact?includeHandled=${includeHandled ? 'true' : 'false'}`),
+
+  setMessageStatus: (id: string, status: 'NEW' | 'HANDLED') =>
+    request<{ id: string; status: string }>(`/admin/contact/${encodeURIComponent(id)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
     }),
 
   // --- fulfilment ----------------------------------------------------------
