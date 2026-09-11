@@ -10,6 +10,7 @@
  * else.
  */
 import type {
+  AdminOrderList,
   AdminProductList,
   ContactList,
   CredentialKind,
@@ -124,6 +125,35 @@ export const api = {
     request<{ sku: string; onHand: number; reserved: number }>(`/admin/variants/${sku}/inventory`, {
       method: 'PATCH',
       body: JSON.stringify({ onHand, reason, ...(note ? { note } : {}) }),
+    }),
+
+  // --- orders ------------------------------------------------------------------
+
+  orders: (status?: string, q?: string) => {
+    const search = new URLSearchParams();
+    if (status) search.set('status', status);
+    if (q) search.set('q', q);
+    const suffix = search.toString();
+    return request<AdminOrderList>(`/admin/orders${suffix ? `?${suffix}` : ''}`);
+  },
+
+  /**
+   * Confirms money that arrived outside the store.
+   *
+   * The one call in this client that releases a licence key against a payment
+   * nothing here can verify, which is why the screen asks for a reference and
+   * the API records who clicked it.
+   */
+  confirmPayment: (number: string, provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) =>
+    request<{ status: string; alreadyApplied: boolean }>(
+      `/admin/orders/${encodeURIComponent(number)}/confirm-payment`,
+      { method: 'POST', body: JSON.stringify({ provider, reference }) },
+    ),
+
+  addOrderNote: (number: string, body: string) =>
+    request<{ id: string }>(`/admin/orders/${encodeURIComponent(number)}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ body, isCustomerVisible: false }),
     }),
 
   // --- redirects ---------------------------------------------------------------

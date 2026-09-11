@@ -244,3 +244,111 @@ export const staffLoginResultSchema = z.discriminatedUnion('outcome', [
   }),
 ]);
 export type StaffLoginResult = z.infer<typeof staffLoginResultSchema>;
+
+// --- orders -----------------------------------------------------------------
+
+/**
+ * An order as the panel lists it.
+ *
+ * Money is shown in the currency the customer was charged *and* in USD,
+ * because the store's books are in USD and the charge was not: an order list
+ * that reports only one of the two is a list somebody has to do arithmetic on
+ * before it means anything.
+ */
+export const adminOrderRowSchema = z.object({
+  number: z.string(),
+  status: z.enum([
+    'PENDING_PAYMENT',
+    'PAYMENT_REVIEW',
+    'PAID',
+    'FULFILLING',
+    'FULFILLED',
+    'COMPLETED',
+    'CANCELLED',
+    'REFUNDED',
+    'PARTIALLY_REFUNDED',
+    'FAILED',
+  ]),
+  email: z.string(),
+  customerName: z.string().nullable(),
+  currency: z.string(),
+  total: moneySchema,
+  totalUsd: moneySchema,
+  itemCount: z.number().int().min(0),
+  /** How many lines are still waiting on somebody. */
+  waitingLines: z.number().int().min(0),
+  riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH', 'BLOCKED']),
+  placedAt: z.string(),
+  paidAt: z.string().nullable(),
+  /** The providers that have a row against this order, succeeded or not. */
+  payments: z.array(
+    z.object({
+      provider: z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CRYPTO']),
+      state: z.string(),
+      /** Null for a row the provider never gave one for. */
+      reference: z.string().nullable(),
+      amount: moneySchema,
+      currency: z.string(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type AdminOrderRow = z.infer<typeof adminOrderRowSchema>;
+
+export const adminOrderLineSchema = z.object({
+  orderItemId: z.string(),
+  sku: z.string(),
+  productName: z.string(),
+  qty: z.number().int().min(1),
+  lineTotal: moneySchema,
+  fulfillmentState: z.enum(['PENDING', 'AUTO_ASSIGNED', 'MANUAL_QUEUE', 'DELIVERED', 'FAILED']),
+  deliveredAt: z.string().nullable(),
+});
+
+export const adminOrderDetailSchema = adminOrderRowSchema.extend({
+  activationEmail: z.string().nullable(),
+  couponCode: z.string().nullable(),
+  locale: localeSchema,
+  lines: z.array(adminOrderLineSchema),
+  notes: z.array(
+    z.object({
+      id: z.string(),
+      body: z.string(),
+      author: z.string().nullable(),
+      isCustomerVisible: z.boolean(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
+
+export const adminOrderListSchema = z.object({
+  rows: z.array(adminOrderRowSchema),
+  counts: z.object({
+    all: z.number().int().min(0),
+    awaitingPayment: z.number().int().min(0),
+    paid: z.number().int().min(0),
+    inReview: z.number().int().min(0),
+  }),
+});
+export type AdminOrderList = z.infer<typeof adminOrderListSchema>;
+
+/**
+ * Confirming a payment that arrived outside the store.
+ *
+ * A bank transfer and a crypto payment both land in somebody's account and
+ * nowhere near this system, so releasing the key is a human saying "the money
+ * is here". The reference is required and is the only thing that ties the row
+ * to the statement it came from — a confirmation with no reference is an
+ * assertion nobody can check later.
+ */
+export const confirmPaymentSchema = z.object({
+  provider: z.enum(['BANK_TRANSFER', 'CRYPTO']),
+  reference: z.string().trim().min(3).max(200),
+});
+
+export const addOrderNoteSchema = z.object({
+  body: z.string().trim().min(2).max(2000),
+  /** Shown to the customer on their order page when true. */
+  isCustomerVisible: z.boolean().default(false),
+});
