@@ -7,9 +7,11 @@ import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
+import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { VaultModule } from './vault/vault.module.js';
 
 /**
  * Release 1 modules land here as they are built, in this order:
@@ -18,7 +20,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
  *   rbac        role guard                                    [done]
  *   catalog     products, variants, categories, brands, media   [done]
  *   inventory   stock levels, timed reservations, movements       [done]
- *   vault       encrypted licence keys — the only importer of vaultPrisma
+ *   vault       encrypted licence keys — the only importer of vaultPrisma [done]
  *   fulfilment  assign a key on payment, deliver, retry, manual queue
  *   cart        server-side carts (prerequisite for recovery in Release 2)
  *   checkout    one-page checkout, idempotent order creation
@@ -44,6 +46,8 @@ import { PrismaModule } from './prisma/prisma.module.js';
     CatalogModule,
     CartModule,
     CheckoutModule,
+    VaultModule,
+    FulfillmentModule,
     AuthModule,
     AdminModule,
   ],

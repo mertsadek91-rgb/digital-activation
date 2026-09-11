@@ -12,5 +12,6 @@ export * from './admin.js';
 export * from './catalog.js';
 export * from './cart.js';
 export * from './checkout.js';
+export * from './fulfillment.js';
 export * from './promotion.js';
 export * from './seo.js';

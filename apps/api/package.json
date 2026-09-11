@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@da/contracts": "workspace:*",
+    "@aws-sdk/client-kms": "catalog:",
     "@da/db": "workspace:*",
     "@da/i18n": "workspace:*",
     "@da/seo": "workspace:*",

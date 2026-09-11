@@ -27,6 +27,8 @@ import { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
 
+import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
+
 import { CheckoutService } from './checkout.service.js';
 import { fromMinorUnits, StripeService, toMinorUnits } from './stripe.service.js';
 
@@ -36,6 +38,7 @@ export class CheckoutController {
   constructor(
     private readonly checkout: CheckoutService,
     private readonly stripe: StripeService,
+    private readonly fulfillment: FulfillmentService,
   ) {}
 
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
@@ -147,13 +150,20 @@ export class CheckoutController {
       const intent = event.data.object;
       const orderNumber = intent.metadata.orderNumber;
       if (orderNumber) {
-        await this.checkout.markPaid({
+        const applied = await this.checkout.markPaid({
           orderNumber,
           provider: 'STRIPE',
           providerRef: intent.id,
           amountCharged: fromMinorUnits(intent.amount_received, intent.currency),
           chargedCurrency: intent.currency.toUpperCase(),
         });
+
+        // Fulfilment runs only on the delivery that actually moved the order.
+        // It is idempotent anyway, but running it on a replay would write a
+        // second set of queue transitions for no reason.
+        if (!applied.alreadyApplied) {
+          await this.fulfillment.onOrderPaid(orderNumber);
+        }
       }
     }
 
