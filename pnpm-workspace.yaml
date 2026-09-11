@@ -72,6 +72,10 @@ catalog:
 
   # --- payments, crypto, mail ---
   stripe: ^22.6.1
+  # The browser half. It only loads js.stripe.com and hands back a typed handle;
+  # the card fields themselves have to come from Stripe's own iframe, which is
+  # what keeps this store out of PCI scope.
+  '@stripe/stripe-js': ^9.16.0
   argon2: ^0.45.1
   otplib: ^13.5.0
   qrcode: ^1.5.4

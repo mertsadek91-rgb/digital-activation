@@ -27,6 +27,7 @@ import { displayPrice, type FxTable } from '../catalog/pricing.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { consumeHolds, nextOrderNumber } from './orders.js';
+import { PaymentSettingsService } from './payment-settings.service.js';
 
 /**
  * Checkout.
@@ -45,6 +46,7 @@ export class CheckoutService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cart: CartService,
+    private readonly paymentSettings: PaymentSettingsService,
   ) {}
 
   private localeFor(query: CartQuery): Locale {
@@ -213,6 +215,10 @@ export class CheckoutService {
         query,
       ),
       activationEmailRequired,
+      // Decided here, once, rather than by a page guessing from a row of
+      // hardcoded buttons. A method whose details nobody has filled in is
+      // absent, so the shopper never reaches a payment step with nothing on it.
+      paymentMethods: await this.paymentSettings.offeredProviders(),
     };
   }
 

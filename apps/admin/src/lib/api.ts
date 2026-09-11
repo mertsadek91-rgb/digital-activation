@@ -16,6 +16,8 @@ import type {
   CredentialKind,
   ImportResult,
   OrderKeysRow,
+  PaymentSettings,
+  PaymentSettingsView,
   Queue,
   Readiness,
   RedirectsView,
@@ -176,6 +178,23 @@ export const api = {
     request<{ id: string }>(`/admin/redirects/not-found/${encodeURIComponent(id)}/resolve`, {
       method: 'POST',
       body: JSON.stringify({}),
+    }),
+
+  // --- payment methods ---------------------------------------------------------
+
+  paymentMethods: () => request<PaymentSettingsView>('/admin/payment-methods'),
+
+  /**
+   * Replaces both manual methods at once.
+   *
+   * A whole-document write, matching the API: a patch could leave one line of
+   * an old account behind beside the new one, and a half-updated bank account
+   * is how a transfer reaches an account that was closed last month.
+   */
+  savePaymentMethods: (settings: PaymentSettings) =>
+    request<PaymentSettingsView>('/admin/payment-methods', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
     }),
 
   // --- the inbox -------------------------------------------------------------

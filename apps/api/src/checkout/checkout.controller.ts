@@ -30,6 +30,7 @@ import { ZodPipe } from '../common/zod.pipe.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 
 import { CheckoutService } from './checkout.service.js';
+import { PaymentSettingsService } from './payment-settings.service.js';
 import { fromMinorUnits, StripeService, toMinorUnits } from './stripe.service.js';
 
 @ApiTags('checkout')
@@ -38,6 +39,7 @@ export class CheckoutController {
   constructor(
     private readonly checkout: CheckoutService,
     private readonly stripe: StripeService,
+    private readonly paymentSettings: PaymentSettingsService,
     private readonly fulfillment: FulfillmentService,
   ) {}
 
@@ -91,6 +93,13 @@ export class CheckoutController {
     }
 
     if (body.provider === 'STRIPE') {
+      // Refused here rather than after the intent exists. Creating a payment
+      // the browser has no publishable key to confirm leaves an open intent on
+      // an order nobody can pay, and the shopper still ends up at a dead end.
+      if (!this.stripe.payable) {
+        throw new ServiceUnavailableException('الدفع بالبطاقة غير مهيّأ بعد.');
+      }
+
       const intent = await this.stripe.intentFor({
         orderNumber: order.number,
         amountMinor: toMinorUnits(order.total.amount, order.total.currency),
@@ -106,15 +115,16 @@ export class CheckoutController {
     }
 
     if (body.provider === 'BANK_TRANSFER' || body.provider === 'CRYPTO') {
-      return {
-        provider: body.provider,
-        // Deliberately not invented here. Bank details and wallet addresses are
-        // content the owner maintains, and a hardcoded placeholder is how money
-        // ends up sent to the wrong account.
-        instructions:
-          'حوّل المبلغ ثم أرفق إثبات الدفع. سيراجعه فريقنا ويُفرج عن المفتاح بعد التأكيد.',
-        amount: order.total,
-      };
+      // Still not invented here. Bank details and wallet addresses are content
+      // the owner maintains in the panel, and a hardcoded placeholder is how
+      // money ends up in the wrong account — so an unfilled method is refused
+      // outright rather than answered with a sentence and no account number.
+      const instructions = await this.paymentSettings.instructionsFor(body.provider, order.locale);
+      if (!instructions) {
+        throw new ServiceUnavailableException('طريقة الدفع هذه غير متاحة حالياً.');
+      }
+
+      return { provider: body.provider, instructions, amount: order.total };
     }
 
     // PayPal has its own order/capture dance and its own webhook shape. It is

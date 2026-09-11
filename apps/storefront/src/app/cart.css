@@ -240,6 +240,29 @@
 .totals-discount {
   color: var(--color-success);
 }
+/*
+ * A button that reads as a link. Three pages already asked for this class and
+ * nothing defined it, so "edit my details" and "remove coupon" were rendering
+ * as the browser's default grey buttons in the middle of a sentence.
+ */
+.linky {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--color-brand);
+  text-decoration: underline;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.linky:hover {
+  color: var(--color-brand-hover);
+}
+.linky:disabled {
+  color: var(--color-ink-muted);
+  cursor: not-allowed;
+}
+
 .totals-discount .linky {
   margin-inline-start: 8px;
   font-size: var(--text-xs);
@@ -337,6 +360,86 @@
 .pay-methods {
   display: grid;
   gap: 10px;
+}
+
+/* --- card --------------------------------------------------------------- */
+
+.card-pay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+/*
+ * The box Stripe mounts its own iframe into. Only the frame is styled: the
+ * inputs live in a document on Stripe's origin, which is the whole point of
+ * mounting theirs instead of building ours.
+ */
+.card-pay-element {
+  padding: var(--spacing-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  min-block-size: 5rem;
+}
+
+/* --- manual payment instructions ----------------------------------------- */
+
+.pay-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  max-inline-size: 44rem;
+}
+.pay-details {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.pay-detail {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+  gap: 6px var(--spacing-1);
+  align-items: baseline;
+  padding: 10px 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 560px) {
+  .pay-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pay-detail dt {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.pay-detail dd {
+  margin: 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+/*
+ * The values that have to be copied exactly. Monospace and tabular figures
+ * because an IBAN is read a group at a time and a proportional 1 beside a
+ * proportional 7 is where a digit gets lost; `dir="ltr"` on the element itself
+ * because the surrounding page is right-to-left and the bidirectional
+ * algorithm would otherwise reorder the groups on screen.
+ */
+.pay-detail.is-exact .pay-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-lg);
+  overflow-wrap: anywhere;
+  color: var(--color-ink);
+  user-select: all;
+}
+.btn-copy {
+  min-block-size: 36px;
+  padding-inline: 12px;
+  font-size: var(--text-sm);
+  margin-inline-start: auto;
 }
 
 .cross-sell {

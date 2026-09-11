@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { cartSchema } from './cart.js';
 import { catalogImageSchema, credentialKindSchema, displayPriceSchema } from './catalog.js';
-import { localeSchema, slugSchema } from './primitives.js';
+import { i18nStringSchema, localeSchema, slugSchema } from './primitives.js';
 
 /**
  * Checkout contracts.
@@ -122,22 +122,56 @@ export const orderSchema = z.object({
 });
 export type Order = z.infer<typeof orderSchema>;
 
-export const checkoutSchema = z.object({
-  order: orderSchema,
-  cart: cartSchema,
-  crossSell: z.array(crossSellSchema),
-  /** True when the cart needs an activation email, so the form can ask. */
-  activationEmailRequired: z.boolean(),
-});
-export type Checkout = z.infer<typeof checkoutSchema>;
-
 // --- payment ----------------------------------------------------------------
 
 export const paymentProviderSchema = z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CRYPTO']);
+export type PaymentProvider = z.infer<typeof paymentProviderSchema>;
+
+/**
+ * The methods whose details a person maintains rather than an integration.
+ *
+ * A bank account and a wallet address are content, and content nobody has
+ * written yet is why this pair is modelled apart from the providers that
+ * configure themselves out of environment variables.
+ */
+export const manualPaymentProviderSchema = z.enum(['BANK_TRANSFER', 'CRYPTO']);
+export type ManualPaymentProvider = z.infer<typeof manualPaymentProviderSchema>;
 
 export const startPaymentSchema = z.object({
   provider: paymentProviderSchema,
 });
+
+/**
+ * One line of a manual payment instruction — an IBAN, a wallet address, the
+ * name the account is held in.
+ *
+ * `copyable` separates the values that must be reproduced exactly from the ones
+ * that only have to be read. A transposed digit in an IBAN sends the money to
+ * nobody and support cannot get it back, so those get a copy button and a
+ * monospace face; "Emirates NBD, Deira branch" needs neither.
+ */
+export const paymentDetailSchema = z.object({
+  /** Already resolved to the shopper's locale by the API. */
+  label: z.string(),
+  value: z.string(),
+  copyable: z.boolean(),
+});
+export type PaymentDetail = z.infer<typeof paymentDetailSchema>;
+
+/**
+ * What a shopper is told when they choose a manual method.
+ *
+ * `fields` is non-empty by construction: a method with nothing to transfer to
+ * is never offered, because a payment button leading to a page with no account
+ * number on it is worse than a method that is absent.
+ */
+export const paymentInstructionsSchema = z.object({
+  /** May be empty. The numbers are the part that may not be. */
+  headline: z.string(),
+  fields: z.array(paymentDetailSchema).min(1),
+  afterPaying: z.string(),
+});
+export type PaymentInstructions = z.infer<typeof paymentInstructionsSchema>;
 
 /**
  * What the storefront needs to hand over to the provider.
@@ -162,13 +196,95 @@ export const paymentSessionSchema = z.discriminatedUnion('provider', [
     amount: displayPriceSchema,
   }),
   z.object({
-    provider: z.enum(['BANK_TRANSFER', 'CRYPTO']),
+    provider: manualPaymentProviderSchema,
     /** Shown to the shopper; the order waits for a human to approve proof. */
-    instructions: z.string(),
+    instructions: paymentInstructionsSchema,
     amount: displayPriceSchema,
   }),
 ]);
 export type PaymentSession = z.infer<typeof paymentSessionSchema>;
+
+// --- payment settings -------------------------------------------------------
+
+/**
+ * The `Setting` row the manual methods live under.
+ *
+ * One row for both rather than one each: the checkout reads them on every draft
+ * it makes, and two queries for a pair of small objects buys nothing.
+ */
+export const PAYMENT_SETTINGS_KEY = 'payments.manual';
+
+export const paymentFieldSettingSchema = z.object({
+  label: i18nStringSchema,
+  /**
+   * Not localised, deliberately. An IBAN is the same string in both languages,
+   * and a second copy of it is a second chance to mistype one digit of it.
+   */
+  value: z.string().trim().max(200),
+  copyable: z.boolean(),
+});
+export type PaymentFieldSetting = z.infer<typeof paymentFieldSettingSchema>;
+
+export const manualPaymentSettingSchema = z.object({
+  /**
+   * Kept apart from "has details filled in". Taking bank transfer off the
+   * checkout for a fortnight should not mean deleting the account number and
+   * typing it back in afterwards from memory.
+   */
+  isEnabled: z.boolean(),
+  headline: i18nStringSchema,
+  afterPaying: i18nStringSchema,
+  fields: z.array(paymentFieldSettingSchema).max(12),
+});
+export type ManualPaymentSetting = z.infer<typeof manualPaymentSettingSchema>;
+
+export const paymentSettingsSchema = z.object({
+  BANK_TRANSFER: manualPaymentSettingSchema,
+  CRYPTO: manualPaymentSettingSchema,
+});
+export type PaymentSettings = z.infer<typeof paymentSettingsSchema>;
+
+export const paymentMethodStatusSchema = z.object({
+  provider: paymentProviderSchema,
+  isOffered: z.boolean(),
+  /** Arabic, for the panel. Null when the method is offered. */
+  blocker: z.string().nullable(),
+});
+export type PaymentMethodStatus = z.infer<typeof paymentMethodStatusSchema>;
+
+/**
+ * The settings, plus what they currently amount to at the checkout.
+ *
+ * Whoever is filling this screen in cannot see the storefront's payment step
+ * from it, so the screen states outright which methods a shopper is being
+ * offered and, for each one that is not, the single reason why.
+ */
+export const paymentSettingsViewSchema = z.object({
+  settings: paymentSettingsSchema,
+  methods: z.array(paymentMethodStatusSchema),
+});
+export type PaymentSettingsView = z.infer<typeof paymentSettingsViewSchema>;
+
+// --- the checkout page ------------------------------------------------------
+
+export const checkoutSchema = z.object({
+  order: orderSchema,
+  cart: cartSchema,
+  crossSell: z.array(crossSellSchema),
+  /** True when the cart needs an activation email, so the form can ask. */
+  activationEmailRequired: z.boolean(),
+
+  /**
+   * The methods a shopper may actually start, decided by the server.
+   *
+   * A method whose details nobody has written — a bank transfer with no account
+   * number behind it — is absent from this list rather than present and broken.
+   * The page draws its buttons from here, so there is one answer to "can this
+   * be paid?" instead of a fixed row of buttons with a 503 behind one of them.
+   */
+  paymentMethods: z.array(paymentProviderSchema),
+});
+export type Checkout = z.infer<typeof checkoutSchema>;
 
 /**
  * Below this, a cross-sell is not worth the interruption.

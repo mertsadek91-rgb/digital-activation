@@ -1,12 +1,14 @@
 'use client';
 
-import type { Cart, Checkout, CrossSell, PaymentSession } from '@da/contracts';
+import type { Cart, Checkout, CrossSell, PaymentProvider, PaymentSession } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { CardPayment } from '../../../components/card-payment';
+import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatPrice } from '../../../lib/format';
 
@@ -27,7 +29,24 @@ import { formatPrice } from '../../../lib/format';
 type Stage =
   | { kind: 'details' }
   | { kind: 'pay'; checkout: Checkout }
-  | { kind: 'manual'; session: PaymentSession; orderNumber: string };
+  | { kind: 'card'; session: CardSession; checkout: Checkout }
+  | { kind: 'manual'; session: ManualSession; orderNumber: string };
+
+type CardSession = Extract<PaymentSession, { provider: 'STRIPE' }>;
+type ManualSession = Extract<PaymentSession, { provider: 'BANK_TRANSFER' | 'CRYPTO' }>;
+
+/**
+ * What each method is called, on the button.
+ *
+ * The server decides which of these a shopper may start; the wording stays
+ * here, beside the rest of the page's Arabic and English.
+ */
+const METHOD_LABELS: Record<PaymentProvider, { ar: string; en: string }> = {
+  STRIPE: { ar: 'بطاقة بنكية', en: 'Card' },
+  PAYPAL: { ar: 'PayPal', en: 'PayPal' },
+  BANK_TRANSFER: { ar: 'تحويل بنكي', en: 'Bank transfer' },
+  CRYPTO: { ar: 'عملات رقمية', en: 'Cryptocurrency' },
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -86,23 +105,22 @@ export default function CheckoutPage() {
     }
   }
 
-  async function pay(
-    orderNumber: string,
-    provider: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER',
-  ): Promise<void> {
+  async function pay(checkout: Checkout, provider: PaymentProvider): Promise<void> {
+    const orderNumber = checkout.order.number;
     setBusy(true);
     setError(null);
     try {
       const session = await cartApi.pay(orderNumber, provider, { locale });
       if (session.provider === 'STRIPE') {
-        // Confirming a card needs Stripe.js in the page. Until the keys exist
-        // there is nothing to mount, and a fake card form would be worse than
-        // none — so the session is reported and the shopper is not misled.
-        setError(
-          ar
-            ? 'الدفع بالبطاقة قيد الربط النهائي. اختر التحويل البنكي حالياً.'
-            : 'Card payment is being connected. Please choose bank transfer for now.',
-        );
+        setStage({ kind: 'card', session, checkout });
+        return;
+      }
+      if (session.provider === 'PAYPAL') {
+        // PayPal is in the contract and not yet wired, and the API refuses it
+        // before this line is reached. Handled anyway so the union stays
+        // exhaustive and a future provider cannot fall through to the manual
+        // branch and render a set of bank details it does not have.
+        setError(ar ? 'PayPal غير متاح بعد.' : 'PayPal is not available yet.');
         return;
       }
       setStage({ kind: 'manual', session, orderNumber });
@@ -157,12 +175,10 @@ export default function CheckoutPage() {
           {ar ? 'رقم طلبك: ' : 'Your order number: '}
           <strong dir="ltr">{stage.orderNumber}</strong>
         </p>
-        <p className="lede">
-          {'instructions' in stage.session ? stage.session.instructions : null}
-        </p>
         <p className="price">
           <strong>{formatPrice(stage.session.amount)}</strong>
         </p>
+        <PaymentInstructionsPanel instructions={stage.session.instructions} locale={locale} />
         <Link
           href={`${prefix}${ROUTES.order(stage.orderNumber)}`}
           className="btn btn-primary"
@@ -261,6 +277,24 @@ export default function CheckoutPage() {
                 {busy ? '...' : ar ? 'متابعة إلى الدفع' : 'Continue to payment'}
               </button>
             </form>
+          ) : stage.kind === 'card' ? (
+            <div className="checkout-form">
+              <h2>{ar ? 'ادفع بالبطاقة' : 'Pay by card'}</h2>
+              <p className="notice">
+                {ar ? 'رقم طلبك: ' : 'Your order number: '}
+                <strong dir="ltr">{stage.checkout.order.number}</strong>
+              </p>
+              <p className="price">
+                <strong>{formatPrice(stage.session.amount)}</strong>
+              </p>
+              <CardPayment
+                session={stage.session}
+                locale={locale}
+                returnPath={`${prefix}/orders/${stage.checkout.order.number}`}
+                onPaid={() => router.push(`${prefix}/orders/${stage.checkout.order.number}`)}
+                onBack={() => setStage({ kind: 'pay', checkout: stage.checkout })}
+              />
+            </div>
           ) : (
             <div className="checkout-form">
               <h2>{ar ? 'طريقة الدفع' : 'How would you like to pay?'}</h2>
@@ -306,24 +340,41 @@ export default function CheckoutPage() {
 
               {error ? <p className="error">{error}</p> : null}
 
-              <div className="pay-methods">
-                <button
-                  type="button"
-                  className="btn btn-primary btn-wide"
-                  disabled={busy}
-                  onClick={() => void pay(stage.checkout.order.number, 'STRIPE')}
-                >
-                  {ar ? 'بطاقة بنكية' : 'Card'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-wide"
-                  disabled={busy}
-                  onClick={() => void pay(stage.checkout.order.number, 'BANK_TRANSFER')}
-                >
-                  {ar ? 'تحويل بنكي' : 'Bank transfer'}
-                </button>
-              </div>
+              {stage.checkout.paymentMethods.length === 0 ? (
+                // Nothing configured, so nothing is offered. A row of buttons
+                // where every one leads to a 503 costs the order and the
+                // goodwill; an address to write to keeps at least the order.
+                <p className="notice">
+                  {ar ? (
+                    <>
+                      لا توجد طريقة دفع متاحة الآن. طلبك محفوظ برقمه —{' '}
+                      <Link href={`${prefix}${ROUTES.contact}`}>راسلنا</Link> وسنُكمله معك.
+                    </>
+                  ) : (
+                    <>
+                      No payment method is available right now. Your order is saved under its number
+                      — <Link href={`${prefix}${ROUTES.contact}`}>write to us</Link> and we will
+                      finish it with you.
+                    </>
+                  )}
+                </p>
+              ) : (
+                <div className="pay-methods">
+                  {stage.checkout.paymentMethods.map((provider, index) => (
+                    <button
+                      key={provider}
+                      type="button"
+                      className={
+                        index === 0 ? 'btn btn-primary btn-wide' : 'btn btn-ghost btn-wide'
+                      }
+                      disabled={busy}
+                      onClick={() => void pay(stage.checkout, provider)}
+                    >
+                      {ar ? METHOD_LABELS[provider].ar : METHOD_LABELS[provider].en}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <button type="button" className="linky" onClick={() => setStage({ kind: 'details' })}>
                 {ar ? 'تعديل بياناتي' : 'Edit my details'}
