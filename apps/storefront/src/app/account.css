@@ -314,6 +314,39 @@
   margin-block: var(--spacing-1);
 }
 
+/*
+ * Two classes the storefront has been using since it was built and never
+ * defined: `.error` on every form on the site, and `.linky` on the copy buttons
+ * and the cart. Both were styled in the admin panel's stylesheet only, so a
+ * customer read an error message as ordinary body text and a copy button as
+ * unformatted text. They live here because this is the sheet every page that
+ * uses them already loads.
+ */
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.linky {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-inline-start: 8px;
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--color-brand-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linky:hover {
+  color: var(--color-brand);
+}
+
 /* --- contact --------------------------------------------------------------- */
 
 .contact-card {

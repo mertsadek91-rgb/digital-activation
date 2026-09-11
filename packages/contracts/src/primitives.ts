@@ -18,9 +18,18 @@ export const currencySchema = z.enum(CURRENCIES);
 export const BASE_CURRENCY: CurrencyCode = 'USD';
 
 /** Money crosses the wire as a decimal string, never as a float. */
+/**
+ * An amount as a string, to three decimal places.
+ *
+ * Three, not two, because the store sells in Kuwaiti dinars: KWD is seeded with
+ * `decimals: 3` and so are the Bahraini and Omani currencies it will add next.
+ * The schema allowed two, which meant a real KWD total — 12.345 — failed its
+ * own contract on the way to the browser. It was latent only because every
+ * storefront request so far asks for USD.
+ */
 export const moneySchema = z
   .string()
-  .regex(/^-?\d{1,10}(\.\d{1,2})?$/, 'expected a decimal amount with up to 2 places');
+  .regex(/^-?\d{1,10}(\.\d{1,3})?$/, 'expected a decimal amount with up to 3 places');
 
 export const slugSchema = z
   .string()
