@@ -13,13 +13,13 @@ model Setting {
 /// Every provider webhook is recorded before it is acted on. Stripe and PayPal
 /// both retry, and a licence key must not be issued twice for one payment.
 model WebhookEvent {
-  id       String          @id @default(cuid())
-  provider PaymentProvider
+  id                String          @id @default(cuid())
+  provider          PaymentProvider
   /// Provider event id. The unique constraint is the idempotency guarantee.
-  eventId  String
-  type     String
-  payload  Json
-  signatureVerified Boolean @default(false)
+  eventId           String
+  type              String
+  payload           Json
+  signatureVerified Boolean         @default(false)
 
   receivedAt  DateTime  @default(now())
   processedAt DateTime?
@@ -34,13 +34,13 @@ model WebhookEvent {
 /// Client-supplied idempotency keys for mutating storefront endpoints, so a
 /// double-tapped "pay" button creates one order rather than two.
 model IdempotencyKey {
-  key       String   @id
-  scope     String
+  key          String   @id
+  scope        String
   /// Hash of the stored response, replayed on a repeat request.
   responseHash String?
-  response  Json?
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+  response     Json?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
 
   @@index([expiresAt])
   @@schema("public")

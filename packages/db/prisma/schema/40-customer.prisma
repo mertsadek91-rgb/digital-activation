@@ -7,13 +7,13 @@
 // ---------------------------------------------------------------------------
 
 model Customer {
-  id    String @id @default(cuid())
-  email String @unique
+  id              String    @id @default(cuid())
+  email           String    @unique
   emailVerifiedAt DateTime?
-  phone String?
+  phone           String?
   /// Argon2id. Null for customers migrated from WordPress and for guests who
   /// only ever checked out — they set one via the reset flow.
-  passwordHash String?
+  passwordHash    String?
 
   firstName String?
   lastName  String?
@@ -21,9 +21,9 @@ model Customer {
   /// Captured for B2B invoices; drives VAT treatment on GCC/EU sales.
   vatNumber String?
 
-  locale   Locale  @default(AR)
+  locale   Locale         @default(AR)
   /// Display currency preference. Money is still stored in USD everywhere.
-  currency String  @default("USD")
+  currency String         @default("USD")
   group    CustomerGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   groupId  String?
 
@@ -33,7 +33,7 @@ model Customer {
   orderCount    Int       @default(0)
   lastOrderAt   DateTime?
 
-  riskLevel RiskLevel @default(LOW)
+  riskLevel         RiskLevel @default(LOW)
   /// Explicit marketing consent, with the timestamp. Transactional mail does
   /// not depend on it; campaigns and push do.
   marketingOptInAt  DateTime?
@@ -43,20 +43,21 @@ model Customer {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  addresses     CustomerAddress[]
-  sessions      CustomerSession[]
-  loginTokens   CustomerLoginToken[]
-  carts         Cart[]
-  orders        Order[]
-  reviews       Review[]
-  reviewInvites ReviewInvite[]
-  pushSubs      PushSubscription[]
-  stockAlerts   StockAlert[]
-  loyalty       LoyaltyAccount?
-  referral      Referral?
-  notifications NotificationLog[]
-  promotions    Promotion[]        @relation("PromotionIssuedTo")
-  promotionUses PromotionUsage[]
+  addresses       CustomerAddress[]
+  sessions        CustomerSession[]
+  loginTokens     CustomerLoginToken[]
+  carts           Cart[]
+  orders          Order[]
+  reviews         Review[]
+  reviewInvites   ReviewInvite[]
+  pushSubs        PushSubscription[]
+  stockAlerts     StockAlert[]
+  loyalty         LoyaltyAccount?
+  referral        Referral?
+  notifications   NotificationLog[]
+  contactMessages ContactMessage[]
+  promotions      Promotion[]          @relation("PromotionIssuedTo")
+  promotionUses   PromotionUsage[]
 
   @@index([groupId])
   @@index([lastOrderAt])
@@ -64,14 +65,14 @@ model Customer {
 }
 
 model CustomerGroup {
-  id   String            @id @default(cuid())
-  kind CustomerGroupKind @default(RETAIL)
-  name String            @unique
+  id                  String            @id @default(cuid())
+  kind                CustomerGroupKind @default(RETAIL)
+  name                String            @unique
   /// Blanket discount for the group, applied before coupons.
-  discountPercent Decimal @default(0) @db.Decimal(5, 2)
+  discountPercent     Decimal           @default(0) @db.Decimal(5, 2)
   /// B2B groups may pay by bank transfer against an invoice.
-  allowInvoicePayment Boolean @default(false)
-  createdAt DateTime @default(now())
+  allowInvoicePayment Boolean           @default(false)
+  createdAt           DateTime          @default(now())
 
   customers Customer[]
 
@@ -117,16 +118,16 @@ model CustomerAddress {
 /// minutes, one use, and the row is kept after use as the record that the
 /// link was redeemed.
 model CustomerLoginToken {
-  id         String   @id @default(cuid())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   customerId String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   /// Where the request came from, so a burst is traceable.
   ip         String?
   userAgent  String?
   expiresAt  DateTime
   usedAt     DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([customerId, createdAt])
   @@index([expiresAt])
@@ -136,14 +137,14 @@ model CustomerLoginToken {
 /// Refresh-token sessions. Only the hash is stored, so a database read cannot
 /// mint a token. Listed in the customer portal so a device can be revoked.
 model CustomerSession {
-  id         String   @id @default(cuid())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id         String    @id @default(cuid())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
   customerId String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   ip         String?
   userAgent  String?
-  createdAt  DateTime @default(now())
-  lastSeenAt DateTime @default(now())
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
   expiresAt  DateTime
   revokedAt  DateTime?
 
@@ -169,41 +170,42 @@ model StaffUser {
 
   /// TOTP is mandatory: the API refuses privileged routes while
   /// totpEnabledAt is null. Secret is encrypted at the application layer.
-  totpSecret     Bytes?
-  totpEnabledAt  DateTime?
+  totpSecret    Bytes?
+  totpEnabledAt DateTime?
   /// Optional CIDR allowlist for admin access.
-  ipAllowlist    String[]
+  ipAllowlist   String[]
 
   isActive    Boolean   @default(true)
   lastLoginAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  sessions   StaffSession[]
-  auditLogs  AuditLog[]
-  orderNotes OrderNote[]
-  promotions Promotion[]    @relation("PromotionCreatedBy")
-  pageEdits  PageVersion[]
-  articles   Article[]
-  redirects  Redirect[]
+  sessions        StaffSession[]
+  auditLogs       AuditLog[]
+  orderNotes      OrderNote[]
+  contactMessages ContactMessage[]
+  promotions      Promotion[]      @relation("PromotionCreatedBy")
+  pageEdits       PageVersion[]
+  articles        Article[]
+  redirects       Redirect[]
 
   @@schema("public")
 }
 
 model StaffSession {
-  id         String    @id @default(cuid())
-  staff      StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  staffId    String
-  tokenHash  String    @unique
-  ip         String?
-  userAgent  String?
+  id             String    @id @default(cuid())
+  staff          StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId        String
+  tokenHash      String    @unique
+  ip             String?
+  userAgent      String?
   /// Set once the session has cleared a TOTP challenge. Reveal-a-key and
   /// bulk-export both require a challenge newer than a few minutes.
   totpVerifiedAt DateTime?
-  createdAt  DateTime  @default(now())
-  lastSeenAt DateTime  @default(now())
-  expiresAt  DateTime
-  revokedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
 
   @@index([staffId, revokedAt])
   @@schema("public")
@@ -227,7 +229,7 @@ model AuditLog {
   ip        String?
   userAgent String?
   hashPrev  String?
-  hash      String  @unique
+  hash      String   @unique
   createdAt DateTime @default(now())
 
   @@index([entity, entityId, createdAt])

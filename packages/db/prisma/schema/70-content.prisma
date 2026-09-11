@@ -16,12 +16,12 @@ model Page {
   template PageTemplate  @default(GENERIC)
   status   PublishStatus @default(DRAFT)
 
-  title String
+  title  String
   /// Block document: hero, product-grid, faq, comparison-table, steps,
   /// testimonials, cta, rich-text.
-  blocks Json @default("[]")
+  blocks Json   @default("[]")
   /// { title, description, ogImageAssetId, robots, canonicalOverride }
-  seo    Json @default("{}")
+  seo    Json   @default("{}")
 
   publishAt   DateTime?
   publishedAt DateTime?
@@ -71,19 +71,19 @@ model Article {
   blocks  Json    @default("[]")
   seo     Json    @default("{}")
 
-  hero      Asset?  @relation(fields: [heroAssetId], references: [id], onDelete: SetNull)
+  hero        Asset?  @relation(fields: [heroAssetId], references: [id], onDelete: SetNull)
   heroAssetId String?
 
-  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  author   Author?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   authorId String?
   /// Staff member who last edited, separate from the by-line author.
   editor   StaffUser? @relation(fields: [editorId], references: [id], onDelete: SetNull)
   editorId String?
 
-  readingMinutes Int @default(0)
+  readingMinutes     Int      @default(0)
   /// Products this article should link to and be linked from. Keeps the
   /// category -> product -> guide -> comparison -> brand loop intact.
-  relatedProductIds String[]
+  relatedProductIds  String[]
   relatedCategoryIds String[]
 
   publishAt   DateTime?
@@ -100,17 +100,17 @@ model Article {
 /// with a stable identity for E-E-A-T, and so does an AI engine deciding
 /// whether to cite the page.
 model Author {
-  id     String @id @default(cuid())
-  slug   String @unique
-  name   String
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
   /// Per-locale bio: { ar, en }
-  bio    Json?
-  credentials String?
-  avatar   Asset?  @relation(fields: [avatarAssetId], references: [id], onDelete: SetNull)
+  bio           Json?
+  credentials   String?
+  avatar        Asset?   @relation(fields: [avatarAssetId], references: [id], onDelete: SetNull)
   avatarAssetId String?
   /// Profile URLs emitted as schema.org `sameAs`.
-  sameAs String[]
-  createdAt DateTime @default(now())
+  sameAs        String[]
+  createdAt     DateTime @default(now())
 
   articles Article[]
 
@@ -118,12 +118,12 @@ model Author {
 }
 
 model Navigation {
-  id     String @id @default(cuid())
+  id        String   @id @default(cuid())
   /// "header" | "footer-1" | "footer-2" | "announcement" | "mobile"
-  key    String
-  locale Locale
+  key       String
+  locale    Locale
   /// [{ label, href, children?, badge? }]
-  items  Json   @default("[]")
+  items     Json     @default("[]")
   updatedAt DateTime @updatedAt
 
   @@unique([key, locale])
@@ -138,11 +138,11 @@ model Redirect {
   to   String
   code Int    @default(301)
 
-  hits        Int       @default(0)
-  lastHitAt   DateTime?
-  isActive    Boolean   @default(true)
+  hits      Int       @default(0)
+  lastHitAt DateTime?
+  isActive  Boolean   @default(true)
   /// "migration" for the generated cutover map, "manual" for later edits.
-  source      String    @default("manual")
+  source    String    @default("manual")
 
   createdBy   StaffUser? @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdById String?
@@ -154,14 +154,52 @@ model Redirect {
 
 /// Fed by the 404 handler. The legacy log showed visitors asking for /about,
 /// /contact, /team, /shop and /blog — all of which 404'd.
+/// A message from the contact form.
+///
+/// Stored as well as emailed, and the order matters: the row is written first
+/// and the mail is sent second, so a message survives a mail outage instead of
+/// evaporating into a failed SMTP call. A store whose only inbox is an SMTP
+/// connection loses the customers it fails to receive, and never learns it did.
+model ContactMessage {
+  id     String        @id @default(cuid())
+  topic  ContactTopic  @default(OTHER)
+  status ContactStatus @default(NEW)
+
+  name        String
+  email       String
+  phone       String?
+  /// Optional, but the single most useful field on the form: a message about
+  /// an order that does not name one costs a round trip before anything starts.
+  orderNumber String?
+  message     String
+  locale      Locale  @default(AR)
+
+  /// Set when the address matches a known customer, so the person answering
+  /// sees who they are talking to without searching.
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  customerId String?
+
+  handledAt   DateTime?
+  handledBy   StaffUser? @relation(fields: [handledById], references: [id], onDelete: SetNull)
+  handledById String?
+
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([email, createdAt])
+  @@schema("public")
+}
+
 model NotFoundLog {
-  id         String   @id @default(cuid())
-  path       String   @unique
-  hits       Int      @default(1)
-  referer    String?
-  userAgent  String?
-  firstSeenAt DateTime @default(now())
-  lastSeenAt  DateTime @default(now())
+  id          String    @id @default(cuid())
+  path        String    @unique
+  hits        Int       @default(1)
+  referer     String?
+  userAgent   String?
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
   resolvedAt  DateTime?
 
   @@index([hits])
@@ -179,16 +217,16 @@ model SeoSetting {
 }
 
 model Experiment {
-  id       String    @id @default(cuid())
-  key      String    @unique
+  id        String    @id @default(cuid())
+  key       String    @unique
   /// [{ id, name, weight }]
-  variants Json
-  isActive Boolean   @default(false)
+  variants  Json
+  isActive  Boolean   @default(false)
   startedAt DateTime?
   endedAt   DateTime?
   /// { variantId: { views, addToCart, orders, revenueUsd } }
-  results  Json      @default("{}")
-  createdAt DateTime @default(now())
+  results   Json      @default("{}")
+  createdAt DateTime  @default(now())
 
   @@schema("public")
 }

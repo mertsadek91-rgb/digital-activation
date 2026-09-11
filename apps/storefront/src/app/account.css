@@ -184,3 +184,53 @@
   gap: 4px;
   color: var(--color-ink-muted);
 }
+
+/* --- contact --------------------------------------------------------------- */
+
+.contact-card {
+  display: grid;
+  gap: var(--spacing-1);
+  max-inline-size: 42rem;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.contact-card h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+/* Two per line on a desktop, one on a phone, with no breakpoint to maintain. */
+.contact-row {
+  display: grid;
+  gap: var(--spacing-1);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.contact-card select,
+.contact-card textarea {
+  font: inherit;
+  padding: 11px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  min-block-size: 46px;
+}
+.contact-card textarea {
+  resize: vertical;
+}
+
+/*
+ * The honeypot.
+ *
+ * Moved out of view rather than `display: none`: a bot that reads the computed
+ * style skips a hidden field, and one that reads the DOM fills this. It is out
+ * of the tab order via tabIndex and hidden from assistive technology via
+ * aria-hidden on the wrapper, so nobody meets it by accident.
+ */
+.hp {
+  position: absolute;
+  inset-inline-start: -9999px;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+}

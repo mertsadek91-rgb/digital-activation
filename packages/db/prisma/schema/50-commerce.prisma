@@ -31,8 +31,8 @@ model Cart {
   discountUsd Decimal @default(0) @db.Decimal(12, 2)
   totalUsd    Decimal @default(0) @db.Decimal(12, 2)
 
-  stage          CartStage @default(ACTIVE)
-  lastActivityAt DateTime  @default(now())
+  stage            CartStage @default(ACTIVE)
+  lastActivityAt   DateTime  @default(now())
   /// Set when a recovery email/push converts, so recovered revenue is
   /// attributable to the exact step that earned it.
   recoveredOrderId String?
@@ -52,17 +52,17 @@ model Cart {
 }
 
 model CartItem {
-  id        String  @id @default(cuid())
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId    String
-  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
-  variantId String
-  qty       Int     @default(1)
+  id            String   @id @default(cuid())
+  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId        String
+  variant       Variant  @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  variantId     String
+  qty           Int      @default(1)
   /// Snapshot so a price change mid-session cannot silently alter the cart.
-  unitPriceUsd Decimal @db.Decimal(12, 2)
+  unitPriceUsd  Decimal  @db.Decimal(12, 2)
   /// True when the line was added from a checkout cross-sell offer.
-  fromCrossSell Boolean @default(false)
-  createdAt DateTime @default(now())
+  fromCrossSell Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   @@unique([cartId, variantId])
   @@schema("public")
@@ -149,13 +149,13 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items          OrderItem[]
-  payments       Payment[]
-  notes          OrderNote[]
-  invoice        Invoice?
-  reviewInvites  ReviewInvite[]
-  promotionUses  PromotionUsage[]
-  loyaltyTxns    LoyaltyTransaction[]
+  items         OrderItem[]
+  payments      Payment[]
+  notes         OrderNote[]
+  invoice       Invoice?
+  reviewInvites ReviewInvite[]
+  promotionUses PromotionUsage[]
+  loyaltyTxns   LoyaltyTransaction[]
 
   @@index([status, placedAt])
   @@index([customerId, placedAt])
@@ -198,33 +198,33 @@ model OrderItem {
 /// legacy store used order notes as its delivery mechanism, which is exactly
 /// how plaintext keys and Office 365 passwords ended up in the database.
 model OrderNote {
-  id       String     @id @default(cuid())
-  order    Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId  String
-  author   StaffUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
-  authorId String?
-  body     String
-  isCustomerVisible Boolean @default(false)
-  createdAt DateTime  @default(now())
+  id                String     @id @default(cuid())
+  order             Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId           String
+  author            StaffUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId          String?
+  body              String
+  isCustomerVisible Boolean    @default(false)
+  createdAt         DateTime   @default(now())
 
   @@index([orderId, createdAt])
   @@schema("public")
 }
 
 model Payment {
-  id      String          @id @default(cuid())
-  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId String
+  id       String          @id @default(cuid())
+  order    Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId  String
   provider PaymentProvider
   state    PaymentState    @default(PROCESSING)
 
   /// Provider-side identifier (Stripe PaymentIntent, PayPal capture id).
-  providerRef String?
+  providerRef     String?
   /// What the customer was actually charged, in the currency they were charged.
-  amountCharged Decimal @db.Decimal(12, 2)
+  amountCharged   Decimal @db.Decimal(12, 2)
   chargedCurrency String
   /// Same amount normalised to USD for reporting.
-  amountUsd     Decimal @db.Decimal(12, 2)
+  amountUsd       Decimal @db.Decimal(12, 2)
 
   /// For BANK_TRANSFER / CRYPTO: the proof-of-payment upload awaiting approval.
   proofAssetId String?
@@ -260,13 +260,13 @@ model Refund {
 }
 
 model Invoice {
-  id       String   @id @default(cuid())
-  order    Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId  String   @unique
-  number   String   @unique
-  pdfAsset Asset?   @relation(fields: [pdfAssetId], references: [id], onDelete: SetNull)
+  id         String   @id @default(cuid())
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId    String   @unique
+  number     String   @unique
+  pdfAsset   Asset?   @relation(fields: [pdfAssetId], references: [id], onDelete: SetNull)
   pdfAssetId String?
-  issuedAt DateTime @default(now())
+  issuedAt   DateTime @default(now())
 
   @@schema("public")
 }
@@ -274,16 +274,16 @@ model Invoice {
 // --- currency ---------------------------------------------------------------
 
 model Currency {
-  code     String  @id /// ISO 4217, e.g. "USD", "SAR", "AED", "TRY"
-  symbol   String
+  code           String  @id /// ISO 4217, e.g. "USD", "SAR", "AED", "TRY"
+  symbol         String
   /// Which side of the amount the symbol sits on: "left" | "right".
-  symbolPosition String @default("left")
-  decimals Int     @default(2)
+  symbolPosition String  @default("left")
+  decimals       Int     @default(2)
   /// e.g. "none" | "nearest_0_95" — psychological rounding after conversion,
   /// so a converted price still reads like a price.
-  roundingRule String @default("none")
-  isActive  Boolean @default(true)
-  sortOrder Int     @default(0)
+  roundingRule   String  @default("none")
+  isActive       Boolean @default(true)
+  sortOrder      Int     @default(0)
 
   rates FxRate[]
 

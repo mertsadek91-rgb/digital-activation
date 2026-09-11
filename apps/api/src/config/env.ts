@@ -59,6 +59,8 @@ const envSchema = z.object({
   SMTP_URL: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM_TRANSACTIONAL: z.string().email(),
+  /** Where customers are told to write. Falls back to the From address. */
+  SUPPORT_EMAIL: z.string().email().optional(),
   MAIL_FROM_MARKETING: z.string().email(),
 
   BASE_CURRENCY: z.string().length(3).default('USD'),

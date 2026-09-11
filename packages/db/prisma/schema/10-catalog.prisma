@@ -43,15 +43,15 @@ model BrandTranslation {
 }
 
 model Category {
-  id       String    @id @default(cuid())
-  slug     String    @unique
-  parent   Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  id       String     @id @default(cuid())
+  slug     String     @unique
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   parentId String?
   children Category[] @relation("CategoryTree")
 
-  image    Asset?  @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  image    Asset?        @relation(fields: [imageId], references: [id], onDelete: SetNull)
   imageId  String?
-  position Int     @default(0)
+  position Int           @default(0)
   status   PublishStatus @default(DRAFT)
 
   createdAt DateTime @default(now())
@@ -88,9 +88,9 @@ model CategoryTranslation {
 }
 
 model Product {
-  id     String      @id @default(cuid())
-  slug   String      @unique
-  kind   ProductKind @default(KEY)
+  id     String        @id @default(cuid())
+  slug   String        @unique
+  kind   ProductKind   @default(KEY)
   status PublishStatus @default(DRAFT)
 
   brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
@@ -151,14 +151,14 @@ model ProductTranslation {
   body      Json?
 
   /// [{ q, a }] — FAQ block + FAQPage structured data.
-  faq              Json?
+  faq             Json?
   /// [{ step, text, image? }] — the 3-step activation instructions that cut
   /// support tickets and rank for "كيف أفعّل …" queries.
-  activationSteps  Json?
+  activationSteps Json?
   /// Official vendor download link, shown next to the activation steps.
-  downloadUrl      String?
+  downloadUrl     String?
   /// Free-text notes: regional restrictions, "not for Windows 10 Home", etc.
-  warnings         Json?
+  warnings        Json?
 
   seoTitle       String?
   seoDescription String?
@@ -225,13 +225,13 @@ model Variant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  inventory      InventoryLevel?
-  reservations   StockReservation[]
-  movements      StockMovement[]
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
-  stockAlerts    StockAlert[]
-  media          ProductMedia[]
+  inventory    InventoryLevel?
+  reservations StockReservation[]
+  movements    StockMovement[]
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  stockAlerts  StockAlert[]
+  media        ProductMedia[]
 
   @@index([productId, position])
   @@schema("public")
@@ -251,8 +251,8 @@ model ProductCategory {
 }
 
 model Tag {
-  id       String @id @default(cuid())
-  slug     String @unique
+  id       String  @id @default(cuid())
+  slug     String  @unique
   name     String
   /// Tag archives stay noindex, as they were in the legacy store. The 501
   /// legacy tags consolidate to roughly 60 that carry real meaning.
@@ -274,16 +274,16 @@ model ProductTag {
 }
 
 model ProductRelation {
-  id        String              @id @default(cuid())
-  source    Product             @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
-  sourceId  String
-  target    Product             @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
-  targetId  String
-  kind      ProductRelationKind @default(RELATED)
-  position  Int                 @default(0)
+  id                    String              @id @default(cuid())
+  source                Product             @relation("RelationSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId              String
+  target                Product             @relation("RelationTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  targetId              String
+  kind                  ProductRelationKind @default(RELATED)
+  position              Int                 @default(0)
   /// Extra discount applied only when the cross-sell is accepted during the
   /// same checkout. Drives "add now and save X%".
-  bundleDiscountPercent Decimal? @db.Decimal(5, 2)
+  bundleDiscountPercent Decimal?            @db.Decimal(5, 2)
 
   @@unique([sourceId, targetId, kind])
   @@schema("public")

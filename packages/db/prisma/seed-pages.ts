@@ -19,6 +19,12 @@
  *
  * Written as blocks rather than HTML, and the two warranty types are a table:
  * a table is what a skimming reader takes in and what an answer engine quotes.
+ *
+ * The contact channels are the store's real ones, taken from the legacy site's
+ * own support page and footer — the WhatsApp number, the Telegram handle and
+ * the support address. They live in a row rather than in a component for the
+ * obvious reason: a phone number hardcoded in a build is a phone number that
+ * goes stale in a build.
  */
 export const PAGES = [
   {
@@ -184,6 +190,91 @@ export const PAGES = [
           buttonLabel: 'Shop now',
           buttonHref: '/store',
           tone: 'brand',
+        },
+      ],
+    },
+  },
+  {
+    slug: 'contact',
+    ar: {
+      title: 'تواصل معنا',
+      seo: {
+        title: 'تواصل معنا — الدعم الفني | متجر التفعيل الرقمي',
+        description:
+          'راسلنا عبر النموذج أو واتساب أو تيليجرام. نردّ خلال 24 ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.',
+      },
+      blocks: [
+        {
+          type: 'answerFirst',
+          text: 'عندك مشكلة أو استفسار؟ اكتب لنا في النموذج أدناه، أو راسلنا على واتساب أو تيليجرام أو البريد. نردّ خلال 24 ساعة كحدّ أقصى — واذكر رقم طلبك إن كانت رسالتك عن طلب، فهو يختصر الرد إلى النصف.',
+        },
+        {
+          type: 'richText',
+          html:
+            '<p>قنوات التواصل المباشرة:</p>' +
+            '<ul>' +
+            '<li>واتساب: <a href="https://wa.me/966534255367" dir="ltr">‎+966 53 425 5367</a></li>' +
+            '<li>تيليجرام: <a href="https://t.me/digitalactivations" dir="ltr">@digitalactivations</a></li>' +
+            '<li>البريد: <a href="mailto:help@digital-activation.com" dir="ltr">help@digital-activation.com</a></li>' +
+            '</ul>',
+        },
+        {
+          type: 'faq',
+          items: [
+            {
+              q: 'المفتاح لا يعمل — ما أسرع طريق؟',
+              a: 'اختر «مشكلة تفعيل» في النموذج واذكر رقم الطلب. ولا تُعِد محاولة التفعيل مراراً قبل أن نردّ: بعض المنتجات تقفل بعد عدّة محاولات خاطئة.',
+            },
+            {
+              q: 'أين أجد مفتاحي؟',
+              a: 'في البريد الذي أرسلناه إليك عند التسليم، وفي صفحة «تراخيصي» بعد تسجيل الدخول برابط يُرسَل إلى بريدك.',
+            },
+            {
+              q: 'هل تبيعون للشركات بفواتير؟',
+              a: 'نعم. اختر «مبيعات الشركات» في النموذج واذكر الكمية والمنتج، ونعود إليك بعرض.',
+            },
+          ],
+        },
+      ],
+    },
+    en: {
+      title: 'Contact us',
+      seo: {
+        title: 'Contact us — support | Digital Activation',
+        description:
+          'Write to us through the form, on WhatsApp or on Telegram. We reply within 24 hours at the latest, usually much sooner.',
+      },
+      blocks: [
+        {
+          type: 'answerFirst',
+          text: 'Something wrong, or a question before you buy? Use the form below, or reach us on WhatsApp, Telegram or email. We reply within 24 hours at the latest — and if your message is about an order, quoting the order number halves the time it takes.',
+        },
+        {
+          type: 'richText',
+          html:
+            '<p>Direct channels:</p>' +
+            '<ul>' +
+            '<li>WhatsApp: <a href="https://wa.me/966534255367" dir="ltr">+966 53 425 5367</a></li>' +
+            '<li>Telegram: <a href="https://t.me/digitalactivations" dir="ltr">@digitalactivations</a></li>' +
+            '<li>Email: <a href="mailto:help@digital-activation.com" dir="ltr">help@digital-activation.com</a></li>' +
+            '</ul>',
+        },
+        {
+          type: 'faq',
+          items: [
+            {
+              q: 'My key will not activate — what is fastest?',
+              a: 'Choose "Activation problem" in the form and quote your order number. Please do not keep retrying the activation before we reply: some products lock after a few failed attempts.',
+            },
+            {
+              q: 'Where do I find my key?',
+              a: 'In the delivery email we sent you, and on the My licences page after signing in with a link emailed to that address.',
+            },
+            {
+              q: 'Do you sell to companies with invoices?',
+              a: 'Yes. Choose "Business sales" in the form with the product and quantity, and we will come back with a quote.',
+            },
+          ],
         },
       ],
     },

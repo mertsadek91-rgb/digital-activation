@@ -71,6 +71,7 @@ export function SiteHeader({ locale }: { locale: string }) {
           {/* Named for what it holds, not for an account system: there is no
               account to manage, only the licences somebody already bought. */}
           <Link href={`${prefix}${ROUTES.licenses}`}>{ar ? 'تراخيصي' : 'My licences'}</Link>
+          <Link href={`${prefix}${ROUTES.contact}`}>{ar ? 'تواصل معنا' : 'Contact'}</Link>
           <Link href={ar ? '/en' : '/'} className="lang" hrefLang={ar ? 'en' : 'ar'}>
             {ar ? 'English' : 'العربية'}
           </Link>

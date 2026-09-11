@@ -104,6 +104,34 @@ enum CredentialKind {
   @@schema("public")
 }
 
+/// Which desk a message from the contact form belongs to.
+///
+/// The legacy support page asked the sender to "choose the right section" and
+/// then emailed everything to one address anyway. The value is kept because it
+/// is the one thing that lets an inbox be worked in the right order: a dead
+/// activation on a paid order is not the same as a question from somebody who
+/// has not bought anything yet.
+enum ContactTopic {
+  /// An existing order: where is it, what state is it in.
+  ORDER
+  /// A key that will not activate. The one that costs money while it waits.
+  ACTIVATION
+  /// A question from somebody who has not bought yet.
+  PRESALE
+  /// Volume, invoices, a company account.
+  BUSINESS
+  OTHER
+
+  @@schema("public")
+}
+
+enum ContactStatus {
+  NEW
+  HANDLED
+
+  @@schema("public")
+}
+
 enum LicensePeriodUnit {
   DAY
   MONTH

@@ -56,8 +56,21 @@ export class MailService {
       : (process.env.MAIL_FROM_TRANSACTIONAL ?? 'orders@digital-activation.com');
   }
 
+  /**
+   * Where a customer is told to write, and where the contact form lands.
+   *
+   * Its own setting, not the transactional From address. Those were the same
+   * value until the contact page went in and pointed at `help@`, which is the
+   * address the store has printed on its own site for years — while every
+   * licence email was telling customers to reply to `orders@`. One of the two
+   * was going to be a mailbox nobody watches.
+   */
   get supportEmail(): string {
-    return process.env.MAIL_FROM_TRANSACTIONAL ?? 'orders@digital-activation.com';
+    return (
+      process.env.SUPPORT_EMAIL ??
+      process.env.MAIL_FROM_TRANSACTIONAL ??
+      'help@digital-activation.com'
+    );
   }
 
   /**

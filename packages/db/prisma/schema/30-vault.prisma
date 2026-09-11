@@ -31,13 +31,13 @@ model LicenseKey {
   state     LicenseKeyState @default(AVAILABLE)
 
   // --- envelope-encrypted payload ---
-  ciphertext Bytes
-  iv         Bytes
-  authTag    Bytes
+  ciphertext  Bytes
+  iv          Bytes
+  authTag     Bytes
   /// The DEK, wrapped by the KEK held in KMS.
-  wrappedDek Bytes
+  wrappedDek  Bytes
   /// Which KEK generation wrapped this row, so keys can be rotated in place.
-  kekVersion Int    @default(1)
+  kekVersion  Int    @default(1)
   /// Salted SHA-256 of the plaintext. Duplicate detection without decryption.
   fingerprint String @unique
 
@@ -55,16 +55,16 @@ model LicenseKey {
   fieldCount Int @default(1)
 
   supplierId String?
-  costUsd    Decimal? @db.Decimal(12, 2)
+  costUsd    Decimal?  @db.Decimal(12, 2)
   /// For time-limited stock (a key that must be activated within N days).
   expiresAt  DateTime?
 
   /// Set when the key is bound to a paid order item. Not a foreign key, by rule 1.
-  orderItemId String?   @unique
-  reservedAt  DateTime?
-  assignedAt  DateTime?
-  deliveredAt DateTime?
-  revokedAt   DateTime?
+  orderItemId   String?   @unique
+  reservedAt    DateTime?
+  assignedAt    DateTime?
+  deliveredAt   DateTime?
+  revokedAt     DateTime?
   revokedReason String?
 
   importBatchId String?
@@ -100,16 +100,16 @@ model KeyAccessLog {
 
 /// One row per bulk import, so a bad batch can be traced and rolled back.
 model KeyImportBatch {
-  id         String    @id @default(cuid())
-  variantId  String
-  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  supplierId String?
-  actorId    String
-  imported   Int       @default(0)
-  duplicatesSkipped Int @default(0)
-  invalidSkipped    Int @default(0)
-  note       String?
-  createdAt  DateTime  @default(now())
+  id                String    @id @default(cuid())
+  variantId         String
+  supplier          Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  supplierId        String?
+  actorId           String
+  imported          Int       @default(0)
+  duplicatesSkipped Int       @default(0)
+  invalidSkipped    Int       @default(0)
+  note              String?
+  createdAt         DateTime  @default(now())
 
   @@index([variantId, createdAt])
   @@schema("public")

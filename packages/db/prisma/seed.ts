@@ -379,9 +379,19 @@ async function main(): Promise<void> {
         url: 'https://digital-activation.com',
         logoUrl: 'https://digital-activation.com/logo.svg',
         email: 'help@digital-activation.com',
-        // Fill in once the Trustpilot and Google Business profiles are live:
+        // Trustpilot and Google Business still to be added once live:
         // external citations are what answer engines actually weigh.
-        sameAs: [],
+        // The store's real profiles, from the legacy site's own footer. These
+        // are what an answer engine follows to confirm the business exists
+        // outside its own website — the field was empty and the profiles were
+        // live the whole time.
+        sameAs: [
+          'https://wa.me/966534255367',
+          'https://t.me/digitalactivations',
+          'https://www.instagram.com/digital.activation',
+          'https://twitter.com/digital_activ',
+          'https://www.facebook.com/digitalactivation',
+        ],
       },
     },
   });

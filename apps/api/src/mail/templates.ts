@@ -415,6 +415,98 @@ ${button(input.url, 'View my licences')}
 }
 
 /**
+ * A message from the contact form, to the store.
+ *
+ * Written for somebody who is about to answer it: the topic and the order
+ * number first, the message verbatim, and a reply-to that goes straight back
+ * to the sender. Nothing is summarised — a support email that paraphrases the
+ * customer is a support email somebody has to open the panel to trust.
+ */
+export function contactToStore(input: {
+  topic: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  orderNumber: string | null;
+  message: string;
+  locale: 'ar' | 'en';
+  id: string;
+}): Rendered {
+  const rows: [string, string][] = [
+    ['القسم', input.topic],
+    ['الاسم', input.name],
+    ['البريد', input.email],
+    ...(input.phone ? ([['الهاتف', input.phone]] as [string, string][]) : []),
+    ...(input.orderNumber ? ([['رقم الطلب', input.orderNumber]] as [string, string][]) : []),
+    ['اللغة', input.locale === 'ar' ? 'العربية' : 'English'],
+  ];
+
+  const table = rows
+    .map(
+      ([label, value]) =>
+        `<tr><td style="padding:6px 0;color:${MUTED};white-space:nowrap;">${escape(label)}</td><td style="padding:6px 12px;"><strong dir="auto">${escape(value)}</strong></td></tr>`,
+    )
+    .join('');
+
+  const body = `<h1 style="margin:0 0 12px;font-size:20px;">رسالة جديدة من نموذج التواصل</h1>
+<table role="presentation" cellpadding="0" cellspacing="0">${table}</table>
+<p style="margin:16px 0 6px;color:${MUTED};">نصّ الرسالة:</p>
+<div dir="auto" style="padding:14px;background:#f6f6f6;border-radius:6px;white-space:pre-wrap;">${escape(input.message)}</div>
+<p style="color:${MUTED};font-size:12px;">المعرّف ${escape(input.id)}</p>`;
+
+  return {
+    subject: `[${input.topic}] رسالة من ${input.name}`,
+    html: shell({ locale: 'ar', title: 'Contact message', body }),
+    text: [
+      ...rows.map(([label, value]) => `${label}: ${value}`),
+      '',
+      input.message,
+      '',
+      `id ${input.id}`,
+    ].join('\n'),
+  };
+}
+
+/**
+ * The acknowledgement, to whoever wrote in.
+ *
+ * Short on purpose. It exists so a customer does not write twice, and it says
+ * the one thing they want to know — when to expect an answer — rather than
+ * quoting their whole message back at them.
+ */
+export function contactAck(input: {
+  locale: 'ar' | 'en';
+  name: string;
+  hours: number;
+  supportEmail: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">وصلتنا رسالتك</h1>
+<p>شكراً ${escape(input.name)}. فريقنا يقرأ الرسائل بالترتيب ويردّ خلال ${String(input.hours)} ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.</p>
+<p style="color:${MUTED};">إن كانت رسالتك عن مفتاح لا يعمل، لا تُعد محاولة التفعيل مراراً قبل أن نردّ — بعض المنتجات تقفل بعد عدّة محاولات خاطئة.</p>`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">We have your message</h1>
+<p>Thank you, ${escape(input.name)}. We read messages in order and reply within ${String(input.hours)} hours at the latest, usually well before that.</p>
+<p style="color:${MUTED};">If this is about a key that will not activate, please do not keep retrying before we reply — some products lock after a few failed attempts.</p>`;
+
+  return {
+    subject: ar ? 'وصلتنا رسالتك' : 'We have your message',
+    html: shell({
+      locale: input.locale,
+      title: 'Message received',
+      body,
+      footerNote: ar
+        ? `للرد على هذه الرسالة راسِلنا على ${input.supportEmail}`
+        : `Reply to this message at ${input.supportEmail}`,
+    }),
+    text: ar
+      ? `وصلتنا رسالتك، ونردّ خلال ${String(input.hours)} ساعة كحدّ أقصى.\n${input.supportEmail}`
+      : `We have your message and will reply within ${String(input.hours)} hours.\n${input.supportEmail}`,
+  };
+}
+
+/**
  * Something went wrong with one line, and the customer is told before they ask.
  *
  * Sent when a line is marked failed. It names what failed and what happens

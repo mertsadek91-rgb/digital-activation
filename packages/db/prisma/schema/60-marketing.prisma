@@ -28,12 +28,12 @@ model Promotion {
   startsAt DateTime?
   endsAt   DateTime?
 
-  usageLimit      Int? /// total redemptions allowed
-  usageCount      Int  @default(0)
-  perCustomerLimit Int? @default(1)
+  usageLimit       Int? /// total redemptions allowed
+  usageCount       Int     @default(0)
+  perCustomerLimit Int?    @default(1)
   /// True for codes minted by the day-7 recovery flow: one use, one customer,
   /// hard expiry. They cannot be shared or scraped into a coupon site.
-  singleUse       Boolean @default(false)
+  singleUse        Boolean @default(false)
 
   issuedTo   Customer? @relation("PromotionIssuedTo", fields: [issuedToId], references: [id], onDelete: SetNull)
   issuedToId String?
@@ -61,7 +61,7 @@ model Promotion {
 /// Redemption ledger. Enforces per-customer limits and lets us report revenue
 /// and margin after discount per code.
 model PromotionUsage {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
   promotionId String
   order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -77,15 +77,15 @@ model PromotionUsage {
 }
 
 model Segment {
-  id   String @id @default(cuid())
-  name String @unique
+  id          String    @id @default(cuid())
+  name        String    @unique
   /// Declarative definition compiled to a Prisma query, e.g.
   /// { boughtCategoryId, notBoughtCategoryId, dormantDays, minTotalSpentUsd,
   ///   renewalDueWithinDays }
-  definition Json
-  cachedCount Int      @default(0)
+  definition  Json
+  cachedCount Int       @default(0)
   refreshedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   campaigns Campaign[]
 
@@ -137,8 +137,8 @@ model Review {
   locale Locale       @default(AR)
   status ReviewStatus @default(PENDING)
 
-  storeReply String?
-  repliedAt  DateTime?
+  storeReply    String?
+  repliedAt     DateTime?
   moderatedById String?
 
   createdAt DateTime @default(now())
@@ -152,13 +152,13 @@ model Review {
 /// Post-delivery review invitations, sent on day 3 and day 10. This is how the
 /// store accumulates genuine ratings instead of generating them.
 model ReviewInvite {
-  id         String   @id @default(cuid())
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId    String
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId String
-  stage      Int      @default(1)
-  sentAt     DateTime @default(now())
+  id          String    @id @default(cuid())
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId  String
+  stage       Int       @default(1)
+  sentAt      DateTime  @default(now())
   respondedAt DateTime?
 
   @@unique([orderId, stage])
@@ -168,12 +168,12 @@ model ReviewInvite {
 // --- retention --------------------------------------------------------------
 
 model LoyaltyAccount {
-  id         String   @id @default(cuid())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId String   @unique
-  points     Int      @default(0)
-  lifetimePoints Int  @default(0)
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId     String   @unique
+  points         Int      @default(0)
+  lifetimePoints Int      @default(0)
+  updatedAt      DateTime @updatedAt
 
   transactions LoyaltyTransaction[]
 
@@ -195,15 +195,15 @@ model LoyaltyTransaction {
 }
 
 model Referral {
-  id         String   @id @default(cuid())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  customerId String   @unique
-  code       String   @unique
-  uses       Int      @default(0)
+  id                String     @id @default(cuid())
+  customer          Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId        String     @unique
+  code              String     @unique
+  uses              Int        @default(0)
   /// The promotion handed to the referred friend.
   rewardPromotion   Promotion? @relation(fields: [rewardPromotionId], references: [id], onDelete: SetNull)
   rewardPromotionId String?
-  createdAt  DateTime @default(now())
+  createdAt         DateTime   @default(now())
 
   @@schema("public")
 }
