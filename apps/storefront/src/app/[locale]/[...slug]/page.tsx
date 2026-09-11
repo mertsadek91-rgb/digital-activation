@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { setRequestLocale } from 'next-intl/server';
 
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
-import { getPage, getRedirect } from '../../../lib/api';
+import { getPage, getRedirect, reportNotFound } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 
 /**
@@ -45,8 +46,15 @@ interface Props {
  * Never returns: it either redirects or renders the 404.
  */
 async function legacyRedirect(segments: string[], locale: string): Promise<never> {
-  const target = await getRedirect(`/${segments.join('/')}`);
-  if (!target) notFound();
+  const pathname = `/${segments.join('/')}`;
+  const target = await getRedirect(pathname);
+  if (!target) {
+    // Recorded on the way past. The generated map covers what the export knew
+    // about; this is how the store finds out about the links it did not — an
+    // old forum post, a printed invoice, a partner's page.
+    reportNotFound(pathname, (await headers()).get('referer') ?? undefined);
+    notFound();
+  }
 
   // The locale travels with the visitor. Somebody who followed an old link
   // from an English result should not be dropped into Arabic.

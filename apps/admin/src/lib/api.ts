@@ -17,6 +17,7 @@ import type {
   OrderKeysRow,
   Queue,
   Readiness,
+  RedirectsView,
   RevealResult,
   SecretInput,
   StaffLoginResult,
@@ -123,6 +124,28 @@ export const api = {
     request<{ sku: string; onHand: number; reserved: number }>(`/admin/variants/${sku}/inventory`, {
       method: 'PATCH',
       body: JSON.stringify({ onHand, reason, ...(note ? { note } : {}) }),
+    }),
+
+  // --- redirects ---------------------------------------------------------------
+
+  redirects: () => request<RedirectsView>('/admin/redirects'),
+
+  createRedirect: (from: string, to: string, code: 301 | 302) =>
+    request<{ id: string }>('/admin/redirects', {
+      method: 'POST',
+      body: JSON.stringify({ from, to, code }),
+    }),
+
+  updateRedirect: (id: string, patch: { to?: string; code?: 301 | 302; isActive?: boolean }) =>
+    request<{ id: string }>(`/admin/redirects/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  resolveNotFound: (id: string) =>
+    request<{ id: string }>(`/admin/redirects/not-found/${encodeURIComponent(id)}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({}),
     }),
 
   // --- the inbox -------------------------------------------------------------

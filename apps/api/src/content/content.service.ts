@@ -74,6 +74,46 @@ export class ContentService {
     return { to: row.to, code: row.code };
   }
 
+  /**
+   * Records a path that answered 404.
+   *
+   * The table's whole value is the legacy URLs the generated map could not
+   * predict — the ones linked from somewhere the export knows nothing about,
+   * an old forum post or a printed invoice. Every row is either a redirect
+   * waiting to be written or a crawler to ignore.
+   *
+   * Two guards, because this is a write on an anonymous request: paths that
+   * are obviously automated probing are dropped rather than stored, and the
+   * row is keyed on the path so a thousand hits are one row. Without the
+   * first, the table fills with `/wp-login.php` within a day of going live and
+   * the real signal is buried.
+   */
+  async recordNotFound(input: {
+    path: string;
+    referer?: string | undefined;
+    userAgent?: string | undefined;
+  }): Promise<void> {
+    const path = normalisePath(input.path);
+    if (!path || path === '/' || path.length > 500) return;
+    if (PROBES.some((pattern) => pattern.test(path))) return;
+
+    await this.prisma.client.notFoundLog.upsert({
+      where: { path },
+      update: {
+        hits: { increment: 1 },
+        lastSeenAt: new Date(),
+        // A path that comes back after being marked resolved is not resolved.
+        resolvedAt: null,
+        referer: input.referer ?? undefined,
+      },
+      create: {
+        path,
+        referer: input.referer ?? null,
+        userAgent: input.userAgent ?? null,
+      },
+    });
+  }
+
   /** Published slugs, for the sitemap and for prerendering. */
   async publishedSlugs(): Promise<{ slug: string; updatedAt: Date }[]> {
     const rows = await this.prisma.client.page.findMany({
@@ -92,6 +132,21 @@ export class ContentService {
     return [...seen].map(([slug, updatedAt]) => ({ slug, updatedAt }));
   }
 }
+
+/**
+ * Paths that are somebody scanning, not somebody who followed a link.
+ *
+ * None of these ever existed on the legacy WordPress store as a page worth
+ * redirecting, and every one of them arrives by the thousand from bots looking
+ * for an unpatched install. They are dropped before the write so the 404 list
+ * stays readable by a person.
+ */
+const PROBES = [
+  /^\/wp-(login|admin|content|includes|json)/,
+  /^\/(xmlrpc|wp-config|\.env|\.git)/,
+  /^\/(vendor|phpunit|phpmyadmin|admin\.php|shell|cgi-bin)/,
+  /\.(php|asp|aspx|jsp|cgi|sql|bak|old|zip|tar|gz)$/,
+];
 
 /**
  * The shape the map is keyed by: decoded, lower-cased, no trailing slash.

@@ -123,3 +123,79 @@ export type ContactList = z.infer<typeof contactListSchema>;
 export const setContactStatusSchema = z.object({
   status: z.enum(['NEW', 'HANDLED']),
 });
+
+/**
+ * The redirect map, as the panel edits it.
+ *
+ * `source` separates the generated cutover map from rows somebody typed: a
+ * regeneration overwrites its own and never touches a hand fix, and the screen
+ * says which is which so nobody wonders why their edit came back.
+ */
+export const redirectRowSchema = z.object({
+  id: z.string(),
+  from: z.string(),
+  to: z.string(),
+  code: z.number().int(),
+  isActive: z.boolean(),
+  source: z.string(),
+  hits: z.number().int().min(0),
+  lastHitAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type RedirectRow = z.infer<typeof redirectRowSchema>;
+
+/**
+ * A path that answered 404, with how often and where from.
+ *
+ * The point of the table is the list of legacy URLs the generated map missed —
+ * the ones nobody could predict, because they were linked from somewhere the
+ * export does not know about. Every row here is either a redirect waiting to
+ * be written or a crawler to ignore, and the referrer is what tells them apart.
+ */
+export const notFoundRowSchema = z.object({
+  id: z.string(),
+  path: z.string(),
+  hits: z.number().int().min(0),
+  referer: z.string().nullable(),
+  firstSeenAt: z.string(),
+  lastSeenAt: z.string(),
+  resolvedAt: z.string().nullable(),
+});
+export type NotFoundRow = z.infer<typeof notFoundRowSchema>;
+
+export const redirectsViewSchema = z.object({
+  redirects: z.array(redirectRowSchema),
+  notFound: z.array(notFoundRowSchema),
+  /** Totals across the whole table, not just the page being shown. */
+  counts: z.object({
+    redirects: z.number().int().min(0),
+    active: z.number().int().min(0),
+    unresolved404: z.number().int().min(0),
+  }),
+});
+export type RedirectsView = z.infer<typeof redirectsViewSchema>;
+
+/**
+ * What the storefront reports when a path matched nothing.
+ *
+ * The referrer comes from the page rather than the header, because the header
+ * on a server-rendered request is the storefront's own — and "where did this
+ * link come from" is the field that tells a missed redirect apart from a bot.
+ */
+export const recordNotFoundSchema = z.object({
+  path: z.string().trim().min(1).max(2000),
+  referer: z.string().trim().max(2000).optional(),
+});
+
+export const createRedirectSchema = z.object({
+  /** Path only. A full URL is accepted and reduced to its path. */
+  from: z.string().trim().min(1).max(2000),
+  to: z.string().trim().min(1).max(2000),
+  code: z.union([z.literal(301), z.literal(302)]).default(301),
+});
+
+export const updateRedirectSchema = z.object({
+  to: z.string().trim().min(1).max(2000).optional(),
+  code: z.union([z.literal(301), z.literal(302)]).optional(),
+  isActive: z.boolean().optional(),
+});

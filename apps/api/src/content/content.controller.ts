@@ -2,7 +2,7 @@ import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req } fro
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
-import { type ContentPage, submitContactSchema } from '@da/contracts';
+import { type ContentPage, recordNotFoundSchema, submitContactSchema } from '@da/contracts';
 import type { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
@@ -62,6 +62,28 @@ export class ContentController {
     const target = await this.content.redirectFor(pathname);
     if (!target) throw new NotFoundException('No redirect for that path.');
     return target;
+  }
+
+  /**
+   * Called by the storefront when a path matched nothing at all.
+   *
+   * Throttled, because it is an anonymous write: a crawler walking random
+   * paths must not be able to fill the table faster than a person can read it.
+   * The service drops the obvious probes on top of that.
+   */
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Post('not-found')
+  @ApiOperation({ summary: 'Record a path that answered 404' })
+  async notFound(
+    @Body(new ZodPipe(recordNotFoundSchema)) body: z.infer<typeof recordNotFoundSchema>,
+    @Req() request: FastifyRequest,
+  ): Promise<{ recorded: true }> {
+    await this.content.recordNotFound({
+      path: body.path,
+      referer: body.referer,
+      userAgent: request.headers['user-agent'],
+    });
+    return { recorded: true };
   }
 
   @Get('pages')

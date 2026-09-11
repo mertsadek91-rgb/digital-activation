@@ -140,6 +140,22 @@ export function getRedirect(pathname: string): Promise<RedirectTarget | null> {
   );
 }
 
+/**
+ * Tells the API a path answered 404.
+ *
+ * Fire and forget, and deliberately not awaited into the render: a visitor
+ * looking at a 404 page must not wait for the store's own bookkeeping, and a
+ * failure to record one is not worth a second error.
+ */
+export function reportNotFound(pathname: string, referer?: string): void {
+  void fetch(new URL('/v1/content/not-found', API_URL), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ path: pathname, ...(referer ? { referer } : {}) }),
+    cache: 'no-store',
+  }).catch(() => undefined);
+}
+
 export function getPage(slug: string, options: FetchOptions): Promise<ContentPage | null> {
   return request(`/content/pages/${encodeURIComponent(slug)}`, options, contentPageSchema);
 }
