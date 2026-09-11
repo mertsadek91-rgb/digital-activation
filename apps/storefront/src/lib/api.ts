@@ -16,10 +16,12 @@ import {
   type CatalogStore,
   type ContentPage,
   type Home,
+  type RedirectTarget,
   catalogCollectionSchema,
   catalogProductSchema,
   catalogStoreSchema,
   contentPageSchema,
+  redirectTargetSchema,
   homeSchema,
 } from '@da/contracts';
 import { z } from 'zod';
@@ -117,6 +119,24 @@ export function getCollection(
     `/catalog/collections/${encodeURIComponent(slug)}`,
     options,
     catalogCollectionSchema,
+  );
+}
+
+/**
+ * Where a legacy URL goes now.
+ *
+ * Never cached: this is asked on what would otherwise be a 404, the answer
+ * changes when somebody edits the map, and the API counts the hit — a cached
+ * redirect is a hit nobody records.
+ */
+export function getRedirect(pathname: string): Promise<RedirectTarget | null> {
+  return request(
+    `/content/redirects?path=${encodeURIComponent(pathname)}`,
+    {
+      locale: 'ar',
+      revalidate: 0,
+    },
+    redirectTargetSchema,
   );
 }
 

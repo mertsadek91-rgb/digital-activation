@@ -44,6 +44,36 @@ export class ContentService {
     };
   }
 
+  /**
+   * Where a legacy URL goes now, if anywhere.
+   *
+   * Looked up per request rather than shipped as a map, because the storefront
+   * only asks after every real route has declined the path — which is to say,
+   * on what would otherwise be a 404. That makes this the cheapest possible
+   * place to count the hit, and the count is the only way to answer the
+   * question worth asking after a cutover: which old URLs are still being
+   * followed, and by whom.
+   */
+  async redirectFor(pathname: string): Promise<{ to: string; code: number } | null> {
+    const from = normalisePath(pathname);
+    if (!from) return null;
+
+    const row = await this.prisma.client.redirect.findUnique({ where: { from } });
+    if (!row || !row.isActive) return null;
+
+    // Counted after the lookup and never awaited into the answer: a redirect
+    // that waited on its own bookkeeping would be slower than the page it
+    // replaces.
+    void this.prisma.client.redirect
+      .update({
+        where: { id: row.id },
+        data: { hits: { increment: 1 }, lastHitAt: new Date() },
+      })
+      .catch(() => undefined);
+
+    return { to: row.to, code: row.code };
+  }
+
   /** Published slugs, for the sitemap and for prerendering. */
   async publishedSlugs(): Promise<{ slug: string; updatedAt: Date }[]> {
     const rows = await this.prisma.client.page.findMany({
@@ -61,6 +91,26 @@ export class ContentService {
     }
     return [...seen].map(([slug, updatedAt]) => ({ slug, updatedAt }));
   }
+}
+
+/**
+ * The shape the map is keyed by: decoded, lower-cased, no trailing slash.
+ *
+ * Both sides have to agree exactly or nothing matches, and the two sides are a
+ * generator reading a WordPress export and a browser sending a percent-encoded
+ * Arabic path. The normalisation lives here so there is one definition of it.
+ */
+function normalisePath(pathname: string): string | null {
+  if (!pathname.startsWith('/')) return null;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    // A malformed percent-escape is a crawler probing, not a customer.
+    return null;
+  }
+  const trimmed = decoded.replace(/\/+$/, '');
+  return (trimmed === '' ? '/' : trimmed).toLowerCase();
 }
 
 /** Prisma's Json columns are `unknown` at the type level; parse, do not cast. */

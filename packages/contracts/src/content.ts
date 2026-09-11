@@ -28,6 +28,19 @@ export const contentPageSchema = z.object({
 export type ContentPage = z.infer<typeof contentPageSchema>;
 
 /**
+ * Where a legacy URL goes now.
+ *
+ * `code` is carried rather than assumed: a product that moved is a 301, and a
+ * blog post whose replacement has not been written yet is a 302 — declaring
+ * that one permanent would be a claim the store does not mean.
+ */
+export const redirectTargetSchema = z.object({
+  to: z.string(),
+  code: z.union([z.literal(301), z.literal(302), z.literal(307), z.literal(308)]),
+});
+export type RedirectTarget = z.infer<typeof redirectTargetSchema>;
+
+/**
  * The contact form.
  *
  * Five fields and a topic, because the legacy support page asked for a

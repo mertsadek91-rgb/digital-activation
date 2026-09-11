@@ -26,7 +26,9 @@
     "roles": "tsx scripts/setup-roles.ts",
     "import": "tsx scripts/import/index.ts",
     "media": "tsx scripts/media/index.ts",
-    "staff": "tsx scripts/create-staff.ts"
+    "staff": "tsx scripts/create-staff.ts",
+    "pages": "tsx scripts/legacy/pages.ts",
+    "redirects": "tsx scripts/legacy/redirects.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "catalog:",

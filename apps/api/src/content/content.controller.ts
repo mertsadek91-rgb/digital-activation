@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
@@ -50,6 +50,18 @@ export class ContentController {
     });
     // The same answer for a real message and for one the honeypot caught.
     return { received: true };
+  }
+
+  /**
+   * Asked only when every real route has declined the path, so the answer is
+   * either a redirect or the 404 the caller was about to render anyway.
+   */
+  @Get('redirects')
+  @ApiOperation({ summary: 'Where a legacy URL goes now' })
+  async redirect(@Query('path') pathname = ''): Promise<{ to: string; code: number }> {
+    const target = await this.content.redirectFor(pathname);
+    if (!target) throw new NotFoundException('No redirect for that path.');
+    return target;
   }
 
   @Get('pages')

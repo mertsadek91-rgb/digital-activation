@@ -2,7 +2,7 @@
   "name": "digital-activation",
   "private": true,
   "version": "0.1.0",
-  "description": "Digital Activation store \u2014 Next.js storefront + admin, NestJS API, PostgreSQL",
+  "description": "Digital Activation store — Next.js storefront + admin, NestJS API, PostgreSQL",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=22.12.0",
@@ -28,6 +28,8 @@
     "db:seed": "pnpm --filter @da/db run seed",
     "db:import": "pnpm --filter @da/db run import",
     "db:media": "pnpm --filter @da/db run media",
+    "db:pages": "pnpm --filter @da/db run pages",
+    "db:redirects": "pnpm --filter @da/db run redirects",
     "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
