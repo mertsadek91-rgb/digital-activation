@@ -12,6 +12,7 @@ import {
   RAIL_MIN_PRODUCTS,
   RAIL_SIZE,
   ROUTES,
+  type SitemapFeed,
   SALES_PROOF_THRESHOLD,
 } from '@da/contracts';
 import { FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
@@ -450,6 +451,64 @@ export class CatalogService {
   }
 
   // --- helpers --------------------------------------------------------------
+
+  /**
+   * Everything the sitemap lists, in one query per kind.
+   *
+   * Built here rather than in the storefront because the answer depends on
+   * publish status and on `updatedAt`, and neither is visible from a page that
+   * fetches one product at a time. It carries no prices, no translations and
+   * no locale: a sitemap URL is the same URL in both languages, and the
+   * hreflang alternates are generated from the path.
+   *
+   * Draft rows are excluded even when a preview token is present. A preview is
+   * for a person looking at unfinished work; a sitemap is a request to index,
+   * and asking Google to index a draft is not something a query parameter
+   * should be able to do.
+   */
+  async sitemap(): Promise<SitemapFeed> {
+    const products = await this.prisma.client.product.findMany({
+      where: { status: PublishStatus.PUBLISHED },
+      orderBy: { slug: 'asc' },
+      select: {
+        slug: true,
+        updatedAt: true,
+        media: {
+          orderBy: { position: 'asc' },
+          take: 1,
+          select: { asset: { select: { key: true } } },
+        },
+      },
+    });
+
+    // A category with nothing published in it renders an empty page, and an
+    // empty page is not worth a crawl — the legacy store's sixteen collection
+    // pages went unsubmitted for 178 days, but submitting empty ones would
+    // have earned the same nothing for a different reason.
+    const categories = await this.prisma.client.category.findMany({
+      where: { products: { some: { product: { status: PublishStatus.PUBLISHED } } } },
+      orderBy: { slug: 'asc' },
+      select: { slug: true, updatedAt: true },
+    });
+
+    return {
+      products: products.map((product) => {
+        const key = product.media[0]?.asset.key;
+        return {
+          path: ROUTES.product(product.slug),
+          lastModified: product.updatedAt.toISOString(),
+          // Inline on the page's own URL rather than in a separate image
+          // sitemap: Google reads both, and one list that says which page each
+          // image belongs to is better than two lists to keep in step.
+          ...(key ? { images: [this.assetUrl(key)] } : {}),
+        };
+      }),
+      collections: categories.map((category) => ({
+        path: ROUTES.collection(category.slug),
+        lastModified: category.updatedAt.toISOString(),
+      })),
+    };
+  }
 
   private assetUrl(key: string): string {
     const base = process.env.S3_PUBLIC_BASE_URL;

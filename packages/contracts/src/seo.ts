@@ -73,6 +73,40 @@ export const ROUTES = {
   checkout: '/checkout',
 } as const;
 
+/**
+ * What the sitemap is built from.
+ *
+ * Paths rather than slugs, because the thing a crawler needs is a URL and the
+ * thing that decides a URL is the route table — which lives here, in ROUTES,
+ * next to this. A response that returned slugs would leave the storefront to
+ * re-derive paths a second time, and two places that build the same URL are
+ * two places that can disagree.
+ *
+ * `lastModified` is the row's own updatedAt. Inventing one — "today", or the
+ * build time — teaches a crawler that everything changes every day, and it
+ * stops believing the field.
+ */
+export const sitemapEntrySchema = z.object({
+  path: z.string(),
+  lastModified: z.string(),
+  /** Absolute URLs of images on that page, for the image extension. */
+  images: z.array(z.string()).optional(),
+});
+export type SitemapEntry = z.infer<typeof sitemapEntrySchema>;
+
+/**
+ * One section per kind of page, and only the kinds that actually exist.
+ *
+ * An index that lists an empty section is a crawl request for nothing, and
+ * Search Console reports it as an error rather than ignoring it — so a section
+ * with no rows is left out entirely rather than emitted empty.
+ */
+export const sitemapFeedSchema = z.object({
+  products: z.array(sitemapEntrySchema),
+  collections: z.array(sitemapEntrySchema),
+});
+export type SitemapFeed = z.infer<typeof sitemapFeedSchema>;
+
 /** Paths that must never be indexed, mirrored into robots.txt. */
 export const NOINDEX_PREFIXES = [
   '/cart',

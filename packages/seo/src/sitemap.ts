@@ -10,6 +10,14 @@
  * bilingual, and a section is impossible to forget because the index is built
  * from this list rather than assembled by hand.
  */
+/**
+ * Every section the finished store will have.
+ *
+ * This is the target, not the current index: the storefront builds its index
+ * from the sections that actually have URLs today, because a sitemap that
+ * points at an empty or non-existent section is a crawl error rather than a
+ * placeholder. Content types arrive here as their pages are built.
+ */
 export const SITEMAP_SECTIONS = [
   'products',
   'collections',
@@ -67,7 +75,14 @@ ${entries}
 </sitemapindex>`;
 }
 
-/** Each URL carries its own xhtml:link alternates, as Google requires. */
+/**
+ * Each URL carries its own xhtml:link alternates, as Google requires.
+ *
+ * The image namespace is `schemas/sitemap-image/1.1`, not `image/1.1`. The
+ * shorter spelling is a common typo and it fails silently: the file still
+ * validates as XML, Google still fetches it, and every image entry in it is
+ * ignored — which looks exactly like having submitted no images at all.
+ */
 export function sitemapXml(urls: SitemapUrl[]): string {
   const body = urls
     .map((url) => {
@@ -98,7 +113,7 @@ export function sitemapXml(urls: SitemapUrl[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:image="http://www.google.com/image/1.1">
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${body}
 </urlset>`;
 }
