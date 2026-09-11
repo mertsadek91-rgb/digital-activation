@@ -1,6 +1,13 @@
 'use client';
 
-import type { AdminProductList, AdminProductRow, Readiness, StaffMe } from '@da/contracts';
+import type {
+  AdminProductList,
+  AdminProductRow,
+  ProductCopy,
+  Readiness,
+  StaffMe,
+} from '@da/contracts';
+import { countBodyWords, READINESS_RULES, SEO_LENGTH_GUIDE } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -238,6 +245,7 @@ function ProductRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [howTo, setHowTo] = useState(false);
+  const [copy, setCopy] = useState(false);
 
   return (
     <>
@@ -277,6 +285,16 @@ function ProductRow({
               <button type="button" onClick={onPublish} disabled={busy || row.blockers > 0}>
                 {row.status === 'PUBLISHED' ? 'إلغاء النشر' : 'نشر'}
               </button>
+              {/* The blocker count sits on this button because this is where
+                  the blockers are fixed: 35 of the 73 products are held back
+                  by nothing but an SEO title and a meta description, and the
+                  panel had nowhere to type either of them until now. */}
+              <button type="button" className="ghost" onClick={() => setCopy(!copy)}>
+                نصوص SEO
+                {row.blockers > 0 ? (
+                  <span className="tab-count is-late">{row.blockers}</span>
+                ) : null}
+              </button>
               {/* The count, on the button. Zero steps is the state worth
                   noticing: the licence still goes out, with no instructions
                   beside it, and that is where the support ticket comes from. */}
@@ -313,6 +331,14 @@ function ProductRow({
         </tr>
       ) : null}
 
+      {copy ? (
+        <tr className="drawer">
+          <td colSpan={7}>
+            <CopyForm slug={row.slug} onSaved={onStockSaved} onError={onError} />
+          </td>
+        </tr>
+      ) : null}
+
       {howTo ? (
         <tr className="drawer">
           <td colSpan={7}>
@@ -342,6 +368,253 @@ function ProductRow({
           </td>
         </tr>
       ) : null}
+    </>
+  );
+}
+
+/**
+ * The gate's own flattening, repeated for the live counter.
+ *
+ * `readiness.ts` strips the tags out of a richText block and counts what is
+ * left; the editor is holding that same HTML in a textarea, so it strips the
+ * same way and counts with the same shared function. Any other arithmetic and
+ * the number beside the box disagrees with the number that decides the
+ * publish, which is worse than showing no number at all.
+ */
+function bodyWords(html: string): number {
+  return countBodyWords(html.replace(/<[^>]+>/g, ' '));
+}
+
+/**
+ * A length against the rule it has to clear.
+ *
+ * The shortfall is the number, not the length: "37 more characters" is an
+ * instruction, "83 characters" is a fact somebody then has to do arithmetic
+ * on. The ceiling is mentioned only once it is passed, and as advice — the
+ * gate has no maximum, the SERP does.
+ */
+function Gauge({
+  value,
+  min,
+  max,
+  unit,
+}: {
+  value: number;
+  min: number;
+  /** Null where there is no ceiling worth mentioning — a long body still ranks. */
+  max: number | null;
+  unit: string;
+}) {
+  const short = min - value;
+
+  return (
+    <small>
+      <span className={`pill ${short <= 0 ? 'pill-ready' : 'pill-blocked'}`}>
+        {short <= 0 ? 'مستوفى' : `ينقص ${short} ${unit}`}
+      </span>{' '}
+      {value} {unit} — الحد الأدنى {min}.
+      {max !== null && value > max
+        ? ` أطول من ${max} ${unit}، وما بعدها يُقتطع في نتيجة البحث.`
+        : ''}
+    </small>
+  );
+}
+
+/**
+ * The SEO title, the meta description and the body — per locale.
+ *
+ * This drawer is the reason the publish gate is usable at all. 43 of the 101
+ * legacy products shipped with no title and no description, the gate refuses
+ * exactly that, and the panel had no box to type either one into: a refusal
+ * nobody can act on is a refusal that gets switched off.
+ *
+ * The readiness for the chosen locale sits above the fields rather than in its
+ * own drawer, and the counters recompute as the text is typed, so a blocker
+ * clears on screen while somebody is fixing it. The locale switch is a real
+ * one: the gate is assessed per locale, and every English translation in this
+ * catalog is missing both fields and its whole body.
+ */
+function CopyForm({
+  slug,
+  onSaved,
+  onError,
+}: {
+  slug: string;
+  onSaved: () => void;
+  onError: (message: string) => void;
+}) {
+  const [locale, setLocale] = useState<'ar' | 'en'>('ar');
+  const [loaded, setLoaded] = useState<ProductCopy | null>(null);
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDescription, setSeoDescription] = useState('');
+  const [shortDesc, setShortDesc] = useState('');
+  const [body, setBody] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const take = useCallback((copy: ProductCopy) => {
+    setLoaded(copy);
+    setSeoTitle(copy.seoTitle);
+    setSeoDescription(copy.seoDescription);
+    setShortDesc(copy.shortDesc);
+    setBody(copy.body);
+  }, []);
+
+  useEffect(() => {
+    setLoaded(null);
+    let cancelled = false;
+    void api
+      .productCopy(slug, locale)
+      .then((copy) => {
+        if (!cancelled) take(copy);
+      })
+      .catch((caught: unknown) => {
+        if (cancelled) return;
+        onError(caught instanceof Error ? caught.message : 'تعذّر تحميل النصوص.');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, locale, onError, take]);
+
+  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+
+  return (
+    <>
+      {/* The refusal, beside the fields that answer it. The three content
+          checks carry live counters below; the rest are here because they are
+          the reason a product stays blocked after the copy is written. */}
+      {loaded ? (
+        <ul className="checks">
+          {loaded.readiness.checks.map((check) => (
+            <li key={check.key} className={check.passed ? 'passed' : check.severity}>
+              <span className="check-key">{CHECK_LABELS[check.key] ?? check.key}</span>
+              <span>{check.passed ? 'مستوفى' : check.detail}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <form
+        className="paste-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!loaded) return;
+          setBusy(true);
+          void api
+            .setProductCopy(slug, {
+              locale,
+              seoTitle,
+              seoDescription,
+              shortDesc,
+              // Omitted when the body holds blocks this box cannot put back;
+              // the API refuses a body in that case rather than flattening it.
+              ...(loaded.bodyEditable ? { body } : {}),
+            })
+            .then((copy) => {
+              take(copy);
+              onSaved();
+            })
+            .catch((caught: unknown) => {
+              onError(caught instanceof Error ? caught.message : 'تعذّر حفظ النصوص.');
+            })
+            .finally(() => setBusy(false));
+        }}
+      >
+        <label>
+          اللغة
+          <select value={locale} onChange={(event) => setLocale(event.target.value as 'ar' | 'en')}>
+            <option value="ar">العربية</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+
+        <label className="grow">
+          عنوان SEO
+          <input
+            type="text"
+            value={seoTitle}
+            dir={dir}
+            disabled={loaded === null}
+            onChange={(event) => setSeoTitle(event.target.value)}
+            placeholder="العنوان الذي يظهر في نتيجة البحث"
+          />
+          <Gauge
+            value={seoTitle.trim().length}
+            min={READINESS_RULES.seoTitleMinLength}
+            max={SEO_LENGTH_GUIDE.seoTitleMax}
+            unit="حرفاً"
+          />
+        </label>
+
+        <label className="grow">
+          وصف الميتا
+          <textarea
+            value={seoDescription}
+            rows={3}
+            dir={dir}
+            disabled={loaded === null}
+            onChange={(event) => setSeoDescription(event.target.value)}
+            placeholder="جملة أو جملتان تصفان المنتج لمن يقرأ نتيجة البحث"
+          />
+          <Gauge
+            value={seoDescription.trim().length}
+            min={READINESS_RULES.seoDescriptionMinLength}
+            max={SEO_LENGTH_GUIDE.seoDescriptionMax}
+            unit="حرفاً"
+          />
+        </label>
+
+        <label className="grow">
+          السطر القصير
+          <input
+            type="text"
+            value={shortDesc}
+            dir={dir}
+            disabled={loaded === null}
+            onChange={(event) => setShortDesc(event.target.value)}
+            placeholder="السطر فوق السعر في صفحة المنتج"
+          />
+          <small>لا يمنع النشر، لكنه أول ما يقرأه الزائر فوق السعر.</small>
+        </label>
+
+        <label className="grow">
+          وصف المنتج
+          <textarea
+            value={body}
+            rows={12}
+            dir={dir}
+            disabled={loaded === null || !loaded.bodyEditable}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="<h2>عن المنتج</h2>&#10;<p>…</p>"
+          />
+          {loaded && !loaded.bodyEditable ? (
+            <small>
+              هذا الوصف يحتوي على كتل لا يحرّرها هذا الصندوق ({loaded.otherBlocks.join('، ')}) — وهي
+              الكتل التي تقتبسها محرّكات البحث. بقية الحقول قابلة للحفظ.
+            </small>
+          ) : (
+            <>
+              <Gauge
+                value={bodyWords(body)}
+                min={READINESS_RULES.bodyMinWords}
+                max={null}
+                unit="كلمة"
+              />
+              {/* HTML rather than a rich editor, because HTML is what is
+                  stored: every Arabic body in this catalog is one richText
+                  block of WooCommerce markup, and a plain-text box would have
+                  wiped its headings and lists on the first save. */}
+              <small>
+                نصّ HTML بسيط — عناوين h2/h3، فقرات p، قوائم ul/ol. ما عدا ذلك يُزال عند الحفظ.
+              </small>
+            </>
+          )}
+        </label>
+
+        <button type="submit" disabled={busy || loaded === null}>
+          {busy ? '...' : 'حفظ'}
+        </button>
+      </form>
     </>
   );
 }

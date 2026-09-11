@@ -33,6 +33,38 @@ export const READINESS_RULES = {
   bodyMinWords: 120,
 } as const;
 
+/**
+ * Where a search result is cut, as opposed to where the gate refuses.
+ *
+ * READINESS_RULES carries floors only, because an absent description is what
+ * cost the legacy store its impressions — a long one still ranks. These are
+ * the ceilings the SERP truncates at, and they are advice: the editor shows
+ * them as a hint beside the counter and `pnpm db:seo` sizes what it proposes
+ * to fit, but nothing refuses a publish over them. The 33 Arabic titles that
+ * came through the import run from 42 to 83 characters, so this is guidance
+ * the catalog does not yet meet rather than a rule it is being held to.
+ */
+export const SEO_LENGTH_GUIDE = {
+  seoTitleMax: 60,
+  seoDescriptionMax: 160,
+} as const;
+
+/**
+ * The gate's word counter, in one place.
+ *
+ * The panel counts words as somebody types and the API decides the publish on
+ * a count of its own — and if the two disagree by a single word, the number on
+ * screen is wrong at exactly the moment it is being trusted. So there is one
+ * rule and two callers: the readiness check flattens a block document to text
+ * and hands it here, the editor hands it the contents of the textarea.
+ *
+ * Single characters do not count. Arabic prose is full of one-letter words
+ * ("و", "ب", "ل") and counting them would let a body clear 120 on particles.
+ */
+export function countBodyWords(text: string): number {
+  return text.split(/\s+/).filter((word) => word.length > 1).length;
+}
+
 export const readinessCheckSchema = z.object({
   /** Stable key, so the UI can label and order these itself. */
   key: z.enum([
@@ -155,6 +187,60 @@ export const setActivationStepsSchema = z.object({
   locale: localeSchema.default('ar'),
   steps: z.array(z.string().trim().min(3).max(500)).max(12),
 });
+
+/**
+ * A product's copy in one locale, as the editor loads it.
+ *
+ * The readiness for that same locale rides along, because the entire point of
+ * this screen is to clear what the gate refuses — 35 of the 73 products are
+ * held back by nothing but a missing SEO title and meta description, and until
+ * now the panel had no box to type either one into. Sending the fields without
+ * the refusal beside them would mean opening two drawers to answer one
+ * question.
+ */
+export const productCopySchema = z.object({
+  locale: localeSchema,
+  /** Shown as context, not edited here: the name is the page's H1. */
+  name: z.string(),
+  shortDesc: z.string(),
+  seoTitle: z.string(),
+  seoDescription: z.string(),
+  /**
+   * The body as the HTML its `richText` block holds, not as plain text. Every
+   * one of the 73 imported Arabic bodies is a single richText block of
+   * WooCommerce markup, and a plain-text box would flatten its headings and
+   * lists the first time anybody pressed save.
+   */
+  body: z.string(),
+  /**
+   * False when the body holds blocks this box cannot put back. An `faq` or a
+   * `specTable` is the copy most likely to be quoted by a search or answer
+   * engine; dropping one to save a meta description would be a bad trade made
+   * silently, so the editor refuses the body and takes the rest.
+   */
+  bodyEditable: z.boolean(),
+  /** The block types that made it uneditable, so the refusal can name them. */
+  otherBlocks: z.array(z.string()),
+  readiness: readinessSchema,
+});
+export type ProductCopy = z.infer<typeof productCopySchema>;
+
+/**
+ * Writing that copy back.
+ *
+ * Empty strings are allowed and mean "clear this", which the gate then refuses
+ * to publish — that is the honest outcome, and better than a field that cannot
+ * be undone. `body` is optional instead: omitting it leaves the body exactly
+ * as it is, which is what the editor sends when the body is not editable.
+ */
+export const setProductCopySchema = z.object({
+  locale: localeSchema.default('ar'),
+  seoTitle: z.string().trim().max(200),
+  seoDescription: z.string().trim().max(500),
+  shortDesc: z.string().trim().max(200),
+  body: z.string().max(60_000).optional(),
+});
+export type SetProductCopy = z.infer<typeof setProductCopySchema>;
 
 export const setInventorySchema = z.object({
   onHand: z.number().int().min(0).max(1_000_000),

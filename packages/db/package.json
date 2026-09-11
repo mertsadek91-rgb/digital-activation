@@ -29,6 +29,7 @@
     "media": "tsx scripts/media/index.ts",
     "staff": "tsx scripts/create-staff.ts",
     "pages": "tsx scripts/legacy/pages.ts",
+    "seo": "tsx scripts/seo/index.ts",
     "redirects": "tsx scripts/legacy/redirects.ts"
   },
   "dependencies": {
