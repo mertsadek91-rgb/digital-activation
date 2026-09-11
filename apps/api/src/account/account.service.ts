@@ -3,12 +3,13 @@ import crypto from 'node:crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import {
+  type AccountOrderList,
   CUSTOMER_SESSION_HOURS,
   type CustomerMe,
   type CustomerSecret,
   type LicenceList,
 } from '@da/contracts';
-import { ActorType, FulfillmentState, Locale, OrderStatus } from '@da/db';
+import { ActorType, FulfillmentState, Locale, OrderStatus, type Prisma } from '@da/db';
 
 import { parseActivationSteps } from '../common/activation-steps.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
@@ -425,5 +426,75 @@ export class AccountService {
     // Deliberately the same answer as a line that does not exist.
     if (!item) throw new NotFoundException('لا يوجد هذا البند في طلباتك.');
     return item;
+  }
+
+  // --- the orders -----------------------------------------------------------
+
+  /**
+   * Every order this customer has placed, newest first.
+   *
+   * No status filter, unlike the licences list. The question that brings
+   * somebody to an order history is usually "what happened to the one I placed
+   * on Tuesday", and the answer is often that it was never paid for or that it
+   * was cancelled — leaving those out would hide the only orders the page
+   * exists to explain and leave the customer certain the store lost the money.
+   *
+   * Ownership is the `customerId` on the row and nothing else. It is a filter
+   * here rather than a check because the caller asks for no particular order:
+   * somebody else's order is simply not in the set, which is the same answer a
+   * number that was never issued gets.
+   */
+  async orders(customerId: string): Promise<AccountOrderList> {
+    const orders = await this.prisma.client.order.findMany({
+      where: { customerId },
+      orderBy: { placedAt: 'desc' },
+      include: {
+        items: {
+          select: {
+            productNameSnapshot: true,
+            skuSnapshot: true,
+            qty: true,
+            lineTotalUsd: true,
+            fulfillmentState: true,
+          },
+        },
+      },
+    });
+
+    // Only how many decimal places each currency is written to. The rate is
+    // not read from here: the one that applies is frozen on the order.
+    const currencies = await this.prisma.client.currency.findMany({
+      select: { code: true, decimals: true },
+    });
+    const places = new Map(currencies.map((currency) => [currency.code, currency.decimals]));
+
+    return {
+      rows: orders.map((order) => {
+        const decimals = places.get(order.currency) ?? 2;
+        // No psychological rounding, unlike a catalog price: an amount that
+        // has already been charged is not a figure to make look nicer, and
+        // rounding each line would stop the lines adding up to the total.
+        const money = (usd: Prisma.Decimal): string => usd.times(order.fxRate).toFixed(decimals);
+
+        return {
+          number: order.number,
+          status: order.status,
+          currency: order.currency,
+          placedAt: order.placedAt.toISOString(),
+          paidAt: order.paidAt?.toISOString() ?? null,
+          subtotal: money(order.subtotalUsd),
+          discount: money(order.discountUsd),
+          tax: money(order.taxUsd),
+          total: money(order.totalUsd),
+          lines: order.items.map((item) => ({
+            productName: item.productNameSnapshot,
+            sku: item.skuSnapshot,
+            qty: item.qty,
+            lineTotal: money(item.lineTotalUsd),
+            fulfillmentState: item.fulfillmentState,
+          })),
+        };
+      }),
+    };
   }
 }

@@ -164,7 +164,7 @@ export default function CheckoutPage() {
           <strong>{formatPrice(stage.session.amount)}</strong>
         </p>
         <Link
-          href={`${prefix}/orders/${stage.orderNumber}`}
+          href={`${prefix}${ROUTES.order(stage.orderNumber)}`}
           className="btn btn-primary"
           onClick={() => router.refresh()}
         >

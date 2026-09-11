@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AccountNav } from '../../../../components/account-nav';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
 /**
@@ -110,6 +111,8 @@ export default function LicensesPage() {
           {ar ? 'خروج' : 'Sign out'}
         </button>
       </div>
+
+      <AccountNav ar={ar} prefix={prefix} />
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="account-sent">{note}</p> : null}
