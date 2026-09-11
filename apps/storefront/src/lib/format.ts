@@ -194,12 +194,33 @@ const STATE_EN: Record<string, string> = {
   FAILED: 'Failed — our team is on it',
 };
 
+/**
+ * The same statuses in English.
+ *
+ * Both pages printed the enum with its underscores removed, so an English
+ * customer was told their order was `PENDING PAYMENT` — the database's word
+ * for it, in capitals, which reads as a fault rather than as "we are waiting
+ * for your transfer". These are the Arabic meanings, not new promises: each
+ * one says the same thing its Arabic counterpart above says.
+ */
+const STATUS_EN: Record<string, string> = {
+  PENDING_PAYMENT: 'Awaiting payment',
+  PAYMENT_REVIEW: 'Payment under review',
+  PAID: 'Paid',
+  FULFILLING: 'Being prepared',
+  FULFILLED: 'Prepared',
+  COMPLETED: 'Complete',
+  CANCELLED: 'Cancelled',
+  REFUNDED: 'Refunded',
+  PARTIALLY_REFUNDED: 'Partially refunded',
+  FAILED: 'Failed',
+};
+
 export function formatOrderStatus(status: Order['status'], locale: string): string {
   if (locale === 'ar') return STATUS_AR[status] ?? status;
-  // The enum with its underscores taken out, which is what the confirmation
-  // page has always printed. Writing English wording here instead would give
-  // the same customer two different names for one status.
-  return status.replace(/_/g, ' ');
+  // Falls back to the enum without its underscores for a status nobody has
+  // translated yet: a word in capitals is poor, and a blank is worse.
+  return STATUS_EN[status] ?? status.replace(/_/g, ' ');
 }
 
 /** Where one line of an order has got to. */
