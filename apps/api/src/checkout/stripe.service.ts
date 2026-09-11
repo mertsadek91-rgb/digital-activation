@@ -45,6 +45,17 @@ export class StripeService {
   }
 
   /**
+   * Whether a card payment can be finished, not merely started.
+   *
+   * Both keys, because they fail at different ends. The secret alone opens a
+   * PaymentIntent the browser has nothing to confirm it with, which is the dead
+   * end this checkout already had: a button, a client secret, and no card form.
+   */
+  get payable(): boolean {
+    return this.configured && this.publishableKey !== '';
+  }
+
+  /**
    * Creates or reuses a PaymentIntent for one order.
    *
    * Keyed on the order number, so a shopper refreshing the payment page or

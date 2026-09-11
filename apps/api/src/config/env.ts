@@ -44,6 +44,13 @@ const envSchema = z.object({
 
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /**
+   * Read by the API and handed to the browser with the payment session, rather
+   * than built into the storefront bundle. It is not a secret, but keeping it
+   * on one side means a key rotation is a restart of one service instead of a
+   * rebuild of the storefront.
+   */
+  STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   PAYPAL_CLIENT_ID: z.string().optional(),
   PAYPAL_CLIENT_SECRET: z.string().optional(),
   PAYPAL_WEBHOOK_ID: z.string().optional(),
@@ -115,6 +122,10 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     }
     if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
+    // Without it the API can open a PaymentIntent that the browser has nothing
+    // to confirm, so the card option simply disappears from the checkout — a
+    // store live with no card payments and no error anywhere to say why.
+    if (!env.STRIPE_PUBLISHABLE_KEY) missing.push('STRIPE_PUBLISHABLE_KEY');
     // Media lives in R2; without it, uploads would silently fall back to a
     // container filesystem that vanishes on the next deploy.
     if (!env.S3_ENDPOINT) missing.push('S3_ENDPOINT');
