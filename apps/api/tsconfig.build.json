@@ -1,0 +1,8 @@
+{
+  // Nest compiles with this one; `typecheck` still uses tsconfig.json, which
+  // includes the test files. The split exists so a `.test.ts` beside the module
+  // it covers is type-checked but never emitted into dist/ and shipped.
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}
