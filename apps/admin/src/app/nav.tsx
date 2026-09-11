@@ -35,13 +35,16 @@ export function Nav({
    */
   messagesWaiting: givenMessages,
   messagesOverdue: givenMessagesOverdue,
+  /** Same arrangement again, for the reviews the moderation screen is working. */
+  reviewsPending: givenReviews,
 }: {
   me: StaffMe;
-  current: 'products' | 'queue' | 'vault' | 'messages' | 'redirects' | 'orders';
+  current: 'products' | 'queue' | 'vault' | 'messages' | 'redirects' | 'orders' | 'reviews';
   waiting?: number;
   overdue?: number;
   messagesWaiting?: number;
   messagesOverdue?: number;
+  reviewsPending?: number;
 }) {
   const router = useRouter();
   const [fetched, setFetched] = useState<{ waiting: number; overdue: number } | null>(null);
@@ -53,6 +56,14 @@ export function Nav({
    * would say so.
    */
   const [messages, setMessages] = useState<{ waiting: number; overdue: number } | null>(null);
+  /**
+   * Reviews waiting to be read.
+   *
+   * Unpublished until somebody looks at them, so a badge nobody sees is a
+   * customer who wrote something the store never printed — which is the one
+   * failure mode of moderating by default.
+   */
+  const [reviews, setReviews] = useState<number | null>(null);
 
   useEffect(() => {
     if (given !== undefined) return;
@@ -94,6 +105,24 @@ export function Nav({
     };
   }, [current, givenMessages]);
 
+  useEffect(() => {
+    if (givenReviews !== undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await api.reviews('PENDING');
+        if (!cancelled) setReviews(list.counts.pending);
+      } catch {
+        if (!cancelled) setReviews(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [current, givenReviews]);
+
+  const reviewsPending = givenReviews ?? reviews ?? null;
   const inboxWaiting = givenMessages ?? messages?.waiting ?? null;
   const inboxOverdue = givenMessagesOverdue ?? messages?.overdue ?? 0;
   const waiting = given ?? fetched?.waiting ?? null;
@@ -138,6 +167,16 @@ export function Nav({
           الرسائل
           {inboxWaiting !== null && inboxWaiting > 0 ? (
             <span className={`tab-count${inboxOverdue > 0 ? ' is-late' : ''}`}>{inboxWaiting}</span>
+          ) : null}
+        </button>
+        <button
+          type="button"
+          className={`tab${current === 'reviews' ? ' is-active' : ''}`}
+          onClick={() => router.push('/reviews')}
+        >
+          التقييمات
+          {reviewsPending !== null && reviewsPending > 0 ? (
+            <span className="tab-count">{reviewsPending}</span>
           ) : null}
         </button>
         <button

@@ -15,13 +15,19 @@
 import {
   type CustomerMe,
   type CustomerSecret,
+  type EditReview,
   type LicenceList,
+  type OwnReview,
+  type ReviewableList,
+  type SubmitReview,
   customerMeSchema,
   customerSecretsSchema,
   exchangeResultSchema,
   licenceListSchema,
   loginLinkResultSchema,
+  ownReviewSchema,
   resendResultSchema,
+  reviewableListSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
@@ -87,6 +93,26 @@ export const accountApi = {
     request(`/account/licences/${encodeURIComponent(orderItemId)}/resend`, resendResultSchema, {
       method: 'POST',
       body: JSON.stringify({}),
+    }),
+
+  /**
+   * The delivered lines this customer may review.
+   *
+   * No product id and no customer id in the request. The session decides both,
+   * which is the only reason a review on this store means anything.
+   */
+  reviewable: (): Promise<ReviewableList> => request('/account/reviews', reviewableListSchema),
+
+  submitReview: (orderItemId: string, review: SubmitReview): Promise<OwnReview> =>
+    request(`/account/reviews/${encodeURIComponent(orderItemId)}`, ownReviewSchema, {
+      method: 'POST',
+      body: JSON.stringify(review),
+    }),
+
+  editReview: (orderItemId: string, patch: EditReview): Promise<OwnReview> =>
+    request(`/account/reviews/${encodeURIComponent(orderItemId)}`, ownReviewSchema, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
     }),
 
   signOut: () =>

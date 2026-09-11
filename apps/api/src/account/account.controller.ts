@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   Req,
   Res,
@@ -16,12 +17,17 @@ import {
   CUSTOMER_SESSION_HOURS,
   type CustomerMe,
   type LicenceList,
+  type OwnReview,
+  type ReviewableList,
+  editReviewSchema,
   exchangeLoginTokenSchema,
   requestLoginLinkSchema,
+  submitReviewSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
+import { ReviewsService } from '../reviews/reviews.service.js';
 
 import { AccountService, type CustomerActor } from './account.service.js';
 
@@ -41,7 +47,10 @@ const SESSION_COOKIE = 'da_customer';
 @ApiTags('account')
 @Controller('account')
 export class AccountController {
-  constructor(private readonly account: AccountService) {}
+  constructor(
+    private readonly account: AccountService,
+    private readonly reviews: ReviewsService,
+  ) {}
 
   private actor(request: FastifyRequest, customerId: string): CustomerActor {
     return {
@@ -174,5 +183,61 @@ export class AccountController {
       throw new NotFoundException('لا يوجد عنوان لإعادة الإرسال إليه.');
     }
     return result;
+  }
+
+  /**
+   * What this customer may review.
+   *
+   * Delivered lines, and the review against each one where there is one. The
+   * customer id comes from the cookie like everything else here, so there is
+   * no shape of this request that lists somebody else's purchases — which is
+   * the only thing standing between a review system and the 565 fabricated
+   * rows on the store this replaces.
+   */
+  @Get('reviews')
+  @ApiOperation({ summary: 'Delivered lines this customer may review' })
+  async reviewable(@Req() request: FastifyRequest): Promise<ReviewableList> {
+    const session = await this.require(request);
+    return this.reviews.reviewable(session.customerId);
+  }
+
+  /**
+   * Writes one review against one delivered line.
+   *
+   * Throttled well below what a person writing about what they bought would
+   * ever hit: the shape this stops is a script walking order-item ids, and
+   * every one of those already answers 404 because the line is not theirs.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('reviews/:orderItemId')
+  @ApiOperation({ summary: 'Review a delivered line. Starts unpublished.' })
+  async submitReview(
+    @Param('orderItemId') orderItemId: string,
+    @Body(new ZodPipe(submitReviewSchema)) body: z.infer<typeof submitReviewSchema>,
+    @Req() request: FastifyRequest,
+  ): Promise<OwnReview> {
+    const session = await this.require(request);
+    return this.reviews.submit({
+      customerId: session.customerId,
+      orderItemId,
+      review: body,
+    });
+  }
+
+  /** Fixing what you wrote, while it is still waiting to be read. */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Patch('reviews/:orderItemId')
+  @ApiOperation({ summary: 'Edit your own review while it is still pending' })
+  async editReview(
+    @Param('orderItemId') orderItemId: string,
+    @Body(new ZodPipe(editReviewSchema)) body: z.infer<typeof editReviewSchema>,
+    @Req() request: FastifyRequest,
+  ): Promise<OwnReview> {
+    const session = await this.require(request);
+    return this.reviews.edit({
+      customerId: session.customerId,
+      orderItemId,
+      patch: body,
+    });
   }
 }

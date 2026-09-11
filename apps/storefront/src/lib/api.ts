@@ -16,11 +16,13 @@ import {
   type CatalogStore,
   type ContentPage,
   type Home,
+  type ProductReviews,
   type RedirectTarget,
   catalogCollectionSchema,
   catalogProductSchema,
   catalogStoreSchema,
   contentPageSchema,
+  productReviewsSchema,
   redirectTargetSchema,
   homeSchema,
 } from '@da/contracts';
@@ -162,4 +164,22 @@ export function getPage(slug: string, options: FetchOptions): Promise<ContentPag
 
 export function getProduct(slug: string, options: FetchOptions): Promise<CatalogProduct | null> {
   return request(`/catalog/products/${encodeURIComponent(slug)}`, options, catalogProductSchema);
+}
+
+/**
+ * Published reviews for a product, with the aggregate over the same rows.
+ *
+ * Revalidated faster than the product itself. A review that has just been
+ * approved is the one piece of this page somebody is waiting to see appear,
+ * and five minutes of a stale product description costs nothing by comparison.
+ */
+export function getProductReviews(
+  slug: string,
+  options: FetchOptions,
+): Promise<ProductReviews | null> {
+  return request(
+    `/reviews/products/${encodeURIComponent(slug)}`,
+    { ...options, revalidate: options.revalidate ?? 60 },
+    productReviewsSchema,
+  );
 }

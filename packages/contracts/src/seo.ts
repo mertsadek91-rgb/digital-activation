@@ -69,6 +69,7 @@ export const ROUTES = {
   contact: '/contact',
   account: '/account',
   licenses: '/account/licenses',
+  accountReviews: '/account/reviews',
   cart: '/cart',
   checkout: '/checkout',
 } as const;

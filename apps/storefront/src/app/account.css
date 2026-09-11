@@ -42,7 +42,9 @@
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
 }
-.account-field input {
+.account-field input,
+.account-field select,
+.account-field textarea {
   font: inherit;
   font-size: var(--text-base);
   padding: 11px 12px;
@@ -50,6 +52,18 @@
   border-radius: var(--radius-sm);
   background: var(--color-bg);
   min-block-size: 46px;
+}
+.account-field textarea {
+  min-block-size: 8rem;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+/* The review form, inside a card that is otherwise read-only. */
+.review-form {
+  display: grid;
+  gap: var(--spacing-1);
+  margin-block-start: var(--spacing-1);
 }
 .account-sent {
   margin: 0;

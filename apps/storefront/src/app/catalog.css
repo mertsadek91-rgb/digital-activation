@@ -493,6 +493,107 @@ h1 {
   color: var(--color-ink-muted);
 }
 
+/* --- reviews ---------------------------------------------------------------
+   Logical properties throughout, like the rest of this sheet: the store is
+   Arabic first and every one of these blocks is mirrored on the English page.
+   The star row is the only thing here that is not mirrored, and it does not
+   need to be — a rating reads left to right in both.
+*/
+
+.reviews {
+  max-width: 72ch;
+}
+.review-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.review-average {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.review-average strong {
+  font-size: var(--text-3xl);
+  line-height: 1;
+  color: var(--color-ink);
+}
+.review-count,
+.review-empty,
+.review-more {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+.review-empty {
+  max-width: 60ch;
+}
+.stars {
+  color: var(--color-accent);
+  letter-spacing: 1px;
+  /* The glyphs are a picture of the number beside them, so they never carry
+     the meaning on their own — see the aria-label in the component. */
+  unicode-bidi: isolate;
+}
+.review-list {
+  list-style: none;
+  margin: var(--spacing-1) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-1);
+}
+.review {
+  padding-block: var(--spacing-1);
+  border-block-start: 1px solid var(--color-border);
+}
+.review-title {
+  margin: 4px 0 0;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.review-body {
+  margin: 6px 0 0;
+  color: var(--color-ink-body);
+  white-space: pre-wrap;
+}
+.review-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.review-verified {
+  color: var(--color-success);
+  font-weight: 500;
+}
+.review-reply {
+  margin-block-start: 10px;
+  /* Indented from the start edge so a reply reads as hanging off the review it
+     answers, and mirrors with the page. */
+  margin-inline-start: var(--spacing-1);
+  padding: 10px 12px;
+  border-inline-start: 3px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-soft);
+}
+.review-reply p {
+  margin: 0;
+  color: var(--color-ink-body);
+}
+.review-reply .review-reply-who {
+  font-weight: 700;
+  font-size: var(--text-xs);
+  color: var(--color-brand-ink);
+  margin-block-end: 4px;
+}
+
 .pager {
   display: flex;
   gap: var(--spacing-1);

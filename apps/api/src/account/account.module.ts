@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { ReviewsModule } from '../reviews/reviews.module.js';
 import { VaultModule } from '../vault/vault.module.js';
 
 import { AccountController } from './account.controller.js';
@@ -17,7 +18,7 @@ import { AccountService } from './account.service.js';
  * both of them.
  */
 @Module({
-  imports: [VaultModule, FulfillmentModule, MailModule],
+  imports: [VaultModule, FulfillmentModule, MailModule, ReviewsModule],
   controllers: [AccountController],
   providers: [AccountService],
 })

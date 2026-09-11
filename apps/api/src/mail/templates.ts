@@ -541,3 +541,86 @@ ${button(input.orderUrl, 'Your order')}`;
       : `We could not fulfil ${input.productName} in order ${input.orderNumber}. Our team will come back with a replacement or a refund.\nSupport: ${input.supportEmail}\n${input.orderUrl}`,
   };
 }
+
+/**
+ * Asking a customer what they thought.
+ *
+ * This email is the store's only source of ratings. The legacy site solved the
+ * same problem with a plugin that generated 565 of them, which is why the
+ * wording here refuses the obvious shortcuts: it names the products actually
+ * delivered, it offers nothing in exchange for a review, and it does not ask
+ * for a good one. A review bought with a discount code is the same lie as a
+ * generated one with a slower delivery mechanism.
+ *
+ * It goes to somebody holding a key that already worked, so it says the one
+ * thing that keeps a broken licence out of the public list: if it did not
+ * work, reply instead of rating. Support can fix that; a one-star review
+ * cannot.
+ */
+export function reviewInvite(input: {
+  locale: 'ar' | 'en';
+  firstName: string | null;
+  orderNumber: string;
+  products: string[];
+  url: string;
+  supportEmail: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const greeting = input.firstName ? ` ${input.firstName}` : '';
+
+  const list = input.products
+    .map(
+      (name) =>
+        `<tr><td dir="auto" style="padding:8px 0;border-bottom:1px solid ${BORDER};color:${INK};">${escape(name)}</td></tr>`,
+    )
+    .join('');
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">كيف كانت تجربتك${escape(greeting)}؟</h1>
+<p>طلبك <span dir="ltr">${escape(input.orderNumber)}</span> وصلك، ونودّ معرفة رأيك فيما اشتريته:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table>
+${button(input.url, 'اكتب رأيك')}
+<p style="color:${MUTED};font-size:13px;">التقييمات هنا من مشترين فعليين فقط، ولا نعطي خصماً مقابل تقييم. رأيك الصريح — جيّداً كان أو سيّئاً — هو الوحيد الذي ينفع من يقرأ بعدك.</p>
+<p style="color:${MUTED};font-size:13px;">إن كان المفتاح لم يعمل، راسِلنا على <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a> بدل كتابة تقييم — نحلّها أسرع.</p>`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">How did it go${escape(greeting)}?</h1>
+<p>Your order <span dir="ltr">${escape(input.orderNumber)}</span> has been delivered, and we would like to know what you made of it:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table>
+${button(input.url, 'Write a review')}
+<p style="color:${MUTED};font-size:13px;">Reviews here come from real purchases only, and we never offer a discount in exchange for one. An honest review — good or bad — is the only kind that helps the next person.</p>
+<p style="color:${MUTED};font-size:13px;">If the key did not work, write to <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a> rather than leaving a review — we can fix that faster.</p>`;
+
+  const text = ar
+    ? [
+        `كيف كانت تجربتك مع طلب ${input.orderNumber}؟`,
+        ...input.products.map((name) => `- ${name}`),
+        '',
+        input.url,
+        '',
+        'التقييمات من مشترين فعليين فقط، ولا خصم مقابل تقييم.',
+        `إن لم يعمل المفتاح: ${input.supportEmail}`,
+      ].join('\n')
+    : [
+        `How did order ${input.orderNumber} go?`,
+        ...input.products.map((name) => `- ${name}`),
+        '',
+        input.url,
+        '',
+        'Reviews come from real purchases only, and never in exchange for a discount.',
+        `If the key did not work: ${input.supportEmail}`,
+      ].join('\n');
+
+  return {
+    subject: ar
+      ? `رأيك في طلب ${input.orderNumber}`
+      : `Your thoughts on order ${input.orderNumber}`,
+    html: shell({
+      locale: input.locale,
+      title: 'Review invitation',
+      body,
+      footerNote: ar
+        ? 'نرسل هذه الرسالة مرّة واحدة بعد تسليم الطلب.'
+        : 'We send this once, after an order is delivered.',
+    }),
+    text,
+  };
+}

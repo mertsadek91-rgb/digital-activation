@@ -14,6 +14,7 @@ import { MailModule } from './mail/mail.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { ReviewsModule } from './reviews/reviews.module.js';
 import { VaultModule } from './vault/vault.module.js';
 
 /**
@@ -56,6 +57,7 @@ import { VaultModule } from './vault/vault.module.js';
     AuthModule,
     AdminModule,
     AccountModule,
+    ReviewsModule,
   ],
   controllers: [HealthController],
 })
