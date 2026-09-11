@@ -315,12 +315,9 @@
 }
 
 /*
- * Two classes the storefront has been using since it was built and never
- * defined: `.error` on every form on the site, and `.linky` on the copy buttons
- * and the cart. Both were styled in the admin panel's stylesheet only, so a
- * customer read an error message as ordinary body text and a copy button as
- * unformatted text. They live here because this is the sheet every page that
- * uses them already loads.
+ * `.error` has been used by every form on this site since each was built and
+ * was defined in the admin panel's stylesheet alone, so a customer read a
+ * failed sign-in or a refused coupon as ordinary body text.
  */
 .error {
   margin: 0;
@@ -332,19 +329,15 @@
   font-weight: 500;
 }
 
-.linky {
-  background: none;
-  border: 0;
-  padding: 0;
+/*
+ * The base `.linky` rule lives in cart.css, which every page loads. Only the
+ * two places that sit inline beside a value need it smaller and spaced off the
+ * text — the copy button next to a licence key, and the one next to an email.
+ */
+.licence-field .linky,
+.queue-meta .linky {
   margin-inline-start: 8px;
-  font: inherit;
   font-size: var(--text-xs);
-  color: var(--color-brand-ink);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.linky:hover {
-  color: var(--color-brand);
 }
 
 /* --- contact --------------------------------------------------------------- */

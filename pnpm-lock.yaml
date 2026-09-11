@@ -57,6 +57,9 @@ catalogs:
     '@prisma/client-runtime-utils':
       specifier: ~7.10.0
       version: 7.10.0
+    '@stripe/stripe-js':
+      specifier: ^9.16.0
+      version: 9.16.0
     '@tailwindcss/postcss':
       specifier: ^4.3.3
       version: 4.3.3
@@ -403,6 +406,9 @@ importers:
       '@da/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@stripe/stripe-js':
+        specifier: 'catalog:'
+        version: 9.16.0
       dotenv:
         specifier: 'catalog:'
         version: 17.4.2
@@ -1974,6 +1980,10 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  '@stripe/stripe-js@9.16.0':
+    resolution: {integrity: sha512-PNZmy9hbuiuiyjAsigMlQChzJqrNEzQUtYIL/z5w0dsx27Ha69SBTYa2o8/M0Hbfiz9V2qctqX2DBd5sa57qoA==}
+    engines: {node: '>=12.16'}
 
   '@swc/core-darwin-arm64@1.16.2':
     resolution: {integrity: sha512-i/j0HNbnn79qnTVPicvay92Nark8fW8NQqn1e2mGERjUXNpBV0+SwQxlRpk2zBhn6laJ8PDI6Kn1nHZhnz3LCA==}
@@ -5431,6 +5441,8 @@ snapshots:
   '@stablelib/base64@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
+
+  '@stripe/stripe-js@9.16.0': {}
 
   '@swc/core-darwin-arm64@1.16.2':
     optional: true
