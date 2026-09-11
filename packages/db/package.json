@@ -20,6 +20,7 @@
     "studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "clean": "rimraf dist generated .turbo",
     "build": "tsc -p tsconfig.build.json",
     "doctor": "tsx scripts/db-doctor.ts",
@@ -47,6 +48,7 @@
     "rimraf": "catalog:",
     "sharp": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
