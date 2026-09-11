@@ -1,8 +1,15 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
-import { FulfillmentMode, FulfillmentState, OrderStatus, Prisma, RiskLevel } from '@da/db';
+import { FulfillmentMode, FulfillmentState, Locale, OrderStatus, Prisma, RiskLevel } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { MailService } from '../mail/mail.service.js';
+import {
+  fulfilmentFailed,
+  licenceDelivered,
+  type OrderLineView,
+  orderReceived,
+} from '../mail/templates.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type Actor, VaultService } from '../vault/vault.service.js';
 
@@ -24,6 +31,21 @@ import { type Actor, VaultService } from '../vault/vault.service.js';
  * and the risk check has cleared. A digital key cannot be clawed back, so the
  * block is always before delivery and never after.
  */
+/** Activation steps out of a Json column, without trusting its shape. */
+function parseSteps(value: Prisma.JsonValue | null): string[] {
+  if (!Array.isArray(value)) return [];
+  const steps: string[] = [];
+  for (const entry of value) {
+    if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
+      const text = (entry as Record<string, unknown>).text;
+      if (typeof text === 'string') steps.push(text);
+    } else if (typeof entry === 'string') {
+      steps.push(entry);
+    }
+  }
+  return steps;
+}
+
 @Injectable()
 export class FulfillmentService {
   private readonly logger = new Logger(FulfillmentService.name);
@@ -32,7 +54,51 @@ export class FulfillmentService {
     private readonly prisma: PrismaService,
     private readonly vault: VaultService,
     private readonly audit: AuditService,
+    private readonly mail: MailService,
   ) {}
+
+  private get storefront(): string {
+    return process.env.STOREFRONT_URL ?? 'http://localhost:3000';
+  }
+
+  /** The order page, in the locale the customer bought in. */
+  private orderUrl(number: string, locale: Locale): string {
+    const prefix = locale === Locale.EN ? '/en' : '';
+    return `${this.storefront}${prefix}/orders/${encodeURIComponent(number)}`;
+  }
+
+  private lang(locale: Locale): 'ar' | 'en' {
+    return locale === Locale.EN ? 'en' : 'ar';
+  }
+
+  /**
+   * How a line is supplied, in the customer's words.
+   *
+   * Said again here rather than shared with the storefront: an email is read
+   * days later, out of the context of the page, and has to stand on its own.
+   */
+  private supplyNote(mode: FulfillmentMode, seconds: number, locale: Locale): string {
+    const ar = locale !== Locale.EN;
+    const hours = Math.round(seconds / 3600);
+    const window = ar
+      ? seconds < 3600
+        ? `${String(Math.round(seconds / 60))} دقيقة`
+        : hours === 1
+          ? 'ساعة'
+          : `${String(hours)} ساعات`
+      : seconds < 3600
+        ? `${String(Math.round(seconds / 60))} minutes`
+        : hours === 1
+          ? 'an hour'
+          : `${String(hours)} hours`;
+
+    if (mode === FulfillmentMode.FROM_STOCK) {
+      return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
+    }
+    return ar
+      ? `يُطلَب من المورّد بعد الشراء — خلال ${window}`
+      : `Ordered from the supplier after purchase — within ${window}`;
+  }
 
   /**
    * Works an order after payment.
@@ -113,6 +179,7 @@ export class FulfillmentService {
     }
 
     await this.refreshOrderState(order.id);
+    await this.sendOrderReceived(orderNumber);
     return { autoAssigned, queued, skipped };
   }
 
@@ -246,6 +313,23 @@ export class FulfillmentService {
       actor: input.actor,
     });
 
+    // The email goes first, and "delivered" is set only if it left. The other
+    // order round looks harmless and is not: a line marked delivered whose
+    // message never went is a customer waiting for something nobody will send
+    // again, with nothing in the system saying so.
+    const sent = await this.emailLicence({
+      orderItemId: item.id,
+      keys: [input.code],
+    });
+    if (!sent.ok) {
+      // The key is in the vault and bound to the line — that part is done and
+      // must not be undone. The line stays in the queue so the send can be
+      // retried, and the failure is on the record.
+      throw new BadRequestException(
+        `المفتاح محفوظ ومربوط بالطلب، لكن إرسال البريد فشل (${sent.error ?? 'سبب غير معروف'}). أعد المحاولة من الطابور.`,
+      );
+    }
+
     await this.vault.markDelivered(item.id);
     const deliveredAt = new Date();
 
@@ -294,7 +378,12 @@ export class FulfillmentService {
     if (item.order.riskLevel === RiskLevel.HIGH || item.order.riskLevel === RiskLevel.BLOCKED) {
       throw new BadRequestException('هذا الطلب موقوف للمراجعة.');
     }
-    if (item.assignedKeyIds.length === 0) {
+    // Asked of the vault, not of `assignedKeyIds`. That array is written only
+    // after a successful send, so a send that failed leaves it empty while the
+    // key is bound and paid for — and reading it here stranded the line: this
+    // path refused it for having no key, and the manual path refused it for
+    // already having one.
+    if (!(await this.vault.isBound(item.id))) {
       throw new BadRequestException('لا يوجد مفتاح مخصّص لهذا السطر.');
     }
 
@@ -305,11 +394,29 @@ export class FulfillmentService {
       orderItemId: item.id,
       actor: input.actor,
     });
+
+    const sent = await this.emailLicence({
+      orderItemId: item.id,
+      keys: opened.map((entry) => entry.plaintext),
+    });
+    if (!sent.ok) {
+      throw new BadRequestException(
+        `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). المفتاح ما زال مخصّصاً للطلب؛ أعد المحاولة.`,
+      );
+    }
+
     await this.vault.markDelivered(item.id);
 
     await this.prisma.client.orderItem.update({
       where: { id: item.id },
-      data: { fulfillmentState: FulfillmentState.DELIVERED, deliveredAt: new Date() },
+      data: {
+        fulfillmentState: FulfillmentState.DELIVERED,
+        deliveredAt: new Date(),
+        // Written here too, not only on the manual path. A delivered line with
+        // an empty array cannot be linked back to the key it sent, which is
+        // the one thing somebody handling a complaint needs.
+        assignedKeyIds: opened.map((entry) => entry.licenseKeyId),
+      },
     });
 
     await this.audit.record({
@@ -347,6 +454,10 @@ export class FulfillmentService {
       ip: input.actor.ip,
       userAgent: input.actor.userAgent,
     });
+
+    // The customer hears it from us rather than by noticing. A silent failure
+    // is how somebody who paid ends up chasing the store.
+    await this.emailFailure(item.id);
 
     await this.refreshOrderState(item.orderId);
     return { state: FulfillmentState.FAILED };
@@ -399,6 +510,178 @@ export class FulfillmentService {
         data: { status: OrderStatus.FULFILLING },
       });
     }
+  }
+
+  // --- mail -----------------------------------------------------------------
+
+  /**
+   * Tells the customer the money arrived and what happens next.
+   *
+   * Sent once. `alreadySent` is keyed on the order number in the log payload,
+   * so a replayed webhook or a second call does not send a second receipt.
+   */
+  private async sendOrderReceived(orderNumber: string): Promise<void> {
+    const order = await this.prisma.client.order.findUnique({
+      where: { number: orderNumber },
+      include: {
+        items: {
+          include: {
+            variant: { select: { fulfillmentMode: true, deliverySlaSeconds: true } },
+          },
+        },
+      },
+    });
+    if (!order) return;
+
+    if (
+      await this.mail.alreadySent({
+        template: 'order.received',
+        to: order.email,
+        orderNumber,
+      })
+    ) {
+      return;
+    }
+
+    const lines: OrderLineView[] = order.items.map((item) => ({
+      productName: item.productNameSnapshot,
+      sku: item.skuSnapshot,
+      qty: item.qty,
+      lineTotal: `$${item.lineTotalUsd.toFixed(2)}`,
+      supplyNote: this.supplyNote(
+        item.variant.fulfillmentMode,
+        item.variant.deliverySlaSeconds,
+        order.locale,
+      ),
+    }));
+
+    await this.mail.send({
+      to: order.email,
+      template: 'order.received',
+      locale: this.lang(order.locale),
+      customerId: order.customerId ?? undefined,
+      rendered: orderReceived({
+        locale: this.lang(order.locale),
+        orderNumber,
+        total: `$${order.totalUsd.toFixed(2)}`,
+        lines,
+        orderUrl: this.orderUrl(orderNumber, order.locale),
+        activationEmail: order.activationEmail,
+      }),
+      // Variables only. There is no key in this email and none in this log.
+      payload: { orderNumber, lines: lines.length, total: order.totalUsd.toFixed(2) },
+    });
+  }
+
+  /**
+   * Sends the licence itself.
+   *
+   * The one message that carries the product. The keys are passed in as
+   * arguments and go into the rendered body and nowhere else — not into the
+   * NotificationLog payload, not into a log line, not into an order note.
+   */
+  private async emailLicence(input: {
+    orderItemId: string;
+    keys: string[];
+  }): Promise<{ ok: boolean; error: string | null }> {
+    const item = await this.prisma.client.orderItem.findUnique({
+      where: { id: input.orderItemId },
+      include: {
+        order: {
+          select: {
+            number: true,
+            email: true,
+            activationEmail: true,
+            locale: true,
+            customerId: true,
+          },
+        },
+        variant: {
+          select: {
+            warrantyDays: true,
+            product: {
+              select: {
+                hasGoldenWarranty: true,
+                translations: { select: { locale: true, activationSteps: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!item) return { ok: false, error: 'order item not found' };
+
+    const locale = item.order.locale;
+    const ar = locale !== Locale.EN;
+
+    const translation =
+      item.variant.product.translations.find((entry) => entry.locale === locale) ??
+      item.variant.product.translations[0];
+    const steps = parseSteps(translation?.activationSteps ?? null);
+
+    const warranty = item.variant.warrantyDays
+      ? ar
+        ? `الضمان: ${String(item.variant.warrantyDays)} يوماً من تاريخ التسليم.`
+        : `Warranty: ${String(item.variant.warrantyDays)} days from delivery.`
+      : item.variant.product.hasGoldenWarranty
+        ? ar
+          ? 'مغطّى بالضمان الذهبي لمدّة الترخيص.'
+          : 'Covered by the Golden Warranty for the licence term.'
+        : ar
+          ? 'راجِع صفحة المنتج لتفاصيل الضمان.'
+          : 'See the product page for warranty details.';
+
+    const result = await this.mail.send({
+      to: item.order.email,
+      template: 'licence.delivered',
+      locale: this.lang(locale),
+      customerId: item.order.customerId ?? undefined,
+      rendered: licenceDelivered({
+        locale: this.lang(locale),
+        orderNumber: item.order.number,
+        productName: item.productNameSnapshot,
+        keys: input.keys,
+        activationSteps: steps,
+        activationEmail: item.order.activationEmail,
+        orderUrl: this.orderUrl(item.order.number, locale),
+        supportEmail: this.mail.supportEmail,
+        warrantyNote: warranty,
+      }),
+      // Deliberately not the keys. `keyCount` is the most this may say.
+      payload: {
+        orderNumber: item.order.number,
+        sku: item.skuSnapshot,
+        keyCount: input.keys.length,
+      },
+    });
+
+    return { ok: result.ok, error: result.error };
+  }
+
+  /** Tells the customer a line could not be supplied. */
+  private async emailFailure(orderItemId: string): Promise<void> {
+    const item = await this.prisma.client.orderItem.findUnique({
+      where: { id: orderItemId },
+      include: {
+        order: { select: { number: true, email: true, locale: true, customerId: true } },
+      },
+    });
+    if (!item) return;
+
+    await this.mail.send({
+      to: item.order.email,
+      template: 'fulfillment.failed',
+      locale: this.lang(item.order.locale),
+      customerId: item.order.customerId ?? undefined,
+      rendered: fulfilmentFailed({
+        locale: this.lang(item.order.locale),
+        orderNumber: item.order.number,
+        productName: item.productNameSnapshot,
+        supportEmail: this.mail.supportEmail,
+        orderUrl: this.orderUrl(item.order.number, item.order.locale),
+      }),
+      payload: { orderNumber: item.order.number, sku: item.skuSnapshot },
+    });
   }
 
   /** Queue depth and the oldest wait, for the admin's attention. */

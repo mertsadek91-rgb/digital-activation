@@ -49,7 +49,13 @@ const envSchema = z.object({
   PAYPAL_WEBHOOK_ID: z.string().optional(),
   PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
 
-  MAIL_TRANSPORT: z.enum(['smtp', 'resend', 'ses']).default('smtp'),
+  /**
+   * `ses` is gone rather than listed: an option the code does not implement is
+   * worse than no option, because it boots and then silently sends nothing.
+   * `capture` writes the rendered message to .cache/mail and sends nothing,
+   * which is a development convenience and refused in production below.
+   */
+  MAIL_TRANSPORT: z.enum(['smtp', 'resend', 'capture']).default('smtp'),
   SMTP_URL: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM_TRANSACTIONAL: z.string().email(),
@@ -93,6 +99,17 @@ export function validateEnv(raw: Record<string, unknown>): Env {
       throw new Error(
         `KEK_PROVIDER=${env.KEK_PROVIDER} is not allowed in production. Use aws-kms — the KEK must not be recoverable from a compromised host.`,
       );
+    }
+    if (env.MAIL_TRANSPORT === 'capture') {
+      throw new Error(
+        'MAIL_TRANSPORT=capture is not allowed in production. It writes message bodies to disk, and one of those bodies is a customer licence key.',
+      );
+    }
+    if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {
+      missing.push('RESEND_API_KEY (required by MAIL_TRANSPORT=resend)');
+    }
+    if (env.MAIL_TRANSPORT === 'smtp' && !env.SMTP_URL) {
+      missing.push('SMTP_URL (required by MAIL_TRANSPORT=smtp)');
     }
     if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');

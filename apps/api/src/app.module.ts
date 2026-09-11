@@ -8,6 +8,7 @@ import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
 import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
+import { MailModule } from './mail/mail.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -47,6 +48,7 @@ import { VaultModule } from './vault/vault.module.js';
     CartModule,
     CheckoutModule,
     VaultModule,
+    MailModule,
     FulfillmentModule,
     AuthModule,
     AdminModule,

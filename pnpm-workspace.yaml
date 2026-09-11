@@ -83,4 +83,8 @@ catalog:
   sharp: ^0.35.4
   fast-xml-parser: ^5.11.1
   resend: ^6.26.0
+  # SMTP for development (mailpit) and for any host that gives you SMTP
+  # rather than an API. Resend is the production transport.
+  nodemailer: ^10.0.3
+  '@types/nodemailer': ^8.0.1
   web-push: ^3.6.7

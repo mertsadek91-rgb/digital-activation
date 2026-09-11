@@ -32,10 +32,12 @@
     "ioredis": "catalog:",
     "meilisearch": "catalog:",
     "nestjs-pino": "catalog:",
+    "nodemailer": "catalog:",
     "otplib": "catalog:",
     "pino": "catalog:",
     "qrcode": "catalog:",
     "reflect-metadata": "catalog:",
+    "resend": "catalog:",
     "rxjs": "catalog:",
     "stripe": "catalog:",
     "zod": "catalog:"
@@ -43,6 +45,7 @@
   "devDependencies": {
     "@nestjs/cli": "catalog:",
     "@types/node": "catalog:",
+    "@types/nodemailer": "catalog:",
     "@types/qrcode": "catalog:",
     "pino-pretty": "catalog:",
     "rimraf": "catalog:",

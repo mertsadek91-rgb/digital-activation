@@ -339,6 +339,15 @@ export class VaultService {
     return opened;
   }
 
+  /** Whether a line already has a key bound to it, without opening anything. */
+  async isBound(orderItemId: string): Promise<boolean> {
+    const found = await this.vault.client.licenseKey.findUnique({
+      where: { orderItemId },
+      select: { id: true },
+    });
+    return found !== null;
+  }
+
   /** Records that the keys on a line actually went out. */
   async markDelivered(orderItemId: string): Promise<number> {
     const { count } = await this.vault.client.licenseKey.updateMany({
