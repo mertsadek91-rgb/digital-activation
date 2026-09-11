@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { cartApi, CartError } from '../../../../lib/cart-client';
-import { formatPrice } from '../../../../lib/format';
+import { formatLineState, formatOrderStatus, formatPrice } from '../../../../lib/format';
 
 /**
  * Order confirmation.
@@ -22,35 +22,6 @@ import { formatPrice } from '../../../../lib/format';
  * is the normal, expected state and not a problem — and telling the customer
  * that, with the window, is what stops them writing in to ask.
  */
-const STATE_AR: Record<string, string> = {
-  PENDING: 'في الانتظار',
-  AUTO_ASSIGNED: 'تم تخصيص المفتاح',
-  MANUAL_QUEUE: 'قيد الطلب من المورّد',
-  DELIVERED: 'تم التسليم',
-  FAILED: 'تعذّر — فريقنا يتابعه',
-};
-
-const STATE_EN: Record<string, string> = {
-  PENDING: 'Pending',
-  AUTO_ASSIGNED: 'Key assigned',
-  MANUAL_QUEUE: 'Being ordered from the supplier',
-  DELIVERED: 'Delivered',
-  FAILED: 'Failed — our team is on it',
-};
-
-const STATUS_AR: Record<string, string> = {
-  PENDING_PAYMENT: 'في انتظار الدفع',
-  PAYMENT_REVIEW: 'قيد المراجعة',
-  PAID: 'مدفوع',
-  FULFILLING: 'قيد التجهيز',
-  FULFILLED: 'تم التجهيز',
-  COMPLETED: 'مكتمل',
-  CANCELLED: 'ملغى',
-  REFUNDED: 'مُسترَد',
-  PARTIALLY_REFUNDED: 'مُسترَد جزئياً',
-  FAILED: 'فشل',
-};
-
 export default function OrderPage() {
   const params = useParams<{ locale: string; number: string }>();
   const locale = params.locale ?? 'ar';
@@ -92,7 +63,6 @@ export default function OrderPage() {
   }
 
   const waiting = order.status === 'PENDING_PAYMENT';
-  const states = ar ? STATE_AR : STATE_EN;
 
   return (
     <main className="shell order-page">
@@ -102,7 +72,7 @@ export default function OrderPage() {
       </h1>
 
       <p className={`pill ${waiting ? 'pill-draft' : 'pill-published'}`}>
-        {ar ? (STATUS_AR[order.status] ?? order.status) : order.status.replace(/_/g, ' ')}
+        {formatOrderStatus(order.status, locale)}
       </p>
 
       {waiting ? (
@@ -138,7 +108,7 @@ export default function OrderPage() {
               <p className="order-line-spec" dir="ltr">
                 {line.sku} × {line.qty}
               </p>
-              <p className="order-line-state">{states[line.fulfillmentState]}</p>
+              <p className="order-line-state">{formatLineState(line.fulfillmentState, locale)}</p>
 
               {/* What will land in the inbox, said before it lands. A customer
                   expecting a key who receives a username and a password reads

@@ -13,9 +13,11 @@
  * never written to storage.
  */
 import {
+  type AccountOrderList,
   type CustomerMe,
   type CustomerSecret,
   type LicenceList,
+  accountOrderListSchema,
   customerMeSchema,
   customerSecretsSchema,
   exchangeResultSchema,
@@ -76,6 +78,8 @@ export const accountApi = {
   me: (): Promise<CustomerMe> => request('/account/me', customerMeSchema),
 
   licences: (): Promise<LicenceList> => request('/account/licences', licenceListSchema),
+
+  orders: (): Promise<AccountOrderList> => request('/account/orders', accountOrderListSchema),
 
   reveal: (orderItemId: string): Promise<CustomerSecret[]> =>
     request(`/account/licences/${encodeURIComponent(orderItemId)}/reveal`, customerSecretsSchema, {

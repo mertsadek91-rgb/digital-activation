@@ -1,4 +1,4 @@
-import type { CatalogVariant, DisplayPrice, FulfillmentMode } from '@da/contracts';
+import type { CatalogVariant, DisplayPrice, FulfillmentMode, Order } from '@da/contracts';
 
 /** The part of a variant that describes its term. A cart line carries it too. */
 type LicenceTerm = Pick<CatalogVariant, 'licensePeriodValue' | 'licensePeriodUnit'>;
@@ -155,6 +155,60 @@ const ACTIVATION_EN: Record<string, string> = {
 export function formatActivation(method: string, locale: string): string {
   const table = locale === 'ar' ? ACTIVATION_AR : ACTIVATION_EN;
   return table[method] ?? method;
+}
+
+/*
+ * Order wording.
+ *
+ * Moved here from the order confirmation page when the account area grew an
+ * order list, because the two pages show the same order and a customer who
+ * reads "قيد الطلب من المورّد" on one and something else on the other reads it
+ * as two different things happening.
+ */
+const STATUS_AR: Record<string, string> = {
+  PENDING_PAYMENT: 'في انتظار الدفع',
+  PAYMENT_REVIEW: 'قيد المراجعة',
+  PAID: 'مدفوع',
+  FULFILLING: 'قيد التجهيز',
+  FULFILLED: 'تم التجهيز',
+  COMPLETED: 'مكتمل',
+  CANCELLED: 'ملغى',
+  REFUNDED: 'مُسترَد',
+  PARTIALLY_REFUNDED: 'مُسترَد جزئياً',
+  FAILED: 'فشل',
+};
+
+const STATE_AR: Record<string, string> = {
+  PENDING: 'في الانتظار',
+  AUTO_ASSIGNED: 'تم تخصيص المفتاح',
+  MANUAL_QUEUE: 'قيد الطلب من المورّد',
+  DELIVERED: 'تم التسليم',
+  FAILED: 'تعذّر — فريقنا يتابعه',
+};
+
+const STATE_EN: Record<string, string> = {
+  PENDING: 'Pending',
+  AUTO_ASSIGNED: 'Key assigned',
+  MANUAL_QUEUE: 'Being ordered from the supplier',
+  DELIVERED: 'Delivered',
+  FAILED: 'Failed — our team is on it',
+};
+
+export function formatOrderStatus(status: Order['status'], locale: string): string {
+  if (locale === 'ar') return STATUS_AR[status] ?? status;
+  // The enum with its underscores taken out, which is what the confirmation
+  // page has always printed. Writing English wording here instead would give
+  // the same customer two different names for one status.
+  return status.replace(/_/g, ' ');
+}
+
+/** Where one line of an order has got to. */
+export function formatLineState(
+  state: Order['lines'][number]['fulfillmentState'],
+  locale: string,
+): string {
+  const table = locale === 'ar' ? STATE_AR : STATE_EN;
+  return table[state] ?? state;
 }
 
 /** Short label for a variant picker button, or for a cart line. */

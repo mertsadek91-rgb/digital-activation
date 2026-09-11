@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { credentialKindSchema } from './catalog.js';
-import { localeSchema } from './primitives.js';
+import { orderStatusSchema } from './checkout.js';
+import { localeSchema, moneySchema } from './primitives.js';
 
 /**
  * The customer's own area — one page, and it exists for one moment: the
@@ -122,3 +123,53 @@ export const resendResultSchema = z.object({
 
 /** How long a signed-in session lasts. Short on purpose — see the service. */
 export const CUSTOMER_SESSION_HOURS = 12;
+
+// --- the orders -------------------------------------------------------------
+
+/**
+ * One line of a past order, as its buyer sees it.
+ *
+ * Deliberately not a licence row. An order answers what was bought, how many,
+ * what it cost and whether it has arrived; the key itself comes out on the
+ * licences page, one line at a time, through the reveal that writes to the
+ * vault's access log. An order history that carried keys would put every key
+ * this customer has ever bought on a single screen — the exact thing the
+ * licences page is shaped to avoid.
+ */
+export const accountOrderLineSchema = z.object({
+  productName: z.string(),
+  sku: z.string(),
+  qty: z.number().int().min(1),
+  /** In the order's own currency, which the order above carries. */
+  lineTotal: moneySchema,
+  fulfillmentState: z.enum(['PENDING', 'AUTO_ASSIGNED', 'MANUAL_QUEUE', 'DELIVERED', 'FAILED']),
+});
+export type AccountOrderLine = z.infer<typeof accountOrderLineSchema>;
+
+/**
+ * One order, in the money the customer actually paid.
+ *
+ * The currency sits on the order rather than on each amount, because an order
+ * is settled once, in one currency, at one rate — all three fixed at the
+ * moment it was placed. Re-converting a past order at today's rate would give
+ * a customer a receipt whose total moves with the dollar.
+ */
+export const accountOrderSchema = z.object({
+  number: z.string(),
+  status: orderStatusSchema,
+  currency: z.string().length(3),
+  placedAt: z.string(),
+  /** Null while the money has not arrived, which is a state customers ask about. */
+  paidAt: z.string().nullable(),
+  subtotal: moneySchema,
+  discount: moneySchema,
+  tax: moneySchema,
+  total: moneySchema,
+  lines: z.array(accountOrderLineSchema),
+});
+export type AccountOrder = z.infer<typeof accountOrderSchema>;
+
+export const accountOrderListSchema = z.object({
+  rows: z.array(accountOrderSchema),
+});
+export type AccountOrderList = z.infer<typeof accountOrderListSchema>;

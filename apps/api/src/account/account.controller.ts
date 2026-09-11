@@ -13,6 +13,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
+  type AccountOrderList,
   CUSTOMER_SESSION_HOURS,
   type CustomerMe,
   type LicenceList,
@@ -174,5 +175,19 @@ export class AccountController {
       throw new NotFoundException('لا يوجد عنوان لإعادة الإرسال إليه.');
     }
     return result;
+  }
+
+  /**
+   * The customer's own orders.
+   *
+   * Unthrottled, like the other reads: the cookie already decides whose orders
+   * these are, and there is nothing to enumerate — the set is whatever this
+   * one customer bought, so asking twice returns the same thing.
+   */
+  @Get('orders')
+  @ApiOperation({ summary: "The customer's own orders. Never a licence." })
+  async orders(@Req() request: FastifyRequest): Promise<AccountOrderList> {
+    const session = await this.require(request);
+    return this.account.orders(session.customerId);
   }
 }
