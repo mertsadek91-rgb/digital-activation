@@ -3,8 +3,11 @@ import {
   type AdminProductList,
   type AdminProductQuery,
   type AdminProductRow,
+  countBodyWords,
   type CredentialKind,
+  type ProductCopy,
   type Readiness,
+  type SetProductCopy,
 } from '@da/contracts';
 import { FulfillmentMode, Locale, type Prisma, PublishStatus, StockMovementReason } from '@da/db';
 
@@ -13,7 +16,8 @@ import { parseActivationSteps } from '../common/activation-steps.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { VaultService } from '../vault/vault.service.js';
 
-import { assessProduct } from './readiness.js';
+import { assessProduct, bodyText } from './readiness.js';
+import { readBody, writeBody } from './rich-text.js';
 
 /**
  * The admin API.
@@ -308,6 +312,122 @@ export class AdminService {
     });
 
     return { sku: variant.sku, onHand: level.onHand, reserved: level.reserved };
+  }
+
+  /**
+   * A product's copy in one locale, with that locale's readiness beside it.
+   *
+   * Both in one response because they are one question. 35 of the 73 products
+   * are held out of the store by a missing SEO title and meta description and
+   * nothing else, and whoever is fixing that needs to see the refusal clear as
+   * they type rather than after a save and a reload.
+   */
+  async productCopy(slug: string, locale: string): Promise<ProductCopy> {
+    const target = this.localeFor({ locale });
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      include: this.include,
+    });
+    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+
+    const translation = product.translations.find((entry) => entry.locale === target);
+    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+
+    const body = readBody(translation.body);
+
+    return {
+      locale: target === Locale.EN ? 'en' : 'ar',
+      name: translation.name,
+      shortDesc: translation.shortDesc ?? '',
+      seoTitle: translation.seoTitle ?? '',
+      seoDescription: translation.seoDescription ?? '',
+      body: body.html,
+      bodyEditable: body.editable,
+      otherBlocks: body.otherBlocks,
+      readiness: assessProduct(product, target),
+    };
+  }
+
+  /**
+   * Writes the two fields the gate refuses on, plus the body it measures.
+   *
+   * The updated readiness comes back with them, so the drawer that asked for
+   * the change is also the thing that reports whether it worked — a save that
+   * returns "ok" while the product is still blocked is how 43 legacy products
+   * ended up published with no description at all.
+   */
+  async setProductCopy(
+    slug: string,
+    input: SetProductCopy,
+    actorId: string,
+    context: { ip?: string | undefined; userAgent?: string | undefined },
+  ): Promise<ProductCopy> {
+    const target = this.localeFor({ locale: input.locale });
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+
+    const translation = await this.prisma.client.productTranslation.findUnique({
+      where: { productId_locale: { productId: product.id, locale: target } },
+      select: { id: true, body: true, seoTitle: true, seoDescription: true, shortDesc: true },
+    });
+    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+
+    const existing = readBody(translation.body);
+    if (input.body !== undefined && !existing.editable) {
+      throw new BadRequestException(
+        `وصف هذا المنتج يحتوي على كتل لا يحرّرها هذا الصندوق (${existing.otherBlocks.join('، ')}). عدّل بقية الحقول، واترك الوصف كما هو.`,
+      );
+    }
+
+    const data: Prisma.ProductTranslationUpdateInput = {
+      // Empty clears the column rather than storing "". A null is what the
+      // gate reads as "missing", and the two must not be different things.
+      seoTitle: input.seoTitle.length > 0 ? input.seoTitle : null,
+      seoDescription: input.seoDescription.length > 0 ? input.seoDescription : null,
+      shortDesc: input.shortDesc.length > 0 ? input.shortDesc : null,
+      ...(input.body === undefined ? {} : { body: writeBody(input.body) }),
+    };
+
+    await this.prisma.client.productTranslation.update({
+      where: { id: translation.id },
+      data,
+    });
+
+    // Lengths, not text. The audit table is read far more widely than the
+    // catalog is — support and finance both live in it — and a product body
+    // copied into it is the same words stored in a second place that nobody
+    // will remember to update. What a reader needs is which field moved and
+    // by how much.
+    await this.audit.record({
+      actorId,
+      entity: 'ProductTranslation',
+      entityId: translation.id,
+      action: 'productCopy.set',
+      before: {
+        locale: target,
+        seoTitle: (translation.seoTitle ?? '').length,
+        seoDescription: (translation.seoDescription ?? '').length,
+        shortDesc: (translation.shortDesc ?? '').length,
+        bodyWords: countBodyWords(bodyText(translation.body)),
+      },
+      after: {
+        locale: target,
+        seoTitle: input.seoTitle.length,
+        seoDescription: input.seoDescription.length,
+        shortDesc: input.shortDesc.length,
+        bodyWords:
+          input.body === undefined
+            ? countBodyWords(bodyText(translation.body))
+            : countBodyWords(bodyText(writeBody(input.body))),
+      },
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    return this.productCopy(slug, input.locale);
   }
 
   /** The activation how-to as it stands, for the editor to load. */

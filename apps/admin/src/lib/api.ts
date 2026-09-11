@@ -16,6 +16,7 @@ import type {
   CredentialKind,
   ImportResult,
   OrderKeysRow,
+  ProductCopy,
   Queue,
   Readiness,
   RedirectsView,
@@ -102,6 +103,30 @@ export const api = {
     request<{ status: string; readiness: Readiness }>(`/admin/products/${slug}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status, locale: 'ar' }),
+    }),
+
+  /**
+   * The copy the publish gate reads. Locale is a real argument here, unlike
+   * `readiness` above: the gate is assessed per locale, and the whole reason
+   * this drawer exists is that every English translation in the catalog is
+   * missing both SEO fields.
+   */
+  productCopy: (slug: string, locale: 'ar' | 'en') =>
+    request<ProductCopy>(`/admin/products/${encodeURIComponent(slug)}/copy?locale=${locale}`),
+
+  setProductCopy: (
+    slug: string,
+    patch: {
+      locale: 'ar' | 'en';
+      seoTitle: string;
+      seoDescription: string;
+      shortDesc: string;
+      body?: string;
+    },
+  ) =>
+    request<ProductCopy>(`/admin/products/${encodeURIComponent(slug)}/copy`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
     }),
 
   activationSteps: (slug: string, locale: 'ar' | 'en') =>

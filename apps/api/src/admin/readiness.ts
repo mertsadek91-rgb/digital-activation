@@ -1,4 +1,9 @@
-import { type Readiness, type ReadinessCheck, READINESS_RULES } from '@da/contracts';
+import {
+  countBodyWords,
+  type Readiness,
+  type ReadinessCheck,
+  READINESS_RULES,
+} from '@da/contracts';
 import { Locale } from '@da/db';
 
 /**
@@ -34,9 +39,15 @@ interface ProductForReadiness {
   primaryCategoryId: string | null;
 }
 
-/** Counts words in a block document, ignoring markup. */
-function countWords(body: unknown): number {
-  if (!Array.isArray(body)) return 0;
+/**
+ * Flattens a block document to the text a reader would see.
+ *
+ * The counting itself is `countBodyWords` from the contracts, shared with the
+ * editor's live counter — a panel that says 118 while the gate has counted 121
+ * is a panel nobody believes twice.
+ */
+export function bodyText(body: unknown): string {
+  if (!Array.isArray(body)) return '';
 
   let text = '';
   for (const block of body) {
@@ -55,7 +66,7 @@ function countWords(body: unknown): number {
     }
   }
 
-  return text.split(/\s+/).filter((word) => word.length > 1).length;
+  return text;
 }
 
 type Reason =
@@ -151,7 +162,7 @@ export function assessProduct(product: ProductForReadiness, locale: Locale): Rea
         : say('seoDescriptionShort', description.length),
   });
 
-  const words = countWords(translation?.body);
+  const words = countBodyWords(bodyText(translation?.body));
   checks.push({
     key: 'body',
     severity: 'blocker',

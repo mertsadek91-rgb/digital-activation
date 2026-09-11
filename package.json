@@ -29,6 +29,7 @@
     "db:import": "pnpm --filter @da/db run import",
     "db:media": "pnpm --filter @da/db run media",
     "db:pages": "pnpm --filter @da/db run pages",
+    "db:seo": "pnpm --filter @da/db run seo",
     "db:redirects": "pnpm --filter @da/db run redirects",
     "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",

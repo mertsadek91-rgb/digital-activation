@@ -3,11 +3,14 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type AdminProductList,
   type AdminProductQuery,
+  type ProductCopy,
   type Readiness,
+  type SetProductCopy,
   adminProductQuerySchema,
   setActivationStepsSchema,
   setCredentialKindSchema,
   setInventorySchema,
+  setProductCopySchema,
   setStatusSchema,
 } from '@da/contracts';
 import { Locale } from '@da/db';
@@ -92,6 +95,34 @@ export class AdminController {
     @Req() request: StaffRequest,
   ) {
     return this.admin.setCredentialKind(sku, body.credentialKind, request.staff?.sub ?? '', {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+  }
+
+  /**
+   * The copy the publish gate reads, per locale.
+   *
+   * Behind a role even to read it: a body and a meta description are not
+   * secrets, but this is the same drawer that writes them, and READONLY exists
+   * so an accountant can be given the panel without a path to the catalog.
+   */
+  @Roles('OWNER', 'ADMIN', 'CATALOG')
+  @Get('products/:slug/copy')
+  @ApiOperation({ summary: 'SEO title, meta description and body for one locale' })
+  productCopy(@Param('slug') slug: string, @Query('locale') locale = 'ar'): Promise<ProductCopy> {
+    return this.admin.productCopy(slug, locale);
+  }
+
+  @Roles('OWNER', 'ADMIN', 'CATALOG')
+  @Patch('products/:slug/copy')
+  @ApiOperation({ summary: 'Write the copy the gate refuses on, and re-assess' })
+  setProductCopy(
+    @Param('slug') slug: string,
+    @Body(new ZodPipe(setProductCopySchema)) body: SetProductCopy,
+    @Req() request: StaffRequest,
+  ): Promise<ProductCopy> {
+    return this.admin.setProductCopy(slug, body, request.staff?.sub ?? '', {
       ip: request.ip,
       userAgent: request.headers['user-agent'],
     });
