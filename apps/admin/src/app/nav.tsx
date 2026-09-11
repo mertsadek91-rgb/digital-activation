@@ -1,0 +1,106 @@
+'use client';
+
+import type { StaffMe } from '@da/contracts';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { api } from '../lib/api';
+
+/**
+ * Admin navigation.
+ *
+ * Carries a live count of the work waiting in the supplier queue, because that
+ * is the number a person running this shop needs in front of them: every one
+ * of those is a customer who has paid and is waiting. It is loaded here rather
+ * than passed in so every screen shows it without threading it through.
+ */
+export function Nav({
+  me,
+  current,
+  /**
+   * The queue page already has these numbers and they change as it is worked,
+   * so it passes them down. Without that the badge is a snapshot from page
+   * load: deliver a line and it still claims the old count, which is the same
+   * stale-sibling problem the storefront header had.
+   *
+   * Omitted elsewhere, where the nav fetches them itself.
+   */
+  waiting: given,
+  overdue: givenOverdue,
+}: {
+  me: StaffMe;
+  current: 'products' | 'queue';
+  waiting?: number;
+  overdue?: number;
+}) {
+  const router = useRouter();
+  const [fetched, setFetched] = useState<{ waiting: number; overdue: number } | null>(null);
+
+  useEffect(() => {
+    if (given !== undefined) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const queue = await api.queue(false);
+        if (cancelled) return;
+        setFetched({
+          waiting: queue.waiting,
+          overdue: queue.rows.filter((row) => row.overdue).length,
+        });
+      } catch {
+        // A badge that cannot load shows nothing. Nothing here depends on it,
+        // and a role without access to the queue is a normal case.
+        if (!cancelled) setFetched(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [current, given]);
+
+  const waiting = given ?? fetched?.waiting ?? null;
+  const overdue = givenOverdue ?? fetched?.overdue ?? 0;
+
+  return (
+    <header className="bar">
+      <nav className="admin-nav">
+        <button
+          type="button"
+          className={`tab${current === 'products' ? ' is-active' : ''}`}
+          onClick={() => router.push('/products')}
+        >
+          المنتجات
+        </button>
+        <button
+          type="button"
+          className={`tab${current === 'queue' ? ' is-active' : ''}`}
+          onClick={() => router.push('/queue')}
+        >
+          الطابور
+          {waiting !== null && waiting > 0 ? (
+            <span className={`tab-count${overdue > 0 ? ' is-late' : ''}`}>{waiting}</span>
+          ) : null}
+        </button>
+      </nav>
+
+      <div className="actions">
+        <span className="who">
+          {me.name} · {me.role}
+        </span>
+        <button type="button" className="ghost" onClick={() => router.push('/password')}>
+          كلمة المرور
+        </button>
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => {
+            void api.logout().then(() => router.push('/login'));
+          }}
+        >
+          خروج
+        </button>
+      </div>
+    </header>
+  );
+}

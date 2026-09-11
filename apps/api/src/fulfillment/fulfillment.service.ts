@@ -224,11 +224,18 @@ export class FulfillmentService {
         ]
       : [FulfillmentState.MANUAL_QUEUE, FulfillmentState.AUTO_ASSIGNED];
 
+    // Only paid work: an unpaid order is not the supplier's problem yet. But
+    // the history view has to reach past PAID — the moment the last line of an
+    // order is delivered the order becomes FULFILLED, so a filter stopping at
+    // FULFILLING hid exactly the completed work the view exists to show.
+    const orderStates = input.includeDone
+      ? [OrderStatus.PAID, OrderStatus.FULFILLING, OrderStatus.FULFILLED, OrderStatus.COMPLETED]
+      : [OrderStatus.PAID, OrderStatus.FULFILLING];
+
     const items = await this.prisma.client.orderItem.findMany({
       where: {
         fulfillmentState: { in: states },
-        // Only paid work. An unpaid order is not the supplier's problem yet.
-        order: { status: { in: [OrderStatus.PAID, OrderStatus.FULFILLING] } },
+        order: { status: { in: orderStates } },
       },
       orderBy: { order: { paidAt: 'asc' } },
       take: input.limit,

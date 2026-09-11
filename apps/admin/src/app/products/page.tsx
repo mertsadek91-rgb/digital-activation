@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { api, ApiError } from '../../lib/api';
+import { Nav } from '../nav';
 
 /**
  * Product list.
@@ -128,29 +129,8 @@ export default function ProductsPage() {
 
   return (
     <main className="shell">
-      <header className="bar">
-        <div>
-          <h1>المنتجات</h1>
-          <p className="who">
-            {me.name} · {me.role}
-            {me.totpEnrolled ? '' : ' · المصادقة الثنائية غير مسجّلة'}
-          </p>
-        </div>
-        <div className="actions">
-          <button type="button" className="ghost" onClick={() => router.push('/password')}>
-            كلمة المرور
-          </button>
-          <button
-            type="button"
-            className="ghost"
-            onClick={() => {
-              void api.logout().then(() => router.push('/login'));
-            }}
-          >
-            خروج
-          </button>
-        </div>
-      </header>
+      <Nav me={me} current="products" />
+      <h1>المنتجات</h1>
 
       <nav className="chips">
         {FILTERS.map((entry) => {

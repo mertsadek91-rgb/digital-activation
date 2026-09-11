@@ -9,7 +9,14 @@
  * session, only ride it, and SameSite=strict stops it doing that from anywhere
  * else.
  */
-import type { AdminProductList, Readiness, StaffLoginResult, StaffMe } from '@da/contracts';
+import type {
+  AdminProductList,
+  ImportResult,
+  Queue,
+  Readiness,
+  StaffLoginResult,
+  StaffMe,
+} from '@da/contracts';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -93,5 +100,43 @@ export const api = {
     request<{ sku: string; onHand: number; reserved: number }>(`/admin/variants/${sku}/inventory`, {
       method: 'PATCH',
       body: JSON.stringify({ onHand, reason, ...(note ? { note } : {}) }),
+    }),
+
+  // --- fulfilment ----------------------------------------------------------
+
+  queue: (includeDone: boolean) =>
+    request<Queue>(`/admin/fulfillment/queue?includeDone=${includeDone ? 'true' : 'false'}`),
+
+  /**
+   * Sends the supplier code.
+   *
+   * The code is in this request body and in the email the server sends. It is
+   * not put in a URL, a query string or anything that would end up in an
+   * access log.
+   */
+  fulfil: (orderItemId: string, code: string, costUsd?: string) =>
+    request<{ state: string; deliveredAt: string }>(
+      `/admin/fulfillment/queue/${encodeURIComponent(orderItemId)}/fulfil`,
+      { method: 'POST', body: JSON.stringify({ code, ...(costUsd ? { costUsd } : {}) }) },
+    ),
+
+  deliver: (orderItemId: string) =>
+    request<{ state: string; keys: number }>(
+      `/admin/fulfillment/queue/${encodeURIComponent(orderItemId)}/deliver`,
+      // An explicit empty object: Fastify rejects a JSON content-type with no
+      // body, and every request here carries that header.
+      { method: 'POST', body: JSON.stringify({}) },
+    ),
+
+  failLine: (orderItemId: string, reason: string) =>
+    request<{ state: string }>(`/admin/fulfillment/queue/${encodeURIComponent(orderItemId)}/fail`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  importKeys: (variantId: string, codes: string, costUsd?: string) =>
+    request<ImportResult>('/admin/fulfillment/vault/import', {
+      method: 'POST',
+      body: JSON.stringify({ variantId, codes, ...(costUsd ? { costUsd } : {}) }),
     }),
 };

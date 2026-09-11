@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
 
 /**
- * There is no admin dashboard yet, and an empty one would be a landing page
- * nobody wants: the panel opens on the products list, which bounces to the
- * sign-in screen when there is no session.
+ * The panel opens on the queue, not the catalog.
+ *
+ * That is the screen with time-sensitive work on it: every line waiting there
+ * is a customer who has already paid. Product editing can wait a minute;
+ * somebody's licence cannot.
  */
 export default function AdminHome() {
-  redirect('/products');
+  redirect('/queue');
 }
