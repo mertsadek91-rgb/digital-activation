@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 
+import { AccountModule } from './account/account.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
@@ -52,6 +53,7 @@ import { VaultModule } from './vault/vault.module.js';
     FulfillmentModule,
     AuthModule,
     AdminModule,
+    AccountModule,
   ],
   controllers: [HealthController],
 })

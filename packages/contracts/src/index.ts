@@ -8,6 +8,7 @@
  */
 export * from './primitives.js';
 export * from './blocks.js';
+export * from './account.js';
 export * from './admin.js';
 export * from './catalog.js';
 export * from './cart.js';

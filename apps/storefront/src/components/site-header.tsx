@@ -68,6 +68,9 @@ export function SiteHeader({ locale }: { locale: string }) {
           <Link href={`${prefix}${ROUTES.goldenWarranty}`}>
             {ar ? 'الضمان الذهبي' : 'Golden Warranty'}
           </Link>
+          {/* Named for what it holds, not for an account system: there is no
+              account to manage, only the licences somebody already bought. */}
+          <Link href={`${prefix}${ROUTES.licenses}`}>{ar ? 'تراخيصي' : 'My licences'}</Link>
           <Link href={ar ? '/en' : '/'} className="lang" hrefLang={ar ? 'en' : 'ar'}>
             {ar ? 'English' : 'العربية'}
           </Link>

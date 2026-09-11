@@ -1,0 +1,178 @@
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import {
+  CUSTOMER_SESSION_HOURS,
+  type CustomerMe,
+  type LicenceList,
+  exchangeLoginTokenSchema,
+  requestLoginLinkSchema,
+} from '@da/contracts';
+import { z } from 'zod';
+
+import { ZodPipe } from '../common/zod.pipe.js';
+
+import { AccountService, type CustomerActor } from './account.service.js';
+
+const SESSION_COOKIE = 'da_customer';
+
+/**
+ * The customer's own area.
+ *
+ * Every route here is behind the session cookie except the two that create
+ * one, and those two are the throttled ones: asking for a link and trading it
+ * for a session are the only places an anonymous caller can push.
+ *
+ * There is no route that lists somebody else's anything. The customer id comes
+ * from the cookie and never from a parameter, which is why none of these
+ * methods takes one.
+ */
+@ApiTags('account')
+@Controller('account')
+export class AccountController {
+  constructor(private readonly account: AccountService) {}
+
+  private actor(request: FastifyRequest, customerId: string): CustomerActor {
+    return {
+      customerId,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    };
+  }
+
+  /** Resolves the cookie or refuses. Nothing below it runs without one. */
+  private async require(request: FastifyRequest): Promise<{ customerId: string; me: CustomerMe }> {
+    const session = await this.account.sessionFor(request.cookies?.[SESSION_COOKIE]);
+    if (!session) {
+      throw new UnauthorizedException('انتهت الجلسة. اطلب رابط دخول جديداً.');
+    }
+    return session;
+  }
+
+  /**
+   * Five a minute. Generous for a person who mistyped their address, and far
+   * too few to walk a list of emails looking for which ones are customers —
+   * which the identical answer already makes pointless.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('link')
+  @ApiOperation({ summary: 'Email a single-use sign-in link' })
+  async requestLink(
+    @Body(new ZodPipe(requestLoginLinkSchema)) body: z.infer<typeof requestLoginLinkSchema>,
+    @Req() request: FastifyRequest,
+  ): Promise<{ sent: true }> {
+    await this.account.requestLink({
+      email: body.email,
+      locale: body.locale,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+    // The same answer whether or not that address has ever bought anything.
+    return { sent: true };
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('session')
+  @ApiOperation({ summary: 'Trade a link for a session cookie' })
+  async exchange(
+    @Body(new ZodPipe(exchangeLoginTokenSchema)) body: z.infer<typeof exchangeLoginTokenSchema>,
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ customer: CustomerMe }> {
+    const result = await this.account.exchange({
+      token: body.token,
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+
+    // httpOnly, so no script on the storefront can read it; SameSite=strict,
+    // so it does not travel on a cross-site request and needs no CSRF token.
+    void reply.setCookie(SESSION_COOKIE, result.sessionToken, {
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: CUSTOMER_SESSION_HOURS * 3600,
+    });
+
+    return { customer: result.customer };
+  }
+
+  @Post('sign-out')
+  @ApiOperation({ summary: 'Revoke this session' })
+  async signOut(
+    @Req() request: FastifyRequest,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ): Promise<{ ok: true }> {
+    await this.account.signOut(request.cookies?.[SESSION_COOKIE]);
+    void reply.clearCookie(SESSION_COOKIE, { path: '/' });
+    return { ok: true };
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Who this session belongs to' })
+  async me(@Req() request: FastifyRequest): Promise<CustomerMe> {
+    return (await this.require(request)).me;
+  }
+
+  @Get('licences')
+  @ApiOperation({ summary: "The customer's own licences. Never a secret." })
+  async licences(@Req() request: FastifyRequest): Promise<LicenceList> {
+    const session = await this.require(request);
+    return this.account.licences(session.customerId);
+  }
+
+  /**
+   * The one customer-facing route that returns a licence in the clear.
+   *
+   * Throttled, owned-line only, and it writes a REVEAL row to the vault's
+   * access log before the plaintext exists — the same row a member of staff
+   * reading the key would write, with the customer as the actor.
+   */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Post('licences/:orderItemId/reveal')
+  @ApiOperation({ summary: 'Show one line’s licences to the person who bought them' })
+  async reveal(@Param('orderItemId') orderItemId: string, @Req() request: FastifyRequest) {
+    const session = await this.require(request);
+    const secrets = await this.account.reveal({
+      orderItemId,
+      actor: this.actor(request, session.customerId),
+    });
+    return { secrets };
+  }
+
+  /**
+   * Sends the licence email again — to the address on the order, and no other.
+   *
+   * Usually the better answer than reading it on screen: it puts the key back
+   * where the customer expects it and shows it to nobody on the way.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('licences/:orderItemId/resend')
+  @ApiOperation({ summary: 'Re-send the licence email for one line' })
+  async resend(
+    @Param('orderItemId') orderItemId: string,
+    @Req() request: FastifyRequest,
+  ): Promise<{ to: string }> {
+    const session = await this.require(request);
+    const result = await this.account.resend({
+      orderItemId,
+      actor: this.actor(request, session.customerId),
+    });
+    if (!result.to) {
+      throw new NotFoundException('لا يوجد عنوان لإعادة الإرسال إليه.');
+    }
+    return result;
+  }
+}

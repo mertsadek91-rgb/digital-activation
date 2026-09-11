@@ -270,6 +270,44 @@ export class FulfillmentService {
   }
 
   /**
+   * Sends a licence email again, to the address on the order.
+   *
+   * The customer's own page calls this, and it is the safer of the two ways to
+   * answer "I lost my key": the plaintext goes from the vault into a message
+   * body and is shown to nobody on the way. The address is read from the order
+   * rather than accepted from the caller — a resend that could be redirected
+   * is a way to steal a licence, not a convenience.
+   *
+   * Marked RESEND in the vault's access log, with whoever asked as the actor.
+   */
+  async resendLicence(input: { orderItemId: string; actor: Actor }): Promise<{ to: string }> {
+    const item = await this.prisma.client.orderItem.findUnique({
+      where: { id: input.orderItemId },
+      select: { id: true, fulfillmentState: true, order: { select: { email: true } } },
+    });
+    if (!item) throw new NotFoundException('لا يوجد هذا السطر.');
+    if (item.fulfillmentState !== FulfillmentState.DELIVERED) {
+      throw new BadRequestException('لم يُسلَّم هذا السطر بعد.');
+    }
+
+    const opened = await this.vault.openForDelivery({
+      orderItemId: item.id,
+      actor: input.actor,
+    });
+    const sent = await this.emailLicence({
+      orderItemId: item.id,
+      secrets: opened.map((entry) => entry.secret),
+    });
+    if (!sent.ok) {
+      throw new BadRequestException(
+        `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). حاول بعد قليل.`,
+      );
+    }
+
+    return { to: item.order.email };
+  }
+
+  /**
    * What a variant is sold as.
    *
    * Lives here rather than in the vault because the vault has no visibility of

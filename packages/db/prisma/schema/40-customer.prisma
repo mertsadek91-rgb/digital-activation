@@ -45,6 +45,7 @@ model Customer {
 
   addresses     CustomerAddress[]
   sessions      CustomerSession[]
+  loginTokens   CustomerLoginToken[]
   carts         Cart[]
   orders        Order[]
   reviews       Review[]
@@ -99,6 +100,36 @@ model CustomerAddress {
   updatedAt DateTime @updatedAt
 
   @@index([customerId])
+  @@schema("public")
+}
+
+/// A single-use sign-in link, emailed to the address on the order.
+///
+/// There is no customer password in this flow and that is deliberate. Every
+/// order here is a guest order, the 218 migrated WordPress customers arrived
+/// with no hash, and the licence was delivered to this mailbox in the first
+/// place — so control of the mailbox is exactly the bar that already handed
+/// the key over. A password would add a secret to steal without raising that
+/// bar. (`Customer.passwordHash` stays in the schema for a future portal that
+/// needs more than reading licences.)
+///
+/// Only the hash is stored, so a database read cannot mint a link. Fifteen
+/// minutes, one use, and the row is kept after use as the record that the
+/// link was redeemed.
+model CustomerLoginToken {
+  id         String   @id @default(cuid())
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String
+  tokenHash  String   @unique
+  /// Where the request came from, so a burst is traceable.
+  ip         String?
+  userAgent  String?
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([customerId, createdAt])
+  @@index([expiresAt])
   @@schema("public")
 }
 

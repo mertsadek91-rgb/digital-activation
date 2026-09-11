@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 
 import type { CredentialKind, SecretInput } from '@da/contracts';
-import { KeyAccessAction, LicenseKeyState, Prisma } from '@da/db';
+import { ActorType, KeyAccessAction, LicenseKeyState, Prisma } from '@da/db';
 
 import { type ParsedSecret, canonical, fieldCount, parse } from './credential.js';
 import { KekService, fingerprint, open, seal } from './kek.js';
@@ -23,9 +23,19 @@ import { VaultPrismaService } from './vault-prisma.service.js';
 export const STEP_UP_WINDOW_SECONDS = 15 * 60;
 
 export interface Actor {
+  /** The staff id, or the customer id when `kind` says CUSTOMER. */
   staffId: string;
   /** Unix seconds of the session's last TOTP challenge. */
   totpAt: number;
+  /**
+   * Who is asking.
+   *
+   * Defaults to staff, which is every caller but one. A customer reading their
+   * own licence writes the same REVEAL row as a member of staff reading it —
+   * the difference belongs in the log rather than in a second log, because
+   * "who has seen this key" has to be answerable from one place.
+   */
+  kind?: ActorType | undefined;
   ip?: string | undefined;
   userAgent?: string | undefined;
 }
@@ -418,6 +428,72 @@ export class VaultService {
   }
 
   /**
+   * Opens the licences on one line for the customer who bought it.
+   *
+   * Separate from `reveal` because the guard is different, not because the act
+   * is: there is no TOTP challenge to be fresh here, and the thing standing in
+   * front of it is the caller's own ownership check — this method trusts that
+   * the line belongs to the actor and must never be reachable from a route
+   * that has not proved it.
+   *
+   * What it does keep is the ordering: the access row is written before the
+   * plaintext exists. And it refuses a key that is not delivered yet; a
+   * customer reading a key still sitting in stock would be reading somebody
+   * else's inventory.
+   */
+  async revealForCustomer(input: { orderItemId: string; actor: Actor }): Promise<ParsedSecret[]> {
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: {
+        orderItemId: input.orderItemId,
+        state: { in: [LicenseKeyState.DELIVERED, LicenseKeyState.ASSIGNED] },
+      },
+    });
+    if (rows.length === 0) {
+      throw new NotFoundException('لا يوجد مفتاح جاهز على هذا البند بعد.');
+    }
+
+    const opened: ParsedSecret[] = [];
+    for (const row of rows) {
+      await this.log(row.id, KeyAccessAction.REVEAL, input.actor);
+      opened.push(parse(row.kind, await open(row, this.kek)));
+    }
+    return opened;
+  }
+
+  /** Whether a line has anything readable, without opening it. */
+  async hasReadableSecret(orderItemIds: string[]): Promise<Set<string>> {
+    if (orderItemIds.length === 0) return new Set();
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: {
+        orderItemId: { in: orderItemIds },
+        state: { in: [LicenseKeyState.DELIVERED, LicenseKeyState.ASSIGNED] },
+      },
+      select: { orderItemId: true, expiresAt: true },
+    });
+    return new Set(rows.map((row) => row.orderItemId).filter((id): id is string => id !== null));
+  }
+
+  /**
+   * The activation deadline on a line's keys, if any.
+   *
+   * Read separately from the key itself because it is not a secret: a customer
+   * has to know a licence must be activated before a date whether or not they
+   * ever click to read it.
+   */
+  async deadlines(orderItemIds: string[]): Promise<Map<string, Date>> {
+    if (orderItemIds.length === 0) return new Map();
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: { orderItemId: { in: orderItemIds }, expiresAt: { not: null } },
+      select: { orderItemId: true, expiresAt: true },
+    });
+    const out = new Map<string, Date>();
+    for (const row of rows) {
+      if (row.orderItemId && row.expiresAt) out.set(row.orderItemId, row.expiresAt);
+    }
+    return out;
+  }
+
+  /**
    * Takes a key out of circulation.
    *
    * A revoked key is never deleted. The row is the only evidence that it
@@ -469,6 +545,7 @@ export class VaultService {
         licenseKeyId,
         action,
         actorId: actor.staffId,
+        actorType: actor.kind ?? ActorType.STAFF,
         ip: actor.ip ?? null,
         userAgent: actor.userAgent ?? null,
         approvedById: approvedById ?? null,

@@ -350,6 +350,71 @@ ${button(input.orderUrl, 'Your order')}`;
 }
 
 /**
+ * The sign-in link for the customer's own licences.
+ *
+ * Deliberately dull, and it says three things: what it opens, how long it
+ * lasts, and that ignoring it is safe. An email that arrives unasked and reads
+ * urgently is the shape of a phishing message, and the customers of a store
+ * that sells activation keys are exactly the people who should be suspicious
+ * of one.
+ *
+ * The link is also printed as text beside the button. Some clients strip the
+ * button, and a sign-in email whose only affordance did not render is a
+ * support ticket.
+ */
+export function accountLink(input: {
+  locale: 'ar' | 'en';
+  url: string;
+  minutes: number;
+  supportEmail: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">رابط الدخول إلى تراخيصك</h1>
+<p>اضغط الزر لعرض المفاتيح والحسابات التي اشتريتها، وخطوات تفعيل كل واحد منها.</p>
+${button(input.url, 'اعرض تراخيصي')}
+<p style="color:${MUTED};font-size:13px;">الرابط يعمل لمرّة واحدة ولمدّة ${String(input.minutes)} دقيقة. إن لم تطلبه أنت، تجاهل هذه الرسالة — لن يتغيّر شيء في حسابك.</p>
+<p style="color:${MUTED};font-size:13px;word-break:break-all;" dir="ltr">${escape(input.url)}</p>`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">Your sign-in link</h1>
+<p>Open your licences to see the keys and accounts you bought, and how to activate each one.</p>
+${button(input.url, 'View my licences')}
+<p style="color:${MUTED};font-size:13px;">The link works once and for ${String(input.minutes)} minutes. If you did not ask for it, ignore this email — nothing about your account changes.</p>
+<p style="color:${MUTED};font-size:13px;word-break:break-all;" dir="ltr">${escape(input.url)}</p>`;
+
+  const text = ar
+    ? [
+        'رابط الدخول إلى تراخيصك:',
+        input.url,
+        '',
+        `يعمل لمرّة واحدة ولمدّة ${String(input.minutes)} دقيقة.`,
+        'إن لم تطلبه أنت، تجاهل هذه الرسالة.',
+        `الدعم: ${input.supportEmail}`,
+      ].join('\n')
+    : [
+        'Your sign-in link:',
+        input.url,
+        '',
+        `It works once and for ${String(input.minutes)} minutes.`,
+        'If you did not ask for it, ignore this email.',
+        `Support: ${input.supportEmail}`,
+      ].join('\n');
+
+  return {
+    subject: ar ? 'رابط الدخول إلى تراخيصك' : 'Your sign-in link',
+    html: shell({
+      locale: input.locale,
+      title: 'Sign-in link',
+      body,
+      footerNote: ar
+        ? 'لا نطلب منك كلمة مرور أبداً. الدخول يكون برابط يُرسَل إلى بريدك فقط.'
+        : 'We never ask you for a password. Signing in is always a link sent to your email.',
+    }),
+    text,
+  };
+}
+
+/**
  * Something went wrong with one line, and the customer is told before they ask.
  *
  * Sent when a line is marked failed. It names what failed and what happens
