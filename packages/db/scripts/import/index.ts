@@ -36,6 +36,7 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '..', '.env'), quiet: tru
 
 import {
   ActivationMethod,
+  type FulfillmentMode,
   LicensePeriodUnit,
   Locale,
   type Platform,
@@ -46,12 +47,14 @@ import {
   ACTIVATION_METHOD,
   BRAND_SLUG,
   CATEGORY_SLUG,
+  classifyFulfillment,
   classifyKind,
   classifyPlatform,
   DELIVERY_SLA_SECONDS,
   DEVICE_COUNT,
   LICENSE_PERIOD,
   refineActivationFromTitle,
+  requiresActivationEmail,
 } from './normalize.js';
 import {
   arabicProductName,
@@ -179,15 +182,27 @@ interface NormalizedVariant {
   priceUsd: string;
   stock: number;
   sku: string | null;
+  fulfillmentMode: FulfillmentMode;
+  requiresActivationEmail: boolean;
+  /** True when the row carries no price and imports only to be visible. */
+  needsPrice: boolean;
 }
 
 function normalizeVariant(legacy: LegacyProduct): NormalizedVariant | null {
   const label = `${legacy.id} "${legacy.title.slice(0, 46)}"`;
 
+  // A row with no price used to be dropped, which made it invisible: the only
+  // trace was a line in this report, and nobody reads a report for a product
+  // they have forgotten exists. It now imports at zero, as a draft the
+  // readiness gate already refuses to publish ("a variant is priced at zero"),
+  // so the gap shows up in the admin panel where the fix belongs.
   const rawPrice = (legacy.meta._regular_price || legacy.meta._price || '').trim();
-  if (!rawPrice || Number.isNaN(Number(rawPrice))) {
-    problem('no price', `${label} — skipped, a product without a price cannot be sold`);
-    return null;
+  const needsPrice = !rawPrice || Number.isNaN(Number(rawPrice));
+  if (needsPrice) {
+    problem(
+      'no price',
+      `${label} — imported at 0.00 and blocked from publishing until it is priced`,
+    );
   }
 
   const rawPeriod = (legacy.meta.license_period ?? '').trim();
@@ -206,26 +221,53 @@ function normalizeVariant(legacy: LegacyProduct): NormalizedVariant | null {
   }
 
   if (!period) {
-    problem('licence period', `${label} — unmapped period ${JSON.stringify(rawPeriod)}`);
-    return null;
+    // An empty period is a row nobody finished filling in, not a row to drop.
+    // It imports as LIFETIME, which is the commonest term in this catalog, and
+    // the gap is reported — the product is already unpublishable for want of a
+    // price, so nothing wrong can reach a customer.
+    if (rawPeriod === '') {
+      period = { value: null, unit: LicensePeriodUnit.LIFETIME };
+      problem('licence period', `${label} — no period set; imported as LIFETIME, confirm the term`);
+    } else {
+      problem('licence period', `${label} — unmapped period ${JSON.stringify(rawPeriod)}`);
+      return null;
+    }
   }
 
   const rawDevices = (legacy.meta.no_of_devices ?? '').trim();
-  const devices = DEVICE_COUNT[rawDevices];
+  let devices = DEVICE_COUNT[rawDevices];
+  if (!devices && rawDevices === '') {
+    devices = { count: 1 };
+    problem('device count', `${label} — no device count set; imported as 1, confirm it`);
+  }
   if (!devices) {
     problem('device count', `${label} — unmapped devices ${JSON.stringify(rawDevices)}`);
     return null;
   }
 
   const rawActivation = (legacy.meta.activation_method ?? '').trim();
-  const activation = ACTIVATION_METHOD[rawActivation];
+  let activation = ACTIVATION_METHOD[rawActivation];
+  if (!activation && rawActivation === '') {
+    activation = ActivationMethod.RETAIL_ONLINE;
+    problem(
+      'activation',
+      `${label} — no activation method set; imported as RETAIL_ONLINE, confirm it`,
+    );
+  }
   if (!activation) {
     problem('activation', `${label} — unmapped method ${JSON.stringify(rawActivation)}`);
     return null;
   }
 
   const rawDelivery = (legacy.meta.delivery ?? '').trim();
-  const sla = DELIVERY_SLA_SECONDS[rawDelivery];
+  let sla = DELIVERY_SLA_SECONDS[rawDelivery];
+  if (sla === undefined && rawDelivery === '') {
+    // Six hours, not a minute. An unfinished row must not inherit the fastest
+    // promise in the catalog — an SLA is something a customer is told, and
+    // guessing generously is a guess the store has to keep.
+    sla = 6 * 3600;
+    problem('delivery', `${label} — no delivery time set; imported as 6 hours, confirm it`);
+  }
   if (sla === undefined) {
     problem('delivery', `${label} — unmapped delivery ${JSON.stringify(rawDelivery)}`);
     return null;
@@ -239,9 +281,15 @@ function normalizeVariant(legacy: LegacyProduct): NormalizedVariant | null {
     platform: devices.platform ?? classifyPlatform(legacy.title),
     activationMethod: refineActivationFromTitle(legacy.title, activation),
     deliverySlaSeconds: sla,
-    priceUsd: Number(rawPrice).toFixed(2),
+    priceUsd: needsPrice ? '0.00' : Number(rawPrice).toFixed(2),
+    // Stock only means something for a line held in hand. WooCommerce left
+    // `_stock` blank on the 91 made-to-order rows, and reading that as zero is
+    // what turned "made to order" into "out of stock".
     stock: Number.parseInt(legacy.meta._stock || '0', 10) || 0,
     sku: legacy.meta._sku?.trim() || null,
+    fulfillmentMode: classifyFulfillment(legacy.meta),
+    requiresActivationEmail: requiresActivationEmail(legacy.meta),
+    needsPrice,
   };
 }
 
@@ -308,6 +356,12 @@ async function main(): Promise<void> {
   let productsWritten = 0;
   let variantsWritten = 0;
   let variantsSkipped = 0;
+  const byMode: Record<FulfillmentMode, number> = {
+    FROM_STOCK: 0,
+    ON_DEMAND: 0,
+    MANUAL_SETUP: 0,
+  };
+  let needsEmail = 0;
 
   // Two rows can reduce to the same variant descriptor — that is the
   // "duplicate config" case reported below. Their generated SKUs would then
@@ -412,6 +466,11 @@ async function main(): Promise<void> {
       0,
     );
 
+    for (const variant of normalized) {
+      byMode[variant.fulfillmentMode] += 1;
+      if (variant.requiresActivationEmail) needsEmail += 1;
+    }
+
     if (!apply) {
       productsWritten += 1;
       variantsWritten += normalized.length;
@@ -509,6 +568,8 @@ async function main(): Promise<void> {
           platform: variant.platform,
           activationMethod: variant.activationMethod,
           deliverySlaSeconds: variant.deliverySlaSeconds,
+          fulfillmentMode: variant.fulfillmentMode,
+          requiresActivationEmail: variant.requiresActivationEmail,
           priceUsd: variant.priceUsd,
           isDefault: index === 0,
           position: index,
@@ -522,6 +583,8 @@ async function main(): Promise<void> {
           platform: variant.platform,
           activationMethod: variant.activationMethod,
           deliverySlaSeconds: variant.deliverySlaSeconds,
+          fulfillmentMode: variant.fulfillmentMode,
+          requiresActivationEmail: variant.requiresActivationEmail,
           priceUsd: variant.priceUsd,
           isDefault: index === 0,
           position: index,
@@ -530,11 +593,18 @@ async function main(): Promise<void> {
       });
       variantsWritten += 1;
 
-      await prisma.inventoryLevel.upsert({
-        where: { variantId: saved.id },
-        update: { onHand: Math.max(0, variant.stock) },
-        create: { variantId: saved.id, onHand: Math.max(0, variant.stock) },
-      });
+      // Inventory is written only for a line held in hand. An on-demand
+      // variant gets no row at all, so nothing can read a blank `_stock` as
+      // zero and call a made-to-order product sold out.
+      if (variant.fulfillmentMode === 'FROM_STOCK') {
+        await prisma.inventoryLevel.upsert({
+          where: { variantId: saved.id },
+          update: { onHand: Math.max(0, variant.stock) },
+          create: { variantId: saved.id, onHand: Math.max(0, variant.stock) },
+        });
+      } else {
+        await prisma.inventoryLevel.deleteMany({ where: { variantId: saved.id } });
+      }
 
       // The 301 map is generated from these rows at cutover.
       await prisma.legacyMap.upsert({
@@ -565,6 +635,10 @@ async function main(): Promise<void> {
   if (variantsSkipped > 0) {
     console.log(`${variantsSkipped} legacy rows skipped — see the report below`);
   }
+  console.log(
+    `fulfilment: ${String(byMode.FROM_STOCK)} from stock, ${String(byMode.ON_DEMAND)} on demand, ` +
+      `${String(byMode.MANUAL_SETUP)} manual setup — ${String(needsEmail)} need the customer's activation email`,
+  );
 
   if (problems.length > 0) {
     const byKind = new Map<string, string[]>();

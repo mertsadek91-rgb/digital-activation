@@ -18,7 +18,13 @@
  * A silent default here would bake a wrong licence term into a product page,
  * and the customer would find out after paying.
  */
-import { ActivationMethod, LicensePeriodUnit, Platform, ProductKind } from '../../src/index.js';
+import {
+  ActivationMethod,
+  type FulfillmentMode,
+  LicensePeriodUnit,
+  Platform,
+  ProductKind,
+} from '../../src/index.js';
 
 export interface LicensePeriod {
   value: number | null;
@@ -154,6 +160,72 @@ export const DELIVERY_SLA_SECONDS: Record<string, number> = {
   'يتم التسليم على الايميل الذي يتم تزويدنا به': 6 * 3600,
   'تنصيب وتفعيل الإضافة على موقعك': 24 * 3600,
 };
+
+/**
+ * How each legacy row is fulfilled, read from WooCommerce rather than guessed.
+ *
+ * `_manage_stock` is the honest signal: the owner switched inventory tracking
+ * on for exactly the nine lines held in hand and left it off for the other 91,
+ * which are bought from a supplier once the customer has paid. That is not a
+ * gap in the old data — it is the old data recording the real business, and
+ * treating every row as stock-backed is what made 67 products read "out of
+ * stock" when they were never out of stock.
+ */
+export function classifyFulfillment(meta: Record<string, string>): FulfillmentMode {
+  // Stock in hand wins, and the order of these two checks is the whole point.
+  // Doing it the other way round classified the Office 365 accounts as manual
+  // setup because their activation is "a ready subscription" — and dropped the
+  // fifteen of them the owner actually holds. How a licence is used describes
+  // it; having fifteen on the shelf is a fact about it.
+  if ((meta._manage_stock ?? 'no') === 'yes') return 'FROM_STOCK';
+
+  const activation = (meta.activation_method ?? '').trim();
+  const delivery = (meta.delivery ?? '').trim();
+
+  // A person has to prepare these: an account made with the customer's own
+  // address, a panel invitation, an installation on their site. No amount of
+  // stock would make them instant.
+  if (MANUAL_SETUP_MARKERS.some((marker) => activation.includes(marker))) {
+    return 'MANUAL_SETUP';
+  }
+  if (delivery.includes('تنصيب')) return 'MANUAL_SETUP';
+
+  return 'ON_DEMAND';
+}
+
+const MANUAL_SETUP_MARKERS = [
+  'حساب جاهز',
+  'أشتراك جاهز',
+  'حساب Canva Edu',
+  'دعوة لحساب',
+  'بانل تفعيل',
+  'تفعيل يدوي',
+  'يتم تفعيل الاضافة',
+];
+
+/**
+ * Activations that bind to an address the customer supplies.
+ *
+ * Seventeen legacy rows say so in their own words — "on your own email", "on
+ * the email you provide us", or a Microsoft/Canva account binding. Ordering one
+ * of these without asking for that address produces a key nobody can use, so
+ * checkout has to collect it.
+ */
+export function requiresActivationEmail(meta: Record<string, string>): boolean {
+  const haystack = `${meta.activation_method ?? ''} ${meta.delivery ?? ''}`;
+  // Only the bindings that genuinely need an address from the customer. A
+  // "ready account" is credentials the seller creates and hands over, so it
+  // needs nothing — and asking for an activation email there would add a field
+  // to checkout that has no purpose, on fourteen products.
+  return [
+    'الايميل الخاص بكم',
+    'الايميل الذي تم تزويدنا به',
+    'الايميل الذي يتم تزويدنا به',
+    'مرتبط بحساب مايكروسوفت',
+    'Bind Key',
+    'دعوة لحساب',
+  ].some((marker) => haystack.includes(marker));
+}
 
 /** Legacy product_cat name -> new Latin category slug. */
 export const CATEGORY_SLUG: Record<string, string> = {

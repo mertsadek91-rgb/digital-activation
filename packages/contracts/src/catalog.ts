@@ -33,6 +33,19 @@ export const activationMethodSchema = z.enum([
 export const productKindSchema = z.enum(['KEY', 'ACCOUNT', 'PANEL', 'BUNDLE', 'SERVICE']);
 
 /**
+ * How a line is delivered, which decides whether stock means anything.
+ *
+ * Most of this catalog is made to order — the licence is bought from a supplier
+ * after the customer pays, because a code's validity starts on purchase, some
+ * activations bind to the customer's own email, and the expensive lines would
+ * tie up money that does not turn over. So ON_DEMAND and MANUAL_SETUP variants
+ * are always sellable and "out of stock" is a state they cannot be in; only
+ * FROM_STOCK consults inventory.
+ */
+export const fulfillmentModeSchema = z.enum(['FROM_STOCK', 'ON_DEMAND', 'MANUAL_SETUP']);
+export type FulfillmentMode = z.infer<typeof fulfillmentModeSchema>;
+
+/**
  * The price as the visitor sees it. Both fields travel together and are handed
  * to the structured-data builder unchanged, so the markup cannot claim a
  * currency the page did not render.
@@ -57,9 +70,20 @@ export const catalogVariantSchema = z.object({
   platform: platformSchema,
   activationMethod: activationMethodSchema,
   deliverySlaSeconds: z.number().int().min(0),
+  fulfillmentMode: fulfillmentModeSchema,
+  /**
+   * True when the licence binds to an address the customer supplies, so
+   * checkout has to ask for it. A key issued against the wrong address is a
+   * key nobody can use.
+   */
+  requiresActivationEmail: z.boolean(),
   price: displayPriceSchema,
-  /** Sellable count: on hand minus reservations. */
-  available: z.number().int().min(0),
+  /**
+   * Sellable count for a stocked line: on hand minus reservations. Null when
+   * the variant is made to order, where a number would be an invention — the
+   * supply is the supplier's, not a shelf we can count.
+   */
+  available: z.number().int().min(0).nullable(),
   inStock: z.boolean(),
   isDefault: z.boolean(),
 });
@@ -121,8 +145,13 @@ export const catalogCardSchema = z.object({
   image: catalogImageSchema.nullable(),
   price: displayPriceSchema,
   inStock: z.boolean(),
-  /** Lowest sellable stock across variants, for the "only N left" line. */
-  available: z.number().int().min(0),
+  /**
+   * Sellable stock across the stocked variants, for the "only N left" line.
+   * Null when nothing on this product is stocked, which is the usual case.
+   */
+  available: z.number().int().min(0).nullable(),
+  /** The fastest mode on the product, which is what the card promises. */
+  fulfillmentMode: fulfillmentModeSchema,
   variantCount: z.number().int().min(1),
   hasGoldenWarranty: z.boolean(),
   salesCount: z.number().int().min(0),

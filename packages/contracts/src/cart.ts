@@ -4,6 +4,7 @@ import {
   activationMethodSchema,
   catalogImageSchema,
   displayPriceSchema,
+  fulfillmentModeSchema,
   licensePeriodUnitSchema,
 } from './catalog.js';
 import { localeSchema, moneySchema, slugSchema } from './primitives.js';
@@ -52,6 +53,9 @@ export const cartLineSchema = z.object({
   deviceCount: z.number().int().min(0),
   activationMethod: activationMethodSchema,
   deliverySlaSeconds: z.number().int().min(0),
+  fulfillmentMode: fulfillmentModeSchema,
+  /** Checkout must collect the address this licence binds to. */
+  requiresActivationEmail: z.boolean(),
 
   image: catalogImageSchema.nullable(),
 
@@ -69,7 +73,8 @@ export const cartLineSchema = z.object({
   /**
    * How many more of this variant the cart could add. Not the same as stock:
    * this cart's own quantity is already held, so what is reported is the
-   * headroom above it — which is what the "+" button needs to know.
+   * headroom above it — which is what the "+" button needs to know. For a
+   * made-to-order line it is simply the room left under the per-line cap.
    */
   availableToAdd: z.number().int().min(0),
   /** True when the line was added from a checkout cross-sell offer. */

@@ -17,7 +17,14 @@ import { formatPrice } from '../lib/format';
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
   const ar = locale === 'ar';
   const href = locale === 'ar' ? `/store/${card.slug}` : `/${locale}/store/${card.slug}`;
-  const lowStock = card.inStock && card.available > 0 && card.available <= LOW_STOCK_THRESHOLD;
+  // "Only N left" is a claim about a shelf, so it appears only where there is
+  // one. A made-to-order product reports no count, and inventing urgency for
+  // it would be the same trick as the 565 reviews nobody wrote.
+  const lowStock =
+    card.inStock &&
+    card.available !== null &&
+    card.available > 0 &&
+    card.available <= LOW_STOCK_THRESHOLD;
 
   return (
     <article className="card">
@@ -78,10 +85,20 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             {card.inStock ? (
               lowStock ? (
                 <span className="stock stock-low">
-                  {ar ? `بقي ${String(card.available)}` : `Only ${String(card.available)} left`}
+                  {ar
+                    ? `بقي ${String(card.available ?? 0)}`
+                    : `Only ${String(card.available ?? 0)} left`}
                 </span>
               ) : (
-                <span className="stock stock-in">{ar ? 'متوفر' : 'In stock'}</span>
+                <span className="stock stock-in">
+                  {card.fulfillmentMode === 'FROM_STOCK'
+                    ? ar
+                      ? 'متوفر فوراً'
+                      : 'In stock'
+                    : ar
+                      ? 'متاح للطلب'
+                      : 'Available to order'}
+                </span>
               )
             ) : (
               <span className="stock stock-out">{ar ? 'غير متوفر' : 'Out of stock'}</span>

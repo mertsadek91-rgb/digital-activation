@@ -12,6 +12,7 @@ import { getProduct } from '../../../../lib/api';
 import {
   formatActivation,
   formatDelivery,
+  formatFulfillment,
   formatDevices,
   formatLicensePeriod,
   formatPrice,
@@ -65,7 +66,8 @@ export default async function ProductPage({ params }: Props) {
 
   const prefix = ar ? '' : `/${locale}`;
   const pageUrl = new URL(`${prefix}${ROUTES.product(slug)}`, SITE_URL).toString();
-  const lowStock = selected.inStock && selected.available <= LOW_STOCK_THRESHOLD;
+  const lowStock =
+    selected.inStock && selected.available !== null && selected.available <= LOW_STOCK_THRESHOLD;
 
   /**
    * The price handed to the structured data is the same object the page
@@ -215,8 +217,28 @@ export default async function ProductPage({ params }: Props) {
             </div>
             <div>
               <dt>{ar ? 'التسليم' : 'Delivery'}</dt>
-              <dd>{formatDelivery(selected.deliverySlaSeconds, locale)}</dd>
+              <dd>
+                {formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode)}
+              </dd>
             </div>
+            {/* How the licence is supplied, said plainly. Most of this catalog
+                is ordered from a supplier after purchase, and the reason —
+                that a code's term starts the moment it is bought — is the
+                reason a buyer should prefer it, not something to hide. */}
+            <div>
+              <dt>{ar ? 'طريقة التوريد' : 'How it is supplied'}</dt>
+              <dd>{formatFulfillment(selected.fulfillmentMode, locale)}</dd>
+            </div>
+            {selected.requiresActivationEmail ? (
+              <div>
+                <dt>{ar ? 'مطلوب منك' : 'We will need'}</dt>
+                <dd>
+                  {ar
+                    ? 'البريد الإلكتروني الذي تريد تفعيل الترخيص عليه — نطلبه عند الدفع'
+                    : 'The email address the licence should be activated on — asked at checkout'}
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt>{ar ? 'المنصّة' : 'Platform'}</dt>
               <dd>{selected.platform.replace('_', ' ').toLowerCase()}</dd>
@@ -234,8 +256,8 @@ export default async function ProductPage({ params }: Props) {
               {lowStock ? (
                 <p className="stock stock-low">
                   {ar
-                    ? `بقي ${String(selected.available)} فقط`
-                    : `Only ${String(selected.available)} left`}
+                    ? `بقي ${String(selected.available ?? 0)} فقط`
+                    : `Only ${String(selected.available ?? 0)} left`}
                 </p>
               ) : null}
               <button type="button" className="buy">

@@ -1,4 +1,4 @@
-import type { CatalogVariant, DisplayPrice } from '@da/contracts';
+import type { CatalogVariant, DisplayPrice, FulfillmentMode } from '@da/contracts';
 
 /**
  * Presentation helpers.
@@ -61,17 +61,59 @@ export function formatDevices(count: number, locale: string): string {
   return count === 1 ? '1 device' : `${String(count)} devices`;
 }
 
-/** The delivery promise, stated in the units a buyer thinks in. */
-export function formatDelivery(seconds: number, locale: string): string {
+/**
+ * The delivery promise, stated in the units a buyer thinks in.
+ *
+ * "Instant" is reserved for a key that is already held. Most of this catalog
+ * is bought from a supplier after the order arrives, and calling that instant
+ * would be a promise the store cannot keep — so a made-to-order line states
+ * the window and says it starts from the moment of purchase, which is the
+ * thing the buyer actually wants to know.
+ */
+export function formatDelivery(
+  seconds: number,
+  locale: string,
+  mode: FulfillmentMode = 'FROM_STOCK',
+): string {
   const ar = locale === 'ar';
-  if (seconds <= 120) return ar ? 'تسليم فوري' : 'Instant delivery';
-  if (seconds < 3600) {
-    const minutes = Math.round(seconds / 60);
-    return ar ? `خلال ${String(minutes)} دقيقة` : `Within ${String(minutes)} minutes`;
+  const fromStock = mode === 'FROM_STOCK';
+
+  if (seconds <= 120) {
+    if (fromStock) return ar ? 'تسليم فوري' : 'Instant delivery';
+    // The supplier is fast, but a person still places the order.
+    return ar ? 'تسليم سريع بعد الشراء' : 'Fast delivery after purchase';
   }
-  const hours = Math.round(seconds / 3600);
-  if (ar) return hours === 1 ? 'خلال ساعة' : `خلال ${String(hours)} ساعات`;
-  return hours === 1 ? 'Within an hour' : `Within ${String(hours)} hours`;
+
+  const window =
+    seconds < 3600
+      ? ar
+        ? `${String(Math.round(seconds / 60))} دقيقة`
+        : `${String(Math.round(seconds / 60))} minutes`
+      : (() => {
+          const hours = Math.round(seconds / 3600);
+          if (ar) return hours === 1 ? 'ساعة' : `${String(hours)} ساعات`;
+          return hours === 1 ? 'an hour' : `${String(hours)} hours`;
+        })();
+
+  if (fromStock) return ar ? `خلال ${window}` : `Within ${window}`;
+  return ar ? `خلال ${window} من إتمام الشراء` : `Within ${window} of purchase`;
+}
+
+/** How the store describes the way a line is supplied. */
+export function formatFulfillment(mode: FulfillmentMode, locale: string): string {
+  const ar = locale === 'ar';
+  switch (mode) {
+    case 'FROM_STOCK':
+      return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
+    case 'ON_DEMAND':
+      return ar
+        ? 'يُطلَب من المورّد بعد الشراء، حتى لا تبدأ مدّة الترخيص قبل أن تستخدمه'
+        : 'Ordered from the supplier after purchase, so the licence term does not start before you use it';
+    case 'MANUAL_SETUP':
+      return ar
+        ? 'يُجهَّز يدوياً على بياناتك بعد الشراء'
+        : 'Prepared by hand against your own details after purchase';
+  }
 }
 
 const ACTIVATION_AR: Record<string, string> = {

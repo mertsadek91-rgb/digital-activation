@@ -130,6 +130,13 @@ model Order {
   billingCountry String?
   billingJson    Json?
 
+  /// The address a licence must be activated against, when it binds to one.
+  /// Twenty-six variants activate on an address the customer supplies — their
+  /// own email, or a Microsoft or Canva account — and it is not always the
+  /// address they ordered from. Issuing a key against the wrong one produces a
+  /// licence nobody can use and a supplier order that cannot be undone.
+  activationEmail String?
+
   ip        String?
   userAgent String?
 

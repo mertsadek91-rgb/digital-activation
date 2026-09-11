@@ -1,4 +1,4 @@
-import { type Prisma, StockReservationState } from '@da/db';
+import { FulfillmentMode, type Prisma, StockReservationState } from '@da/db';
 
 /**
  * Stock holds.
@@ -22,6 +22,11 @@ import { type Prisma, StockReservationState } from '@da/db';
  *
  *  3. Expired reservations are swept before anything is counted, so a lapsed
  *     hold never keeps a sellable key off the shelf.
+ *
+ * None of it applies to most of the catalog. Only a FROM_STOCK variant has a
+ * shelf; an ON_DEMAND or MANUAL_SETUP line is bought from a supplier after the
+ * customer pays, so there is nothing to hold and nothing to run out of. Those
+ * are granted whatever is asked for.
  */
 
 /** A Prisma client or a transaction handle — the lock needs the transaction. */
@@ -97,6 +102,18 @@ export async function hold(
   input: { variantId: string; cartId: string; qty: number; ttlMinutes: number },
 ): Promise<Hold> {
   const { variantId, cartId, qty, ttlMinutes } = input;
+
+  const variant = await tx.variant.findUnique({
+    where: { id: variantId },
+    select: { fulfillmentMode: true },
+  });
+
+  // Made to order: no shelf, no hold, no ceiling. Taking a reservation here
+  // would invent a limit the business does not have, and refusing the line
+  // would make four fifths of the catalog unbuyable.
+  if (variant && variant.fulfillmentMode !== FulfillmentMode.FROM_STOCK) {
+    return { granted: qty, requested: qty, availableAfter: qty };
+  }
 
   const onHand = await lockInventory(tx, variantId);
   await sweepExpired(tx, variantId);

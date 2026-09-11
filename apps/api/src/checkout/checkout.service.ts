@@ -11,6 +11,8 @@ import {
 } from '@da/contracts';
 import {
   CartStage,
+  FulfillmentMode,
+  FulfillmentState,
   Locale,
   OrderStatus,
   Prisma,
@@ -103,6 +105,19 @@ export class CheckoutService {
       );
     }
 
+    // Refused, not guessed. A licence issued against the wrong address is a
+    // key nobody can use and a supplier order that cannot be reversed, so the
+    // checkout stops here rather than quietly using the order email.
+    const bindingLines = fresh.items.filter((item) => item.variant.requiresActivationEmail);
+    const activationEmailRequired = bindingLines.length > 0;
+    if (activationEmailRequired && !input.activationEmail) {
+      throw new BadRequestException(
+        `يجب تحديد البريد الإلكتروني الذي يُفعَّل عليه الترخيص لـ: ${bindingLines
+          .map((item) => item.variant.sku)
+          .join('، ')}`,
+      );
+    }
+
     const locale = this.localeFor(query);
     const customer = await this.upsertCustomer(input, locale, query.currency);
 
@@ -137,6 +152,7 @@ export class CheckoutService {
       billingCompany: input.company ?? null,
       billingVat: input.vatNumber ?? null,
       billingCountry: input.country ?? null,
+      activationEmail: activationEmailRequired ? (input.activationEmail ?? null) : null,
       ip: context.ip ?? null,
       userAgent: context.userAgent ?? null,
     };
@@ -195,6 +211,7 @@ export class CheckoutService {
         fresh.items.map((item) => item.variantId),
         query,
       ),
+      activationEmailRequired,
     };
   }
 
@@ -230,6 +247,14 @@ export class CheckoutService {
           qty: item.qty,
           unitPriceUsd: item.unitPriceUsd,
           lineTotalUsd: item.unitPriceUsd.times(item.qty),
+          // A made-to-order line has no key to assign: somebody has to place
+          // the supplier order. Starting it in MANUAL_QUEUE puts it on a
+          // person's list instead of waiting for an automation that would
+          // never find a key to hand over.
+          fulfillmentState:
+            item.variant.fulfillmentMode === FulfillmentMode.FROM_STOCK
+              ? FulfillmentState.PENDING
+              : FulfillmentState.MANUAL_QUEUE,
         },
       });
     }
@@ -466,6 +491,7 @@ export class CheckoutService {
       number: order.number,
       status: order.status,
       email: order.email,
+      activationEmail: order.activationEmail,
       locale: order.locale === Locale.EN ? 'en' : 'ar',
       currency: query.currency,
       lines: order.items.map((item) => ({

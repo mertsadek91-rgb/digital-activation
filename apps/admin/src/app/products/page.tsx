@@ -21,7 +21,7 @@ const FILTERS = [
   { key: 'all', label: 'الكل' },
   { key: 'draft', label: 'مسودّات' },
   { key: 'published', label: 'منشورة' },
-  { key: 'out-of-stock', label: 'نافدة' },
+  { key: 'out-of-stock', label: 'نافدة من المخزون' },
   { key: 'blocked', label: 'محجوبة' },
 ] as const;
 
@@ -274,7 +274,11 @@ function ProductRow({
           </span>
         </td>
         <td className="num">{row.variantCount}</td>
-        <td className={`num${row.stock === 0 ? ' is-zero' : ''}`}>{row.stock}</td>
+        {/* A dash, not a zero. Most of this catalog is made to order, and a
+            zero in a stock column reads as sold out. */}
+        <td className={`num${row.stock === 0 ? ' is-zero' : ''}`}>
+          {row.stock === null ? <span className="meta">حسب الطلب</span> : row.stock}
+        </td>
         <td className="num">{row.priceFromUsd ? `$${row.priceFromUsd}` : '—'}</td>
         <td>
           <button type="button" className="linky" onClick={onReadiness}>
@@ -292,7 +296,7 @@ function ProductRow({
               <button type="button" onClick={onPublish} disabled={busy || row.blockers > 0}>
                 {row.status === 'PUBLISHED' ? 'إلغاء النشر' : 'نشر'}
               </button>
-              {row.variantCount === 1 ? (
+              {row.stockedVariantCount === 0 ? null : row.variantCount === 1 ? (
                 <button type="button" className="ghost" onClick={() => setEditing(!editing)}>
                   مخزون
                 </button>

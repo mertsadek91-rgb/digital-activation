@@ -25,6 +25,16 @@ export const checkoutStartSchema = z.object({
   vatNumber: z.string().trim().max(40).optional(),
   /** ISO-3166 alpha-2. Drives VAT treatment on GCC and EU sales. */
   country: z.string().trim().length(2).toUpperCase().optional(),
+  /**
+   * The address a licence should be activated against.
+   *
+   * Required when any line in the cart binds to one, and asked for separately
+   * from the order email because they are often different: people order from a
+   * work address and want the licence on a personal Microsoft account. The
+   * server refuses the checkout rather than guessing, because guessing produces
+   * a key nobody can use and a supplier order that cannot be reversed.
+   */
+  activationEmail: z.string().trim().toLowerCase().email().max(200).optional(),
   /** Marketing consent is asked for separately and defaults to no. */
   marketingOptIn: z.boolean().default(false),
 });
@@ -78,6 +88,8 @@ export const orderSchema = z.object({
   number: z.string(),
   status: orderStatusSchema,
   email: z.string(),
+  /** Set only when a line binds the licence to an address. */
+  activationEmail: z.string().nullable(),
   locale: localeSchema,
   currency: z.string().length(3),
 
@@ -97,6 +109,8 @@ export const checkoutSchema = z.object({
   order: orderSchema,
   cart: cartSchema,
   crossSell: z.array(crossSellSchema),
+  /** True when the cart needs an activation email, so the form can ask. */
+  activationEmailRequired: z.boolean(),
 });
 export type Checkout = z.infer<typeof checkoutSchema>;
 

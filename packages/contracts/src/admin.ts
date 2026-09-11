@@ -71,7 +71,14 @@ export const adminProductRowSchema = z.object({
   primaryCategory: z.string().nullable(),
   variantCount: z.number().int().min(0),
   /** Sum of on-hand across variants. */
-  stock: z.number().int().min(0),
+  /**
+   * Stock across the product's FROM_STOCK variants. Null when none of them is
+   * stocked, which is most of this catalog — those are made to order, and a
+   * zero there would read as "sold out" when nothing is sold out.
+   */
+  stock: z.number().int().min(0).nullable(),
+  /** How many of the product's variants are held in hand. */
+  stockedVariantCount: z.number().int().min(0),
   priceFromUsd: moneySchema.nullable(),
   hasGoldenWarranty: z.boolean(),
   salesCount: z.number().int().min(0),
@@ -91,6 +98,7 @@ export const adminProductListSchema = z.object({
     all: z.number().int(),
     draft: z.number().int(),
     published: z.number().int(),
+    /** Stocked products with nothing left. Made-to-order products cannot be. */
     outOfStock: z.number().int(),
     blocked: z.number().int(),
   }),

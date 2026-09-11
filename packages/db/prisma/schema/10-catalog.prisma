@@ -181,9 +181,27 @@ model Variant {
   platform           Platform          @default(WINDOWS)
   activationMethod   ActivationMethod  @default(RETAIL_ONLINE)
 
+  /// How this line is delivered. ON_DEMAND is the default because it is what
+  /// most of this catalog is: bought from a supplier after the customer pays.
+  /// Only FROM_STOCK consults inventory — for everything else "out of stock"
+  /// is a state that cannot occur.
+  fulfillmentMode FulfillmentMode @default(ON_DEMAND)
+
   /// Delivery promise in seconds, shown verbatim on the product page. Anything
   /// that cannot be auto-fulfilled must state an honest window instead.
   deliverySlaSeconds Int @default(60)
+
+  /// True when the licence binds to an address the customer supplies, so
+  /// checkout has to ask for it. Six legacy products activate "on your own
+  /// email" and eleven more bind to a Microsoft or Canva account; ordering one
+  /// without that address produces a key nobody can use.
+  requiresActivationEmail Boolean @default(false)
+
+  /// Replacement window in days. Null means the licence term itself, which is
+  /// what the Golden Warranty covers. Some supplier lines come with seven days
+  /// and no more, and promising more than the supplier gives is a promise the
+  /// store has to pay for.
+  warrantyDays Int?
 
   /// All money is stored in USD, the base currency. Display currencies are
   /// derived at render time via FxRate — and the schema.org price emitted for

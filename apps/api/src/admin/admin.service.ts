@@ -5,7 +5,7 @@ import {
   type AdminProductRow,
   type Readiness,
 } from '@da/contracts';
-import { Locale, type Prisma, PublishStatus, StockMovementReason } from '@da/db';
+import { FulfillmentMode, Locale, type Prisma, PublishStatus, StockMovementReason } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -79,6 +79,8 @@ export class AdminService {
     let rows = products.map((product) => this.toRow(product, locale));
 
     if (query.status === 'blocked') rows = rows.filter((row) => row.blockers > 0);
+    // Out of stock means a product that is held in hand and has none left.
+    // A made-to-order product has `stock: null` and cannot be out of stock.
     if (query.status === 'out-of-stock') rows = rows.filter((row) => row.stock === 0);
 
     const total = postFilter ? rows.length : await this.prisma.client.product.count({ where });
@@ -125,6 +127,9 @@ export class AdminService {
     locale: Locale,
   ): AdminProductRow {
     const readiness = assessProduct(product, locale);
+    const stocked = product.variants.filter(
+      (variant) => variant.fulfillmentMode === FulfillmentMode.FROM_STOCK,
+    );
     const ar = product.translations.find((entry) => entry.locale === Locale.AR);
     const en = product.translations.find((entry) => entry.locale === Locale.EN);
 
@@ -142,10 +147,14 @@ export class AdminService {
       brand: product.brand?.name ?? null,
       primaryCategory: product.categories[0]?.category.slug ?? null,
       variantCount: product.variants.length,
-      stock: product.variants.reduce(
-        (total, variant) => total + (variant.inventory?.onHand ?? 0),
-        0,
-      ),
+      // Only the stocked variants are counted, and null when there are none.
+      // Summing every variant's empty inventory as zero is what made 67 of 72
+      // products read "out of stock" while all of them were sellable.
+      stock:
+        stocked.length > 0
+          ? stocked.reduce((total, variant) => total + (variant.inventory?.onHand ?? 0), 0)
+          : null,
+      stockedVariantCount: stocked.length,
       priceFromUsd: cheapest?.toFixed(2) ?? null,
       hasGoldenWarranty: product.hasGoldenWarranty,
       salesCount: product.salesCount,

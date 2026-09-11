@@ -14,7 +14,7 @@ import {
   ROUTES,
   SALES_PROOF_THRESHOLD,
 } from '@da/contracts';
-import { Locale, Prisma, PublishStatus } from '@da/db';
+import { FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -47,6 +47,23 @@ function parseSteps(value: Prisma.JsonValue | null): CatalogProduct['activationS
     });
   }
   return steps.length > 0 ? steps : null;
+}
+
+/**
+ * Whether stock is a question worth asking about this variant.
+ *
+ * Only a FROM_STOCK line has a shelf to count. An ON_DEMAND or MANUAL_SETUP
+ * line is bought from a supplier after the customer pays, so it is always
+ * sellable — and reading its empty inventory as zero is what made 67 of 72
+ * products advertise themselves as out of stock when none of them were.
+ */
+function isStocked(variant: { fulfillmentMode: FulfillmentMode }): boolean {
+  return variant.fulfillmentMode === FulfillmentMode.FROM_STOCK;
+}
+
+/** Sellable count for a stocked variant: on hand minus what carts hold. */
+function sellable(variant: { inventory: { onHand: number; reserved: number } | null }): number {
+  return Math.max(0, (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0));
 }
 
 @Injectable()
@@ -337,9 +354,7 @@ export class CatalogService {
     const fx = await this.fxTable();
 
     const variants: CatalogVariant[] = product.variants.map((variant) => {
-      const onHand = variant.inventory?.onHand ?? 0;
-      const reserved = variant.inventory?.reserved ?? 0;
-      const available = Math.max(0, onHand - reserved);
+      const stocked = isStocked(variant);
 
       return {
         id: variant.id,
@@ -350,9 +365,11 @@ export class CatalogService {
         platform: variant.platform,
         activationMethod: variant.activationMethod,
         deliverySlaSeconds: variant.deliverySlaSeconds,
+        fulfillmentMode: variant.fulfillmentMode,
+        requiresActivationEmail: variant.requiresActivationEmail,
         price: displayPrice(variant.priceUsd, variant.compareAtUsd, query.currency, fx),
-        available,
-        inStock: available > 0,
+        available: stocked ? sellable(variant) : null,
+        inStock: stocked ? sellable(variant) > 0 : true,
         isDefault: variant.isDefault,
       };
     });
@@ -474,19 +491,40 @@ export class CatalogService {
   ): CatalogCard {
     const translation = product.translations[0];
 
-    const priced = product.variants.map((variant) => {
-      const onHand = variant.inventory?.onHand ?? 0;
-      const reserved = variant.inventory?.reserved ?? 0;
-      return { variant, available: Math.max(0, onHand - reserved) };
-    });
+    // Buyable means buyable, which for most of this catalog has nothing to do
+    // with a shelf: a made-to-order variant is always buyable, and a stocked
+    // one is buyable while it has stock left.
+    const priced = product.variants.map((variant) => ({
+      variant,
+      stocked: isStocked(variant),
+      available: isStocked(variant) ? sellable(variant) : null,
+      buyable: isStocked(variant) ? sellable(variant) > 0 : true,
+    }));
 
     // The card shows the entry price — the cheapest variant a visitor could
-    // actually buy, falling back to the cheapest overall when nothing is in
-    // stock, so a sold-out product still shows what it costs.
-    const sellable = priced.filter((entry) => entry.available > 0);
-    const pool = sellable.length > 0 ? sellable : priced;
+    // actually buy, falling back to the cheapest overall when none can be
+    // bought, so a sold-out product still shows what it costs.
+    const buyable = priced.filter((entry) => entry.buyable);
+    const pool = buyable.length > 0 ? buyable : priced;
     const cheapest =
       [...pool].sort((a, b) => a.variant.priceUsd.comparedTo(b.variant.priceUsd))[0] ?? priced[0];
+
+    // The promise the card makes is the fastest one the product can keep.
+    const modes = product.variants.map((variant) => variant.fulfillmentMode);
+    const fulfillmentMode = modes.includes(FulfillmentMode.FROM_STOCK)
+      ? FulfillmentMode.FROM_STOCK
+      : modes.includes(FulfillmentMode.ON_DEMAND)
+        ? FulfillmentMode.ON_DEMAND
+        : FulfillmentMode.MANUAL_SETUP;
+
+    // "Only N left" is a true statement about a shelf, so it is reported only
+    // when there is one. Null for a made-to-order product, which has no count
+    // to give and must not have one invented for urgency.
+    const stockedEntries = priced.filter((entry) => entry.stocked);
+    const available =
+      stockedEntries.length > 0
+        ? stockedEntries.reduce((total, entry) => total + (entry.available ?? 0), 0)
+        : null;
 
     const hero = product.media[0];
 
@@ -505,8 +543,9 @@ export class CatalogService {
       price: cheapest
         ? displayPrice(cheapest.variant.priceUsd, cheapest.variant.compareAtUsd, currency, fx)
         : { amount: '0.00', currency: 'USD', compareAt: null, discountPercent: null },
-      inStock: sellable.length > 0,
-      available: sellable.reduce((total, entry) => total + entry.available, 0),
+      inStock: buyable.length > 0,
+      available,
+      fulfillmentMode,
       variantCount: Math.max(1, product.variants.length),
       hasGoldenWarranty: product.hasGoldenWarranty,
       // Below the floor a count is noise, not proof.

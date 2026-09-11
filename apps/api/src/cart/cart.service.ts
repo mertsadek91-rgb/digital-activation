@@ -7,11 +7,13 @@ import {
   type CartLine,
   type CartQuery,
   type PromotionRules,
+  MAX_LINE_QTY,
   promotionRulesSchema,
   RESERVATION_TTL_MINUTES,
 } from '@da/contracts';
 import {
   CartStage,
+  FulfillmentMode,
   Locale,
   Prisma,
   PromotionType,
@@ -346,6 +348,11 @@ export class CartService {
 
       // Headroom, not availability. This cart's own qty is already inside
       // `reserved`, so what is left over is exactly how much more it could add.
+      //
+      // For a made-to-order line there is no headroom to report, only the
+      // per-line cap — the supply is the supplier's, and a number here would
+      // be an invention.
+      const stocked = variant.fulfillmentMode === FulfillmentMode.FROM_STOCK;
       const onHand = variant.inventory?.onHand ?? 0;
       const reserved = variant.inventory?.reserved ?? 0;
 
@@ -380,7 +387,9 @@ export class CartService {
               direction: nowUsd.greaterThan(item.unitPriceUsd) ? 'up' : 'down',
             }
           : null,
-        availableToAdd: Math.max(0, onHand - reserved),
+        availableToAdd: stocked ? Math.max(0, onHand - reserved) : MAX_LINE_QTY - item.qty,
+        fulfillmentMode: variant.fulfillmentMode,
+        requiresActivationEmail: variant.requiresActivationEmail,
         fromCrossSell: item.fromCrossSell,
       };
     });

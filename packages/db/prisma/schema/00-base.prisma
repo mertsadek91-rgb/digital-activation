@@ -111,6 +111,33 @@ enum BackorderPolicy {
   @@schema("public")
 }
 
+/// How a line gets delivered, which decides whether stock means anything.
+///
+/// Most of this catalog is made to order: the licence is bought from a supplier
+/// after the customer pays, and for good reasons rather than for lack of
+/// capital. A code's validity starts the moment it is purchased, so buying
+/// early burns the customer's subscription; some activations bind to the
+/// customer's own email address and cannot be bought in advance at all; some
+/// carry only a seven-day warranty from the supplier; and the expensive, rarely
+/// ordered lines would tie up money in stock that does not turn over.
+///
+/// The consequence for the software is that "out of stock" is meaningless for
+/// most variants — they are always sellable — and only FROM_STOCK lines are
+/// gated on inventory.
+enum FulfillmentMode {
+  /// A key is already held and is handed over on payment. Inventory is real,
+  /// a hold is taken at add-to-cart, and delivery is immediate.
+  FROM_STOCK
+  /// Ordered from a supplier once the customer has paid. No inventory, no
+  /// hold, always sellable; the page states an honest window instead.
+  ON_DEMAND
+  /// Needs a person: an account prepared with the customer's own email, a
+  /// panel invitation, an installation done on their site.
+  MANUAL_SETUP
+
+  @@schema("public")
+}
+
 enum StockReservationState {
   ACTIVE
   /// The shopper removed the line, or the cart was emptied.
