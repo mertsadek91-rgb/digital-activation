@@ -607,3 +607,96 @@ h1 {
   color: var(--color-ink-muted);
   font-size: var(--text-sm);
 }
+
+/* --- the dead end ---------------------------------------------------------- */
+
+/*
+ * The 404 and the error page.
+ *
+ * Narrower than a catalog page and centred, because there is nothing to scan
+ * here — it is one sentence and a decision. Everything is logical-property
+ * based like the rest of this stylesheet: the page ships in Arabic and English
+ * and the two mirror each other completely.
+ */
+.missing {
+  max-inline-size: 44rem;
+  padding-block: var(--spacing-4);
+}
+.missing .page-head {
+  text-align: center;
+}
+.missing .lede {
+  margin-inline: auto;
+}
+
+.missing-actions {
+  display: flex;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-block: var(--spacing-3) 0;
+}
+
+/*
+ * The guess.
+ *
+ * Framed as a list rather than as cards: these are possibilities, not
+ * products, and drawing them at the weight of a product grid would say the
+ * store is confident about something it is guessing at.
+ */
+.missing-guess {
+  margin-block-start: var(--spacing-4);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.missing-guess h2 {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--text-lg);
+}
+.missing-guess ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.missing-guess li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-1);
+  padding-block: 10px;
+  border-block-end: 1px solid var(--color-border);
+}
+.missing-guess li:last-child {
+  border-block-end: none;
+}
+.missing-guess li a {
+  color: var(--color-ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+.missing-guess li a:hover {
+  text-decoration: underline;
+}
+
+/* Which shelf the answer is on. Pushed to the far edge so the titles align. */
+.missing-kind {
+  margin-inline-start: auto;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.missing-hint {
+  margin: var(--spacing-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+.missing-hint a {
+  color: var(--color-brand-ink);
+}
+.missing-hint code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}

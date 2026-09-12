@@ -7,7 +7,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../components/blocks';
 import { getPage } from '../../../lib/api';
 import { goneOrRedirect } from '../../../lib/gone';
-import { robotsMeta } from '../../../lib/seo';
+import { notFoundMetadata, robotsMeta } from '../../../lib/seo';
 
 /**
  * Editorial pages: the warranty, the policies, whatever is written next.
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const key = slugFor(slug);
   const page = key ? await getPage(key, { locale }) : null;
-  if (!page) return { title: 'Not found', robots: { index: false, follow: false } };
+  if (!page) return notFoundMetadata(locale);
 
   const path = `/${page.slug}`;
   const links = alternates(SITE_URL, path);

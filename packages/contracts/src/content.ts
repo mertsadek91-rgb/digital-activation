@@ -199,3 +199,22 @@ export const updateRedirectSchema = z.object({
   code: z.union([z.literal(301), z.literal(302)]).optional(),
   isActive: z.boolean().optional(),
 });
+
+/**
+ * A guess at what a 404 was reaching for.
+ *
+ * `kind` is carried so the page can say which shelf the answer is on — a
+ * visitor who asked for a product and is offered a category has been given
+ * something, but not the thing, and the label is what makes that honest.
+ */
+export const suggestionSchema = z.object({
+  kind: z.enum(['product', 'collection', 'page']),
+  title: z.string(),
+  href: z.string(),
+});
+export type Suggestion = z.infer<typeof suggestionSchema>;
+
+export const suggestionsSchema = z.object({
+  suggestions: z.array(suggestionSchema),
+});
+export type Suggestions = z.infer<typeof suggestionsSchema>;

@@ -12,7 +12,7 @@ import { BuyBox } from '../../../../components/buy-box';
 import { Reviews } from '../../../../components/reviews';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { robotsMeta } from '../../../../lib/seo';
+import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -23,7 +23,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const product = await getProduct(slug, { locale });
-  if (!product) return { title: 'Not found', robots: { index: false, follow: false } };
+  if (!product) return notFoundMetadata(locale);
 
   const path = ROUTES.product(slug);
   const links = alternates(SITE_URL, path);

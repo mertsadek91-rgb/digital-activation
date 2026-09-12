@@ -10,11 +10,12 @@ import { ContentController } from './content.controller.js';
 import { RedirectsController } from './redirects.controller.js';
 import { RedirectsService } from './redirects.service.js';
 import { ContentService } from './content.service.js';
+import { SuggestService } from './suggest.service.js';
 
 @Module({
   imports: [MailModule, AuthModule],
   controllers: [ContentController, ContactAdminController, RedirectsController],
-  providers: [ContentService, ContactService, RedirectsService],
+  providers: [ContentService, ContactService, RedirectsService, SuggestService],
   exports: [ContentService],
 })
 export class ContentModule {}

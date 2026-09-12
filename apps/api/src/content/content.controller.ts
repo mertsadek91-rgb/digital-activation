@@ -2,13 +2,19 @@ import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req } fro
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
-import { type ContentPage, recordNotFoundSchema, submitContactSchema } from '@da/contracts';
+import {
+  type ContentPage,
+  type Suggestions,
+  recordNotFoundSchema,
+  submitContactSchema,
+} from '@da/contracts';
 import type { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { ContactService } from './contact.service.js';
 import { ContentService } from './content.service.js';
+import { SuggestService } from './suggest.service.js';
 
 @ApiTags('content')
 @Controller('content')
@@ -16,6 +22,7 @@ export class ContentController {
   constructor(
     private readonly content: ContentService,
     private readonly contact: ContactService,
+    private readonly suggestions: SuggestService,
   ) {}
 
   @Get('pages/:slug')
@@ -84,6 +91,22 @@ export class ContentController {
       userAgent: request.headers['user-agent'],
     });
     return { recorded: true };
+  }
+
+  /**
+   * What the 404 page offers instead of nothing.
+   *
+   * Throttled like the report above and for the same reason — a crawler
+   * walking an old sitemap produces these in bursts — but more generously,
+   * because one visitor hitting one dead end makes exactly one of these and
+   * the answer is what decides whether they stay.
+   */
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Get('suggest')
+  @ApiOperation({ summary: 'Nearest published pages to a path that 404d' })
+  async suggest(@Query('path') path = '', @Query('locale') locale = 'ar'): Promise<Suggestions> {
+    if (path.trim().length === 0 || path.length > 2000) return { suggestions: [] };
+    return this.suggestions.suggest({ path, locale });
   }
 
   @Get('pages')

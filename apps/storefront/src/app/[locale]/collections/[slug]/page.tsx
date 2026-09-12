@@ -10,7 +10,7 @@ import { Blocks } from '../../../../components/blocks';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { robotsMeta } from '../../../../lib/seo';
+import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
@@ -31,7 +31,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const page = pageNumber((await searchParams).page);
 
   const collection = await getCollection(slug, { locale, page, perPage: PER_PAGE });
-  if (!collection) return { title: 'Not found', robots: { index: false, follow: false } };
+  if (!collection) return notFoundMetadata(locale);
 
   const path = ROUTES.collection(slug);
   const links = alternates(SITE_URL, path);
