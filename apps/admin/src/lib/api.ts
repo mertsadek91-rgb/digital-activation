@@ -10,6 +10,7 @@
  * else.
  */
 import type {
+  AdminOrderDetail,
   AdminOrderList,
   AdminProductList,
   AdminPromotion,
@@ -353,6 +354,28 @@ export const api = {
   keyHistory: (licenseKeyId: string) =>
     request<{ action: string; actorId: string | null; ip: string | null; createdAt: string }[]>(
       `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/history`,
+    ),
+
+  /**
+   * One order, in full.
+   *
+   * The endpoint has existed since the orders screen was built and nothing
+   * called it, which meant a note written from the panel could never be read
+   * back from it.
+   */
+  order: (number: string) =>
+    request<AdminOrderDetail>(`/admin/orders/${encodeURIComponent(number)}`),
+
+  /**
+   * Sends a licence email again, to the address on the order.
+   *
+   * Not a parameter, that address — the API reads it from the order, so this
+   * cannot be pointed anywhere else.
+   */
+  resendLicence: (number: string, orderItemId: string) =>
+    request<{ to: string }>(
+      `/admin/orders/${encodeURIComponent(number)}/lines/${encodeURIComponent(orderItemId)}/resend`,
+      { method: 'POST', body: JSON.stringify({}) },
     ),
 
   /**

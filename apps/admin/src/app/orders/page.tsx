@@ -1,6 +1,6 @@
 'use client';
 
-import type { AdminOrderList, AdminOrderRow, StaffMe } from '@da/contracts';
+import type { AdminOrderDetail, AdminOrderList, AdminOrderRow, StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -88,6 +88,9 @@ export default function OrdersPage() {
   if (!me) return <main className="shell">…</main>;
 
   const canConfirm = ['OWNER', 'ADMIN'].includes(me.role);
+  // Wider than confirming on purpose: re-sending a licence is what the person
+  // answering the message needs to do, and the API agrees.
+  const canResend = ['OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT'].includes(me.role);
 
   async function act(label: string, run: () => Promise<unknown>): Promise<void> {
     setError(null);
@@ -163,6 +166,7 @@ export default function OrdersPage() {
             key={row.number}
             row={row}
             canConfirm={canConfirm}
+            canResend={canResend}
             onConfirm={(provider, reference) =>
               void act(`أُكّد دفع ${row.number}`, () =>
                 api.confirmPayment(row.number, provider, reference),
@@ -181,16 +185,64 @@ export default function OrdersPage() {
 function OrderCard({
   row,
   canConfirm,
+  canResend,
   onConfirm,
   onNote,
 }: {
   row: AdminOrderRow;
   canConfirm: boolean;
+  canResend: boolean;
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [noting, setNoting] = useState(false);
+  /**
+   * The rest of the order, loaded when somebody asks for it.
+   *
+   * Not with the list: the list is the whole screen and pulling every order's
+   * lines, notes and mail log into it would be dozens of queries to draw rows
+   * nobody has looked at. Loaded once per card and kept, so closing and
+   * reopening does not fetch again — except after a re-send, which changes
+   * what the mail log says.
+   */
+  const [detail, setDetail] = useState<AdminOrderDetail | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [resent, setResent] = useState<string | null>(null);
+
+  async function loadDetail(): Promise<void> {
+    setDetailError(null);
+    try {
+      setDetail(await api.order(row.number));
+    } catch (caught) {
+      setDetailError(caught instanceof Error ? caught.message : 'تعذّر تحميل تفاصيل الطلب.');
+    }
+  }
+
+  async function toggle(): Promise<void> {
+    const next = !open;
+    setOpen(next);
+    if (next && !detail) await loadDetail();
+  }
+
+  async function resend(orderItemId: string): Promise<void> {
+    setBusy(orderItemId);
+    setDetailError(null);
+    setResent(null);
+    try {
+      const result = await api.resendLicence(row.number, orderItemId);
+      setResent(result.to);
+      // The mail log just gained a row, and it is the evidence somebody came
+      // here for.
+      await loadDetail();
+    } catch (caught) {
+      setDetailError(caught instanceof Error ? caught.message : 'تعذّر إرسال الرسالة.');
+    } finally {
+      setBusy(null);
+    }
+  }
   const [provider, setProvider] = useState<'BANK_TRANSFER' | 'CRYPTO'>('BANK_TRANSFER');
   const [reference, setReference] = useState('');
   const [body, setBody] = useState('');
@@ -251,6 +303,9 @@ function OrderCard({
         ) : null}
         <button type="button" className="ghost" onClick={() => setNoting(!noting)}>
           ملاحظة
+        </button>
+        <button type="button" className="ghost" onClick={() => void toggle()}>
+          {open ? 'أخفِ التفاصيل' : 'التفاصيل'}
         </button>
       </div>
 
@@ -324,6 +379,107 @@ function OrderCard({
             أضِف
           </button>
         </form>
+      ) : null}
+
+      {open ? (
+        <div className="order-detail">
+          {detailError ? <p className="error">{detailError}</p> : null}
+          {resent ? (
+            <p className="ok-note" dir="ltr">
+              {resent}
+            </p>
+          ) : null}
+          {!detail && !detailError ? <p className="meta">…</p> : null}
+
+          {detail ? (
+            <>
+              <h3>البنود</h3>
+              <ul className="line-list">
+                {detail.lines.map((line) => (
+                  <li key={line.orderItemId}>
+                    <div>
+                      <p className="slug" dir="ltr">
+                        {line.sku}
+                      </p>
+                      <p className="meta">
+                        {line.productName}
+                        {line.qty > 1 ? ` · ×${String(line.qty)}` : ''} · {line.fulfillmentState}
+                        {line.deliveredAt
+                          ? ` · ${line.deliveredAt.slice(0, 16).replace('T', ' ')}`
+                          : ''}
+                      </p>
+                    </div>
+                    {/* Only on a delivered line. On anything else the API
+                        refuses, and a button whose only outcome is an error is
+                        worse than no button. */}
+                    {canResend && line.fulfillmentState === 'DELIVERED' ? (
+                      <button
+                        type="button"
+                        disabled={busy !== null}
+                        onClick={() => void resend(line.orderItemId)}
+                      >
+                        {busy === line.orderItemId ? '…' : 'أعِد إرسال الترخيص'}
+                      </button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+
+              {/*
+                The half of "لم يصلني المفتاح" that is answerable without
+                touching the vault: whether the message went out, where, and
+                whether it failed.
+              */}
+              <h3>الرسائل</h3>
+              {detail.emails.length === 0 ? (
+                <p className="meta">لم تُرسَل أي رسالة على هذا الطلب بعد.</p>
+              ) : (
+                <ul className="mail-log">
+                  {detail.emails.map((mail, index) => (
+                    <li
+                      key={index}
+                      className={(mail.error ?? mail.bouncedAt) ? 'is-bad' : undefined}
+                    >
+                      <span className="slug" dir="ltr">
+                        {mail.template}
+                      </span>
+                      <span dir="ltr">{mail.to}</span>
+                      <span className="meta">{mail.sentAt.slice(0, 16).replace('T', ' ')}</span>
+                      <span className="meta">
+                        {mail.error ??
+                          (mail.bouncedAt ? 'ارتدّت' : mail.deliveredAt ? 'وصلت' : 'أُرسلت')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {detail.notes.length > 0 ? (
+                <>
+                  <h3>الملاحظات</h3>
+                  <ul className="note-list">
+                    {detail.notes.map((note) => (
+                      <li key={note.id}>
+                        <p>{note.body}</p>
+                        <p className="meta">
+                          {note.author ?? 'غير معروف'} ·{' '}
+                          {note.createdAt.slice(0, 16).replace('T', ' ')}
+                          {note.isCustomerVisible ? ' · ظاهرة للعميل' : ''}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+
+              {detail.activationEmail ? (
+                <p className="meta">
+                  بريد التفعيل: <span dir="ltr">{detail.activationEmail}</span>
+                </p>
+              ) : null}
+            </>
+          ) : null}
+        </div>
       ) : null}
     </li>
   );

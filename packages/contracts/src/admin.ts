@@ -410,6 +410,26 @@ export const adminOrderDetailSchema = adminOrderRowSchema.extend({
       createdAt: z.string(),
     }),
   ),
+  /**
+   * Every message this order caused, and whether it arrived.
+   *
+   * The half of "I never got my key" that is answerable without touching the
+   * vault: a row here saying the licence email went to that address at that
+   * time settles it, and a row carrying an error says the opposite. Carries no
+   * message body and never could — `NotificationLog.payload` is template
+   * variables only, and a licence key is not one of them.
+   */
+  emails: z.array(
+    z.object({
+      template: z.string(),
+      to: z.string(),
+      sentAt: z.string(),
+      /** Null until the transport confirms it; an error means it never will. */
+      deliveredAt: z.string().nullable(),
+      bouncedAt: z.string().nullable(),
+      error: z.string().nullable(),
+    }),
+  ),
 });
 export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
 

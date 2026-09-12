@@ -1104,3 +1104,88 @@ tr.drawer td > * {
 .promo-form .actions {
   grid-column: 1 / -1;
 }
+
+/* --- one order, opened ------------------------------------------------------ */
+
+/*
+ * The panel under an order card.
+ *
+ * Inset and quieter than the card it hangs off, because it is the same order
+ * in more detail rather than a second thing: the card stays the unit somebody
+ * scans, and this is what they read once they have stopped scanning.
+ */
+.order-detail {
+  margin-block-start: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+.order-detail h3 {
+  margin: var(--spacing-1) 0 6px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+.order-detail h3:first-child {
+  margin-block-start: 0;
+}
+
+.line-list,
+.mail-log,
+.note-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.line-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  padding-block: 8px;
+  border-block-end: 1px solid var(--color-border);
+}
+.line-list li:last-child,
+.mail-log li:last-child,
+.note-list li:last-child {
+  border-block-end: none;
+}
+
+/*
+ * The mail log.
+ *
+ * A grid rather than a table so the four columns line up on a desktop and
+ * stack on a phone without a second rule — and because it is four facts about
+ * one message, not a dataset anybody sorts.
+ */
+.mail-log li {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr auto auto;
+  gap: 6px var(--spacing-1);
+  align-items: baseline;
+  padding-block: 6px;
+  border-block-end: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+}
+@media (max-width: 40rem) {
+  .mail-log li {
+    grid-template-columns: 1fr;
+  }
+}
+/* A message that failed or bounced is the answer somebody came looking for. */
+.mail-log li.is-bad {
+  color: var(--color-danger);
+}
+.mail-log li.is-bad .meta {
+  color: var(--color-danger);
+}
+
+.note-list li {
+  padding-block: 8px;
+  border-block-end: 1px solid var(--color-border);
+}
+.note-list li p {
+  margin: 0;
+}

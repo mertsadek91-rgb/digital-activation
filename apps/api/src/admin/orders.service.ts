@@ -112,7 +112,99 @@ export class OrdersService {
         isCustomerVisible: note.isCustomerVisible,
         createdAt: note.createdAt.toISOString(),
       })),
+      emails: await this.emailsFor(order.number),
     };
+  }
+
+  /**
+   * Every message this order caused.
+   *
+   * Matched on the order number inside the payload rather than on a foreign
+   * key, because `NotificationLog` deliberately has none to an order: it is a
+   * log of what was sent to an address, and some of what it holds was sent to
+   * somebody who is not a customer row at all. The same path `alreadySent`
+   * matches on.
+   *
+   * Nothing here can carry a licence: the payload is template variables, and a
+   * key has never been one of them.
+   */
+  private async emailsFor(number: string): Promise<AdminOrderDetail['emails']> {
+    const rows = await this.prisma.client.notificationLog.findMany({
+      where: { payload: { path: ['orderNumber'], equals: number } },
+      orderBy: { sentAt: 'desc' },
+      take: 50,
+      select: {
+        template: true,
+        toAddress: true,
+        sentAt: true,
+        deliveredAt: true,
+        bouncedAt: true,
+        error: true,
+      },
+    });
+
+    return rows.map((row) => ({
+      template: row.template,
+      to: row.toAddress,
+      sentAt: row.sentAt.toISOString(),
+      deliveredAt: row.deliveredAt?.toISOString() ?? null,
+      bouncedAt: row.bouncedAt?.toISOString() ?? null,
+      error: row.error,
+    }));
+  }
+
+  /**
+   * Sends a licence email again, at a member of staff's request.
+   *
+   * The single most common thing a customer writes in about, and until now it
+   * was unanswerable from this panel: the customer's own page could resend and
+   * nobody here could, so the workaround was to read the key out of the vault
+   * by hand and paste it into a reply. That puts a plaintext licence in a chat
+   * window, which is the one outcome this whole system is built to avoid.
+   *
+   * The address is not a parameter. `resendLicence` reads it from the order,
+   * so this cannot be used to send somebody else's licence somewhere else —
+   * and the vault records a RESEND against the member of staff who asked.
+   */
+  async resendLicence(input: {
+    number: string;
+    orderItemId: string;
+    staffId: string;
+    /** The session's last TOTP challenge, in unix seconds. The vault reads it. */
+    totpAt: number;
+    context: { ip?: string | undefined; userAgent?: string | undefined };
+  }): Promise<{ to: string }> {
+    const item = await this.prisma.client.orderItem.findFirst({
+      // Scoped to the order in the URL: a line id alone would let any order
+      // number in the path stand in front of any line in the database.
+      where: { id: input.orderItemId, order: { number: input.number } },
+      select: { id: true },
+    });
+    if (!item) throw new NotFoundException('لا يوجد هذا البند في هذا الطلب.');
+
+    const result = await this.fulfillment.resendLicence({
+      orderItemId: item.id,
+      actor: {
+        staffId: input.staffId,
+        totpAt: input.totpAt,
+        ip: input.context.ip,
+        userAgent: input.context.userAgent,
+      },
+    });
+
+    await this.audit.record({
+      actorId: input.staffId,
+      entity: 'Order',
+      entityId: input.number,
+      action: 'licence.resent',
+      // The address is on the order and already in this row's entity; naming
+      // it again here is what makes the audit answer "sent where" on its own.
+      after: { orderItemId: item.id, to: result.to },
+      ip: input.context.ip,
+      userAgent: input.context.userAgent,
+    });
+
+    return result;
   }
 
   /**

@@ -67,6 +67,39 @@ export class OrdersController {
     });
   }
 
+  /**
+   * Sends a licence email again.
+   *
+   * SUPPORT is on it deliberately: this is the single most common thing a
+   * customer writes in about, and until now nobody here could answer it — the
+   * customer's own page could resend and the panel could not, so the workaround
+   * was to read the key out of the vault by hand and paste it into a reply.
+   * That is the one outcome the vault exists to prevent, and it needed a role
+   * far higher than the person answering the message.
+   *
+   * The address is not a parameter and cannot be: it is read from the order.
+   * Throttled well below anything a person answering messages would hit, and
+   * far below anything that could walk the catalogue of order lines — every
+   * one of which answers 404 unless it belongs to the order in the path.
+   */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT')
+  @Post(':number/lines/:orderItemId/resend')
+  @ApiOperation({ summary: 'Re-send the licence email for one line, to the order’s address' })
+  resendLicence(
+    @Param('number') number: string,
+    @Param('orderItemId') orderItemId: string,
+    @Req() request: StaffRequest,
+  ): Promise<{ to: string }> {
+    return this.orders.resendLicence({
+      number,
+      orderItemId,
+      staffId: request.staff?.sub ?? '',
+      totpAt: request.staff?.totpAt ?? 0,
+      context: { ip: request.ip, userAgent: request.headers['user-agent'] },
+    });
+  }
+
   @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT')
   @Post(':number/notes')
   @ApiOperation({ summary: 'Add a note. Never a licence key.' })
