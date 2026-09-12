@@ -12,8 +12,11 @@
 import type {
   AdminOrderList,
   AdminProductList,
+  AdminPromotion,
+  AdminPromotionList,
   AdminReviewList,
   ContactList,
+  CreatePromotion,
   CredentialKind,
   ImportResult,
   OrderKeysRow,
@@ -23,6 +26,7 @@ import type {
   Queue,
   Readiness,
   RedirectsView,
+  UpdatePromotion,
   RevealResult,
   SecretInput,
   StaffLoginResult,
@@ -350,6 +354,30 @@ export const api = {
     request<{ action: string; actorId: string | null; ip: string | null; createdAt: string }[]>(
       `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/history`,
     ),
+
+  /**
+   * Coupons.
+   *
+   * Read by every role and written by ADMIN and OWNER only — the API refuses
+   * the rest, so a CATALOG session sees the list with the buttons disabled
+   * rather than a screen it cannot use.
+   */
+  promotions: (filter?: string) =>
+    request<AdminPromotionList>(
+      `/admin/promotions${filter && filter !== 'all' ? `?filter=${filter}` : ''}`,
+    ),
+
+  createPromotion: (body: CreatePromotion) =>
+    request<AdminPromotion>('/admin/promotions', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  updatePromotion: (id: string, patch: UpdatePromotion) =>
+    request<AdminPromotion>(`/admin/promotions/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
 
   /** Re-clears the TOTP challenge without signing out. */
   stepUp: (totp: string) =>

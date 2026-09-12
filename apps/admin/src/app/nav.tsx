@@ -40,7 +40,15 @@ export function Nav({
 }: {
   me: StaffMe;
   current:
-    'products' | 'orders' | 'queue' | 'vault' | 'reviews' | 'messages' | 'payments' | 'redirects';
+    | 'products'
+    | 'orders'
+    | 'queue'
+    | 'vault'
+    | 'reviews'
+    | 'messages'
+    | 'payments'
+    | 'promotions'
+    | 'redirects';
   waiting?: number;
   overdue?: number;
   messagesWaiting?: number;
@@ -159,6 +167,16 @@ export function Nav({
           onClick={() => router.push('/payments')}
         >
           طرق الدفع
+        </button>
+        {/* Next to the payment methods rather than off with the catalog: both
+            are about what money arrives, and a code is the fastest way for
+            less of it to. */}
+        <button
+          type="button"
+          className={`tab${current === 'promotions' ? ' is-active' : ''}`}
+          onClick={() => router.push('/promotions')}
+        >
+          الأكواد
         </button>
         <button
           type="button"

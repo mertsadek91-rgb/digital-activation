@@ -10,11 +10,13 @@ import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersService } from './orders.service.js';
+import { PromotionsController } from './promotions.controller.js';
+import { PromotionsService } from './promotions.service.js';
 import { ReviewsAdminController } from './reviews.controller.js';
 
 @Module({
   imports: [AuthModule, VaultModule, CheckoutModule, FulfillmentModule, ReviewsModule],
-  controllers: [AdminController, OrdersController, ReviewsAdminController],
-  providers: [AdminService, OrdersService],
+  controllers: [AdminController, OrdersController, ReviewsAdminController, PromotionsController],
+  providers: [AdminService, OrdersService, PromotionsService],
 })
 export class AdminModule {}

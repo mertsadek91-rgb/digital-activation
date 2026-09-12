@@ -1010,3 +1010,97 @@ tr.drawer td > * {
   padding: var(--spacing-1);
   border-block-start: 0;
 }
+
+/* --- coupons --------------------------------------------------------------- */
+
+/*
+ * A code that is not currently doing anything — scheduled, expired, exhausted
+ * or switched off — is still listed but stops competing for attention. Most of
+ * this screen is history after the first month, and history that looks like
+ * the live row is history somebody edits by mistake.
+ */
+.queue-card.is-muted {
+  background: var(--color-bg);
+}
+.queue-card.is-muted .queue-product {
+  color: var(--color-ink-muted);
+}
+
+/*
+ * The code itself, which is read a character at a time.
+ *
+ * Monospace with tabular figures for the same reason the IBAN box above is:
+ * this string is proof-read against a banner or a message, and a proportional
+ * 0 beside a proportional O is exactly where a support ticket comes from.
+ */
+.coupon-code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--text-base);
+  letter-spacing: 0.04em;
+}
+
+/* Setting a usage cap from the row, without opening anything. */
+.inline-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-basis: 100%;
+  margin-block-start: 8px;
+}
+.inline-form input {
+  font: inherit;
+  inline-size: 8rem;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+/*
+ * Minting a code.
+ *
+ * Two columns on a desktop and one on a phone with no breakpoint to keep: the
+ * fields are short and independent, so they wrap rather than being laid out.
+ */
+.promo-form {
+  display: grid;
+  gap: var(--spacing-1);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  align-items: start;
+  margin-block-start: var(--spacing-1);
+}
+.promo-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.promo-form .field input,
+.promo-form .field select {
+  font: inherit;
+  font-size: var(--text-base);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  min-block-size: 40px;
+}
+.promo-form .field small {
+  color: var(--color-ink-muted);
+  line-height: var(--leading-normal);
+}
+.promo-form .field small.bad {
+  color: var(--color-danger);
+  font-weight: 500;
+}
+/* The checkbox and the buttons are decisions about the whole form, not one
+   field, so they take the full width rather than sitting in a column. */
+.promo-form .check,
+.promo-form .actions {
+  grid-column: 1 / -1;
+}
