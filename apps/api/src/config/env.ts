@@ -70,6 +70,27 @@ const envSchema = z.object({
   SUPPORT_EMAIL: z.string().email().optional(),
   MAIL_FROM_MARKETING: z.string().email(),
 
+  /**
+   * The store's own clock, used to decide the hours a marketing email may be
+   * sent. Not the server's timezone and not the customer's: a store's working
+   * hours are a property of the store.
+   */
+  STORE_TIMEZONE: z
+    .string()
+    .min(1)
+    .default('Asia/Riyadh')
+    // Checked here rather than where it is used: an unknown zone makes Intl
+    // throw, and the place it would throw is inside a scheduled sweep at 9am,
+    // where nobody is looking.
+    .refine((zone) => {
+      try {
+        new Intl.DateTimeFormat('en-GB', { timeZone: zone });
+        return true;
+      } catch {
+        return false;
+      }
+    }, 'is not an IANA timezone name'),
+
   BASE_CURRENCY: z.string().length(3).default('USD'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SENTRY_DSN: z.string().optional(),

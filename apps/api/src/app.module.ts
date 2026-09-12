@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AccountModule } from './account/account.module.js';
@@ -46,6 +47,10 @@ import { VaultModule } from './vault/vault.module.js';
     // Protects login, coupon validation and checkout from brute force. Coupon
     // validation matters as much as login: guessable codes are money.
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    // The one scheduled thing in this system so far: the review invitation
+    // sweep. It guards itself with a Postgres advisory lock, so registering it
+    // here is safe on more than one replica.
+    ScheduleModule.forRoot(),
     PrismaModule,
     CatalogModule,
     CartModule,
