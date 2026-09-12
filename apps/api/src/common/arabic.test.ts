@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { subjectWords, words } from './suggest.service.js';
+import { subjectWords, words } from './arabic.js';
 
 /**
  * Guards the tokenizer the 404 suggester matches on.

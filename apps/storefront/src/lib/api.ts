@@ -21,6 +21,8 @@ import {
   catalogCollectionSchema,
   catalogProductSchema,
   catalogStoreSchema,
+  type SearchResults,
+  searchResultsSchema,
   contentPageSchema,
   productReviewsSchema,
   redirectTargetSchema,
@@ -50,6 +52,8 @@ interface FetchOptions {
   revalidate?: number;
   /** One of the sorts the API implements. Anything else is ignored by it. */
   sort?: string;
+  /** What was searched for. Only the search endpoint reads it. */
+  q?: string;
 }
 
 function buildUrl(pathname: string, options: FetchOptions): string {
@@ -59,6 +63,7 @@ function buildUrl(pathname: string, options: FetchOptions): string {
   if (options.page) url.searchParams.set('page', String(options.page));
   if (options.perPage) url.searchParams.set('perPage', String(options.perPage));
   if (options.sort) url.searchParams.set('sort', options.sort);
+  if (options.q !== undefined) url.searchParams.set('q', options.q);
 
   const token = process.env.PREVIEW_TOKEN;
   if (token && !indexingPolicy(process.env.NEXT_PUBLIC_SITE_URL).index) {
@@ -107,6 +112,19 @@ export function getHome(options: FetchOptions): Promise<Home | null> {
 
 export function getStore(options: FetchOptions): Promise<CatalogStore | null> {
   return request('/catalog/store', options, catalogStoreSchema);
+}
+
+/**
+ * Search.
+ *
+ * Not cached, unlike everything else here. A results page is per-visitor by
+ * definition — the query is the page — and a shared cache keyed on a URL with
+ * arbitrary text in it fills with entries nobody asks for twice.
+ */
+export function searchProducts(
+  options: FetchOptions & { q: string },
+): Promise<SearchResults | null> {
+  return request('/catalog/search', { ...options, revalidate: 0 }, searchResultsSchema);
 }
 
 export function getCollections(options: FetchOptions): Promise<CollectionSummary[] | null> {

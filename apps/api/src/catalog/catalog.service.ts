@@ -604,6 +604,30 @@ export class CatalogService {
     }
   }
 
+  /**
+   * Cards for a set of ids, keyed by id.
+   *
+   * Exists for search, which ranks ids and then needs them drawn. Going back
+   * through the catalog rather than building a card in the search service is
+   * the whole point: price, stock, the golden-warranty flag and the currency
+   * conversion are decided in one place, so a result and the grid it links to
+   * cannot disagree about what something costs.
+   */
+  async cardsByIds(ids: string[], query: CatalogQuery): Promise<Map<string, CatalogCard>> {
+    if (ids.length === 0) return new Map();
+
+    const locale = this.localeFor(query);
+    const products = await this.prisma.client.product.findMany({
+      where: { id: { in: ids }, ...this.statusFilter(query) },
+      include: this.cardInclude(locale).product.include,
+    });
+
+    const fx = await this.fxTable();
+    return new Map(
+      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+    );
+  }
+
   private cardInclude(locale: Locale) {
     return {
       product: {

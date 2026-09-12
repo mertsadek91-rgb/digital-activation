@@ -53,6 +53,8 @@ export const SEO_PUBLISH_REQUIREMENTS = {
 export const ROUTES = {
   home: '/',
   store: '/store',
+  /** Already in NOINDEX_PREFIXES: a results page is not a page to index. */
+  search: '/search',
   product: (slug: string) => `/store/${slug}`,
   collection: (slug: string) => `/collections/${slug}`,
   brand: (slug: string) => `/brands/${slug}`,

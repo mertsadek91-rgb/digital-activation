@@ -282,3 +282,24 @@ export const SALES_PROOF_THRESHOLD = 5;
 
 /** Below this, the storefront shows "only N left" instead of a plain badge. */
 export const LOW_STOCK_THRESHOLD = 5;
+
+/**
+ * What the search box answers with.
+ *
+ * The same `CatalogCard` the store grid draws, deliberately: a result that
+ * showed a different price from the grid one click away would be a bug nobody
+ * notices until an order is placed. `q` comes back so the page can render what
+ * was actually searched for rather than trusting its own query string, which a
+ * visitor can edit.
+ */
+export const searchResultsSchema = z.object({
+  q: z.string(),
+  products: z.array(catalogCardSchema),
+  total: z.number().int().min(0),
+  page: z.number().int().min(1),
+  perPage: z.number().int().min(1),
+});
+export type SearchResults = z.infer<typeof searchResultsSchema>;
+
+/** Longer than a product name and shorter than a paste of a whole page. */
+export const searchQuerySchema = z.string().trim().max(120);

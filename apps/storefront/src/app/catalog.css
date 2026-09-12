@@ -700,3 +700,69 @@ h1 {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
 }
+
+/* --- the search box -------------------------------------------------------- */
+
+/*
+ * Between the store name and the navigation.
+ *
+ * It grows into whatever the header has left and collapses onto its own line
+ * on a narrow screen, which is what `flex-wrap` on the header already does for
+ * the nav — no breakpoint to keep in step with anything.
+ */
+.search-box {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 12rem;
+  max-inline-size: 22rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.search-box:focus-within {
+  border-color: var(--color-brand);
+}
+.search-box input {
+  flex: 1;
+  min-inline-size: 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding-inline: 14px;
+  padding-block: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-ink);
+}
+.search-box input:focus {
+  outline: none;
+}
+/* The browser's own clear button, which lands in the wrong place inside a
+   pill and cannot be styled. The Escape key still clears the field. */
+.search-box input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-box button {
+  display: grid;
+  place-items: center;
+  padding-inline: 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.search-box button:hover {
+  color: var(--color-brand-ink);
+}
+
+/*
+ * The glass mirrors with the page.
+ *
+ * A magnifier drawn with its handle to the lower right reads as backwards in a
+ * right-to-left layout — it is a physical object held in a hand, and the hand
+ * changes sides with the text.
+ */
+[dir='rtl'] .search-box button svg {
+  transform: scaleX(-1);
+}

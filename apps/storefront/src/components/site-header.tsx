@@ -9,6 +9,8 @@ import { BRAND } from '@da/ui';
 
 import { CART_EVENT, type CartEventDetail, cartApi } from '../lib/cart-client';
 
+import { SearchBox } from './search-box';
+
 /**
  * Site header.
  *
@@ -62,6 +64,11 @@ export function SiteHeader({ locale }: { locale: string }) {
         <Link href={`${prefix}${ROUTES.home}`} className="logo">
           {ar ? BRAND.nameAr : BRAND.nameEn}
         </Link>
+
+        {/* Between the name and the navigation, which is where a shopper
+            looks for it. Until this existed the only way to find a product was
+            to page through the store or to already know a category name. */}
+        <SearchBox locale={locale} />
 
         <nav className="site-nav">
           <Link href={`${prefix}${ROUTES.store}`}>{ar ? 'المتجر' : 'Store'}</Link>

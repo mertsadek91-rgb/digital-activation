@@ -22,6 +22,11 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-1);
+  /* The search box joined this row and it is the one child that can be made
+     narrow rather than dropped, so the row wraps instead of overflowing — the
+     store must never scroll sideways. */
+  flex-wrap: wrap;
+  padding-block: 8px;
 }
 .logo {
   font-weight: 700;

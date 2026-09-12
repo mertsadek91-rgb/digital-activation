@@ -1,23 +1,30 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   type CatalogCollection,
   type CatalogProduct,
   type CatalogQuery,
   type CatalogStore,
   type Home,
+  type SearchResults,
   type SitemapFeed,
   catalogQuerySchema,
+  searchQuerySchema,
 } from '@da/contracts';
 
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogService } from './catalog.service.js';
+import { SearchService } from './search.service.js';
 
 @ApiTags('catalog')
 @Controller('catalog')
 export class CatalogController {
-  constructor(private readonly catalog: CatalogService) {}
+  constructor(
+    private readonly catalog: CatalogService,
+    private readonly searchService: SearchService,
+  ) {}
 
   @Get('home')
   @ApiOperation({ summary: 'Everything the home page renders, in one response' })
@@ -39,6 +46,23 @@ export class CatalogController {
    * storefront. Cached hard at the edge — it changes when the catalog does,
    * which is rarely.
    */
+  /**
+   * The search box.
+   *
+   * Throttled: the query is arbitrary text and the index is held in memory, so
+   * the cost of one request is small and the cost of a thousand a second is
+   * not. Well above anything a person typing could reach.
+   */
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Get('search')
+  @ApiOperation({ summary: 'Products matching a query, best first' })
+  search(
+    @Query('q') q = '',
+    @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery,
+  ): Promise<SearchResults> {
+    return this.searchService.search({ q: searchQuerySchema.parse(q), query });
+  }
+
   @Get('sitemap')
   @ApiOperation({ summary: 'Published paths with their lastmod, for the sitemap' })
   sitemap(): Promise<SitemapFeed> {
