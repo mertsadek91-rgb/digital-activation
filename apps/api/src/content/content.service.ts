@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { type ContentPage, blockDocumentSchema } from '@da/contracts';
 import { Locale, type Prisma, PublishStatus } from '@da/db';
 
+import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -173,10 +174,16 @@ function normalisePath(pathname: string): string | null {
   return (trimmed === '' ? '/' : trimmed).toLowerCase();
 }
 
-/** Prisma's Json columns are `unknown` at the type level; parse, do not cast. */
+/**
+ * Prisma's Json columns are `unknown` at the type level; parse, do not cast.
+ *
+ * Sanitised on the way out for the same reason the catalog's bodies are: the
+ * pages were imported from WordPress too, and `blocks.tsx` renders a richText
+ * block as markup rather than as text.
+ */
 function parseBlocks(value: Prisma.JsonValue): ContentPage['blocks'] {
   const parsed = blockDocumentSchema.safeParse(value ?? []);
-  return parsed.success ? parsed.data : [];
+  return parsed.success ? sanitizeBlocks(parsed.data) : [];
 }
 
 function parseSeo(value: Prisma.JsonValue): ContentPage['seo'] {

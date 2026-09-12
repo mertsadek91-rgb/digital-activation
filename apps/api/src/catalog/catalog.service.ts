@@ -18,14 +18,22 @@ import {
 } from '@da/contracts';
 import { FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
+import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { displayPrice, type FxTable } from './pricing.js';
 
-/** Prisma's Json columns are `unknown` at the type level; parse, do not cast. */
+/**
+ * Prisma's Json columns are `unknown` at the type level; parse, do not cast.
+ *
+ * And sanitise on the way out, not only on the way in. These bodies came from
+ * WordPress carrying `<style>`, `<link>` and `<xmp>` tags that the storefront
+ * renders through `dangerouslySetInnerHTML` — cleaning them only when somebody
+ * saves that product would leave all 73 of them intact indefinitely.
+ */
 function parseBlocks(value: Prisma.JsonValue | null): CatalogProduct['body'] {
   const parsed = blockDocumentSchema.safeParse(value ?? []);
-  return parsed.success ? parsed.data : [];
+  return parsed.success ? sanitizeBlocks(parsed.data) : [];
 }
 
 function parseFaq(value: Prisma.JsonValue | null): CatalogProduct['faq'] {
