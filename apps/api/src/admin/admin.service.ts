@@ -214,9 +214,14 @@ export class AdminService {
     const readiness = assessProduct(product, this.localeFor({ locale }));
 
     if (status === PublishStatus.PUBLISHED && !readiness.publishable) {
+      // `detail` is null on a check that passed, and these are the ones that
+      // did not — but narrowing it here beats asserting it, because the only
+      // cost is a filter and the alternative is a `null` in the sentence the
+      // editor reads.
       const blockers = readiness.checks
         .filter((check) => check.severity === 'blocker' && !check.passed)
-        .map((check) => check.detail);
+        .map((check) => check.detail)
+        .filter((detail): detail is string => detail !== null);
       throw new BadRequestException({
         message: 'هذا المنتج غير جاهز للنشر.',
         blockers,

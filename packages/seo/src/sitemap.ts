@@ -89,7 +89,7 @@ export function sitemapXml(urls: SitemapUrl[]): string {
       const alternates = url.alternates
         .map(
           (alt) =>
-            `    <xhtml:link rel="alternate" hreflang="${alt.hrefLang}" href="${xmlEscape(alt.href)}" />`,
+            `    <xhtml:link rel="alternate" hreflang="${xmlEscape(alt.hrefLang)}" href="${xmlEscape(alt.href)}" />`,
         )
         .join('\n');
       const images = (url.images ?? [])

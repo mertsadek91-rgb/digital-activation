@@ -144,37 +144,45 @@ export function assessProduct(product: ProductForReadiness, locale: Locale): Rea
   const checks: ReadinessCheck[] = [];
 
   const title = translation?.seoTitle?.trim() ?? '';
+  const titlePassed = title.length >= READINESS_RULES.seoTitleMinLength;
   checks.push({
     key: 'seoTitle',
     severity: 'blocker',
-    passed: title.length >= READINESS_RULES.seoTitleMinLength,
-    detail: title.length === 0 ? say('seoTitleMissing') : say('seoTitleShort', title.length),
+    passed: titlePassed,
+    detail: titlePassed
+      ? null
+      : title.length === 0
+        ? say('seoTitleMissing')
+        : say('seoTitleShort', title.length),
   });
 
   const description = translation?.seoDescription?.trim() ?? '';
+  const descriptionPassed = description.length >= READINESS_RULES.seoDescriptionMinLength;
   checks.push({
     key: 'seoDescription',
     severity: 'blocker',
-    passed: description.length >= READINESS_RULES.seoDescriptionMinLength,
-    detail:
-      description.length === 0
+    passed: descriptionPassed,
+    detail: descriptionPassed
+      ? null
+      : description.length === 0
         ? say('seoDescriptionMissing')
         : say('seoDescriptionShort', description.length),
   });
 
   const words = countBodyWords(bodyText(translation?.body));
+  const bodyPassed = words >= READINESS_RULES.bodyMinWords;
   checks.push({
     key: 'body',
     severity: 'blocker',
-    passed: words >= READINESS_RULES.bodyMinWords,
-    detail: say('bodyShort', words),
+    passed: bodyPassed,
+    detail: bodyPassed ? null : say('bodyShort', words),
   });
 
   checks.push({
     key: 'primaryCategory',
     severity: 'blocker',
     passed: product.primaryCategoryId !== null,
-    detail: say('noPrimaryCategory'),
+    detail: product.primaryCategoryId !== null ? null : say('noPrimaryCategory'),
   });
 
   const hasVariant = product.variants.length > 0;
@@ -182,14 +190,16 @@ export function assessProduct(product: ProductForReadiness, locale: Locale): Rea
     key: 'sku',
     severity: 'blocker',
     passed: hasVariant,
-    detail: say('noVariant'),
+    detail: hasVariant ? null : say('noVariant'),
   });
 
+  const pricePassed =
+    hasVariant && product.variants.every((variant) => variant.priceUsd.toNumber() > 0);
   checks.push({
     key: 'price',
     severity: 'blocker',
-    passed: hasVariant && product.variants.every((variant) => variant.priceUsd.toNumber() > 0),
-    detail: say('zeroPrice'),
+    passed: pricePassed,
+    detail: pricePassed ? null : say('zeroPrice'),
   });
 
   // Warnings from here down.
@@ -197,15 +207,16 @@ export function assessProduct(product: ProductForReadiness, locale: Locale): Rea
     key: 'heroImage',
     severity: 'warning',
     passed: product.media.length > 0,
-    detail: say('noImage'),
+    detail: product.media.length > 0 ? null : say('noImage'),
   });
 
   const english = product.translations.find((entry) => entry.locale === Locale.EN);
+  const englishNamed = Boolean(english?.name.trim());
   checks.push({
     key: 'englishName',
     severity: 'warning',
-    passed: Boolean(english?.name.trim()),
-    detail: say('noEnglishName'),
+    passed: englishNamed,
+    detail: englishNamed ? null : say('noEnglishName'),
   });
 
   return {

@@ -71,6 +71,17 @@ describe('assessProduct', () => {
     expect(failed(aProduct())).toEqual([]);
   });
 
+  it('says nothing at all about a check that passed', () => {
+    // Every check used to carry its complaint whether or not it applied, so a
+    // fully ready product shipped eight sentences describing what was wrong
+    // with it. Anything rendering `detail` without also reading `passed` — a
+    // future export, a second panel — would have read those as failures.
+    const readiness = assessProduct(aProduct(), Locale.AR);
+
+    expect(readiness.checks.every((check) => check.passed)).toBe(true);
+    expect(readiness.checks.map((check) => check.detail)).toEqual(readiness.checks.map(() => null));
+  });
+
   it('blocks a product with no SEO title', () => {
     const readiness = assessProduct(withTranslation({ seoTitle: null }), Locale.AR);
 

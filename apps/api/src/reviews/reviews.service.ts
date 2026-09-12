@@ -86,14 +86,12 @@ export class ReviewsService {
         deliveredAt: true,
         order: { select: { number: true } },
         variant: { select: { product: { select: { slug: true } } } },
-        reviews: true,
+        review: true,
       },
     });
 
     const rows = items.map((item) => {
-      // One per line at the database level; the relation is a list because
-      // that is how the generated client models it.
-      const review = item.reviews[0];
+      const review = item.review;
       return {
         orderItemId: item.id,
         orderNumber: item.order.number,
@@ -128,7 +126,7 @@ export class ReviewsService {
         orderId: true,
         fulfillmentState: true,
         variant: { select: { productId: true } },
-        reviews: { select: { id: true } },
+        review: { select: { id: true } },
       },
     });
     if (!item) throw new NotFoundException('لا يوجد هذا البند في طلباتك.');
@@ -136,7 +134,7 @@ export class ReviewsService {
     if (item.fulfillmentState !== FulfillmentState.DELIVERED) {
       throw new BadRequestException('لم يُسلَّم هذا البند بعد، فلا شيء لتقييمه.');
     }
-    if (item.reviews.length > 0) {
+    if (item.review) {
       throw new BadRequestException('لديك تقييم لهذا البند بالفعل. يمكنك تعديله بدل كتابة آخر.');
     }
 
@@ -502,7 +500,7 @@ export class ReviewsService {
           select: {
             id: true,
             productNameSnapshot: true,
-            reviews: { select: { id: true } },
+            review: { select: { id: true } },
           },
         },
       },
@@ -516,7 +514,7 @@ export class ReviewsService {
     // Nothing delivered, or everything already reviewed: no email. An
     // invitation to review something you have already reviewed is the kind of
     // message that teaches people to filter the sender.
-    const pending = order.items.filter((item) => item.reviews.length === 0);
+    const pending = order.items.filter((item) => item.review === null);
     if (pending.length === 0) return { sent: false };
 
     const already = await this.prisma.client.reviewInvite.findUnique({

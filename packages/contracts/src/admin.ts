@@ -80,8 +80,13 @@ export const readinessCheckSchema = z.object({
   /** Blockers refuse the publish; warnings are shown and allowed. */
   severity: z.enum(['blocker', 'warning']),
   passed: z.boolean(),
-  /** What is wrong, in the words an editor needs to act on. */
-  detail: z.string(),
+  /**
+   * What is wrong, in the words an editor needs to act on — and `null` when
+   * nothing is. A passing check used to carry a sentence too ("the body is 340
+   * words"), which reads as a complaint to anything that renders `detail`
+   * without also reading `passed`.
+   */
+  detail: z.string().nullable(),
 });
 export type ReadinessCheck = z.infer<typeof readinessCheckSchema>;
 

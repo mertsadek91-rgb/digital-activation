@@ -66,10 +66,21 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busySlug, setBusySlug] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<{ slug: string; value: Readiness } | null>(null);
+  /**
+   * Which language the gate is being read in.
+   *
+   * Not cosmetic. The gate is assessed per locale and this screen sent `ar` and
+   * only `ar`, so the one thing it could never tell you is the thing that is
+   * actually true of this catalog: all 73 English translations are missing both
+   * SEO fields. Switching here changes the blocker counts, the drawer and what
+   * publishing is refused for, together — a gate that disagreed with the screen
+   * it is drawn on would be worse than no gate.
+   */
+  const [locale, setLocale] = useState<'ar' | 'en'>('ar');
 
   const load = useCallback(async () => {
     try {
-      setData(await api.products({ status: filter, q: query || undefined }));
+      setData(await api.products({ status: filter, q: query || undefined, locale }));
       setError(null);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
@@ -78,7 +89,7 @@ export default function ProductsPage() {
       }
       setError(caught instanceof Error ? caught.message : 'تعذّر تحميل المنتجات.');
     }
-  }, [filter, query, router]);
+  }, [filter, query, locale, router]);
 
   useEffect(() => {
     void (async () => {
@@ -107,7 +118,7 @@ export default function ProductsPage() {
     setBusySlug(row.slug);
     setError(null);
     try {
-      await api.setStatus(row.slug, row.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED');
+      await api.setStatus(row.slug, row.status === 'PUBLISHED' ? 'DRAFT' : 'PUBLISHED', locale);
       await load();
     } catch (caught) {
       if (caught instanceof ApiError) {
@@ -129,7 +140,7 @@ export default function ProductsPage() {
       setReadiness(null);
       return;
     }
-    setReadiness({ slug, value: await api.readiness(slug) });
+    setReadiness({ slug, value: await api.readiness(slug, locale) });
   }
 
   if (!me) return <main className="shell">…</main>;
@@ -173,6 +184,26 @@ export default function ProductsPage() {
           onChange={(event) => setQuery(event.target.value)}
           className="search"
         />
+
+        {/* Switching language closes any open drawer: the checks in it were
+            read for the other one, and a stale list of blockers is worse than
+            no list. */}
+        <div className="locale-switch" role="group" aria-label="لغة الجهوزية">
+          {(['ar', 'en'] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              className={`chip${locale === code ? ' is-active' : ''}`}
+              aria-pressed={locale === code}
+              onClick={() => {
+                setLocale(code);
+                setReadiness(null);
+              }}
+            >
+              {code === 'ar' ? 'عربي' : 'English'}
+            </button>
+          ))}
+        </div>
       </nav>
 
       {error ? <p className="error">{error}</p> : null}

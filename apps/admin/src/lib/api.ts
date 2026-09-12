@@ -91,29 +91,49 @@ export const api = {
       body: JSON.stringify({ currentPassword, newPassword }),
     }),
 
-  products: (params: { status?: string; q?: string; page?: number; perPage?: number }) => {
+  products: (params: {
+    status?: string;
+    q?: string;
+    page?: number;
+    perPage?: number;
+    locale?: 'ar' | 'en';
+  }) => {
     const search = new URLSearchParams();
     if (params.status && params.status !== 'all') search.set('status', params.status);
     if (params.q) search.set('q', params.q);
     search.set('page', String(params.page ?? 1));
     search.set('perPage', String(params.perPage ?? 50));
+    search.set('locale', params.locale ?? 'ar');
     return request<AdminProductList>(`/admin/products?${search.toString()}`);
   },
 
-  readiness: (slug: string) => request<Readiness>(`/admin/products/${slug}/readiness?locale=ar`),
-
-  setStatus: (slug: string, status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED') =>
-    request<{ status: string; readiness: Readiness }>(`/admin/products/${slug}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, locale: 'ar' }),
-    }),
-
   /**
-   * The copy the publish gate reads. Locale is a real argument here, unlike
-   * `readiness` above: the gate is assessed per locale, and the whole reason
-   * this drawer exists is that every English translation in the catalog is
-   * missing both SEO fields.
+   * The gate, for one locale.
+   *
+   * Both of these used to send `ar` and nothing else, which made the English
+   * gate unassessable from the panel: every English translation in the catalog
+   * is missing both SEO fields, and the screen that exists to show you that
+   * was reporting on the Arabic copy instead. Publishing follows the same
+   * locale, because refusing on Arabic while showing English readings would be
+   * a gate that disagrees with the screen it is drawn on.
    */
+  readiness: (slug: string, locale: 'ar' | 'en' = 'ar') =>
+    request<Readiness>(`/admin/products/${encodeURIComponent(slug)}/readiness?locale=${locale}`),
+
+  setStatus: (
+    slug: string,
+    status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED',
+    locale: 'ar' | 'en' = 'ar',
+  ) =>
+    request<{ status: string; readiness: Readiness }>(
+      `/admin/products/${encodeURIComponent(slug)}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status, locale }),
+      },
+    ),
+
+  /** The copy the publish gate reads, for the locale being assessed. */
   productCopy: (slug: string, locale: 'ar' | 'en') =>
     request<ProductCopy>(`/admin/products/${encodeURIComponent(slug)}/copy?locale=${locale}`),
 

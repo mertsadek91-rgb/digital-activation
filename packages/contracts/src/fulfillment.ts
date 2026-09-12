@@ -80,18 +80,27 @@ export type Queue = z.infer<typeof queueSchema>;
  * A discriminated union rather than a `code` field that sometimes holds a
  * password: the two shapes are stored differently, rendered differently and
  * labelled differently, and every one of those decisions needs to know which
- * it is holding. Neither part may contain a newline — the sealed payload is
- * newline-separated, so a newline inside a password would split it in two.
+ * it is holding.
+ *
+ * Neither part may contain a newline — the sealed payload is newline-separated,
+ * so a newline inside a password would split it in two and deliver half a
+ * credential. `canonical()` in the vault refuses one as the last line of
+ * defence; refusing it here as well is what puts the message on the field that
+ * holds it, rather than as a 400 from three layers down with no field named.
  */
+const noNewline = z.string().refine((value) => !/[\r\n]/.test(value), {
+  message: 'must not contain a line break',
+});
+
 export const secretInputSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('ACTIVATION_KEY'),
-    key: z.string().trim().min(4).max(4000),
+    key: noNewline.trim().min(4).max(4000),
   }),
   z.object({
     kind: z.literal('ACCOUNT_CREDENTIALS'),
-    username: z.string().trim().min(3).max(320),
-    password: z.string().trim().min(4).max(500),
+    username: noNewline.trim().min(3).max(320),
+    password: noNewline.trim().min(4).max(500),
   }),
 ]);
 export type SecretInput = z.infer<typeof secretInputSchema>;

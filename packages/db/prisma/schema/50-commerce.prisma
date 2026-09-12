@@ -187,7 +187,12 @@ model OrderItem {
   /// the `public` schema.
   assignedKeyIds   String[]
 
-  reviews Review[]
+  /// At most one, enforced by the unique `orderItemId` on the other side: a
+  /// review on this store is a bought line's opinion of itself, so a second
+  /// one would mean the same purchase was rated twice. Modelled as an optional
+  /// single rather than a list, because a list asks every caller to handle a
+  /// second review that the database will not allow to exist.
+  review Review?
 
   @@index([orderId])
   @@index([fulfillmentState])

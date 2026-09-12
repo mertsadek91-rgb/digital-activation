@@ -230,6 +230,30 @@ button.linky:hover .pill {
 }
 
 /*
+ * Which language the publish gate is being read in.
+ *
+ * Two chips joined into one control rather than two loose ones, because they
+ * are a single choice: the pair sits after the search box, at the end of the
+ * row, since it is changed far less often than the filters at the start of it.
+ */
+.locale-switch {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
+}
+.locale-switch .chip {
+  border-color: transparent;
+  background: transparent;
+  min-block-size: 30px;
+}
+.locale-switch .chip.is-active {
+  border-color: transparent;
+}
+
+/*
  * The table gets its own scroll box rather than growing the page, so the
  * column header stays pinned over 72 rows. A dense list whose header scrolls
  * away is a list you have to count columns in.
