@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Digital Activation">
+  <!--
+    The store's tab icon.
+
+    A key, because that is literally what this shop sells, and because a
+    favicon is read at sixteen pixels where a wordmark is a smudge — the two
+    Arabic and English names are five and nineteen characters, so neither
+    survives the size.
+
+    Drawn rather than exported: an SVG icon is text in the repository, scales
+    to every density without a second file, and needs no image tooling to
+    change. Next serves it and writes the link tag from the file's presence.
+
+    Brand green on a rounded square rather than a bare glyph on transparent: a
+    tab strip and a phone home screen both put this against unknown
+    backgrounds, and a transparent dark key vanishes on a dark one.
+  -->
+  <rect width="32" height="32" rx="7" fill="#148576" />
+  <g fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round">
+    <!-- The bow. -->
+    <circle cx="11.5" cy="20.5" r="4.4" />
+    <!-- The shaft, running up to the bit. -->
+    <path d="M14.7 17.3 L23 9" />
+    <!-- Two teeth, which is what reads as a key rather than as a balloon. -->
+    <path d="M19.4 12.6 L21.8 15" />
+    <path d="M22.3 9.7 L24.6 12" />
+  </g>
+</svg>
