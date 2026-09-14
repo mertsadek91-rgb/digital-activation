@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { absoluteUrl, alternates, canonical, localizedPath } from './hreflang.js';
+import { absoluteUrl, alternates, alternatesIn, canonical, localizedPath } from './hreflang.js';
 
 /**
  * Guards the locale routing that the whole bilingual plan rests on.
@@ -87,5 +87,43 @@ describe('canonical', () => {
     expect(
       canonical('https://digital-activation.com', '/store/win', 'en', 'https://elsewhere.test/x'),
     ).toBe('https://elsewhere.test/x');
+  });
+});
+
+/**
+ * The blog is the first thing on this site that exists in one language only.
+ *
+ * Seven posts came across from the old store and all seven are Arabic. The
+ * blanket pair would have put `hreflang="en"` on every one of them, pointing at
+ * `/en/blog/<slug>` — which answers 404, because the post endpoint deliberately
+ * does not fall back across locales the way a product page does. That is a
+ * reciprocity error Search Console reports, and it would have shipped in the
+ * sitemap seven times.
+ */
+describe('alternatesIn', () => {
+  it('declares only the language a post was actually written in', () => {
+    const links = alternatesIn('https://digital-activation.com', '/blog/excel-keyboard-shortcuts', [
+      'ar',
+    ]);
+
+    expect(links.map((link) => link.hrefLang)).toEqual(['ar', 'x-default']);
+    expect(links.every((link) => !link.href.includes('/en/'))).toBe(true);
+  });
+
+  it('matches the blanket pair once a post exists in both', () => {
+    const path = '/blog/excel-keyboard-shortcuts';
+    expect(alternatesIn('https://digital-activation.com', path, ['ar', 'en'])).toEqual(
+      alternates('https://digital-activation.com', path),
+    );
+  });
+
+  it('points x-default at the only language there is, not at a missing Arabic one', () => {
+    const links = alternatesIn('https://digital-activation.com', '/blog/english-only', ['en']);
+
+    expect(links.map((link) => link.hrefLang)).toEqual(['en', 'x-default']);
+    expect(links.map((link) => link.href)).toEqual([
+      'https://digital-activation.com/en/blog/english-only',
+      'https://digital-activation.com/en/blog/english-only',
+    ]);
   });
 });

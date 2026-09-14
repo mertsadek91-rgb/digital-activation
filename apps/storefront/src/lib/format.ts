@@ -239,3 +239,32 @@ export function variantLabel(
 ): string {
   return `${formatLicensePeriod(variant, locale)} · ${formatDevices(variant.deviceCount, locale)}`;
 }
+
+/**
+ * A publication date, in the reader's own calendar convention.
+ *
+ * Gregorian in both languages with Latin digits, which is what the store this
+ * replaces prints and what a reader comparing two posts needs: `ar-SA` would
+ * give Hijri dates that do not line up with the Gregorian ones in the article
+ * bodies, and Eastern Arabic numerals that no other number on this site uses.
+ */
+export function formatArticleDate(iso: string, locale: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'ar', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    calendar: 'gregory',
+    numberingSystem: 'latn',
+  }).format(date);
+}
+
+/** "٥ دقائق قراءة" — the plural rules Arabic needs, not a bare number. */
+export function readingLabel(minutes: number, locale: string): string {
+  if (locale === 'en') return `${String(minutes)} min read`;
+  if (minutes === 1) return 'دقيقة قراءة';
+  if (minutes === 2) return 'دقيقتا قراءة';
+  if (minutes <= 10) return `${String(minutes)} دقائق قراءة`;
+  return `${String(minutes)} دقيقة قراءة`;
+}

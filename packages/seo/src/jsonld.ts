@@ -87,7 +87,13 @@ export interface ArticleInput {
   imageUrl?: string;
   datePublished: string;
   dateModified: string;
-  author: { name: string; url?: string; sameAs?: string[] };
+  /**
+   * `Organization` for a post the shop published without a by-line, which is
+   * what the seven imported posts are. A named `Person` is better and is what
+   * the `Author` table exists to hold; inventing one to fill the field would be
+   * the same habit as the 565 reviews nobody wrote.
+   */
+  author: { name: string; url?: string; sameAs?: string[]; type?: 'Person' | 'Organization' };
   publisherName: string;
 }
 
@@ -213,7 +219,7 @@ export function article(input: ArticleInput): JsonLdNode {
     datePublished: input.datePublished,
     dateModified: input.dateModified,
     author: {
-      '@type': 'Person',
+      '@type': input.author.type ?? 'Person',
       name: input.author.name,
       ...(input.author.url ? { url: input.author.url } : {}),
       ...(input.author.sameAs ? { sameAs: input.author.sameAs } : {}),

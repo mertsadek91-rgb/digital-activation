@@ -133,6 +133,9 @@ export function SiteFooter({
               <Link href={`${prefix}${ROUTES.store}`}>{ar ? 'المتجر' : 'Store'}</Link>
             </li>
             <li>
+              <Link href={`${prefix}${ROUTES.blog}`}>{ar ? 'المدونة' : 'Blog'}</Link>
+            </li>
+            <li>
               <Link href={`${prefix}${ROUTES.search}`}>{ar ? 'ابحث' : 'Search'}</Link>
             </li>
             <li>

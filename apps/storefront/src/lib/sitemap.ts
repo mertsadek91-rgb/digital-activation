@@ -1,5 +1,19 @@
-import { ROUTES, type SitemapEntry, type SitemapFeed, sitemapFeedSchema } from '@da/contracts';
-import { alternates, indexingPolicy, sitemapIndexXml, sitemapXml, type SitemapUrl } from '@da/seo';
+import {
+  type AppLocale,
+  localeSchema,
+  ROUTES,
+  type SitemapEntry,
+  type SitemapFeed,
+  sitemapFeedSchema,
+} from '@da/contracts';
+import {
+  alternates,
+  alternatesIn,
+  indexingPolicy,
+  sitemapIndexXml,
+  sitemapXml,
+  type SitemapUrl,
+} from '@da/seo';
 import { z } from 'zod';
 
 /**
@@ -32,15 +46,21 @@ const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 export const STATIC_PATHS: { path: string; changeFrequency: 'daily' | 'weekly' }[] = [
   { path: ROUTES.home, changeFrequency: 'daily' },
   { path: ROUTES.store, changeFrequency: 'daily' },
+  // The index itself. Its entries are in the posts section; this is the page
+  // that links them, and it changes whenever one is published.
+  { path: ROUTES.blog, changeFrequency: 'weekly' },
 ];
 
-export type Section = 'pages' | 'products' | 'collections';
+export type Section = 'pages' | 'products' | 'collections' | 'posts';
 
 /** How often each kind of page genuinely changes. A guess here is noise. */
-const CHANGE_FREQUENCY: Record<Section, 'daily' | 'weekly'> = {
+const CHANGE_FREQUENCY: Record<Section, 'daily' | 'weekly' | 'monthly'> = {
   pages: 'daily',
   products: 'weekly',
   collections: 'weekly',
+  // A post is written once and edited rarely. Claiming weekly would be the
+  // kind of guess that teaches a crawler to ignore the field entirely.
+  posts: 'monthly',
 };
 
 /**
@@ -50,15 +70,40 @@ const CHANGE_FREQUENCY: Record<Section, 'daily' | 'weekly'> = {
  * page is a row somebody can edit and a second page will be added without
  * anyone remembering this file exists.
  */
-async function editorialPages(): Promise<{ slug: string; lastModified: string }[] | null> {
+async function slugFeed(path: string): Promise<{ slug: string; lastModified: string }[] | null> {
   try {
-    const response = await fetch(new URL('/v1/content/pages', API_URL), {
+    const response = await fetch(new URL(path, API_URL), {
       headers: { accept: 'application/json' },
       next: { revalidate: 3600 },
     });
     if (!response.ok) return null;
     const parsed = z
       .array(z.object({ slug: z.string(), lastModified: z.string() }))
+      .safeParse(await response.json());
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Post slugs with their lastmod and the languages each exists in. */
+async function postFeed(): Promise<
+  { slug: string; lastModified: string; locales: AppLocale[] }[] | null
+> {
+  try {
+    const response = await fetch(new URL('/v1/content/post-slugs', API_URL), {
+      headers: { accept: 'application/json' },
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) return null;
+    const parsed = z
+      .array(
+        z.object({
+          slug: z.string(),
+          lastModified: z.string(),
+          locales: z.array(localeSchema).min(1),
+        }),
+      )
       .safeParse(await response.json());
     return parsed.success ? parsed.data : null;
   } catch {
@@ -110,7 +155,7 @@ export async function sectionUrls(section: Section): Promise<SitemapUrl[] | null
       alternates: alternates(SITE_URL, entry.path),
     }));
 
-    const editorial = await editorialPages();
+    const editorial = await slugFeed('/v1/content/pages');
     if (editorial === null) return null;
 
     return [
@@ -124,6 +169,19 @@ export async function sectionUrls(section: Section): Promise<SitemapUrl[] | null
         alternates: alternates(SITE_URL, `/${page.slug}`),
       })),
     ];
+  }
+
+  if (section === 'posts') {
+    const posts = await postFeed();
+    if (posts === null) return null;
+    return posts.map((post) => ({
+      loc: new URL(ROUTES.post(post.slug), SITE_URL).toString(),
+      lastmod: post.lastModified,
+      changefreq: CHANGE_FREQUENCY.posts,
+      // Only the languages the post was actually written in. Everything else
+      // on this site falls back across locales; a post does not.
+      alternates: alternatesIn(SITE_URL, ROUTES.post(post.slug), post.locales),
+    }));
   }
 
   const data = await feed();
@@ -179,7 +237,7 @@ export async function serveSection(section: Section): Promise<Response> {
 export async function serveIndex(): Promise<Response> {
   if (!indexable()) return notFound();
 
-  const sections: Section[] = ['pages', 'products', 'collections'];
+  const sections: Section[] = ['pages', 'products', 'collections', 'posts'];
   const present: string[] = [];
   for (const section of sections) {
     const urls = await sectionUrls(section);

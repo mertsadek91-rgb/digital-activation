@@ -14,6 +14,8 @@ import {
   type CatalogCollection,
   type CatalogProductWithRelated,
   type CatalogStore,
+  type Article,
+  type BlogIndex,
   type ContentPage,
   type Home,
   type ProductReviews,
@@ -23,6 +25,8 @@ import {
   catalogStoreSchema,
   type SearchResults,
   searchResultsSchema,
+  articleSchema,
+  blogIndexSchema,
   contentPageSchema,
   productReviewsSchema,
   redirectTargetSchema,
@@ -178,6 +182,14 @@ export function reportNotFound(pathname: string, referer?: string): void {
 
 export function getPage(slug: string, options: FetchOptions): Promise<ContentPage | null> {
   return request(`/content/pages/${encodeURIComponent(slug)}`, options, contentPageSchema);
+}
+
+export function getPosts(options: FetchOptions): Promise<BlogIndex | null> {
+  return request('/content/posts', options, blogIndexSchema);
+}
+
+export function getPost(slug: string, options: FetchOptions): Promise<Article | null> {
+  return request(`/content/posts/${encodeURIComponent(slug)}`, options, articleSchema);
 }
 
 export function getProduct(

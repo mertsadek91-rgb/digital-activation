@@ -3,6 +3,8 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import {
+  type Article,
+  type BlogIndex,
   type ContentPage,
   type Suggestions,
   recordNotFoundSchema,
@@ -33,6 +35,22 @@ export class ContentController {
     @Query('preview') preview?: string,
   ): Promise<ContentPage> {
     return this.content.page(slug, locale, preview);
+  }
+
+  @Get('posts')
+  @ApiOperation({ summary: 'Every published blog post, newest first' })
+  posts(@Query('locale') locale = 'ar', @Query('preview') preview?: string): Promise<BlogIndex> {
+    return this.content.articles(locale, preview);
+  }
+
+  @Get('posts/:slug')
+  @ApiOperation({ summary: 'One blog post, with the newest others' })
+  post(
+    @Param('slug') slug: string,
+    @Query('locale') locale = 'ar',
+    @Query('preview') preview?: string,
+  ): Promise<Article> {
+    return this.content.article(slug, locale, preview);
   }
 
   /**
@@ -114,5 +132,22 @@ export class ContentController {
   async pages(): Promise<{ slug: string; lastModified: string }[]> {
     const rows = await this.content.publishedSlugs();
     return rows.map((row) => ({ slug: row.slug, lastModified: row.updatedAt.toISOString() }));
+  }
+
+  /**
+   * Deliberately separate from `posts` above, which carries titles, summaries
+   * and reading times the sitemap has no use for. A sitemap asks one question —
+   * what exists and when did it change — and answering it with the blog index
+   * would mean fetching seven summaries every hour to read two fields.
+   */
+  @Get('post-slugs')
+  @ApiOperation({ summary: 'Published post slugs and their languages, for the sitemap' })
+  async postSlugs(): Promise<{ slug: string; lastModified: string; locales: string[] }[]> {
+    const rows = await this.content.publishedPostSlugs();
+    return rows.map((row) => ({
+      slug: row.slug,
+      lastModified: row.updatedAt.toISOString(),
+      locales: row.locales,
+    }));
   }
 }

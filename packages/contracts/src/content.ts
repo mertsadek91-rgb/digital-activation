@@ -218,3 +218,54 @@ export const suggestionsSchema = z.object({
   suggestions: z.array(suggestionSchema),
 });
 export type Suggestions = z.infer<typeof suggestionsSchema>;
+
+/**
+ * The blog.
+ *
+ * Seven posts carried over from the store this replaces, and they are the only
+ * pages on it that answer a question somebody types into a search engine rather
+ * than a shopping query — "اختصارات Excel", "ويندوز 10 مقابل ويندوز 11". On a
+ * migration whose whole risk is losing organic traffic, dropping the only
+ * editorial content would have been the one avoidable loss.
+ */
+export const articleCardSchema = z.object({
+  slug: slugSchema,
+  locale: localeSchema,
+  title: z.string(),
+  /**
+   * Never derived by the reader.
+   *
+   * The store this replaces derived its excerpt by stripping tags from the
+   * body, which removes `<style>` and `</style>` and leaves the CSS between
+   * them as text — so three of its seven article cards print
+   * `da-article { font-family: 'Tajawal'…` where a summary should be. This
+   * field is written once at import, from prose only.
+   */
+  summary: z.string().nullable(),
+  readingMinutes: z.number().int().min(0),
+  publishedAt: z.string().nullable(),
+});
+export type ArticleCard = z.infer<typeof articleCardSchema>;
+
+export const articleSchema = articleCardSchema.extend({
+  blocks: blockDocumentSchema,
+  seo: z.object({
+    title: z.string().nullable(),
+    description: z.string().nullable(),
+  }),
+  updatedAt: z.string(),
+  /** True when this post is not published; only reachable in preview. */
+  isDraft: z.boolean(),
+  /** Newer posts, for the foot of the page. Never includes this one. */
+  more: z.array(articleCardSchema),
+});
+export type Article = z.infer<typeof articleSchema>;
+
+export const blogIndexSchema = z.object({
+  posts: z.array(articleCardSchema),
+  total: z.number().int().min(0),
+});
+export type BlogIndex = z.infer<typeof blogIndexSchema>;
+
+/** Posts under a single post, and on the home page's latest row. */
+export const BLOG_MORE_SIZE = 3;

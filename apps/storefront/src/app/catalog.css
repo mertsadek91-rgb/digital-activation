@@ -1567,3 +1567,121 @@ h1 {
 .related-row > * {
   scroll-snap-align: start;
 }
+
+/* --- the blog -------------------------------------------------------------- */
+
+/*
+ * A single column at a readable measure.
+ *
+ * The rest of this store is a grid of cards because it sells things; the blog
+ * is prose and wants the opposite — one column, wide margins, nothing beside it
+ * competing for the eye. The measure is on the text rather than the page so the
+ * headings and the meta line still start at the same edge.
+ */
+.blog-head {
+  max-inline-size: 46rem;
+  margin-block-end: var(--spacing-3);
+}
+.blog-head h1 {
+  margin-block: 0 var(--spacing-half);
+  color: var(--color-brand-ink);
+}
+.blog-head p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-lg);
+}
+.blog-empty {
+  color: var(--color-ink-muted);
+}
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-inline-size: 46rem;
+  display: grid;
+  gap: var(--spacing-2);
+}
+.post-card {
+  padding-block-end: var(--spacing-2);
+  border-block-end: 1px solid var(--color-border);
+}
+.post-list > li:last-child .post-card {
+  border-block-end: 0;
+}
+.post-card h2 {
+  margin: 0 0 6px;
+  font-size: var(--text-xl);
+}
+.post-card h2 a {
+  color: var(--color-brand-ink);
+  text-decoration: none;
+}
+.post-card h2 a:hover {
+  text-decoration: underline;
+}
+.post-summary {
+  margin: 0 0 8px;
+  color: var(--color-ink);
+}
+/* The date and the reading time, which are reference rather than reading. */
+.post-meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.post-body {
+  max-inline-size: 46rem;
+}
+.post-header h1 {
+  margin-block: 0 var(--spacing-1);
+  color: var(--color-brand-ink);
+  /* Long Arabic titles wrap; this stops the second line hugging the first. */
+  line-height: 1.35;
+}
+/* The answer-first summary, set apart from the body it introduces. */
+.post-lede {
+  margin-block: var(--spacing-1) 0;
+  padding-inline-start: var(--spacing-1);
+  border-inline-start: 3px solid var(--color-brand);
+  font-size: var(--text-lg);
+  color: var(--color-ink);
+}
+.post-body .prose {
+  max-width: none;
+  margin-block-start: var(--spacing-2);
+}
+
+.post-more {
+  max-inline-size: 46rem;
+  margin-block-start: var(--spacing-3);
+  padding-block-start: var(--spacing-2);
+  border-block-start: 1px solid var(--color-border);
+}
+.post-more h2 {
+  font-size: var(--text-lg);
+  margin-block: 0 var(--spacing-1);
+  color: var(--color-brand-ink);
+}
+.post-more ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.post-more li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+.post-more a {
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}

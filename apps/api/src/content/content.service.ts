@@ -1,7 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { type ContentPage, blockDocumentSchema } from '@da/contracts';
-import { Locale, type Prisma, PublishStatus } from '@da/db';
+import {
+  type Article,
+  type ArticleCard,
+  BLOG_MORE_SIZE,
+  type BlogIndex,
+  type ContentPage,
+  blockDocumentSchema,
+} from '@da/contracts';
+import { ArticleKind, Locale, type Prisma, PublishStatus } from '@da/db';
 
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -115,6 +122,116 @@ export class ContentService {
     });
   }
 
+  // --- the blog -------------------------------------------------------------
+
+  /**
+   * Every published post, newest first.
+   *
+   * No pagination. There are seven, and a paginated index over seven rows is a
+   * second page that exists only to be crawled and found empty. It gains one
+   * the day the blog needs one.
+   *
+   * Unlike an editorial page there is no cross-locale fallback: the imported
+   * posts are Arabic, and serving Arabic prose under an English URL would
+   * declare a translation that does not exist. The English index is honestly
+   * empty until something is written for it.
+   */
+  async articles(locale: string, preview?: string): Promise<BlogIndex> {
+    const wanted = locale === 'en' ? Locale.EN : Locale.AR;
+    const where = {
+      kind: ArticleKind.POST,
+      locale: wanted,
+      ...(this.allowDrafts(preview) ? {} : { status: PublishStatus.PUBLISHED }),
+    };
+
+    const rows = await this.prisma.client.article.findMany({
+      where,
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return { posts: rows.map(toArticleCard), total: rows.length };
+  }
+
+  async article(slug: string, locale: string, preview?: string): Promise<Article> {
+    const wanted = locale === 'en' ? Locale.EN : Locale.AR;
+    const allowDrafts = this.allowDrafts(preview);
+
+    const post = await this.prisma.client.article.findFirst({
+      where: {
+        slug,
+        kind: ArticleKind.POST,
+        locale: wanted,
+        ...(allowDrafts ? {} : { status: PublishStatus.PUBLISHED }),
+      },
+    });
+    if (!post) throw new NotFoundException(`No post with slug "${slug}"`);
+
+    // Newest others, never this one. Published only even in preview: a draft
+    // suggested under a finished post is a link to something unfinished.
+    const more = await this.prisma.client.article.findMany({
+      where: {
+        kind: ArticleKind.POST,
+        locale: wanted,
+        status: PublishStatus.PUBLISHED,
+        slug: { not: slug },
+      },
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+      take: BLOG_MORE_SIZE,
+    });
+
+    return {
+      ...toArticleCard(post),
+      blocks: parseBlocks(post.blocks),
+      seo: parseSeo(post.seo),
+      updatedAt: post.updatedAt.toISOString(),
+      isDraft: post.status !== PublishStatus.PUBLISHED,
+      more: more.map(toArticleCard),
+    };
+  }
+
+  /**
+   * Published post slugs with their lastmod and, unlike the page equivalent,
+   * the languages each one exists in.
+   *
+   * A page falls back across locales, so every page URL renders in both and a
+   * blanket pair of hreflang alternates is true for it. A post does not — the
+   * imported ones are Arabic and `/en/blog/<slug>` answers 404 — so the sitemap
+   * has to be told which alternates are real rather than assuming two.
+   */
+  async publishedPostSlugs(): Promise<
+    { slug: string; updatedAt: Date; locales: ('ar' | 'en')[] }[]
+  > {
+    const rows = await this.prisma.client.article.findMany({
+      where: { kind: ArticleKind.POST, status: PublishStatus.PUBLISHED },
+      orderBy: { slug: 'asc' },
+      select: { slug: true, updatedAt: true, locale: true },
+    });
+
+    const seen = new Map<string, { updatedAt: Date; locales: Set<'ar' | 'en'> }>();
+    for (const row of rows) {
+      const entry = seen.get(row.slug) ?? { updatedAt: row.updatedAt, locales: new Set() };
+      if (row.updatedAt > entry.updatedAt) entry.updatedAt = row.updatedAt;
+      entry.locales.add(row.locale === Locale.EN ? 'en' : 'ar');
+      seen.set(row.slug, entry);
+    }
+    return [...seen].map(([slug, entry]) => ({
+      slug,
+      updatedAt: entry.updatedAt,
+      // Arabic first, so `x-default` and the reading order agree.
+      locales: (['ar', 'en'] as const).filter((locale) => entry.locales.has(locale)),
+    }));
+  }
+
+  /**
+   * Drafts are visible only to somebody holding the preview token, and only
+   * when one is configured. An unset `PREVIEW_TOKEN` must not mean "everybody":
+   * `undefined === undefined` would open the whole unpublished catalog.
+   */
+  private allowDrafts(preview?: string): boolean {
+    const token = process.env.PREVIEW_TOKEN;
+    return Boolean(token && preview && preview === token);
+  }
+
   /** Published slugs, for the sitemap and for prerendering. */
   async publishedSlugs(): Promise<{ slug: string; updatedAt: Date }[]> {
     const rows = await this.prisma.client.page.findMany({
@@ -172,6 +289,24 @@ function normalisePath(pathname: string): string | null {
   }
   const trimmed = decoded.replace(/\/+$/, '');
   return (trimmed === '' ? '/' : trimmed).toLowerCase();
+}
+
+function toArticleCard(row: {
+  slug: string;
+  locale: Locale;
+  title: string;
+  summary: string | null;
+  readingMinutes: number;
+  publishedAt: Date | null;
+}): ArticleCard {
+  return {
+    slug: row.slug,
+    locale: row.locale === Locale.EN ? 'en' : 'ar',
+    title: row.title,
+    summary: row.summary,
+    readingMinutes: row.readingMinutes,
+    publishedAt: row.publishedAt?.toISOString() ?? null,
+  };
 }
 
 /**
