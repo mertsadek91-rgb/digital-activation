@@ -7,12 +7,30 @@
 
 /* --- header --------------------------------------------------------------- */
 
+/*
+ * The header sticks only where it is one row tall.
+ *
+ * It holds a logo, a search box and six navigation links, which fit on one
+ * line above about 1100px and cannot below it. Stuck at every width it was
+ * 116px on a tablet and 198px on a phone — a quarter of the screen, gone, on
+ * every scroll — and it silently broke everything keyed to
+ * `--header-height: 72px`, including the cart summary that positions itself
+ * just under it.
+ *
+ * So: sticky where the token is true, and an ordinary header that scrolls away
+ * where it is not. A tall header that leaves is better than a tall header that
+ * stays.
+ */
 .site-header {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 10;
   background: var(--color-bg);
   border-block-end: 1px solid var(--color-border);
+}
+@media (min-width: 70rem) {
+  .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 10;
+  }
 }
 .site-header-inner {
   max-width: var(--container-max);

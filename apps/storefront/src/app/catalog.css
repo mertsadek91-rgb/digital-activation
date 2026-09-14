@@ -713,8 +713,15 @@ h1 {
 .search-box {
   display: flex;
   align-items: stretch;
-  flex: 1 1 12rem;
-  max-inline-size: 22rem;
+  /*
+   * Shares the header row where there is room for it, and takes a row of its
+   * own where there is not — rather than squeezing in at 352px and pushing the
+   * navigation onto a second line while still looking like an afterthought.
+   * The breakpoint is the width at which logo, search and nav genuinely fit.
+   */
+  flex: 1 0 100%;
+  order: 3;
+  max-inline-size: none;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
   background: var(--color-bg);
@@ -765,4 +772,12 @@ h1 {
  */
 [dir='rtl'] .search-box button svg {
   transform: scaleX(-1);
+}
+
+@media (min-width: 70rem) {
+  .search-box {
+    flex: 1 1 12rem;
+    order: 0;
+    max-inline-size: 20rem;
+  }
 }
