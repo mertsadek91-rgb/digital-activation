@@ -242,6 +242,81 @@ export class MailService {
     });
     return found !== null;
   }
+
+  /**
+   * Whether mail can actually leave this machine right now.
+   *
+   * The distinction this draws is the one the launch checklist was getting
+   * wrong: `MAIL_TRANSPORT=smtp` is a statement about configuration, and a
+   * store whose SMTP host refuses the connection is configured perfectly and
+   * delivers nothing. On a store whose product *is* an email, that is the
+   * difference between open and quietly broken — and the symptom is an order
+   * that looks fulfilled with a customer who never received anything.
+   *
+   * So it opens the connection. Short timeouts on purpose: this is read by a
+   * screen somebody is waiting on, and "we could not tell within five seconds"
+   * is itself the answer worth printing.
+   */
+  async selfTest(): Promise<{ ok: boolean; detail: string }> {
+    if (this.transport === 'capture') {
+      return {
+        ok: false,
+        detail: 'MAIL_TRANSPORT=capture يكتب الرسالة إلى ملف ولا يرسلها.',
+      };
+    }
+
+    if (this.transport === 'resend') {
+      const key = process.env.RESEND_API_KEY;
+      if (!key) return { ok: false, detail: 'RESEND_API_KEY غير مضبوط.' };
+      try {
+        const response = await fetch('https://api.resend.com/domains', {
+          headers: { authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(5000),
+        });
+        return response.ok
+          ? { ok: true, detail: 'Resend يستجيب والمفتاح مقبول.' }
+          : { ok: false, detail: `Resend ردّ بـ ${String(response.status)}. راجِع المفتاح.` };
+      } catch (error) {
+        return { ok: false, detail: `تعذّر الوصول إلى Resend: ${reason(error)}` };
+      }
+    }
+
+    const url = process.env.SMTP_URL;
+    if (!url) return { ok: false, detail: 'SMTP_URL غير مضبوط.' };
+
+    try {
+      const nodemailer = await import('nodemailer');
+      const transporter = nodemailer.createTransport(url);
+      try {
+        // Opens the connection and completes the greeting without sending
+        // anything — which is exactly the part that fails when the host is
+        // gone, the port is wrong or the credentials have been rotated.
+        //
+        // Timed out here rather than through the transport's own options: the
+        // URL form of `createTransport` takes message defaults as its second
+        // argument, not connection settings, so passing them there is silently
+        // ignored. A race is honest about what it is doing.
+        await Promise.race([
+          transporter.verify(),
+          new Promise((_resolve, reject) => {
+            setTimeout(() => {
+              reject(new Error('لم يردّ خلال خمس ثوانٍ'));
+            }, 5000);
+          }),
+        ]);
+        return { ok: true, detail: 'خادم SMTP يستجيب.' };
+      } finally {
+        transporter.close();
+      }
+    } catch (error) {
+      return { ok: false, detail: `خادم SMTP لا يستجيب: ${reason(error)}` };
+    }
+  }
+}
+
+/** The one line of an error worth showing on a screen. */
+function reason(error: unknown): string {
+  return error instanceof Error ? (error.message.split('\n')[0] ?? '') : 'سبب غير معروف';
 }
 
 /**

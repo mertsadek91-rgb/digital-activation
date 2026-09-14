@@ -20,6 +20,7 @@ import type {
   CreatePromotion,
   CredentialKind,
   ImportResult,
+  LaunchReadiness,
   OrderKeysRow,
   PaymentSettings,
   PaymentSettingsView,
@@ -355,6 +356,15 @@ export const api = {
     request<{ action: string; actorId: string | null; ip: string | null; createdAt: string }[]>(
       `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/history`,
     ),
+
+  /**
+   * What stands between this store and its first order.
+   *
+   * Readable by every role including READONLY: it is six questions asked of
+   * things that already know their own answers, and the only sensitive thing
+   * on it is the shape of what is not configured yet.
+   */
+  launch: () => request<LaunchReadiness>('/admin/launch'),
 
   /**
    * One order, in full.

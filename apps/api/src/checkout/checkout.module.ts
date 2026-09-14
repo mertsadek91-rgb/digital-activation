@@ -22,6 +22,9 @@ import { StripeService } from './stripe.service.js';
   imports: [AuthModule, CartModule, FulfillmentModule],
   controllers: [CheckoutController, PaymentSettingsController],
   providers: [CheckoutService, PaymentSettingsService, StripeService],
-  exports: [CheckoutService],
+  // PaymentSettingsService too, because the launch checklist asks it the one
+  // question that decides whether this store can take money at all — and the
+  // methods already know their own reasons for being off.
+  exports: [CheckoutService, PaymentSettingsService],
 })
 export class CheckoutModule {}

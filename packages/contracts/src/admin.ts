@@ -463,3 +463,35 @@ export const addOrderNoteSchema = z.object({
   /** Shown to the customer on their order page when true. */
   isCustomerVisible: z.boolean().default(false),
 });
+
+// --- can this store open? ---------------------------------------------------
+
+/**
+ * One thing standing between this store and its first order.
+ *
+ * `severity` is the whole point of the shape. A store with no payment method
+ * cannot take money at all; a store with two published products can, and is
+ * merely thin. Mixing those into one list of "issues" is how a launch
+ * checklist becomes something nobody reads.
+ *
+ * `fix` names the screen rather than describing the work, because every one of
+ * these is fixed in one place and the fastest useful thing a checklist can do
+ * is take you there.
+ */
+export const launchCheckSchema = z.object({
+  key: z.string(),
+  severity: z.enum(['blocker', 'warning', 'ready']),
+  title: z.string(),
+  /** What is true right now, in the words somebody needs to act on. */
+  detail: z.string(),
+  /** A path in this panel, or null when the fix is not in the panel at all. */
+  fix: z.string().nullable(),
+});
+export type LaunchCheck = z.infer<typeof launchCheckSchema>;
+
+export const launchReadinessSchema = z.object({
+  /** True only when nothing is a blocker: the store could take an order now. */
+  canSell: z.boolean(),
+  checks: z.array(launchCheckSchema),
+});
+export type LaunchReadiness = z.infer<typeof launchReadinessSchema>;

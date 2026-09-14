@@ -40,6 +40,7 @@ export function Nav({
 }: {
   me: StaffMe;
   current:
+    | 'launch'
     | 'products'
     | 'orders'
     | 'queue'
@@ -171,6 +172,16 @@ export function Nav({
         {/* Next to the payment methods rather than off with the catalog: both
             are about what money arrives, and a code is the fastest way for
             less of it to. */}
+        {/* Last in the row rather than first: it is read closely once before
+            the store opens and then almost never, and the tabs before it are
+            worked every day. */}
+        <button
+          type="button"
+          className={`tab${current === 'launch' ? ' is-active' : ''}`}
+          onClick={() => router.push('/launch')}
+        >
+          حالة المتجر
+        </button>
         <button
           type="button"
           className={`tab${current === 'promotions' ? ' is-active' : ''}`}
