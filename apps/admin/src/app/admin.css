@@ -1257,3 +1257,38 @@ tr.drawer td > * {
      wrap badly at a fixed width in a row that also holds a button. */
   max-inline-size: 52rem;
 }
+
+/*
+ * The bar above the "ready to publish" list.
+ *
+ * Deliberately loud, and deliberately only on that one filter. It is the single
+ * control on this panel that changes what the shop sells for many products at
+ * once, so it states the number, says what will happen, and asks before doing
+ * it. Everywhere else the panel is quiet; here it is not, because the state it
+ * describes — a finished catalog nobody can buy from — is the kind that stays
+ * unnoticed for months.
+ */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-block-end: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  background: var(--color-accent-soft, #fdf1dc);
+}
+.bulk-bar p {
+  margin: 0;
+  max-inline-size: 52ch;
+}
+.bulk-bar strong {
+  font-size: 1.25rem;
+}
+/* The bar's own ground is already the accent tint, so the button inside it
+   takes the brand colour rather than disappearing into it. */
+.bulk-bar button {
+  white-space: nowrap;
+}

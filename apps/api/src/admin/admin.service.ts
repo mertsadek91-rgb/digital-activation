@@ -72,14 +72,15 @@ export class AdminService {
     // filter after loading, which is affordable on a catalog this size and
     // honest about what it is doing.
     const statusWhere: Prisma.ProductWhereInput =
-      query.status === 'draft'
+      query.status === 'draft' || query.status === 'ready'
         ? { status: PublishStatus.DRAFT }
         : query.status === 'published'
           ? { status: PublishStatus.PUBLISHED }
           : {};
 
     const where: Prisma.ProductWhereInput = { AND: [search, statusWhere] };
-    const postFilter = query.status === 'blocked' || query.status === 'out-of-stock';
+    const postFilter =
+      query.status === 'blocked' || query.status === 'out-of-stock' || query.status === 'ready';
 
     const products = await this.prisma.client.product.findMany({
       where,
@@ -91,6 +92,10 @@ export class AdminService {
     let rows = products.map((product) => this.toRow(product, locale));
 
     if (query.status === 'blocked') rows = rows.filter((row) => row.blockers > 0);
+    // Ready means a draft the publish gate would accept right now. The gate is
+    // the same one the publish button consults, so a row listed here cannot be
+    // refused by the button beside it.
+    if (query.status === 'ready') rows = rows.filter((row) => row.blockers === 0);
     // Out of stock means a product that is held in hand and has none left.
     // A made-to-order product has `stock: null` and cannot be out of stock.
     if (query.status === 'out-of-stock') rows = rows.filter((row) => row.stock === 0);
@@ -131,6 +136,7 @@ export class AdminService {
       published: rows.filter((row) => row.status === 'PUBLISHED').length,
       outOfStock: rows.filter((row) => row.stock === 0).length,
       blocked: rows.filter((row) => row.blockers > 0).length,
+      ready: rows.filter((row) => row.status === 'DRAFT' && row.blockers === 0).length,
     };
   }
 

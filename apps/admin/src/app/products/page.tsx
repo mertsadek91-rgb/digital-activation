@@ -28,6 +28,16 @@ import { Nav } from '../nav';
 const FILTERS = [
   { key: 'all', label: 'الكل' },
   { key: 'draft', label: 'مسودّات' },
+  /**
+   * The chip this screen was missing.
+   *
+   * "محجوبة" answers what needs work. Nothing answered what needs a decision —
+   * and the catalog was sitting on 30 drafts that were priced, described,
+   * categorised and imaged, with the publish gate ready to accept every one of
+   * them. Two products were live out of 73. That is not a content problem and
+   * the panel was not saying it was anything at all.
+   */
+  { key: 'ready', label: 'جاهزة للنشر' },
   { key: 'published', label: 'منشورة' },
   { key: 'out-of-stock', label: 'نافدة من المخزون' },
   { key: 'blocked', label: 'محجوبة' },
@@ -65,6 +75,7 @@ export default function ProductsPage() {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busySlug, setBusySlug] = useState<string | null>(null);
+  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   const [readiness, setReadiness] = useState<{ slug: string; value: Readiness } | null>(null);
   /**
    * Which language the gate is being read in.
@@ -135,6 +146,62 @@ export default function ProductsPage() {
     }
   }
 
+  /**
+   * Publish every draft the gate would accept, one call at a time.
+   *
+   * Sequential rather than batched, and through the same endpoint the single
+   * button uses, so each product passes the gate on its own and each one writes
+   * its own audit row. A bulk endpoint would be faster and would also be a
+   * second publish path that could disagree with the first about what "ready"
+   * means — which is the class of bug that puts a product with no price on a
+   * live shop.
+   *
+   * Confirmed by name and number first. This is the one control on the panel
+   * that changes what the shop sells, for many products at once, and it is not
+   * something to discover by clicking.
+   */
+  async function publishReady() {
+    const rows = (data?.rows ?? []).filter((row) => row.status === 'DRAFT' && row.blockers === 0);
+    if (rows.length === 0) return;
+    if (
+      !window.confirm(
+        [
+          `سيُنشر ${String(rows.length)} منتجاً ويصبح معروضاً للبيع فوراً على المتجر.`,
+          '',
+          ...rows.slice(0, 8).map((row) => `· ${row.nameAr}`),
+          ...(rows.length > 8 ? [`… و${String(rows.length - 8)} غيرها`] : []),
+          '',
+          'هل تريد المتابعة؟',
+        ].join('\n'),
+      )
+    ) {
+      return;
+    }
+
+    setBulk({ done: 0, total: rows.length });
+    setError(null);
+    const failed: string[] = [];
+    for (const [index, row] of rows.entries()) {
+      try {
+        await api.setStatus(row.slug, 'PUBLISHED', locale);
+      } catch (caught) {
+        // One refusal does not stop the rest: the gate is per product, and
+        // stopping would leave the run half done with no record of where.
+        failed.push(
+          caught instanceof ApiError && caught.blockers.length > 0
+            ? `${row.slug} (${caught.blockers.join('، ')})`
+            : row.slug,
+        );
+      }
+      setBulk({ done: index + 1, total: rows.length });
+    }
+    setBulk(null);
+    if (failed.length > 0) {
+      setError(`تعذّر نشر ${String(failed.length)}: ${failed.slice(0, 5).join(' · ')}`);
+    }
+    await load();
+  }
+
   async function showReadiness(slug: string) {
     if (readiness?.slug === slug) {
       setReadiness(null);
@@ -157,11 +224,13 @@ export default function ProductsPage() {
               ? data.counts.all
               : entry.key === 'draft'
                 ? data.counts.draft
-                : entry.key === 'published'
-                  ? data.counts.published
-                  : entry.key === 'out-of-stock'
-                    ? data.counts.outOfStock
-                    : data.counts.blocked
+                : entry.key === 'ready'
+                  ? data.counts.ready
+                  : entry.key === 'published'
+                    ? data.counts.published
+                    : entry.key === 'out-of-stock'
+                      ? data.counts.outOfStock
+                      : data.counts.blocked
             : null;
 
           return (
@@ -212,6 +281,22 @@ export default function ProductsPage() {
         <p className="notice">
           دورك <strong>{me.role}</strong> للقراءة فقط — النشر وتعديل المخزون غير متاحين.
         </p>
+      ) : null}
+
+      {/* Offered only on the list it acts on, so what it will publish is what
+          is on screen. */}
+      {canWrite && filter === 'ready' && (data?.counts.ready ?? 0) > 0 ? (
+        <div className="bulk-bar">
+          <p>
+            <strong>{data?.counts.ready}</strong> منتجاً مكتملاً ينتظر قراراً — مسعّرة وموصوفة
+            ومصنّفة، والمتجر لا يعرضها.
+          </p>
+          <button type="button" disabled={bulk !== null} onClick={() => void publishReady()}>
+            {bulk === null
+              ? 'انشر الجاهزة كلها'
+              : `جارٍ النشر ${String(bulk.done)}/${String(bulk.total)}…`}
+          </button>
+        </div>
       ) : null}
 
       <div className="table-scroll">

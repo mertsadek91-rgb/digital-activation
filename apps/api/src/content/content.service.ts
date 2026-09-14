@@ -2,7 +2,6 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import {
   type Article,
-  type ArticleCard,
   BLOG_MORE_SIZE,
   type BlogIndex,
   type ContentPage,
@@ -10,6 +9,7 @@ import {
 } from '@da/contracts';
 import { ArticleKind, Locale, type Prisma, PublishStatus } from '@da/db';
 
+import { toArticleCard } from '../common/article-card.js';
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -289,24 +289,6 @@ function normalisePath(pathname: string): string | null {
   }
   const trimmed = decoded.replace(/\/+$/, '');
   return (trimmed === '' ? '/' : trimmed).toLowerCase();
-}
-
-function toArticleCard(row: {
-  slug: string;
-  locale: Locale;
-  title: string;
-  summary: string | null;
-  readingMinutes: number;
-  publishedAt: Date | null;
-}): ArticleCard {
-  return {
-    slug: row.slug,
-    locale: row.locale === Locale.EN ? 'en' : 'ar',
-    title: row.title,
-    summary: row.summary,
-    readingMinutes: row.readingMinutes,
-    publishedAt: row.publishedAt?.toISOString() ?? null,
-  };
 }
 
 /**

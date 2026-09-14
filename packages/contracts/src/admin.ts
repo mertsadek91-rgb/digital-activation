@@ -147,6 +147,16 @@ export const adminProductListSchema = z.object({
     /** Stocked products with nothing left. Made-to-order products cannot be. */
     outOfStock: z.number().int(),
     blocked: z.number().int(),
+    /**
+     * Drafts with nothing wrong with them.
+     *
+     * The complement of `blocked` within the drafts, and the number this
+     * screen was missing: the catalog held 73 products, 2 of them published
+     * and 30 finished — priced, described, categorised, imaged, and invisible.
+     * Nothing on the panel said so, because "blocked" answers what needs work
+     * and nothing answered what needs a decision.
+     */
+    ready: z.number().int(),
   }),
 });
 export type AdminProductList = z.infer<typeof adminProductListSchema>;
@@ -154,7 +164,7 @@ export type AdminProductList = z.infer<typeof adminProductListSchema>;
 export const adminProductQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(50),
-  status: z.enum(['all', 'draft', 'published', 'out-of-stock', 'blocked']).default('all'),
+  status: z.enum(['all', 'draft', 'published', 'out-of-stock', 'blocked', 'ready']).default('all'),
   q: z.string().trim().max(120).optional(),
   locale: localeSchema.default('ar'),
 });

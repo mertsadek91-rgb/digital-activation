@@ -412,3 +412,65 @@
   font-size: var(--text-sm);
   font-weight: 700;
 }
+
+/*
+ * The blog row on the home page.
+ *
+ * A list of headlines rather than a row of cards with images, deliberately. The
+ * posts have no hero images — the WordPress export carried none — and a card
+ * grid with an empty picture frame on each one reads as a page that failed to
+ * load. A headline and its first sentence is what these have to offer, so that
+ * is what the row shows.
+ */
+.post-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-1);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 52rem) {
+  .post-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-2);
+  }
+}
+.post-strip li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--spacing-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.post-strip a {
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  gap: 6px;
+}
+.post-strip strong {
+  color: var(--color-brand-ink);
+  font-size: var(--text-base);
+  line-height: 1.4;
+}
+.post-strip a:hover strong {
+  text-decoration: underline;
+}
+/* Three lines of the summary. Enough to decide, short enough that three cards
+   beside each other stay the same height. */
+.post-strip-sub {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.post-strip .post-meta {
+  margin-block-start: auto;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}

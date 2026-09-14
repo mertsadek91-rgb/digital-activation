@@ -13,13 +13,15 @@ import {
   RAIL_MIN_PRODUCTS,
   RAIL_SIZE,
   RELATED_SIZE,
+  BLOG_MORE_SIZE,
   ROUTES,
   type CatalogStore,
   type SitemapFeed,
   SALES_PROOF_THRESHOLD,
 } from '@da/contracts';
-import { FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
+import { ArticleKind, FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
+import { toArticleCard } from '../common/article-card.js';
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -288,7 +290,7 @@ export class CatalogService {
     const status = this.statusFilter(query);
     const fx = await this.fxTable();
 
-    const [categories, brands, productCount, bestSellers, newest] = await Promise.all([
+    const [categories, brands, productCount, bestSellers, newest, posts] = await Promise.all([
       this.prisma.client.category.findMany({
         // Top level only. A rail per leaf category would be forty rows.
         where: { parentId: null },
@@ -322,6 +324,28 @@ export class CatalogService {
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         take: RAIL_SIZE * 2,
         include: this.cardInclude(locale).product.include,
+      }),
+      /**
+       * The newest posts, published only.
+       *
+       * No draft here even under a preview token, unlike every other list on
+       * this page: the rest of the home page is catalog somebody is staging,
+       * and an unfinished article on the front page is a different kind of
+       * mistake from an unfinished product card.
+       *
+       * No cross-locale fallback either, for the same reason `/blog` has none.
+       * The imported posts are Arabic; an English home page showing Arabic
+       * headlines under "Latest articles" would promise a translation that
+       * does not exist, so the row is simply absent there.
+       */
+      this.prisma.client.article.findMany({
+        where: {
+          kind: ArticleKind.POST,
+          locale,
+          status: PublishStatus.PUBLISHED,
+        },
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        take: BLOG_MORE_SIZE,
       }),
     ]);
 
@@ -365,6 +389,7 @@ export class CatalogService {
           href: ROUTES.brand(brand.slug),
           productCount: brand._count.products,
         })),
+      posts: posts.map(toArticleCard),
       productCount,
       isPreview: status.status === undefined,
     };

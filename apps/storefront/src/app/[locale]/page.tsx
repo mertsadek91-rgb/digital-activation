@@ -8,6 +8,7 @@ import { BRAND } from '@da/ui';
 
 import { CategoryMark, StepMark } from '../../components/icons';
 import { ProductCard } from '../../components/product-card';
+import { readingLabel } from '../../lib/format';
 import { getHome } from '../../lib/api';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -222,6 +223,36 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           {home.newest.length > 0 ? (
             <Rail title={t('newestTitle')} cards={home.newest} locale={locale} />
+          ) : null}
+
+          {/* The blog, where somebody can find it.
+              Before this row the only link to seven articles was one line in
+              the footer, which is how editorial content gets crawled once and
+              read by nobody. Absent on the English home page, because the
+              posts are Arabic and the API does not pretend otherwise. */}
+          {home.posts.length > 0 ? (
+            <section className="section posts-rail" aria-labelledby="posts-title">
+              <header className="section-head">
+                <h2 id="posts-title">{t('postsTitle')}</h2>
+                <p>{t('postsBody')}</p>
+                <Link className="section-more" href={href(ROUTES.blog)}>
+                  {t('postsAll')}
+                </Link>
+              </header>
+              <ul className="post-strip">
+                {home.posts.map((post) => (
+                  <li key={post.slug}>
+                    <Link href={href(ROUTES.post(post.slug))}>
+                      <strong>{post.title}</strong>
+                      {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
+                    </Link>
+                    {post.readingMinutes > 0 ? (
+                      <span className="post-meta">{readingLabel(post.readingMinutes, locale)}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </section>
           ) : null}
 
           {home.brands.length > 0 ? (

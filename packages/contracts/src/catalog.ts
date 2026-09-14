@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { blockDocumentSchema, faqItemsSchema } from './blocks.js';
+import { articleCardSchema } from './content.js';
 import { localeSchema, moneySchema, paginationSchema, slugSchema } from './primitives.js';
 
 /**
@@ -275,6 +276,19 @@ export const homeSchema = z.object({
   bestSellers: z.array(catalogCardSchema),
   newest: z.array(catalogCardSchema),
   brands: z.array(homeLinkSchema),
+  /**
+   * The newest posts.
+   *
+   * On the home page because that is where the blog is discoverable: the store
+   * this replaces puts its articles there for the same reason, and without a
+   * row here the only link to seven posts is one line in the footer — which is
+   * how editorial content ends up crawled once and never read.
+   *
+   * Carried in this response rather than fetched separately, because the home
+   * page is the most-linked page on the site and the one an answer engine
+   * fetches first, so it answers in a single round trip.
+   */
+  posts: z.array(articleCardSchema),
   /** Real catalog size, for the hero. Not a rounded boast. */
   productCount: z.number().int().min(0),
   /** True when the response includes drafts, i.e. this is a preview host. */
