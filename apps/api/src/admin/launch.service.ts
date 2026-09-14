@@ -136,7 +136,11 @@ export class LaunchService {
    * their card number in.
    */
   private async policies(): Promise<LaunchCheck> {
-    const required = ['refund-policy', 'terms', 'privacy-policy'];
+    // The slugs the pages are actually published under. An earlier version of
+    // this check guessed `refund-policy` and `privacy-policy` and so reported
+    // the privacy page as missing while it was live — a checklist that cries
+    // wolf is one somebody stops reading.
+    const required = ['refunds', 'terms', 'privacy'];
     const rows = await this.prisma.client.page.findMany({
       where: { slug: { in: required } },
       select: { slug: true, status: true },

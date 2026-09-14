@@ -9,6 +9,7 @@ import { alternates } from '@da/seo';
 import { robotsMeta } from '../../lib/seo';
 import { DIRECTION } from '@da/ui';
 
+import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { routing } from '../../i18n/routing';
 
@@ -63,6 +64,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <SiteHeader locale={locale} />
           {children}
+          <SiteFooter locale={locale} />
         </NextIntlClientProvider>
       </body>
     </html>

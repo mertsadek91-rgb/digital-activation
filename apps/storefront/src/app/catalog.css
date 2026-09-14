@@ -781,3 +781,156 @@ h1 {
     max-inline-size: 20rem;
   }
 }
+
+/* --- the footer ------------------------------------------------------------ */
+
+/*
+ * There was no footer at all, which is the largest structural difference from
+ * the site this replaces: every page ended at its last paragraph. A footer is
+ * where a shop keeps what a hesitant buyer looks for before typing a card
+ * number — who you are, what you promise, how to reach a person, where the
+ * policies are.
+ *
+ * Set on a tinted ground rather than a border, so it reads as the end of the
+ * document rather than as one more section of it.
+ */
+.site-footer {
+  margin-block-start: var(--spacing-5);
+  background: var(--color-surface);
+  border-block-start: 1px solid var(--color-border);
+}
+
+/* The four promises, across the top. Same claims the old footer made. */
+.footer-promises {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: var(--spacing-2) var(--spacing-1);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--spacing-2);
+  border-block-end: 1px solid var(--color-border);
+}
+.promise {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.promise > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.promise strong {
+  font-size: var(--text-base);
+  color: var(--color-ink);
+}
+.promise-sub {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  line-height: var(--leading-normal);
+}
+/* A mark rather than an icon set: four different glyphs would need four files
+   and a decision about which, and the shape is doing spacing work here. */
+.promise-mark {
+  inline-size: 34px;
+  block-size: 34px;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: var(--color-brand-soft);
+  border: 1px solid var(--color-brand);
+}
+
+.footer-columns {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: var(--spacing-3) var(--spacing-1);
+  display: grid;
+  grid-template-columns: minmax(14rem, 1.4fr) repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--spacing-3) var(--spacing-2);
+  align-items: start;
+}
+
+.footer-logo {
+  margin: 0 0 8px;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-brand-ink);
+}
+.footer-about {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  line-height: var(--leading-normal);
+  max-inline-size: 26rem;
+}
+
+.footer-col h2 {
+  margin: 0 0 10px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.footer-col a {
+  color: var(--color-ink-muted);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+.footer-col a:hover {
+  color: var(--color-brand-ink);
+  text-decoration: underline;
+}
+
+/* Two lines per contact: what it is, then the value — because the value is
+   what somebody copies, and it is Latin inside an Arabic column. */
+.footer-contact a {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.contact-kind {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.contact-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  /* An address is copied, not read as prose: break it at the @ if it must
+     break at all, rather than mid-word. */
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.footer-contact a:hover .contact-value {
+  color: var(--color-brand-ink);
+}
+
+.footer-base {
+  border-block-start: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.footer-base {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: var(--spacing-1);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.footer-base p {
+  margin: 0;
+}
+.footer-base a {
+  color: var(--color-brand-ink);
+  text-decoration: none;
+}
