@@ -87,6 +87,8 @@
   /* --- layout ------------------------------------------------------------ */
   --container-max: 1400px;
   --header-height: 72px;
+  /** The contact bar above the header, which scrolls away while it pins. */
+  --utility-height: 34px;
   /* The mobile sticky buy bar the current store already has, and which works. */
   --sticky-buy-height: 64px;
 

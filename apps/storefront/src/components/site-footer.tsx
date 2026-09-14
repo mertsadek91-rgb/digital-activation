@@ -3,8 +3,6 @@ import Link from 'next/link';
 
 import { BRAND } from '@da/ui';
 
-import { getCollections } from '../lib/api';
-
 /**
  * The footer.
  *
@@ -75,13 +73,15 @@ const POLICY_PAGES = [
   { slug: 'golden-warranty', ar: 'الضمان الذهبي', en: 'Golden warranty' },
 ];
 
-export async function SiteFooter({ locale }: { locale: string }) {
+export function SiteFooter({
+  locale,
+  collections = [],
+}: {
+  locale: string;
+  collections?: { slug: string; name: string }[];
+}) {
   const ar = locale !== 'en';
   const prefix = ar ? '' : `/${locale}`;
-
-  // Null when the API cannot be reached; the footer then renders without the
-  // category column rather than failing the page it sits under.
-  const collections = await getCollections({ locale, revalidate: 900 });
 
   return (
     <footer className="site-footer">
@@ -103,7 +103,7 @@ export async function SiteFooter({ locale }: { locale: string }) {
           <p className="footer-about">{ar ? BRAND.taglineAr : BRAND.taglineEn}</p>
         </div>
 
-        {collections && collections.length > 0 ? (
+        {collections.length > 0 ? (
           <nav className="footer-col" aria-label={ar ? 'التصنيفات' : 'Categories'}>
             <h2>{ar ? 'التصنيفات' : 'Categories'}</h2>
             <ul>

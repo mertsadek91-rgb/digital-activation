@@ -11,6 +11,8 @@ import { DIRECTION } from '@da/ui';
 
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
+import { WhatsAppButton } from '../../components/whatsapp-button';
+import { getCollections } from '../../lib/api';
 import { routing } from '../../i18n/routing';
 
 import '../globals.css';
@@ -58,13 +60,19 @@ export default async function LocaleLayout({
   // Required for static rendering of a localised route.
   setRequestLocale(locale);
 
+  // Fetched once here and handed to both the menu and the footer. Two fetches
+  // for the same list on every page would be two cache entries that can
+  // disagree about which categories exist.
+  const collections = (await getCollections({ locale, revalidate: 900 })) ?? [];
+
   return (
     <html lang={locale} dir={DIRECTION[locale]}>
       <body>
         <NextIntlClientProvider>
-          <SiteHeader locale={locale} />
+          <SiteHeader locale={locale} collections={collections} />
           {children}
-          <SiteFooter locale={locale} />
+          <SiteFooter locale={locale} collections={collections} />
+          <WhatsAppButton locale={locale} />
         </NextIntlClientProvider>
       </body>
     </html>

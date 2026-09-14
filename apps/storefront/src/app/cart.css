@@ -28,7 +28,13 @@
 @media (min-width: 70rem) {
   .site-header {
     position: sticky;
-    inset-block-start: 0;
+    /*
+     * Negative by the utility bar's height, so that bar scrolls off and the
+     * shop bar pins on its own. Which keeps `--header-height` honest: the
+     * thing that stays is exactly 72px, and the cart summary offsets itself by
+     * that to park just underneath it.
+     */
+    inset-block-start: calc(-1 * var(--utility-height));
     z-index: 10;
   }
 }
