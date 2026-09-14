@@ -5,6 +5,8 @@ import Link from 'next/link';
 
 import { formatPrice } from '../lib/format';
 
+import { AddToCart } from './add-to-cart';
+
 /**
  * Grid card.
  *
@@ -13,6 +15,10 @@ import { formatPrice } from '../lib/format';
  * stock, and "sold N times" appears because N orders exist. The legacy store
  * showed 4.6 stars from synthetic reviews on 81 products, which is the habit
  * this card is built to avoid.
+ *
+ * The buy button sits outside the link rather than inside it. A button nested
+ * in an anchor is invalid, and browsers resolve it by firing both — every
+ * add-to-cart would also navigate away from the grid.
  */
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
   const ar = locale === 'ar';
@@ -106,6 +112,25 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
           </div>
         </div>
       </Link>
+
+      {/* Outside the link, so pressing it adds rather than navigates. */}
+      {card.inStock ? (
+        <div className="card-actions">
+          {card.buyableVariantId ? (
+            <AddToCart
+              variantId={card.buyableVariantId}
+              locale={locale}
+              currency={card.price.currency}
+            />
+          ) : (
+            /* More than one thing to buy here, so the honest control is the
+               one that goes and asks which. */
+            <Link href={href} className="card-buy card-buy-choose">
+              {ar ? 'اختر الخيار المناسب' : 'Choose an option'}
+            </Link>
+          )}
+        </div>
+      ) : null}
 
       {card.isDraft ? <p className="draft-flag">{ar ? 'مسودّة' : 'Draft'}</p> : null}
     </article>

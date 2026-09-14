@@ -165,6 +165,16 @@ export const catalogCardSchema = z.object({
   /** The fastest mode on the product, which is what the card promises. */
   fulfillmentMode: fulfillmentModeSchema,
   variantCount: z.number().int().min(1),
+  /**
+   * The one buyable variant, when there is exactly one.
+   *
+   * Which is the only case a card may add to the cart in. With two variants
+   * there is a choice to make — a one-year against a three-year licence, one
+   * device against five — and a button that picked for the shopper would put
+   * the wrong licence in the cart and only say so on the confirmation page.
+   * Null there, and the card links to the product instead.
+   */
+  buyableVariantId: z.string().nullable(),
   hasGoldenWarranty: z.boolean(),
   salesCount: z.number().int().min(0),
   brand: z.string().nullable(),

@@ -3,6 +3,8 @@ import Link from 'next/link';
 
 import { BRAND } from '@da/ui';
 
+import { PromiseMark } from './icons';
+
 /**
  * The footer.
  *
@@ -41,24 +43,28 @@ const SUPPORT_EMAIL = 'help@digital-activation.com';
 /** What the store promises, in the four claims the old footer made. */
 const PROMISES = [
   {
+    kind: 'warranty' as const,
     ar: 'ضمان ذهبي',
     en: 'Golden warranty',
     subAr: 'أكواد تفعيل أصلية ١٠٠٪ ومكفولة',
     subEn: 'Genuine keys, covered for the licence term',
   },
   {
+    kind: 'delivery' as const,
     ar: 'تسليم سريع',
     en: 'Fast delivery',
     subAr: 'تسليم فوري لأكواد التفعيل عبر البريد',
     subEn: 'Activation keys by email',
   },
   {
+    kind: 'price' as const,
     ar: 'أسعار منافسة',
     en: 'Fair prices',
     subAr: 'تلبّي ميزانيتك مع خصومات دائمة',
     subEn: 'Priced to sit inside a budget',
   },
   {
+    kind: 'support' as const,
     ar: 'دعم فني',
     en: 'Real support',
     subAr: 'فريق تقني محترف متواجد لمساعدتك',
@@ -88,7 +94,9 @@ export function SiteFooter({
       <div className="footer-promises">
         {PROMISES.map((promise) => (
           <div key={promise.ar} className="promise">
-            <span className="promise-mark" aria-hidden="true" />
+            <span className="promise-mark" aria-hidden="true">
+              <PromiseMark kind={promise.kind} />
+            </span>
             <span>
               <strong>{ar ? promise.ar : promise.en}</strong>
               <span className="promise-sub">{ar ? promise.subAr : promise.subEn}</span>

@@ -240,3 +240,98 @@ export function CategoryMark({ slug, size = 26 }: { slug: string; size?: number 
     </span>
   );
 }
+
+/* --- the three steps ------------------------------------------------------- */
+
+/**
+ * One drawing per step of buying something here.
+ *
+ * The old store illustrated its three steps with raster art. These say the
+ * same thing in the same place at a fraction of the weight, and they say *our*
+ * three steps rather than a stock set: choose a licence, pay, activate — which
+ * is the sequence this shop actually puts somebody through, and the third one
+ * is a key because that is literally what arrives.
+ */
+export function StepMark({ step }: { step: number }) {
+  return (
+    <svg
+      viewBox="0 0 64 64"
+      width="56"
+      height="56"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {step === 1 ? (
+        /* A list with one line picked out. */
+        <>
+          <rect x="10" y="12" width="44" height="40" rx="5" opacity="0.35" />
+          <path d="M18 24h20M18 32h28M18 40h14" />
+          <circle cx="46" cy="40" r="7" fill="currentColor" opacity="0.18" stroke="none" />
+          <path d="m43 40 2.4 2.4L50 37.5" />
+        </>
+      ) : null}
+
+      {step === 2 ? (
+        /* A card, and the band across it that says it is one. */
+        <>
+          <rect x="8" y="16" width="48" height="32" rx="5" opacity="0.35" />
+          <path d="M8 26h48" strokeWidth="3.2" />
+          <path d="M17 38h10" />
+        </>
+      ) : null}
+
+      {step === 3 ? (
+        /* The key itself. */
+        <>
+          <circle cx="24" cy="40" r="9" />
+          <path d="m30.6 33.4 16-16" />
+          <path d="m39.5 24.5 4.6 4.6M44.5 19.5l4.6 4.6" />
+        </>
+      ) : null}
+    </svg>
+  );
+}
+
+/* --- what the shop promises ------------------------------------------------ */
+
+/**
+ * The four marks in the footer's promise strip.
+ *
+ * They were an empty tinted square each, which reads as a picture that failed
+ * to load rather than as a design. Drawn in the same stroke weight as the rest
+ * so the footer belongs to the same family as the header.
+ */
+export function PromiseMark({ kind }: { kind: 'warranty' | 'delivery' | 'price' | 'support' }) {
+  return (
+    <Svg size={19}>
+      {kind === 'warranty' ? (
+        <>
+          <path d="M12 2.8 4.8 5.4v6.1c0 4.1 3 7.5 7.2 9.4 4.2-1.9 7.2-5.3 7.2-9.4V5.4z" />
+          <path d="m9 11.9 2.2 2.2 4.1-4.3" />
+        </>
+      ) : null}
+      {kind === 'delivery' ? (
+        /* A bolt: the licence arrives by email, in minutes. */
+        <path d="M13.4 2.5 5 13.2h5.4l-.8 8.3L18 10.8h-5.4z" />
+      ) : null}
+      {kind === 'price' ? (
+        <>
+          <circle cx="12" cy="12" r="8.6" />
+          <path d="M14.6 9.1a3 3 0 0 0-2.6-1.2c-1.6 0-2.7.8-2.7 2s1 1.7 2.7 2 2.9.9 2.9 2.1-1.2 2.1-2.9 2.1a3.1 3.1 0 0 1-2.7-1.3M12 6.2v11.6" />
+        </>
+      ) : null}
+      {kind === 'support' ? (
+        <>
+          <path d="M5 13v-1a7 7 0 0 1 14 0v1" />
+          <rect x="3.2" y="13" width="3.4" height="5.4" rx="1.4" />
+          <rect x="17.4" y="13" width="3.4" height="5.4" rx="1.4" />
+        </>
+      ) : null}
+    </Svg>
+  );
+}

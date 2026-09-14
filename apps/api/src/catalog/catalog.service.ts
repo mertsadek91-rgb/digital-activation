@@ -708,6 +708,10 @@ export class CatalogService {
       available,
       fulfillmentMode,
       variantCount: Math.max(1, product.variants.length),
+      // Offered for one-click adding only where there is genuinely nothing to
+      // choose. `buyable` is already the list that can be sold right now, so a
+      // product whose second variant is out of stock still qualifies.
+      buyableVariantId: buyable.length === 1 ? (buyable[0]?.variant.id ?? null) : null,
       hasGoldenWarranty: product.hasGoldenWarranty,
       // Below the floor a count is noise, not proof.
       salesCount: product.salesCount >= SALES_PROOF_THRESHOLD ? product.salesCount : 0,

@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { buildGraph, jsonld } from '@da/seo';
 import { BRAND } from '@da/ui';
 
+import { CategoryMark, StepMark } from '../../components/icons';
 import { ProductCard } from '../../components/product-card';
 import { getHome } from '../../lib/api';
 
@@ -183,6 +184,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {home.categories.map((category) => (
                   <li key={category.slug}>
                     <Link href={href(category.href)}>
+                      {/* The same mark the product menu uses, so a category is
+                          the same object wherever it is met. */}
+                      <CategoryMark slug={category.slug} size={30} />
                       <strong>{category.name}</strong>
                       {category.headline ? <span>{category.headline}</span> : null}
                       <em>{t('productCount', { count: category.productCount })}</em>
@@ -247,8 +251,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <ol className="steps-grid">
           {[1, 2, 3].map((n) => (
             <li key={n}>
-              <span className="step-number" aria-hidden="true">
-                {n}
+              <span className="step-art" aria-hidden="true">
+                <StepMark step={n} />
+                <span className="step-number">{n}</span>
               </span>
               <h3>{t(`step${String(n)}Title`)}</h3>
               <p>{t(`step${String(n)}Body`)}</p>

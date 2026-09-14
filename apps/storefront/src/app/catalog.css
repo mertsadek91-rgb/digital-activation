@@ -832,12 +832,14 @@ h1 {
 /* A mark rather than an icon set: four different glyphs would need four files
    and a decision about which, and the shape is doing spacing work here. */
 .promise-mark {
+  display: grid;
+  place-items: center;
   inline-size: 34px;
   block-size: 34px;
   flex: none;
   border-radius: var(--radius-md);
   background: var(--color-brand-soft);
-  border: 1px solid var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .footer-columns {
@@ -1183,4 +1185,65 @@ h1 {
   .whatsapp-fab:hover {
     transform: none;
   }
+}
+
+/* --- buying from the grid --------------------------------------------------- */
+
+/*
+ * The store this replaces puts a buy button on every card, and for this
+ * catalog that is right: an activation key has nothing to configure, so the
+ * product page is there to be read rather than filled in, and making somebody
+ * open it to press a second button costs a step for nothing.
+ */
+.card-actions {
+  padding: 0 var(--spacing-1) var(--spacing-1);
+}
+.card-buy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  inline-size: 100%;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 10px 12px;
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+  text-decoration: none;
+  cursor: pointer;
+}
+.card-buy:hover {
+  background: var(--color-brand-hover);
+  border-color: var(--color-brand-hover);
+}
+.card-buy:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+/* Confirmed in place rather than in a corner: a toast that appears and leaves
+   is one somebody misses while looking at the card they just clicked. */
+.card-buy.is-added {
+  background: var(--color-success-soft);
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+/* The choice case is a link, not a purchase, so it does not wear the buy
+   colour — it would promise something it does not do. */
+.card-buy-choose {
+  background: transparent;
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+}
+.card-buy-choose:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-brand);
+  color: var(--color-brand-ink);
+}
+.card-buy-error {
+  margin: 6px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger);
 }
