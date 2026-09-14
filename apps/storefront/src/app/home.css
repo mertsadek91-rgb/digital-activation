@@ -292,21 +292,28 @@
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: var(--spacing-1);
 }
+/*
+ * Centred, like the section it is modelled on.
+ *
+ * Start-aligned these were three 440px cards with the drawing and forty
+ * characters of Arabic pinned to one edge and the other 40% of each card
+ * empty — the content read as stranded rather than composed. Centring is also
+ * what the store this replaces does with the same three steps, which is the
+ * point of the exercise.
+ */
 .steps-grid li {
   background: var(--color-bg);
   border-radius: var(--radius-md);
-  padding: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-1);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.step-number {
-  display: grid;
-  place-items: center;
-  inline-size: 34px;
-  block-size: 34px;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand);
-  color: var(--color-ink-inverse);
-  font-weight: 700;
-  margin-block-end: 10px;
+/* The prose stops before the card does, so a two-line body breaks near its
+   middle rather than at the very edge. */
+.steps-grid li p {
+  max-inline-size: 24rem;
 }
 .steps-grid h3 {
   margin: 0 0 4px;
@@ -369,7 +376,7 @@
  */
 .step-art {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   inline-size: 84px;
