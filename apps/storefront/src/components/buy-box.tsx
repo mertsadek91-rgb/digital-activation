@@ -2,7 +2,7 @@
 
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cartApi, CartError } from '../lib/cart-client';
 import {
@@ -15,6 +15,8 @@ import {
   variantLabel,
 } from '../lib/format';
 
+import { MinusIcon, PlusIcon, SpecMark, type SpecKind } from './icons';
+
 /**
  * Everything on a product page that changes when the shopper chooses.
  *
@@ -26,6 +28,13 @@ import {
  * It still renders on the server for the first paint, so the crawler sees the
  * default variant's price and specs in the HTML — which is what the structured
  * data on the page claims, and the two must agree.
+ *
+ * Shaped after the store this replaces, because that page is doing something
+ * right: the specification grid, the stepper with a running total and the bar
+ * that follows you down the page are all things a licence buyer uses. What is
+ * not carried over is the part of that page which is not true — the certifier
+ * badges it never earned and the "16 visitors are viewing this now" a plugin
+ * makes up on every load.
  */
 export function BuyBox({ product, locale }: { product: CatalogProduct; locale: string }) {
   const ar = locale === 'ar';
@@ -36,6 +45,50 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
+  /**
+   * Whether the real buy row has gone up past the top of the screen, which is
+   * the only thing the following bar needs to know.
+   *
+   * A scroll listener rather than an `IntersectionObserver`, which is the wrong
+   * instrument here and quietly so. An observer reports one boolean, and above
+   * the viewport and below it produce the same one — so moving between those
+   * two states crosses no threshold and fires no callback. Measured on this
+   * page: the row starts below the fold, and a flick that carries it past the
+   * top in a single frame never reports anything at all, leaving the bar hidden
+   * for the rest of the page.
+   *
+   * The cost this avoids is real but small, and it is paid for: the listener is
+   * passive, and it never measures more than once a frame because the work is
+   * deferred to a `requestAnimationFrame` that will not be queued twice.
+   * Setting the same value again is a React no-op, so a screen's worth of
+   * scrolling re-renders nothing.
+   */
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [passed, setPassed] = useState(false);
+
+  useEffect(() => {
+    const node = actionsRef.current;
+    if (!node) return;
+
+    let frame = 0;
+    const measure = (): void => {
+      frame = 0;
+      setPassed(node.getBoundingClientRect().bottom < 0);
+    };
+    const onScroll = (): void => {
+      if (frame === 0) frame = requestAnimationFrame(measure);
+    };
+
+    measure();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      if (frame !== 0) cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
   const selected: CatalogVariant =
     product.variants.find((variant) => variant.id === selectedId) ?? product.variants[0]!;
 
@@ -45,6 +98,13 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
   // A stocked line cannot be sold beyond what is on the shelf; a made-to-order
   // one is capped only by the per-line limit that exists to catch fraud.
   const maxQty = stocked ? Math.min(MAX_LINE_QTY, selected.available ?? 0) : MAX_LINE_QTY;
+
+  // Multiplied here rather than trusted from anywhere: it is the one number on
+  // the page a shopper checks against their own arithmetic.
+  const total = formatPrice({
+    amount: (Number(selected.price.amount) * qty).toFixed(2),
+    currency: selected.price.currency,
+  });
 
   async function add(): Promise<void> {
     setBusy(true);
@@ -61,28 +121,133 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     }
   }
 
+  /**
+   * The specification rows, built from the variant rather than written per
+   * product.
+   *
+   * The old store typed this table into each product's description by hand,
+   * which is why one product says "مدى الحياة" and the next says "دائم" for the
+   * same licence term. Here it is the same fields the cart, the licence email
+   * and the structured data read, so the page cannot describe a variant the
+   * shop would not actually deliver.
+   */
+  const specs: { kind: SpecKind; label: string; value: string }[] = [
+    {
+      kind: 'term',
+      label: ar ? 'مدّة الترخيص' : 'Licence term',
+      value: formatLicensePeriod(selected, locale),
+    },
+    {
+      kind: 'devices',
+      label: ar ? 'عدد الأجهزة' : 'Devices',
+      value: formatDevices(selected.deviceCount, locale),
+    },
+    {
+      kind: 'activation',
+      label: ar ? 'نوع التفعيل' : 'Activation',
+      value: formatActivation(selected.activationMethod, locale),
+    },
+    {
+      kind: 'delivery',
+      label: ar ? 'التسليم' : 'Delivery',
+      value: formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode),
+    },
+    {
+      kind: 'supply',
+      label: ar ? 'طريقة التوريد' : 'How it is supplied',
+      value: formatFulfillment(selected.fulfillmentMode, locale),
+    },
+    {
+      kind: 'platform',
+      label: ar ? 'المنصّة' : 'Platform',
+      value: selected.platform.replace('_', ' ').toLowerCase(),
+    },
+  ];
+
+  if (selected.requiresActivationEmail) {
+    specs.push({
+      kind: 'email',
+      label: ar ? 'مطلوب منك' : 'We will need',
+      value: ar
+        ? 'بريدك الذي يُفعَّل عليه الترخيص — نطلبه عند الدفع'
+        : 'The email to activate on — asked at checkout',
+    });
+  }
+  if (product.hasGoldenWarranty) {
+    specs.push({
+      kind: 'warranty',
+      label: ar ? 'الضمان' : 'Warranty',
+      value: ar ? 'الضمان الذهبي' : 'Golden Warranty',
+    });
+  }
+
+  const stepper = (
+    <div className="stepper" role="group" aria-label={ar ? 'الكمية' : 'Quantity'}>
+      <button
+        type="button"
+        onClick={() => {
+          setQty(Math.max(1, qty - 1));
+          setAdded(false);
+        }}
+        disabled={qty <= 1}
+        aria-label={ar ? 'إنقاص الكمية' : 'Decrease quantity'}
+      >
+        <MinusIcon />
+      </button>
+      {/* The number is read, not edited: a text field here invites "0" and
+          "-3", and every one of those is a validation message for a control
+          with two buttons that cannot produce a wrong value. */}
+      <output>{qty}</output>
+      <button
+        type="button"
+        onClick={() => {
+          setQty(Math.min(Math.max(1, maxQty), qty + 1));
+          setAdded(false);
+        }}
+        disabled={qty >= Math.max(1, maxQty)}
+        aria-label={ar ? 'زيادة الكمية' : 'Increase quantity'}
+      >
+        <PlusIcon />
+      </button>
+    </div>
+  );
+
   return (
     <div className="buy">
-      <p className="price">
-        <strong>{formatPrice(selected.price)}</strong>
-        {selected.price.compareAt ? (
-          <>
-            <s>
-              {formatPrice({
-                amount: selected.price.compareAt,
-                currency: selected.price.currency,
-              })}
-            </s>
-            {selected.price.discountPercent ? (
-              <span className="badge badge-accent">
-                {ar
-                  ? `خصم ${String(selected.price.discountPercent)}%`
-                  : `${String(selected.price.discountPercent)}% off`}
-              </span>
-            ) : null}
-          </>
+      <div className="price-row">
+        <p className="price">
+          <strong>{formatPrice(selected.price)}</strong>
+          {selected.price.compareAt ? (
+            <>
+              <s>
+                {formatPrice({
+                  amount: selected.price.compareAt,
+                  currency: selected.price.currency,
+                })}
+              </s>
+              {selected.price.discountPercent ? (
+                <span className="badge badge-accent">
+                  {ar
+                    ? `خصم ${String(selected.price.discountPercent)}%`
+                    : `${String(selected.price.discountPercent)}% off`}
+                </span>
+              ) : null}
+            </>
+          ) : null}
+        </p>
+
+        {/* Next to the price, where the old page puts it, because it is part
+            of what the money buys rather than a line in a table. */}
+        {product.hasGoldenWarranty ? (
+          <a
+            className="warranty-pill"
+            href={ar ? ROUTES.goldenWarranty : `/${locale}${ROUTES.goldenWarranty}`}
+          >
+            <SpecMark kind="warranty" />
+            <span>{ar ? 'برنامج الضمان الذهبي' : 'Golden Warranty'}</span>
+          </a>
         ) : null}
-      </p>
+      </div>
 
       {product.variants.length > 1 ? (
         <fieldset className="variants">
@@ -119,46 +284,15 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
       ) : null}
 
       <dl className="specs">
-        <div>
-          <dt>{ar ? 'مدّة الترخيص' : 'Licence term'}</dt>
-          <dd>{formatLicensePeriod(selected, locale)}</dd>
-        </div>
-        <div>
-          <dt>{ar ? 'عدد الأجهزة' : 'Devices'}</dt>
-          <dd>{formatDevices(selected.deviceCount, locale)}</dd>
-        </div>
-        <div>
-          <dt>{ar ? 'طريقة التفعيل' : 'Activation'}</dt>
-          <dd>{formatActivation(selected.activationMethod, locale)}</dd>
-        </div>
-        <div>
-          <dt>{ar ? 'التسليم' : 'Delivery'}</dt>
-          <dd>{formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode)}</dd>
-        </div>
-        <div>
-          <dt>{ar ? 'طريقة التوريد' : 'How it is supplied'}</dt>
-          <dd>{formatFulfillment(selected.fulfillmentMode, locale)}</dd>
-        </div>
-        {selected.requiresActivationEmail ? (
-          <div>
-            <dt>{ar ? 'مطلوب منك' : 'We will need'}</dt>
-            <dd>
-              {ar
-                ? 'البريد الإلكتروني الذي تريد تفعيل الترخيص عليه — نطلبه عند الدفع'
-                : 'The email the licence should be activated on — asked at checkout'}
-            </dd>
+        {specs.map((spec) => (
+          <div key={spec.kind}>
+            <span className="spec-mark" aria-hidden="true">
+              <SpecMark kind={spec.kind} />
+            </span>
+            <dt>{spec.label}</dt>
+            <dd>{spec.value}</dd>
           </div>
-        ) : null}
-        <div>
-          <dt>{ar ? 'المنصّة' : 'Platform'}</dt>
-          <dd>{selected.platform.replace('_', ' ').toLowerCase()}</dd>
-        </div>
-        {product.hasGoldenWarranty ? (
-          <div>
-            <dt>{ar ? 'الضمان' : 'Warranty'}</dt>
-            <dd>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</dd>
-          </div>
-        ) : null}
+        ))}
       </dl>
 
       {lowStock ? (
@@ -169,37 +303,30 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
         </p>
       ) : null}
 
-      {selected.inStock ? (
-        <div className="buy-actions">
-          <label className="qty">
-            <span>{ar ? 'الكمية' : 'Quantity'}</span>
-            <select
-              value={qty}
-              onChange={(event) => {
-                setQty(Number(event.target.value));
-                setAdded(false);
-              }}
+      {/* The observed element is this wrapper rather than the button, so the
+          bar behaves the same on a sold-out product — where there is no button
+          to observe and the bar never appears anyway. */}
+      <div ref={actionsRef}>
+        {selected.inStock ? (
+          <div className="buy-actions">
+            {stepper}
+            <button
+              type="button"
+              className="btn btn-accent btn-buy"
+              onClick={() => void add()}
+              disabled={busy}
             >
-              {Array.from({ length: Math.max(1, maxQty) }, (_, index) => index + 1).map((n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <button
-            type="button"
-            className="btn btn-primary btn-buy"
-            onClick={() => void add()}
-            disabled={busy}
-          >
-            {busy ? '...' : ar ? 'أضف إلى السلة' : 'Add to cart'}
-          </button>
-        </div>
-      ) : (
-        <p className="stock stock-out">{ar ? 'غير متوفر حالياً' : 'Not available right now'}</p>
-      )}
+              {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
+            </button>
+            <p className="buy-total">
+              <span>{ar ? 'الإجمالي' : 'Total'}</span>
+              <strong>{total}</strong>
+            </p>
+          </div>
+        ) : (
+          <p className="stock stock-out">{ar ? 'غير متوفر حالياً' : 'Not available right now'}</p>
+        )}
+      </div>
 
       {error ? <p className="error">{error}</p> : null}
 
@@ -210,6 +337,35 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
             {ar ? 'إتمام الشراء' : 'Go to checkout'}
           </a>
         </p>
+      ) : null}
+
+      {/* The same controls, following the page down.
+          The description on this catalog runs long — activation steps, a spec
+          list, an FAQ — and the old store's answer was a bar that keeps the
+          price and the button in reach the whole way. It shares this
+          component's state rather than holding its own, so the variant it adds
+          is the variant that is selected above and cannot drift from it.
+
+          `inert` while it is off screen, which takes the whole bar out of the
+          tab order and the accessibility tree in one attribute. Without it the
+          page carries a second stepper and a second buy button that nobody can
+          see but a keyboard still stops at. */}
+      {selected.inStock ? (
+        <div className={`buy-bar${passed ? ' is-shown' : ''}`} inert={!passed}>
+          <div className="buy-bar-inner">
+            <span className="buy-bar-name">{product.name}</span>
+            <span className="buy-bar-price">{total}</span>
+            {stepper}
+            <button
+              type="button"
+              className="btn btn-accent btn-buy"
+              onClick={() => void add()}
+              disabled={busy}
+            >
+              {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );

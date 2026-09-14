@@ -84,6 +84,17 @@
 .btn-primary:hover {
   background: var(--color-brand-hover);
 }
+/* The shop's buy colour. Orange against a page of teal, because on a product
+   page the one control that commits money should not look like the six links
+   that do not. It is the colour the store this replaces uses for the same
+   button, and returning customers reach for it without reading it. */
+.btn-accent {
+  background: var(--color-accent);
+  color: #3a2400;
+}
+.btn-accent:hover {
+  background: var(--color-accent-hover);
+}
 .btn-ghost {
   background: var(--color-bg);
   color: var(--color-brand-ink);

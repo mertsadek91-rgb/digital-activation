@@ -183,6 +183,23 @@ export const catalogCardSchema = z.object({
 export type CatalogCard = z.infer<typeof catalogCardSchema>;
 
 /**
+ * The product, plus what else is on its shelf.
+ *
+ * Declared here rather than as a field on `catalogProductSchema` above only
+ * because a card is defined after a product and a schema cannot reference one
+ * that has not been evaluated yet. The endpoint returns this one.
+ *
+ * Same-category rather than "customers also bought": with no order history
+ * worth mining, a bought-together list would be an invention, and the honest
+ * version of "what else?" on a licence store is what else is on this shelf —
+ * somebody reading about a Windows Server CAL is usually comparing CALs.
+ */
+export const catalogProductWithRelatedSchema = catalogProductSchema.extend({
+  related: z.array(catalogCardSchema),
+});
+export type CatalogProductWithRelated = z.infer<typeof catalogProductWithRelatedSchema>;
+
+/**
  * The store index: every published product, paginated.
  *
  * Carries the collection list beside the grid because it is the page a visitor
@@ -269,6 +286,14 @@ export type Home = z.infer<typeof homeSchema>;
 export const RAIL_MIN_PRODUCTS = 3;
 /** Cards per rail. Four fills the row at desktop and scrolls on mobile. */
 export const RAIL_SIZE = 4;
+
+/**
+ * Cards in the "you might also like" row on a product page.
+ *
+ * Five rather than four: this row scrolls sideways rather than wrapping, and a
+ * fifth card half in view is what tells somebody it scrolls at all.
+ */
+export const RELATED_SIZE = 5;
 
 // --- request contracts ------------------------------------------------------
 

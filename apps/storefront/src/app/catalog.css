@@ -353,21 +353,76 @@ h1 {
   color: var(--color-danger);
 }
 
+/* The price and what comes with it, on one line. */
+.price-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+}
+.warranty-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-brand-ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+.warranty-pill:hover {
+  border-color: var(--color-brand);
+}
+.warranty-pill svg {
+  color: var(--color-accent);
+}
+
+/*
+ * The specification table.
+ *
+ * Two columns on a wide screen and one on a phone, each row a mark, a label and
+ * an answer. Hairlines between rather than a box around each: the rows are one
+ * table about one licence, and eight bordered cards would read as eight
+ * unrelated facts.
+ */
 .specs {
   display: grid;
-  gap: 1px;
+  grid-template-columns: minmax(0, 1fr);
   margin: 0;
-  background: var(--color-border);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  border-block: 1px solid var(--color-border);
+}
+@media (min-width: 40rem) {
+  .specs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--spacing-2);
+  }
 }
 .specs > div {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--color-bg);
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 10px;
+  padding-block: 10px;
+  border-block-end: 1px solid var(--color-border);
+}
+/* The last row in each column has the table's own border under it already. */
+.specs > div:last-child,
+.specs > div:nth-last-child(2):nth-child(odd) {
+  border-block-end: 0;
+}
+@media (max-width: 39.999rem) {
+  .specs > div:nth-last-child(2):nth-child(odd) {
+    border-block-end: 1px solid var(--color-border);
+  }
+}
+.spec-mark {
+  grid-row: span 2;
+  display: inline-flex;
+  align-self: center;
+  color: var(--color-brand);
 }
 .specs dt {
   color: var(--color-ink-muted);
@@ -378,26 +433,162 @@ h1 {
   margin: 0;
   font-size: var(--text-sm);
   font-weight: 700;
+  color: var(--color-ink);
 }
 
-.buy,
+/*
+ * The quantity stepper.
+ *
+ * Two buttons and a readout, and the readout is an `output` rather than an
+ * input: the only values it can hold are the ones the buttons produce, both of
+ * which are already clamped, so there is nothing to validate and no way to type
+ * a quantity the cart would reject.
+ */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  block-size: 48px;
+}
+.stepper button {
+  inline-size: 40px;
+  block-size: 100%;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.stepper button:disabled {
+  color: var(--color-ink-muted);
+  cursor: default;
+}
+.stepper output {
+  min-inline-size: 2.5rem;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.buy-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  padding: var(--spacing-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.buy-total {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.buy-total span {
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+.buy-total strong {
+  font-size: var(--text-lg);
+  color: var(--color-brand-ink);
+}
+
+/*
+ * The bar that follows the page down.
+ *
+ * Fixed to the bottom, off screen until the real buy row has scrolled past —
+ * `translate` rather than `display`, so it slides in and so the button inside
+ * it keeps a stable position for anybody tabbing. While it is hidden its button
+ * is disabled and out of the tab order, because a control nobody can see is a
+ * control nobody meant to press.
+ *
+ * It sits above the phone's tab bar when there is one, which is why the offset
+ * is a variable rather than zero.
+ */
+.buy-bar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: var(--buy-bar-offset, 0px);
+  z-index: 40;
+  background: var(--color-bg);
+  border-block-start: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  translate: 0 110%;
+  transition: translate 180ms ease-out;
+}
+.buy-bar.is-shown {
+  translate: 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .buy-bar {
+    transition: none;
+  }
+}
+.buy-bar-inner {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: 10px var(--spacing-2);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+.buy-bar-name {
+  flex: 1 1 12rem;
+  min-inline-size: 0;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  /* One line: the bar is a reminder of what is being bought, not the title. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.buy-bar-price {
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-brand-ink);
+  white-space: nowrap;
+}
+.buy-bar .btn-buy {
+  flex: 0 1 14rem;
+}
+/* On a phone the name is what the thumbnail would say, and the row has to fit
+   a stepper and a button. The name goes. */
+@media (max-width: 34rem) {
+  .buy-bar-name {
+    display: none;
+  }
+  .buy-bar-inner {
+    padding-inline: var(--spacing-1);
+  }
+}
+
+/*
+ * The buy column.
+ *
+ * `.buy` used to be the add-to-cart button and was given the brand's teal and
+ * white text. It became the wrapper around the whole column — price, licence
+ * picker, specification table, buttons — and kept the paint, so the column was
+ * a teal panel with white text that only the rows setting their own colours
+ * escaped. It is a container now and paints nothing; the button carries the
+ * colour, which is `.btn-accent`.
+ */
+.buy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
 .notify {
   min-block-size: 48px;
-  border: 0;
   border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: var(--text-base);
   font-weight: 700;
   cursor: pointer;
-}
-.buy {
-  background: var(--color-brand);
-  color: var(--color-ink-inverse);
-}
-.buy:hover {
-  background: var(--color-brand-hover);
-}
-.notify {
   background: var(--color-surface);
   color: var(--color-ink);
   border: 1px solid var(--color-border-strong);
@@ -1246,4 +1437,133 @@ h1 {
   margin: 6px 0 0;
   font-size: var(--text-xs);
   color: var(--color-danger);
+}
+
+/* --- the lower half of a product page -------------------------------------- */
+
+/*
+ * Description and reviews, side by side.
+ *
+ * Ratio rather than a fixed side column: the description is prose and wants a
+ * readable measure, the reviews are short rows and do not. One column below
+ * 62rem, description first — on a phone the reviews stay where they are useful,
+ * which is after the thing being reviewed.
+ */
+.product-detail {
+  display: grid;
+  gap: var(--spacing-2);
+  grid-template-columns: minmax(0, 1fr);
+  margin-block-end: var(--spacing-3);
+}
+@media (min-width: 62rem) {
+  .product-detail {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.detail-main {
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--spacing-2);
+}
+.detail-side {
+  min-inline-size: 0;
+}
+
+/* A bordered card rather than bare text, because two panels beside each other
+   need an edge to say where one stops. */
+.panel {
+  max-width: none;
+  margin-block-end: 0;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.panel > :first-child {
+  margin-block-start: 0;
+}
+.panel > h2:first-child {
+  color: var(--color-brand-ink);
+}
+
+/*
+ * The offer of help at the end of the description.
+ *
+ * Placed where somebody has just finished reading and still has a question,
+ * which is the one moment on this page where an offer of help is an answer
+ * rather than an interruption. It is a link to WhatsApp and nothing else — no
+ * widget, no script, no third party watching the page.
+ */
+.help-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+}
+.help-cta > div {
+  flex: 1 1 16rem;
+}
+.help-cta strong {
+  display: block;
+  font-size: var(--text-lg);
+}
+.help-cta p {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  opacity: 0.9;
+}
+.help-mark {
+  display: inline-flex;
+}
+.help-mark svg {
+  width: 34px;
+  height: 34px;
+}
+.help-cta .btn-ghost {
+  background: var(--color-bg);
+  border-color: transparent;
+}
+
+/*
+ * "You might also like".
+ *
+ * A scrolling row rather than a wrapping grid: it is a suggestion at the end of
+ * a page, and letting five cards reflow into two rows would give it the weight
+ * of the store index. `scroll-snap` so a swipe lands on a card rather than
+ * between two.
+ */
+.related {
+  margin-block-end: var(--spacing-3);
+}
+.related h2 {
+  font-size: var(--text-xl);
+  color: var(--color-brand-ink);
+  margin-block-end: var(--spacing-1);
+}
+.related-row {
+  display: flex;
+  gap: var(--spacing-1);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  /* Room for the cards' own focus ring, which an `overflow` box would clip. */
+  padding-block-end: 4px;
+}
+/*
+ * A fixed card width rather than a share of the row.
+ *
+ * With `1fr` the row divides itself among whatever it holds, so a product whose
+ * shelf has one other item on it got a single card stretched across the whole
+ * page — 1355px wide and 762px tall, which reads as a layout accident rather
+ * than a suggestion. A card here is the same size whether there is one or five.
+ */
+.related-row > * {
+  flex: 0 0 clamp(13rem, 30%, 16rem);
+}
+.related-row > * {
+  scroll-snap-align: start;
 }

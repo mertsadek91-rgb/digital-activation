@@ -9,12 +9,16 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
+import { SupportIcon } from '../../../../components/icons';
+import { ProductCard } from '../../../../components/product-card';
 import { Reviews } from '../../../../components/reviews';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
+/** Digits only: `wa.me` takes no groups. The same number the footer prints. */
+const WHATSAPP_DIAL = '966534255367';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -229,29 +233,80 @@ export default async function ProductPage({ params }: Props) {
         </section>
       ) : null}
 
-      {product.body.length > 0 ? (
-        <section className="prose">
-          <Blocks blocks={product.body} />
-        </section>
-      ) : null}
+      {/* The description and the reviews side by side, which is how the store
+          this replaces lays out the same two things — and it is the right
+          arrangement for a page whose description runs to two screens: stacked,
+          the reviews are below a fold nobody reaches, and they are the part a
+          hesitant buyer came for. One column on a phone, description first. */}
+      <div className="product-detail">
+        <div className="detail-main">
+          {product.body.length > 0 ? (
+            <section className="prose panel">
+              <h2>{ar ? 'وصف المنتج' : 'About this product'}</h2>
+              <Blocks blocks={product.body} />
+            </section>
+          ) : null}
 
-      {/* Rendered whether or not there are any, because "none yet, and here is
-          why" is a claim worth making on a store whose predecessor showed 4.6
-          stars on 81 products nobody had reviewed. Omitted only when the API
-          could not be reached, where an empty section would be a lie. */}
-      {reviews ? <Reviews reviews={reviews} locale={locale} /> : null}
+          {product.faq ? (
+            <section className="prose panel faq">
+              <h2>{ar ? 'أسئلة متكرّرة' : 'Frequently asked'}</h2>
+              <dl>
+                {product.faq.map((item, index) => (
+                  <div key={index}>
+                    <dt>{item.q}</dt>
+                    <dd>{item.a}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
 
-      {product.faq ? (
-        <section className="prose faq">
-          <h2>{ar ? 'أسئلة متكرّرة' : 'Frequently asked'}</h2>
-          <dl>
-            {product.faq.map((item, index) => (
-              <div key={index}>
-                <dt>{item.q}</dt>
-                <dd>{item.a}</dd>
-              </div>
+          {/* The old page ends its description with an offer of help, and it
+              is the right place for one: somebody who has read this far either
+              bought it or has a question the page did not answer. */}
+          <aside className="help-cta">
+            <span className="help-mark" aria-hidden="true">
+              <SupportIcon />
+            </span>
+            <div>
+              <strong>{ar ? 'لا تتردّد في طلب الدعم' : 'Ask us before you buy'}</strong>
+              <p>
+                {ar
+                  ? 'عندك سؤال عن التفعيل أو عن النسخة المناسبة لك؟ راسلنا وسنردّ عليك.'
+                  : 'Not sure which licence you need, or how it activates? Message us and a person will answer.'}
+              </p>
+            </div>
+            <a
+              className="btn btn-ghost"
+              href={`https://wa.me/${WHATSAPP_DIAL}`}
+              rel="noopener noreferrer"
+            >
+              {ar ? 'اطلب الدعم' : 'Get help'}
+            </a>
+          </aside>
+        </div>
+
+        {/* Rendered whether or not there are any, because "none yet, and here
+            is why" is a claim worth making on a store whose predecessor showed
+            4.6 stars on 81 products nobody had reviewed. Omitted only when the
+            API could not be reached, where an empty section would be a lie. */}
+        {reviews ? (
+          <div className="detail-side">
+            <Reviews reviews={reviews} locale={locale} />
+          </div>
+        ) : null}
+      </div>
+
+      {/* What else is on the same shelf. Absent entirely when the shelf holds
+          nothing else, rather than padded out with whatever the catalog has. */}
+      {product.related.length > 0 ? (
+        <section className="related">
+          <h2>{ar ? 'منتجات قد تعجبك' : 'You might also like'}</h2>
+          <div className="related-row">
+            {product.related.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
             ))}
-          </dl>
+          </div>
         </section>
       ) : null}
     </main>

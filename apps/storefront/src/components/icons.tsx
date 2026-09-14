@@ -335,3 +335,103 @@ export function PromiseMark({ kind }: { kind: 'warranty' | 'delivery' | 'price' 
     </Svg>
   );
 }
+
+/* --- the specification grid ------------------------------------------------ */
+
+/**
+ * A mark per row of the product's specification table.
+ *
+ * The store this replaces draws the same table with the same six-ish rows, and
+ * it is the most useful block on its product page: somebody buying a licence is
+ * deciding on the term, the device count and how it activates, and those three
+ * answers are what the page exists to give. It drew them as image icons pulled
+ * from a plugin; these are the same idea at no request cost.
+ *
+ * Keyed by what the row *means* rather than by position, so a product that has
+ * no activation email to ask for simply has no `email` row and nothing shifts.
+ */
+export type SpecKind =
+  'term' | 'devices' | 'activation' | 'delivery' | 'supply' | 'platform' | 'warranty' | 'email';
+
+export function SpecMark({ kind }: { kind: SpecKind }) {
+  return (
+    <Svg size={20}>
+      {kind === 'term' ? (
+        <>
+          <circle cx="12" cy="12" r="8.6" />
+          <path d="M12 7.2V12l3.2 1.9" />
+        </>
+      ) : null}
+      {kind === 'devices' ? (
+        <>
+          <rect x="2.6" y="4.6" width="13.4" height="9.6" rx="1.4" />
+          <path d="M6.4 18.4h6.2" />
+          <rect x="17.2" y="9.4" width="4.2" height="9.4" rx="1.2" />
+        </>
+      ) : null}
+      {kind === 'activation' ? (
+        /* A key, which is literally what most of this catalog sells. */
+        <>
+          <circle cx="8" cy="15.6" r="3.4" />
+          <path d="m10.6 13.2 8-8M16.4 7.4l2 2M14.2 9.6l2 2" />
+        </>
+      ) : null}
+      {kind === 'delivery' ? (
+        <>
+          <rect x="2.8" y="5.4" width="18.4" height="13.2" rx="1.8" />
+          <path d="m3.4 7 8.6 5.8L20.6 7" />
+        </>
+      ) : null}
+      {kind === 'supply' ? (
+        <>
+          <path d="M3.4 8.4 12 3.6l8.6 4.8v7.2L12 20.4l-8.6-4.8z" />
+          <path d="M3.4 8.4 12 13.2l8.6-4.8M12 13.2v7.2" />
+        </>
+      ) : null}
+      {kind === 'platform' ? (
+        <>
+          <circle cx="12" cy="12" r="8.6" />
+          <path d="M3.4 12h17.2M12 3.4a13 13 0 0 1 0 17.2 13 13 0 0 1 0-17.2" />
+        </>
+      ) : null}
+      {kind === 'warranty' ? (
+        <>
+          <path d="M12 2.8 4.8 5.4v6.1c0 4.1 3 7.5 7.2 9.4 4.2-1.9 7.2-5.3 7.2-9.4V5.4z" />
+          <path d="m9 11.9 2.2 2.2 4.1-4.3" />
+        </>
+      ) : null}
+      {kind === 'email' ? (
+        <>
+          <path d="M12 3.4a8.6 8.6 0 1 0 4.6 15.9" />
+          <circle cx="12" cy="12" r="3.4" />
+          <path d="M15.4 12v1.9a2.6 2.6 0 0 0 5.2 0V12" />
+        </>
+      ) : null}
+    </Svg>
+  );
+}
+
+/* --- the quantity stepper -------------------------------------------------- */
+
+/**
+ * Plus and minus, at the stroke weight of everything else.
+ *
+ * A stepper rather than a dropdown because that is what the old page has and
+ * because a select for "how many" opens a list of twenty identical numbers on
+ * a phone to move from one to two.
+ */
+export function PlusIcon() {
+  return (
+    <Svg size={16}>
+      <path d="M12 5.4v13.2M5.4 12h13.2" />
+    </Svg>
+  );
+}
+
+export function MinusIcon() {
+  return (
+    <Svg size={16}>
+      <path d="M5.4 12h13.2" />
+    </Svg>
+  );
+}

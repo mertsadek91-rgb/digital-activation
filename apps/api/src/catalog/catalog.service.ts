@@ -3,6 +3,7 @@ import {
   type CatalogCard,
   type CatalogCollection,
   type CatalogProduct,
+  type CatalogProductWithRelated,
   type CatalogQuery,
   type CatalogVariant,
   type Home,
@@ -11,6 +12,7 @@ import {
   faqItemsSchema,
   RAIL_MIN_PRODUCTS,
   RAIL_SIZE,
+  RELATED_SIZE,
   ROUTES,
   type CatalogStore,
   type SitemapFeed,
@@ -370,7 +372,7 @@ export class CatalogService {
 
   // --- product --------------------------------------------------------------
 
-  async product(slug: string, query: CatalogQuery): Promise<CatalogProduct> {
+  async product(slug: string, query: CatalogQuery): Promise<CatalogProductWithRelated> {
     const locale = this.localeFor(query);
     const status = this.statusFilter(query);
 
@@ -443,6 +445,34 @@ export class CatalogService {
       product.categories.find((link) => link.isPrimary)?.category ??
       product.categories[0]?.category;
 
+    /**
+     * The rest of the shelf.
+     *
+     * Ordered by the category's own `position` so it matches the order the
+     * collection page puts them in — a visitor who clicks through from this row
+     * to the category should not find the same products in a different order
+     * and wonder whether they are looking at the same list.
+     *
+     * Draft rows follow the same status filter as everything else, so a preview
+     * host shows drafts in the row and production never does. And this product
+     * is excluded from its own row, which is the one recommendation nobody
+     * needs.
+     */
+    const related: CatalogCard[] = [];
+    if (primary) {
+      const siblings = await this.prisma.client.productCategory.findMany({
+        where: {
+          categoryId: primary.id,
+          productId: { not: product.id },
+          product: this.statusFilter(query),
+        },
+        orderBy: { position: 'asc' },
+        take: RELATED_SIZE,
+        include: this.cardInclude(locale),
+      });
+      for (const link of siblings) related.push(this.toCard(link.product, query.currency, fx));
+    }
+
     const breadcrumbs: CatalogProduct['breadcrumbs'] = [
       { name: locale === Locale.AR ? 'الرئيسية' : 'Home', href: ROUTES.home },
       { name: locale === Locale.AR ? 'المتجر' : 'Store', href: ROUTES.store },
@@ -505,6 +535,7 @@ export class CatalogService {
         description: translation?.seoDescription ?? null,
       },
       isDraft: product.status !== PublishStatus.PUBLISHED,
+      related,
     };
   }
 

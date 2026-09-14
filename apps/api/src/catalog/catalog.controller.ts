@@ -3,7 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
   type CatalogCollection,
-  type CatalogProduct,
+  type CatalogProductWithRelated,
   type CatalogQuery,
   type CatalogStore,
   type Home,
@@ -89,7 +89,7 @@ export class CatalogController {
   product(
     @Param('slug') slug: string,
     @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery,
-  ): Promise<CatalogProduct> {
+  ): Promise<CatalogProductWithRelated> {
     return this.catalog.product(slug, query);
   }
 }

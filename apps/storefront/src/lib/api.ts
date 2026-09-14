@@ -12,14 +12,14 @@
  */
 import {
   type CatalogCollection,
-  type CatalogProduct,
+  type CatalogProductWithRelated,
   type CatalogStore,
   type ContentPage,
   type Home,
   type ProductReviews,
   type RedirectTarget,
   catalogCollectionSchema,
-  catalogProductSchema,
+  catalogProductWithRelatedSchema,
   catalogStoreSchema,
   type SearchResults,
   searchResultsSchema,
@@ -180,8 +180,15 @@ export function getPage(slug: string, options: FetchOptions): Promise<ContentPag
   return request(`/content/pages/${encodeURIComponent(slug)}`, options, contentPageSchema);
 }
 
-export function getProduct(slug: string, options: FetchOptions): Promise<CatalogProduct | null> {
-  return request(`/catalog/products/${encodeURIComponent(slug)}`, options, catalogProductSchema);
+export function getProduct(
+  slug: string,
+  options: FetchOptions,
+): Promise<CatalogProductWithRelated | null> {
+  return request(
+    `/catalog/products/${encodeURIComponent(slug)}`,
+    options,
+    catalogProductWithRelatedSchema,
+  );
 }
 
 /**
