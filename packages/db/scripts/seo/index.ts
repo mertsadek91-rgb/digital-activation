@@ -262,6 +262,28 @@ function report(rows: Row[], apply: boolean): void {
     );
   }
 
+  /**
+   * A title past the ceiling, which the report used to say nothing about.
+   *
+   * Descriptions were checked here and titles were not, and four titles were
+   * running to 72 characters — cut in the result, and cut in the middle of the
+   * one line a searcher reads. They are shortened at the source now; anything
+   * still over is a product whose name alone exceeds the budget, which is a
+   * naming decision rather than something this script should take.
+   */
+  const longTitles = rows.filter(
+    (row) => row.fields.includes('seoTitle') && row.seoTitle.length > SEO_LENGTH_GUIDE.seoTitleMax,
+  );
+  if (longTitles.length > 0) {
+    console.log(
+      `${String(longTitles.length)} titles run past ${String(SEO_LENGTH_GUIDE.seoTitleMax)} characters — ` +
+        'the product name alone is over budget:',
+    );
+    for (const row of longTitles) {
+      console.log(`  (${row.lang}) [${String(row.seoTitle.length)}] ${row.slug}`);
+    }
+  }
+
   // Not a failure, a judgement call left to the reader: the gate has no
   // ceiling and a long description still ranks, but everything past this is
   // cut in the result somebody actually sees.

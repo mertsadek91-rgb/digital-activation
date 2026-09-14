@@ -322,10 +322,38 @@ function buildTitle(product: ProductFacts, lang: Lang, max: number, min: number)
   const adjective = termAdjective(product.variants, true);
   const platform = platformPhrase(product.variants, lang);
 
-  let title =
+  /**
+   * The head of the title, shortened if the product's own name has spent the
+   * budget already.
+   *
+   * `CorelDRAW Technical Suite 2024 for Windows` is 42 characters before this
+   * file adds a word to it, and four titles came out between 63 and 72 — over
+   * the 60 where Google cuts, with nothing in the script noticing. The optional
+   * parts below are only ever *added* when they fit, so nothing was ever
+   * shortening the base.
+   *
+   * What goes is the least load-bearing word first: the term adjective, which
+   * the description states in full anyway, then the kind noun. The name itself
+   * is never cut — a title ending mid-word is worse than a title that is only
+   * the product's name.
+   */
+  const heads =
     lang === 'ar'
-      ? `${noun} ${product.name}`
-      : `${product.name}${adjective === null ? '' : ` ${adjective}`} ${noun}`;
+      ? [`${noun} ${product.name}`, product.name]
+      : [
+          `${product.name}${adjective === null ? '' : ` ${adjective}`} ${noun}`,
+          `${product.name} ${noun}`,
+          product.name,
+        ];
+
+  let title = heads[0] ?? product.name;
+  for (const head of heads) {
+    if (title.length <= max) break;
+    // Never below the gate's own floor: a title the gate would refuse is a
+    // second problem rather than a fix, and the top-up loop further down can
+    // only add to a title, not rescue one that has been cut too far.
+    if (head.length >= min) title = head;
+  }
 
   // Two things about the list below. The platform carries its preposition,
   // because "…Lifetime Licence Key Mac" is not English and "…مدى الحياة ماك"
@@ -440,19 +468,61 @@ export function propose(
         ? `${activation}، و${delivered}`
         : `${activation}, ${delivered}`;
 
-  const closing = `${arrival}.${warranty === null ? '' : ` ${warranty}.`}`;
+  /**
+   * The closing sentences, with either fact optionally left out.
+   *
+   * Dropping the activation method falls back to exactly what a product with no
+   * single activation method already gets — the delivery clause standing on its
+   * own, capitalised in English and without the و that would join it to a
+   * clause that is no longer there.
+   */
+  const close = (withActivation: boolean, withWarranty: boolean): string => {
+    const head =
+      withActivation && activation !== null
+        ? arrival
+        : lang === 'ar'
+          ? delivered
+          : `Delivered by email ${delivery}`;
+    return `${head}.${withWarranty && warranty !== null ? ` ${warranty}.` : ''}`;
+  };
 
-  // Trim to where the SERP cuts, by dropping facts rather than by cutting a
-  // sentence in half: the platform goes first, then the device count. Both are
-  // still on the product page; a description truncated mid-word is not.
-  let description = `${opening(product, lang, { devices: true, platform: true })} ${closing}`;
-  for (const parts of [
-    { devices: true, platform: false },
-    { devices: false, platform: false },
-  ]) {
+  /**
+   * Trim to where the SERP cuts, by dropping facts rather than by cutting a
+   * sentence in half. Everything dropped here is still on the product page; a
+   * description truncated mid-word is not.
+   *
+   * The order is what the store can most afford to lose. The platform goes
+   * first — a buyer looking at a Windows Server licence knows it is for
+   * Windows. Then the device count. Then the activation method, which is the
+   * most technical fact here and the one fewest people search on. The Golden
+   * Warranty goes last of all, because it is the only sentence in the
+   * description that is a promise rather than a specification.
+   *
+   * The ladder used to stop after the device count, and for ten products the
+   * remaining sentence was still over the limit — the script warned that Google
+   * would cut them and then proposed them anyway, which is a warning standing
+   * in for a fix.
+   */
+  const rungs: { devices: boolean; platform: boolean; activation: boolean; warranty: boolean }[] = [
+    { devices: true, platform: true, activation: true, warranty: true },
+    { devices: true, platform: false, activation: true, warranty: true },
+    { devices: false, platform: false, activation: true, warranty: true },
+    { devices: false, platform: false, activation: false, warranty: true },
+    { devices: false, platform: false, activation: false, warranty: false },
+  ];
+
+  let description = '';
+  for (const rung of rungs) {
+    const candidate = `${opening(product, lang, rung)} ${close(rung.activation, rung.warranty)}`;
+    // The first rung is taken unconditionally so there is always a proposal;
+    // after that a shorter one is only an improvement while it still clears the
+    // gate's own floor.
+    if (description === '') {
+      description = candidate;
+    } else if (candidate.length >= rules.seoDescriptionMinLength) {
+      description = candidate;
+    }
     if (description.length <= guide.seoDescriptionMax) break;
-    const shorter = `${opening(product, lang, parts)} ${closing}`;
-    if (shorter.length >= rules.seoDescriptionMinLength) description = shorter;
   }
 
   // Every template above clears the 70-character floor comfortably, but a
