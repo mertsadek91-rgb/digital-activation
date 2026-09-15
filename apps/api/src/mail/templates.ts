@@ -189,6 +189,97 @@ ${button(input.orderUrl, 'Track your order')}`;
 }
 
 /**
+ * What to transfer, where, and against which order.
+ *
+ * The one email a bank-transfer shop cannot do without, and the store had none.
+ * `order.received` is sent when the money *arrives* — after the owner confirms
+ * it — so between placing the order and paying for it the customer had nothing
+ * at all: the account number appeared on one screen, once, and closing the tab
+ * lost it. Nobody does a bank transfer from the checkout page; they do it later,
+ * from a banking app, and they need the figures with them.
+ *
+ * It carries the shop's own account details, which are meant to be read by the
+ * person paying. No licence key is in it and none can be — the key does not
+ * exist until the payment is confirmed.
+ *
+ * The amount is repeated in the subject line, because the two things somebody
+ * needs while standing in their banking app are the number to send and the
+ * reference to quote.
+ */
+export function transferInstructions(input: {
+  locale: 'ar' | 'en';
+  orderNumber: string;
+  total: string;
+  headline: string;
+  fields: { label: string; value: string }[];
+  afterPaying: string;
+  orderUrl: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+
+  const rows = input.fields
+    .map(
+      (field) => `<tr>
+        <td style="padding:8px 0;border-bottom:1px solid ${BORDER};color:${MUTED};white-space:nowrap;">${escape(field.label)}</td>
+        <td dir="ltr" align="${ar ? 'left' : 'right'}" style="padding:8px 0;border-bottom:1px solid ${BORDER};font-family:Consolas,Menlo,monospace;color:${INK};">${escape(field.value)}</td>
+      </tr>`,
+    )
+    .join('');
+
+  const note = input.headline
+    ? `<p style="margin:0 0 16px;color:${MUTED};">${escape(input.headline)}</p>`
+    : '';
+  const after = input.afterPaying
+    ? `<p style="background:#fdf1dc;padding:12px;border-radius:5px;">${escape(input.afterPaying)}</p>`
+    : '';
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">تفاصيل التحويل لطلبك</h1>
+<p style="margin:0 0 16px;color:${MUTED};">رقم الطلب <strong dir="ltr">${escape(input.orderNumber)}</strong></p>
+${note}
+<p style="margin:0 0 4px;font-size:17px;"><strong>المبلغ المطلوب: ${escape(input.total)}</strong></p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">${rows}</table>
+${after}
+<p style="color:${MUTED};font-size:13px;">اذكر رقم الطلب في خانة الملاحظات عند التحويل حتى نربط الحوالة بطلبك بسرعة.</p>
+${button(input.orderUrl, 'تابع حالة الطلب')}`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">Transfer details for your order</h1>
+<p style="margin:0 0 16px;color:${MUTED};">Order <strong dir="ltr">${escape(input.orderNumber)}</strong></p>
+${note}
+<p style="margin:0 0 4px;font-size:17px;"><strong>Amount to send: ${escape(input.total)}</strong></p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">${rows}</table>
+${after}
+<p style="color:${MUTED};font-size:13px;">Quote the order number in the transfer reference so we can match it to your order quickly.</p>
+${button(input.orderUrl, 'Track your order')}`;
+
+  const text = [
+    ar
+      ? `تفاصيل التحويل لطلب ${input.orderNumber}`
+      : `Transfer details for order ${input.orderNumber}`,
+    '',
+    input.headline,
+    ar ? `المبلغ المطلوب: ${input.total}` : `Amount to send: ${input.total}`,
+    '',
+    ...input.fields.map((field) => `${field.label}: ${field.value}`),
+    '',
+    input.afterPaying,
+    ar
+      ? 'اذكر رقم الطلب في خانة الملاحظات عند التحويل.'
+      : 'Quote the order number in the transfer reference.',
+    input.orderUrl,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  return {
+    subject: ar
+      ? `تفاصيل التحويل — طلب ${input.orderNumber} (${input.total})`
+      : `Transfer details — order ${input.orderNumber} (${input.total})`,
+    html: shell({ locale: input.locale, title: 'Transfer instructions', body }),
+    text,
+  };
+}
+
+/**
  * One delivered secret, in the shape the vault hands over.
  *
  * Mirrors the vault's own parsed form rather than re-deriving it: the one place

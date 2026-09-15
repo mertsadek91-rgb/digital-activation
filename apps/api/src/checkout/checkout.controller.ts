@@ -18,6 +18,8 @@ import {
   type CheckoutStart,
   type OfferedPayment,
   type Order,
+  type PaymentInstructions,
+  ROUTES,
   type PaymentSession,
   cartQuerySchema,
   checkoutStartSchema,
@@ -29,6 +31,8 @@ import { z } from 'zod';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
+import { MailService } from '../mail/mail.service.js';
+import { transferInstructions } from '../mail/templates.js';
 
 import { CheckoutService } from './checkout.service.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
@@ -42,6 +46,7 @@ export class CheckoutController {
     private readonly stripe: StripeService,
     private readonly paymentSettings: PaymentSettingsService,
     private readonly fulfillment: FulfillmentService,
+    private readonly mail: MailService,
   ) {}
 
   /**
@@ -139,6 +144,23 @@ export class CheckoutController {
         throw new ServiceUnavailableException('طريقة الدفع هذه غير متاحة حالياً.');
       }
 
+      /**
+       * The same details, in an email.
+       *
+       * Nobody does a bank transfer from the checkout page. They do it later,
+       * from a banking app, and until this existed the account number appeared
+       * on one screen once — `order.received` is sent when the money arrives,
+       * which for a manual method is after the owner confirms it, so between
+       * placing the order and paying for it the customer had nothing at all.
+       *
+       * Sent once per order, and never awaited into the response: a shopper
+       * looking at the instructions on screen should not wait on SMTP, and a
+       * mail server that is down must not take the checkout down with it. The
+       * attempt is recorded either way, which is what makes "did they ever get
+       * the account number" answerable.
+       */
+      void this.sendTransferInstructions(order, instructions);
+
       return { provider: body.provider, instructions, amount: order.total };
     }
 
@@ -146,6 +168,49 @@ export class CheckoutController {
     // the agreed second provider and it is not wired yet; a stub returning a
     // dead URL would look like a working button.
     throw new ServiceUnavailableException('PayPal لم يُربط بعد. استخدم البطاقة حالياً.');
+  }
+
+  private async sendTransferInstructions(
+    order: Order,
+    instructions: PaymentInstructions,
+  ): Promise<void> {
+    try {
+      const template = 'order.transfer-instructions';
+      if (await this.mail.alreadySent({ template, to: order.email, orderNumber: order.number })) {
+        return;
+      }
+
+      const locale = order.locale === 'en' ? 'en' : 'ar';
+      await this.mail.send({
+        to: order.email,
+        template,
+        locale,
+        rendered: transferInstructions({
+          locale,
+          orderNumber: order.number,
+          total: `$${order.total.amount}`,
+          headline: instructions.headline,
+          // Label and value only. `copyable` is a rendering hint for the page;
+          // in an email every value is text somebody selects anyway.
+          fields: instructions.fields.map((field) => ({
+            label: field.label,
+            value: field.value,
+          })),
+          afterPaying: instructions.afterPaying,
+          orderUrl: new URL(
+            ROUTES.order(order.number),
+            process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+          ).toString(),
+        }),
+        // Never the account details: the log answers whether we tried, and the
+        // message itself is where the numbers belong.
+        payload: { orderNumber: order.number, fields: instructions.fields.length },
+      });
+    } catch {
+      // A failed send must not fail the payment step. The shopper still has the
+      // instructions on screen, and the absent log row is the record that this
+      // did not reach them.
+    }
   }
 
   /**

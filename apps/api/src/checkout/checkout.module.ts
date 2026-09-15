@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
+import { MailModule } from '../mail/mail.module.js';
 
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
@@ -19,7 +20,11 @@ import { StripeService } from './stripe.service.js';
   // AuthModule for the one staff-guarded screen that belongs here: the bank and
   // wallet details the payment step reads are edited beside the code that
   // decides whether they are complete enough to offer.
-  imports: [AuthModule, CartModule, FulfillmentModule],
+  // MailModule for the transfer-instruction email. A manual payment is the one
+  // method where the details a customer needs are not on the screen they end up
+  // on — they are in a banking app, later — so the message is part of taking
+  // the order rather than part of fulfilling it.
+  imports: [AuthModule, CartModule, FulfillmentModule, MailModule],
   controllers: [CheckoutController, PaymentSettingsController],
   providers: [CheckoutService, PaymentSettingsService, StripeService],
   // PaymentSettingsService too, because the launch checklist asks it the one
