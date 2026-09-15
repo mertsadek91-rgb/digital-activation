@@ -248,6 +248,17 @@ function MethodEditor({
       </div>
 
       <h3 className="pay-fields-head">الحقول</h3>
+      {/*
+        Spelled out, because the column headings alone were not enough.
+        "الاسم" beside "القيمة" reads as "the name" — and the first owner to fill
+        this in typed their own name into it, leaving a shopper looking at
+        "Mert: AE51…" where the heading should have said "الآيبان". The heading
+        is a caption for the box beneath it, not the thing being captioned.
+      */}
+      <p className="pay-fields-hint">
+        كل سطر هو <strong>عنوان</strong> و<strong>قيمة</strong>: العنوان ما يقرؤه المشتري فوق الرقم
+        («الآيبان»، «اسم صاحب الحساب»)، والقيمة هي الرقم أو الاسم نفسه.
+      </p>
       {method.fields.length === 0 ? (
         <p className="notice">لا حقول بعد، ولذلك لا تُعرض هذه الطريقة على المشتري.</p>
       ) : null}
@@ -256,32 +267,32 @@ function MethodEditor({
         {method.fields.map((field, index) => (
           <div className="pay-field" key={index}>
             <label>
-              الاسم (عربي)
+              العنوان الظاهر (عربي)
               <input
                 type="text"
                 value={field.label.ar}
                 disabled={!canWrite}
-                placeholder="الآيبان"
+                placeholder="مثال: الآيبان"
                 onChange={(event) =>
                   setField(index, { ...field, label: { ...field.label, ar: event.target.value } })
                 }
               />
             </label>
             <label>
-              الاسم (إنجليزي)
+              العنوان الظاهر (إنجليزي)
               <input
                 type="text"
                 value={field.label.en}
                 disabled={!canWrite}
                 dir="ltr"
-                placeholder="IBAN"
+                placeholder="e.g. IBAN"
                 onChange={(event) =>
                   setField(index, { ...field, label: { ...field.label, en: event.target.value } })
                 }
               />
             </label>
             <label className="grow">
-              القيمة
+              القيمة (الرقم أو الاسم)
               {/*
                 LTR and monospace here as well as on the storefront. This is the
                 box the number is pasted into, and a value that renders with its
@@ -338,7 +349,54 @@ function MethodEditor({
           أضف حقلاً
         </button>
       ) : null}
+
+      <ShopperPreview method={method} />
     </section>
+  );
+}
+
+/**
+ * The same block the shopper is shown at checkout, drawn from the boxes above.
+ *
+ * Added because none of the wording on this screen caught the mistake it was
+ * built to prevent: an owner typed their own name into the heading column and
+ * saved a payment instruction reading "Mert: AE51…". Every label here was
+ * technically accurate and the result was still wrong, which is the point at
+ * which a form should stop explaining itself and start showing its output.
+ *
+ * Arabic, because that is what almost every shopper on this store reads, and
+ * the value is `dir="ltr"` for the same reason it is in the editor — an account
+ * number whose groups reorder gets proof-read as correct.
+ */
+function ShopperPreview({ method }: { method: ManualPaymentSetting }) {
+  const usable = method.fields.filter(
+    (field) =>
+      field.value.trim() !== '' && (field.label.ar.trim() !== '' || field.label.en.trim() !== ''),
+  );
+  if (usable.length === 0) return null;
+
+  return (
+    <div className="pay-preview">
+      <h4>ما يراه المشتري</h4>
+      {method.headline.ar.trim() || method.headline.en.trim() ? (
+        <p className="pay-preview-headline">
+          {method.headline.ar.trim() || method.headline.en.trim()}
+        </p>
+      ) : null}
+      <dl>
+        {usable.map((field, index) => (
+          <div key={index}>
+            <dt>{field.label.ar.trim() || field.label.en.trim()}</dt>
+            <dd dir="ltr">{field.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {method.afterPaying.ar.trim() || method.afterPaying.en.trim() ? (
+        <p className="pay-preview-after">
+          {method.afterPaying.ar.trim() || method.afterPaying.en.trim()}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
