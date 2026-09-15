@@ -262,7 +262,9 @@ button.linky:hover .pill {
   margin-inline-start: auto;
   min-inline-size: min(16rem, 100%);
   border-radius: var(--radius-pill);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 .search:focus-visible {
   border-color: var(--color-brand);
@@ -568,7 +570,9 @@ tr.drawer td > * {
   backdrop-filter: blur(3px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 250ms var(--ease-out), visibility 250ms var(--ease-out);
+  transition:
+    opacity 250ms var(--ease-out),
+    visibility 250ms var(--ease-out);
 }
 .admin-drawer-overlay.is-open {
   opacity: 1;
@@ -1717,9 +1721,9 @@ tbody tr:hover:not(.drawer) {
   color: inherit;
 }
 
-
 /* Additional fixes for table layout */
-th.num, td.num {
+th.num,
+td.num {
   text-align: center; /* Centering numeric columns often looks better */
 }
 
@@ -1760,7 +1764,7 @@ tbody td {
 .table-scroll {
   border-radius: var(--radius-md) !important;
   border: 1px solid var(--color-border) !important;
-  box-shadow: none !important; 
+  box-shadow: none !important;
   /* Make sure it fills the container */
   width: 100% !important;
   max-width: 100% !important;
@@ -1777,7 +1781,6 @@ tbody td {
   max-inline-size: 100% !important; /* Let it stretch */
 }
 
-
 /* Fix for slug alignment in RTL table */
 .slug {
   display: block;
@@ -1792,7 +1795,9 @@ tbody td {
 }
 
 /* Also ensure the product name cell stays tidy */
-td .name, td .slug, td .meta {
+td .name,
+td .slug,
+td .meta {
   text-align: right; /* Force all to right align in RTL so they stack neatly */
 }
 
@@ -1814,7 +1819,8 @@ tbody td {
 }
 
 /* Make sure the empty header for actions takes only necessary space */
-th:last-child, td:last-child {
+th:last-child,
+td:last-child {
   width: 1%;
   white-space: nowrap;
 }
@@ -1879,7 +1885,7 @@ tr.drawer td > * {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-md);
-  
+
   /* Use grid for a clean stacked layout */
   display: grid !important;
   grid-template-columns: 1fr; /* Stack everything cleanly */
@@ -1923,7 +1929,7 @@ tr.drawer td > * {
 }
 
 /* The Save Button */
-.paste-form button[type="submit"] {
+.paste-form button[type='submit'] {
   justify-self: flex-end;
   padding: 12px 32px;
   border-radius: var(--radius-md);
@@ -1934,7 +1940,7 @@ tr.drawer td > * {
   cursor: pointer;
   margin-top: var(--spacing-2);
 }
-.paste-form button[type="submit"]:hover {
+.paste-form button[type='submit']:hover {
   filter: brightness(0.9);
 }
 
@@ -1959,7 +1965,8 @@ tr.drawer td > * {
   gap: 8px;
 }
 
-.rte-tools, .rte-modes {
+.rte-tools,
+.rte-modes {
   display: flex;
   gap: 4px;
 }
@@ -2011,14 +2018,36 @@ tr.drawer td > * {
   line-height: 1.6;
 }
 
-.rte-preview h2, .rte-preview h3 {
+.rte-preview h2,
+.rte-preview h3 {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   font-weight: 700;
 }
-.rte-preview h2 { font-size: 1.5rem; }
-.rte-preview h3 { font-size: 1.25rem; }
-.rte-preview p { margin-bottom: 1em; }
-.rte-preview ul { margin-inline-start: 2em; margin-bottom: 1em; list-style-type: disc; }
-.rte-preview a { color: var(--color-brand); text-decoration: underline; }
+.rte-preview h2 {
+  font-size: 1.5rem;
+}
+.rte-preview h3 {
+  font-size: 1.25rem;
+}
+.rte-preview p {
+  margin-bottom: 1em;
+}
+.rte-preview ul {
+  margin-inline-start: 2em;
+  margin-bottom: 1em;
+  list-style-type: disc;
+}
+.rte-preview a {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
 
+/* A note on a method that is live but probably not complete enough to pay with.
+   Amber rather than red: nothing is broken, and the shop may have its reasons. */
+.meta-warn {
+  color: #8a5a00;
+  background: var(--color-accent-soft, #fdf1dc);
+  padding: 4px 10px;
+  border-radius: 6px;
+}

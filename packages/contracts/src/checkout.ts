@@ -269,6 +269,21 @@ export const paymentMethodStatusSchema = z.object({
   isOffered: z.boolean(),
   /** Arabic, for the panel. Null when the method is offered. */
   blocker: z.string().nullable(),
+  /**
+   * Something wrong with an offered method, which a blocker cannot express.
+   *
+   * The gate needs one labelled field to offer a bank transfer, and one is
+   * enough to be correct and not enough to be usable: a shop that has entered
+   * an IBAN and nothing else is offering a transfer that many banks will
+   * reject, because the sending form asks for the beneficiary name and the
+   * receiving bank and refuses a mismatch. Before this the screen said nothing
+   * at all once a method went live, so the difference between "offered" and
+   * "offered and workable" was invisible.
+   *
+   * A warning, never a blocker. The shop may have a reason for one field, and
+   * refusing to take money over a heuristic would be worse than the gap.
+   */
+  warning: z.string().nullable(),
 });
 export type PaymentMethodStatus = z.infer<typeof paymentMethodStatusSchema>;
 

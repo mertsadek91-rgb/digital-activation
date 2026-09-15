@@ -119,8 +119,7 @@ export default function PaymentsPage() {
     view?.methods.find((method) => method.provider === provider);
 
   return (
-    <Nav me={me} current="payments" >
-
+    <Nav me={me} current="payments">
       <div className="queue-head">
         <h1>طرق الدفع</h1>
         <p className="who">
@@ -153,6 +152,10 @@ export default function PaymentsPage() {
               </span>
               <strong>{labelFor(method.provider)}</strong>
               {method.blocker ? <span className="meta">{method.blocker}</span> : null}
+              {/* A method can be live and still not workable. The screen used to
+                  fall silent the moment it went green, so "offered" and "offered
+                  with enough detail to actually pay" looked identical. */}
+              {method.warning ? <span className="meta meta-warn">{method.warning}</span> : null}
             </li>
           ))}
         </ul>

@@ -145,6 +145,7 @@ export class PaymentSettingsService {
       {
         provider: 'STRIPE',
         isOffered: this.stripe.payable,
+        warning: null,
         // Named separately because the two keys fail differently and the fix
         // is different: without the secret nothing can open a payment, without
         // the publishable key the browser has nothing to confirm one with.
@@ -157,6 +158,7 @@ export class PaymentSettingsService {
       {
         provider: 'PAYPAL',
         isOffered: false,
+        warning: null,
         // Stated rather than hidden: PayPal is an agreed provider that is not
         // wired, and a blank row would read as a bug in this screen.
         blocker: 'PayPal لم يُربط بعد.',
@@ -169,7 +171,9 @@ export class PaymentSettingsService {
     provider: ManualPaymentProvider,
     method: ManualPaymentSetting,
   ): PaymentMethodStatus {
-    if (usableFields(method).length === 0) {
+    const fields = usableFields(method);
+
+    if (fields.length === 0) {
       return {
         provider,
         isOffered: false,
@@ -177,12 +181,40 @@ export class PaymentSettingsService {
           provider === 'BANK_TRANSFER'
             ? 'لا يوجد حقل مكتمل: التحويل يحتاج اسماً ورقم حساب أو آيبان.'
             : 'لا يوجد حقل مكتمل: التحويل يحتاج شبكة وعنوان محفظة.',
+        warning: null,
       };
     }
     if (!method.isEnabled) {
-      return { provider, isOffered: false, blocker: 'البيانات مكتملة لكن الطريقة موقوفة.' };
+      return {
+        provider,
+        isOffered: false,
+        blocker: 'البيانات مكتملة لكن الطريقة موقوفة.',
+        warning: null,
+      };
     }
-    return { provider, isOffered: true, blocker: null };
+    return { provider, isOffered: true, blocker: null, warning: this.thinness(provider, fields) };
+  }
+
+  /**
+   * An offered method that is probably not enough to pay with.
+   *
+   * Counted rather than parsed. Guessing which field is the beneficiary name by
+   * reading its label would mean matching Arabic and English wordings against a
+   * list, and being wrong about it in either direction — refusing a correct
+   * setup, or passing an incomplete one — is worse than saying plainly what a
+   * transfer usually needs and letting the owner judge.
+   */
+  private thinness(
+    provider: ManualPaymentProvider,
+    fields: ManualPaymentSetting['fields'],
+  ): string | null {
+    if (provider === 'BANK_TRANSFER' && fields.length < 3) {
+      return 'التحويل معروض بحقل أو حقلين. أكثر البنوك تطلب اسم صاحب الحساب واسم البنك إلى جانب الآيبان، وترفض الحوالة إن لم يطابق الاسم.';
+    }
+    if (provider === 'CRYPTO' && fields.length < 2) {
+      return 'العنوان وحده لا يكفي: أضِف الشبكة (مثل TRC-20)، فالإرسال على الشبكة الخطأ يضيّع المبلغ.';
+    }
+    return null;
   }
 }
 
