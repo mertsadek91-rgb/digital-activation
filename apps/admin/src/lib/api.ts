@@ -50,12 +50,70 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+/**
+ * One refresh in flight at a time.
+ *
+ * Without this a screen that loads four things at once answers four 401s with
+ * four refreshes, and the session rotates under three of them — each rotation
+ * invalidating the token the next was about to use, so a page that was one
+ * expired minute old logs the staff member out.
+ */
+let refreshing: Promise<boolean> | null = null;
+
+async function refreshSession(): Promise<boolean> {
+  refreshing ??= (async () => {
+    try {
+      const response = await fetch(`${API}/v1/auth/staff/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        // An empty body, not no body. Fastify refuses a POST that declares
+        // `application/json` and sends nothing — "Body cannot be empty when
+        // content-type is set to 'application/json'" — so the refresh answered
+        // 400, the retry never happened, and the fix looked like it worked
+        // until it was pointed at a real expired session.
+        body: '{}',
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      // Cleared on the next tick so the callers awaiting this one all see the
+      // same answer, and the one after them starts a new attempt.
+      setTimeout(() => {
+        refreshing = null;
+      }, 0);
+    }
+  })();
+  return refreshing;
+}
+
+/**
+ * Every call, with one silent refresh when the access token has expired.
+ *
+ * An access token lasts fifteen minutes and nothing here was renewing it, so
+ * the panel quietly stopped accepting writes a quarter of an hour after login.
+ * The failure was invisible in the worst way: the screen still rendered, the
+ * form still accepted typing, and only the save reported anything — as
+ * "Unauthorized", next to a form whose contents were then lost on reload. Three
+ * separate attempts to enter a bank account were swallowed that way.
+ *
+ * The retry runs once. A 401 that survives a successful refresh is a real
+ * refusal — a role that may not write — and retrying it forever would turn one
+ * permission error into a loop.
+ */
+async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const response = await fetch(`${API}/v1${path}`, {
     ...init,
     credentials: 'include',
     headers: { 'content-type': 'application/json', ...init?.headers },
   });
+
+  // Never on the auth routes themselves: refreshing a failed login is a loop,
+  // and a failed refresh must surface as a failed refresh.
+  if (response.status === 401 && !retried && !path.startsWith('/auth/staff/')) {
+    if (await refreshSession()) return request<T>(path, init, true);
+  }
 
   const payload: unknown = await response.json().catch(() => null);
 
