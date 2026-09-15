@@ -75,14 +75,26 @@
   --spacing-5: 90px;
 
   /* --- radii & elevation ------------------------------------------------- */
-  --radius-sm: 5px;
+  --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 22px;
   --radius-pill: 999px;
 
-  --shadow-sm: 0 1px 1px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 0 10px rgb(0 0 0 / 0.1);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04);
   --shadow-lg: 0 12px 32px -12px rgb(0 0 0 / 0.18);
+  --shadow-card: 0 2px 8px -2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.03);
+  --shadow-card-hover: 0 12px 28px -6px rgb(0 0 0 / 0.1), 0 4px 10px -2px rgb(0 0 0 / 0.05);
+  --shadow-drawer: 0 20px 40px -10px rgb(0 0 0 / 0.28);
+
+  /* Gold & Instant delivery specific accents */
+  --color-gold: #b37400;
+  --color-gold-soft: #fff9e6;
+  --color-gold-border: #f2dc99;
+  --color-instant: #0b7a5a;
+  --color-instant-soft: #e3f5ee;
 
   /* --- layout ------------------------------------------------------------ */
   --container-max: 1400px;

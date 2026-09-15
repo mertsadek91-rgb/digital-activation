@@ -86,7 +86,7 @@ export default function PaymentsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   // Narrower than the redirect screen next door on purpose. Answering a dead
   // URL is content work; re-pointing every bank transfer the store takes is not.
@@ -119,8 +119,7 @@ export default function PaymentsPage() {
     view?.methods.find((method) => method.provider === provider);
 
   return (
-    <main className="shell">
-      <Nav me={me} current="payments" />
+    <Nav me={me} current="payments" >
 
       <div className="queue-head">
         <h1>طرق الدفع</h1>
@@ -182,7 +181,7 @@ export default function PaymentsPage() {
           </span>
         </div>
       ) : null}
-    </main>
+    </Nav>
   );
 }
 

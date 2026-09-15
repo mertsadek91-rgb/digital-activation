@@ -6,34 +6,28 @@ import Link from 'next/link';
 import { formatPrice } from '../lib/format';
 
 import { AddToCart } from './add-to-cart';
+import { BoltIcon, ShieldCheckIcon } from './icons';
+import { MotionCard } from './motion-wrapper';
 
 /**
  * Grid card.
  *
- * Every claim on it is read from real data. There is no decorative countdown
- * and no invented rating: "only N left" appears because N is the sellable
- * stock, and "sold N times" appears because N orders exist. The legacy store
- * showed 4.6 stars from synthetic reviews on 81 products, which is the habit
- * this card is built to avoid.
- *
- * The buy button sits outside the link rather than inside it. A button nested
- * in an anchor is invalid, and browsers resolve it by firing both — every
- * add-to-cart would also navigate away from the grid.
+ * Every claim on it is read from real data.
+ * The buy button sits outside the link rather than inside it.
  */
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
   const ar = locale === 'ar';
   const href = locale === 'ar' ? `/store/${card.slug}` : `/${locale}/store/${card.slug}`;
-  // "Only N left" is a claim about a shelf, so it appears only where there is
-  // one. A made-to-order product reports no count, and inventing urgency for
-  // it would be the same trick as the 565 reviews nobody wrote.
   const lowStock =
     card.inStock &&
     card.available !== null &&
     card.available > 0 &&
     card.available <= LOW_STOCK_THRESHOLD;
 
+  const discount = card.price.discountPercent;
+
   return (
-    <article className="card">
+    <MotionCard className="card">
       <Link href={href} className="card-link">
         <div className="card-media" aria-hidden={card.image ? undefined : true}>
           {card.image ? (
@@ -41,11 +35,24 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
               src={card.image.url}
               alt={card.image.alt}
               fill
-              sizes="(max-width: 700px) 50vw, 220px"
+              sizes="(max-width: 700px) 50vw, 260px"
             />
           ) : (
             <span className="card-media-empty">{ar ? 'لا صورة' : 'No image'}</span>
           )}
+
+          {discount ? (
+            <span className="card-discount-tag" aria-label={ar ? `خصم ${discount}%` : `${discount}% discount`}>
+              {ar ? `-${discount}%` : `-${discount}%`}
+            </span>
+          ) : null}
+
+          {card.fulfillmentMode === 'FROM_STOCK' && card.inStock ? (
+            <span className="card-instant-tag">
+              <BoltIcon size={12} />
+              <span>{ar ? 'فوري' : 'Instant'}</span>
+            </span>
+          ) : null}
         </div>
 
         <div className="card-body">
@@ -56,21 +63,22 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
           <div className="card-badges">
             {card.hasGoldenWarranty ? (
               <span className="badge badge-warranty">
-                {ar ? 'الضمان الذهبي' : 'Golden Warranty'}
+                <ShieldCheckIcon size={13} />
+                <span>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</span>
               </span>
             ) : null}
             {card.variantCount > 1 ? (
-              <span className="badge">
+              <span className="badge badge-options">
                 {ar
                   ? `${String(card.variantCount)} خيارات`
                   : `${String(card.variantCount)} options`}
               </span>
             ) : null}
             {card.salesCount > 0 ? (
-              <span className="badge">
+              <span className="badge badge-sales">
                 {ar
-                  ? `تم بيعه ${String(card.salesCount)} مرة`
-                  : `Sold ${String(card.salesCount)} times`}
+                  ? `تم بيع ${String(card.salesCount)}`
+                  : `Sold ${String(card.salesCount)}`}
               </span>
             ) : null}
           </div>
@@ -133,6 +141,6 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
       ) : null}
 
       {card.isDraft ? <p className="draft-flag">{ar ? 'مسودّة' : 'Draft'}</p> : null}
-    </article>
+    </MotionCard>
   );
 }

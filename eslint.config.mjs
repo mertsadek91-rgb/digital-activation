@@ -15,6 +15,11 @@ export default tseslint.config(
       // from here reports thousands of parse errors for code that is already
       // linted in its own tree.
       '.claude/**',
+      // Skill and plugin tooling that installs itself into the repo. Plain
+      // CommonJS helpers with no tsconfig of their own, so the type-aware rules
+      // can only report them as unparseable — twelve errors that say nothing
+      // about this project's code. Same reason as `.claude/**` above.
+      '.agents/**',
       '**/dist/**',
       '**/.next/**',
       '**/.turbo/**',

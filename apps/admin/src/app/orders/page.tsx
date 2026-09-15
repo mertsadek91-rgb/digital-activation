@@ -85,7 +85,7 @@ export default function OrdersPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const canConfirm = ['OWNER', 'ADMIN'].includes(me.role);
   // Wider than confirming on purpose: re-sending a licence is what the person
@@ -105,8 +105,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <main className="shell">
-      <Nav me={me} current="orders" />
+    <Nav me={me} current="orders" >
 
       <div className="queue-head">
         <h1>الطلبات</h1>
@@ -178,7 +177,7 @@ export default function OrdersPage() {
           />
         ))}
       </ul>
-    </main>
+    </Nav>
   );
 }
 

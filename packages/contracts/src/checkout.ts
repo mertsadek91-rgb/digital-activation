@@ -128,6 +128,26 @@ export const paymentProviderSchema = z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER'
 export type PaymentProvider = z.infer<typeof paymentProviderSchema>;
 
 /**
+ * What the shop can actually take money with, for any page that wants to say so.
+ *
+ * Carries providers and nothing else — no bank account, no key, no field the
+ * manual methods hold — so it is safe to serve to anybody, which is the point:
+ * it is read by the product page, the cart and the footer, none of which have a
+ * checkout session to ask.
+ *
+ * It exists because a payment badge is a promise. The product page, the cart
+ * and the checkout all grew a row of mada, Apple Pay, Visa and Mastercard marks
+ * while the store had no payment method configured at all — on the checkout
+ * page the badges sat directly beneath the sentence "لا توجد طريقة دفع متاحة
+ * الآن", contradicting it. A mark appears here only when the method behind it
+ * can take an order.
+ */
+export const offeredPaymentSchema = z.object({
+  providers: z.array(paymentProviderSchema),
+});
+export type OfferedPayment = z.infer<typeof offeredPaymentSchema>;
+
+/**
  * The methods whose details a person maintains rather than an integration.
  *
  * A bank account and a wallet address are content, and content nobody has

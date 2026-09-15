@@ -2,6 +2,7 @@
 
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
 import { cartApi, CartError } from '../lib/cart-client';
@@ -330,43 +331,49 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
 
       {error ? <p className="error">{error}</p> : null}
 
-      {added ? (
-        <p className="added">
-          {ar ? 'أُضيف إلى السلة.' : 'Added to your cart.'}{' '}
-          <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
-            {ar ? 'إتمام الشراء' : 'Go to checkout'}
-          </a>
-        </p>
-      ) : null}
+      <AnimatePresence>
+        {added && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -6 }}
+            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+            className="added"
+          >
+            <span>{ar ? '✓ أُضيف إلى السلة بنجاح.' : '✓ Added to your cart.'}</span>{' '}
+            <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
+              {ar ? 'إتمام الشراء ←' : 'Go to checkout →'}
+            </a>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* The same controls, following the page down.
-          The description on this catalog runs long — activation steps, a spec
-          list, an FAQ — and the old store's answer was a bar that keeps the
-          price and the button in reach the whole way. It shares this
-          component's state rather than holding its own, so the variant it adds
-          is the variant that is selected above and cannot drift from it.
-
-          `inert` while it is off screen, which takes the whole bar out of the
-          tab order and the accessibility tree in one attribute. Without it the
-          page carries a second stepper and a second buy button that nobody can
-          see but a keyboard still stops at. */}
-      {selected.inStock ? (
-        <div className={`buy-bar${passed ? ' is-shown' : ''}`} inert={!passed}>
-          <div className="buy-bar-inner">
-            <span className="buy-bar-name">{product.name}</span>
-            <span className="buy-bar-price">{total}</span>
-            {stepper}
-            <button
-              type="button"
-              className="btn btn-accent btn-buy"
-              onClick={() => void add()}
-              disabled={busy}
-            >
-              {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {/* The same controls, following the page down with Framer Motion slide-up */}
+      <AnimatePresence>
+        {selected.inStock && passed && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+            className="buy-bar is-shown motion-controlled"
+          >
+            <div className="buy-bar-inner">
+              <span className="buy-bar-name">{product.name}</span>
+              <span className="buy-bar-price">{total}</span>
+              {stepper}
+              <button
+                type="button"
+                className="btn btn-accent btn-buy"
+                onClick={() => void add()}
+                disabled={busy}
+              >
+                {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

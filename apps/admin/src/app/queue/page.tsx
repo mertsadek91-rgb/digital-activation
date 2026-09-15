@@ -89,11 +89,10 @@ export default function QueuePage() {
     queue?.rows.filter((row) => row.overdue && row.state !== 'DELIVERED' && row.state !== 'FAILED')
       .length ?? 0;
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   return (
-    <main className="shell">
-      <Nav me={me} current="queue" {...(queue ? { waiting: queue.waiting, overdue } : {})} />
+    <Nav me={me} current="queue" {...(queue ? { waiting: queue.waiting, overdue } : {})} >
 
       <div className="queue-head">
         <h1>طابور التسليم</h1>
@@ -139,7 +138,7 @@ export default function QueuePage() {
           />
         ))}
       </ul>
-    </main>
+    </Nav>
   );
 }
 

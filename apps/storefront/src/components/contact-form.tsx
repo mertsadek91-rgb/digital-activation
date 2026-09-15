@@ -89,7 +89,7 @@ export function ContactForm({ locale }: { locale: string }) {
 
   if (sent) {
     return (
-      <div className="contact-card">
+      <div className="contact-card contact-form-card">
         <p className="account-sent">
           {ar
             ? `وصلتنا رسالتك، وأرسلنا إليك تأكيداً على بريدك. نردّ خلال ${String(CONTACT_REPLY_HOURS)} ساعة كحدّ أقصى.`
@@ -104,12 +104,19 @@ export function ContactForm({ locale }: { locale: string }) {
 
   return (
     <form
-      className="contact-card"
+      className="contact-card contact-form-card"
       onSubmit={(event) => {
         void submit(event);
       }}
     >
-      <h2>{ar ? 'اكتب لنا' : 'Write to us'}</h2>
+      <div className="contact-card-header">
+        <h2>{ar ? 'أرسل استفسارك للدعم الفني' : 'Send a Message to Support'}</h2>
+        <p>
+          {ar
+            ? 'املأ البيانات أدناه وسيتولى فريق الدعم الرد عليك في أقرب وقت.'
+            : 'Fill in the details below and our support team will respond promptly.'}
+        </p>
+      </div>
 
       <label className="account-field">
         {ar ? 'القسم' : 'Topic'}
@@ -210,9 +217,10 @@ export function ContactForm({ locale }: { locale: string }) {
       <button
         type="submit"
         className="btn btn-primary"
+        style={{ minBlockSize: '48px', fontSize: 'var(--text-base)' }}
         disabled={busy || name.trim().length < 2 || message.trim().length < 10}
       >
-        {busy ? '…' : ar ? 'أرسل' : 'Send'}
+        {busy ? (ar ? 'جارٍ الإرسال...' : 'Sending...') : ar ? 'إرسال الرسالة الآن ←' : 'Send Message Now →'}
       </button>
 
       <p className="account-hint">

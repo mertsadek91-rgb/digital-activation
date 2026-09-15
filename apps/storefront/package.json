@@ -16,6 +16,7 @@
     "@da/ui": "workspace:*",
     "@stripe/stripe-js": "catalog:",
     "dotenv": "catalog:",
+    "framer-motion": "^13.2.0",
     "next": "catalog:",
     "next-intl": "catalog:",
     "react": "catalog:",

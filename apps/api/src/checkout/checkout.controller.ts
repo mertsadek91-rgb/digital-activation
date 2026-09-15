@@ -16,6 +16,7 @@ import {
   type CartQuery,
   type Checkout,
   type CheckoutStart,
+  type OfferedPayment,
   type Order,
   type PaymentSession,
   cartQuerySchema,
@@ -42,6 +43,20 @@ export class CheckoutController {
     private readonly paymentSettings: PaymentSettingsService,
     private readonly fulfillment: FulfillmentService,
   ) {}
+
+  /**
+   * What the shop can take money with, for pages with no checkout session.
+   *
+   * Providers only — never the bank details behind a manual method — so it is
+   * safe unauthenticated. The product page and the cart draw payment marks from
+   * this rather than from a hard-coded list, because a mark for a method the
+   * shop cannot take is a promise made to somebody about to type a card number.
+   */
+  @Get('payment-methods')
+  @ApiOperation({ summary: 'Payment providers the shop can currently take' })
+  async offeredPayment(): Promise<OfferedPayment> {
+    return { providers: await this.paymentSettings.offeredProviders() };
+  }
 
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('checkout')

@@ -68,7 +68,7 @@ export default function VaultPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const canStock = ['OWNER', 'ADMIN', 'FULFILLMENT'].includes(me.role);
   // Not FULFILLMENT: changing the shape changes how every future key for the
@@ -79,8 +79,7 @@ export default function VaultPage() {
   const others = (stock ?? []).filter((row) => row.mode !== 'FROM_STOCK');
 
   return (
-    <main className="shell">
-      <Nav me={me} current="vault" />
+    <Nav me={me} current="vault" >
 
       <h1>الخزنة</h1>
       {error ? <p className="error">{error}</p> : null}
@@ -184,7 +183,7 @@ export default function VaultPage() {
         </p>
         <OrderLookup canReveal={canReveal} onError={setError} onNote={setNote} />
       </section>
-    </main>
+    </Nav>
   );
 }
 

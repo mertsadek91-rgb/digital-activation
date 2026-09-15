@@ -79,7 +79,7 @@ export default function ReviewsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const canWork = ['OWNER', 'ADMIN', 'SUPPORT'].includes(me.role);
 
@@ -113,8 +113,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <main className="shell">
-      <Nav me={me} current="reviews" {...(list ? { reviewsPending: list.counts.pending } : {})} />
+    <Nav me={me} current="reviews" {...(list ? { reviewsPending: list.counts.pending } : {})} >
 
       <div className="queue-head">
         <h1>التقييمات</h1>
@@ -172,7 +171,7 @@ export default function ReviewsPage() {
           />
         ))}
       </ul>
-    </main>
+    </Nav>
   );
 }
 

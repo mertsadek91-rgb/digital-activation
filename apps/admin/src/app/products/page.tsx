@@ -8,6 +8,7 @@ import type {
   StaffMe,
 } from '@da/contracts';
 import { countBodyWords, READINESS_RULES, SEO_LENGTH_GUIDE } from '@da/contracts';
+import { RichTextEditor } from './rich-text-editor';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -210,11 +211,10 @@ export default function ProductsPage() {
     setReadiness({ slug, value: await api.readiness(slug, locale) });
   }
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   return (
-    <main className="shell">
-      <Nav me={me} current="products" />
+    <Nav me={me} current="products" >
       <h1>المنتجات</h1>
 
       <nav className="chips">
@@ -336,7 +336,7 @@ export default function ProductsPage() {
           {data.rows.length} من {data.total}
         </p>
       ) : null}
-    </main>
+    </Nav>
   );
 }
 
@@ -695,13 +695,11 @@ function CopyForm({
 
         <label className="grow">
           وصف المنتج
-          <textarea
+          <RichTextEditor
             value={body}
-            rows={12}
             dir={dir}
             disabled={loaded === null || !loaded.bodyEditable}
-            onChange={(event) => setBody(event.target.value)}
-            placeholder="<h2>عن المنتج</h2>&#10;<p>…</p>"
+            onChange={setBody}
           />
           {loaded && !loaded.bodyEditable ? (
             <small>

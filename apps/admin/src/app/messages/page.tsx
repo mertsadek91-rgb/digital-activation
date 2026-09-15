@@ -85,7 +85,7 @@ export default function MessagesPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const canWork = ['OWNER', 'ADMIN', 'SUPPORT'].includes(me.role);
 
@@ -103,12 +103,11 @@ export default function MessagesPage() {
   }
 
   return (
-    <main className="shell">
-      <Nav
+    <Nav
         me={me}
         current="messages"
         {...(inbox ? { messagesWaiting: inbox.waiting, messagesOverdue: inbox.overdue } : {})}
-      />
+      >
 
       <div className="queue-head">
         <h1>الرسائل</h1>
@@ -155,7 +154,7 @@ export default function MessagesPage() {
           />
         ))}
       </ul>
-    </main>
+    </Nav>
   );
 }
 

@@ -91,6 +91,48 @@ export function ChevronIcon() {
   );
 }
 
+export function CloseIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M18 6L6 18M6 6l12 12" />
+    </Svg>
+  );
+}
+
+export function SearchIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Svg>
+  );
+}
+
+export function ShieldCheckIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </Svg>
+  );
+}
+
+export function BoltIcon({ size = 16 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </Svg>
+  );
+}
+
+export function CheckIcon({ size = 16 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M20 6L9 17l-5-5" />
+    </Svg>
+  );
+}
+
 /**
  * WhatsApp.
  *
@@ -109,6 +151,14 @@ export function WhatsAppIcon({ size = 26 }: { size?: number }) {
         fill="currentColor"
         d="M9.1 7.3c-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.8.4s-1 1-1 2.4 1 2.8 1.2 3 2 3.2 4.9 4.3c2.4 1 2.9.8 3.4.7s1.6-.6 1.8-1.3.2-1.2.2-1.3l-.6-.4-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.4 7.4 0 0 1-1.4-1.7c-.1-.3 0-.4.1-.5l.4-.5.3-.4v-.5z"
       />
+    </svg>
+  );
+}
+
+export function TelegramIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8-1.7 8.01c-.13.57-.47.71-.95.44l-2.6-1.92-1.25 1.21c-.14.14-.26.26-.53.26l.19-2.64 4.81-4.35c.21-.19-.05-.29-.32-.1l-5.95 3.75-2.56-.8c-.56-.17-.57-.56.12-.83l10-3.85c.46-.17.87.11.74.87z" />
     </svg>
   );
 }
@@ -435,3 +485,116 @@ export function MinusIcon() {
     </Svg>
   );
 }
+
+export function BrandLogoIcon({ size = 32 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true" focusable="false">
+      <rect width="32" height="32" rx="8" fill="#148576" />
+      <g fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round">
+        <circle cx="11.5" cy="20.5" r="4.2" />
+        <path d="M14.7 17.3 L23 9" />
+        <path d="M19.4 12.6 L21.8 15" />
+        <path d="M22.3 9.7 L24.6 12" />
+      </g>
+    </svg>
+  );
+}
+
+export function StcPayIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 72 32"
+      className={className}
+      width="52"
+      height="22"
+      aria-label="stc pay"
+      role="img"
+    >
+      <title>stc pay</title>
+      <rect width="72" height="32" rx="6" fill="#4f008c" />
+      <text
+        x="36"
+        y="21"
+        fontFamily="sans-serif"
+        fontWeight="800"
+        fontSize="13"
+        fill="#ffffff"
+        textAnchor="middle"
+        letterSpacing="0.4"
+      >
+        stc pay
+      </text>
+    </svg>
+  );
+}
+
+export function XIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false">
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+export function InstagramIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+  );
+}
+
+export function GlobeIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+export function CreditCardIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+    </svg>
+  );
+}
+

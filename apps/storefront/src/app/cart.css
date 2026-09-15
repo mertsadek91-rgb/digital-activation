@@ -178,17 +178,41 @@
 }
 @media (max-width: 640px) {
   .cart-line {
-    grid-template-columns: 72px minmax(0, 1fr);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+    padding-block: 14px;
+  }
+  .cart-line-media {
+    inline-size: 74px;
+    block-size: 74px;
+    flex-shrink: 0;
+  }
+  .cart-line-body {
+    flex: 1 1 12rem;
+  }
+  .cart-line-qty {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-inline-start: 86px;
+  }
+  .cart-line-total {
+    margin-inline-start: auto;
+    font-size: var(--text-base);
   }
 }
 .cart-line-media {
   position: relative;
   aspect-ratio: 1;
   background: var(--color-surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   overflow: hidden;
   display: grid;
   place-items: center;
+  border: 1px solid var(--color-border);
 }
 .cart-line-media img {
   object-fit: contain;
@@ -198,13 +222,14 @@
   color: var(--color-ink);
   text-decoration: none;
   display: block;
+  font-size: var(--text-base);
 }
 .cart-line-name:hover {
   color: var(--color-brand);
 }
 .cart-line-spec {
   margin: 2px 0 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-ink-muted);
 }
 .cart-line-note {
@@ -212,7 +237,7 @@
   font-size: var(--text-xs);
   color: var(--color-brand-ink);
   background: var(--color-brand-soft);
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: var(--radius-sm);
   display: inline-block;
 }
@@ -227,14 +252,17 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  color: var(--color-brand-ink);
 }
 
 /* --- summary -------------------------------------------------------------- */
 
 .cart-summary {
   background: var(--color-surface);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2);
+  box-shadow: var(--shadow-sm);
   position: sticky;
   inset-block-start: calc(var(--header-height) + var(--spacing-1));
 }
@@ -354,11 +382,18 @@
 .checkout-form input[type='text'] {
   font: inherit;
   min-block-size: 48px;
-  padding-inline: 12px;
+  padding-inline: 14px;
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg);
   color: var(--color-ink);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.checkout-form input[type='email']:focus,
+.checkout-form input[type='text']:focus {
+  border-color: var(--color-brand);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
 }
 .checkout-form small {
   font-weight: 400;
@@ -369,9 +404,9 @@
    customer a licence they cannot use, so it is not a field among fields. */
 .checkout-form label.highlight {
   background: var(--color-accent-soft);
-  border-inline-start: 3px solid var(--color-accent);
-  padding: 12px;
-  border-radius: var(--radius-sm);
+  border-inline-start: 4px solid var(--color-accent);
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
 }
 .checkout-form label.check {
   flex-direction: row;
@@ -388,7 +423,21 @@
 
 .pay-methods {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  margin-block: var(--spacing-1);
+}
+.pay-methods button {
+  min-block-size: 52px;
+  padding: 12px var(--spacing-2);
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: var(--text-base);
+  box-shadow: var(--shadow-sm);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.pay-methods button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 /* --- card --------------------------------------------------------------- */
@@ -406,9 +455,10 @@
 .card-pay-element {
   padding: var(--spacing-1);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg);
   min-block-size: 5rem;
+  box-shadow: var(--shadow-xs);
 }
 
 /* --- manual payment instructions ----------------------------------------- */
@@ -422,16 +472,17 @@
 .pay-details {
   margin: 0;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 .pay-detail {
   display: grid;
   grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
-  gap: 6px var(--spacing-1);
-  align-items: baseline;
-  padding: 10px 12px;
+  gap: 8px var(--spacing-1);
+  align-items: center;
+  padding: 12px 16px;
   background: var(--color-surface);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 @media (max-width: 560px) {
   .pay-detail {
@@ -459,16 +510,28 @@
 .pay-detail.is-exact .pay-value {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
+  font-weight: 700;
   overflow-wrap: anywhere;
-  color: var(--color-ink);
+  color: var(--color-brand-ink);
   user-select: all;
 }
 .btn-copy {
-  min-block-size: 36px;
-  padding-inline: 12px;
-  font-size: var(--text-sm);
+  min-block-size: 38px;
+  padding-inline: 14px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  border: 1px solid var(--color-brand);
+  cursor: pointer;
   margin-inline-start: auto;
+  transition: all 160ms ease;
+}
+.btn-copy:hover {
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
 }
 
 .cross-sell {

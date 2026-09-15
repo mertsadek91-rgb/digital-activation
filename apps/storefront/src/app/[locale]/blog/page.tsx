@@ -8,6 +8,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { getPosts } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 import { formatArticleDate, readingLabel } from '../../../lib/format';
+import { MotionFadeIn } from '../../../components/motion-wrapper';
 
 /**
  * /blog — the seven posts the old store had, and a place to put the next one.
@@ -99,28 +100,36 @@ export default async function BlogPage({ params }: Props) {
             : 'Nothing here in English yet — the articles on this store are written in Arabic.'}
         </p>
       ) : (
-        <ul className="post-list">
-          {posts.map((post) => (
-            <li key={post.slug}>
-              <article className="post-card">
-                <h2>
-                  <Link href={`${prefix}${ROUTES.post(post.slug)}`}>{post.title}</Link>
-                </h2>
-                {post.summary ? <p className="post-summary">{post.summary}</p> : null}
-                <p className="post-meta">
-                  {post.publishedAt ? (
-                    <time dateTime={post.publishedAt}>
-                      {formatArticleDate(post.publishedAt, locale)}
-                    </time>
-                  ) : null}
-                  {post.readingMinutes > 0 ? (
-                    <span>{readingLabel(post.readingMinutes, locale)}</span>
-                  ) : null}
-                </p>
-              </article>
-            </li>
-          ))}
-        </ul>
+        <MotionFadeIn>
+          <ul className="post-list">
+            {posts.map((post) => (
+              <li key={post.slug}>
+                <article className="post-card">
+                  <h2>
+                    <Link href={`${prefix}${ROUTES.post(post.slug)}`}>{post.title}</Link>
+                  </h2>
+                  {post.summary ? <p className="post-summary">{post.summary}</p> : null}
+                  <p className="post-meta">
+                    {post.publishedAt ? (
+                      <time dateTime={post.publishedAt}>
+                        {formatArticleDate(post.publishedAt, locale)}
+                      </time>
+                    ) : null}
+                    {post.readingMinutes > 0 ? (
+                      <span>{readingLabel(post.readingMinutes, locale)}</span>
+                    ) : null}
+                  </p>
+                  <div className="post-action">
+                    <Link href={`${prefix}${ROUTES.post(post.slug)}`} className="post-read-link">
+                      <span>{ar ? 'قراءة المقال' : 'Read article'}</span>
+                      <span aria-hidden="true">{ar ? '←' : '→'}</span>
+                    </Link>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
+        </MotionFadeIn>
       )}
     </main>
   );

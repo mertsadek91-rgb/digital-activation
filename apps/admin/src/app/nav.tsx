@@ -37,8 +37,10 @@ export function Nav({
   messagesOverdue: givenMessagesOverdue,
   /** Same arrangement again, for the reviews the moderation screen is working. */
   reviewsPending: givenReviews,
+  children,
 }: {
   me: StaffMe;
+  children: React.ReactNode;
   current:
     | 'launch'
     | 'products'
@@ -138,113 +140,185 @@ export function Nav({
   const waiting = given ?? fetched?.waiting ?? null;
   const overdue = givenOverdue ?? fetched?.overdue ?? 0;
 
-  return (
-    <header className="bar">
-      <nav className="admin-nav">
-        <button
-          type="button"
-          className={`tab${current === 'products' ? ' is-active' : ''}`}
-          onClick={() => router.push('/products')}
-        >
-          المنتجات
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'orders' ? ' is-active' : ''}`}
-          onClick={() => router.push('/orders')}
-        >
-          الطلبات
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'vault' ? ' is-active' : ''}`}
-          onClick={() => router.push('/vault')}
-        >
-          الخزنة
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'payments' ? ' is-active' : ''}`}
-          onClick={() => router.push('/payments')}
-        >
-          طرق الدفع
-        </button>
-        {/* Next to the payment methods rather than off with the catalog: both
-            are about what money arrives, and a code is the fastest way for
-            less of it to. */}
-        {/* Last in the row rather than first: it is read closely once before
-            the store opens and then almost never, and the tabs before it are
-            worked every day. */}
-        <button
-          type="button"
-          className={`tab${current === 'launch' ? ' is-active' : ''}`}
-          onClick={() => router.push('/launch')}
-        >
-          حالة المتجر
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'promotions' ? ' is-active' : ''}`}
-          onClick={() => router.push('/promotions')}
-        >
-          الأكواد
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'redirects' ? ' is-active' : ''}`}
-          onClick={() => router.push('/redirects')}
-        >
-          التوجيهات
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'messages' ? ' is-active' : ''}`}
-          onClick={() => router.push('/messages')}
-        >
-          الرسائل
-          {inboxWaiting !== null && inboxWaiting > 0 ? (
-            <span className={`tab-count${inboxOverdue > 0 ? ' is-late' : ''}`}>{inboxWaiting}</span>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'reviews' ? ' is-active' : ''}`}
-          onClick={() => router.push('/reviews')}
-        >
-          التقييمات
-          {reviewsPending !== null && reviewsPending > 0 ? (
-            <span className="tab-count">{reviewsPending}</span>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          className={`tab${current === 'queue' ? ' is-active' : ''}`}
-          onClick={() => router.push('/queue')}
-        >
-          الطابور
-          {waiting !== null && waiting > 0 ? (
-            <span className={`tab-count${overdue > 0 ? ' is-late' : ''}`}>{waiting}</span>
-          ) : null}
-        </button>
-      </nav>
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-      <div className="actions">
-        <span className="who">
-          {me.name} · {me.role}
-        </span>
-        <button type="button" className="ghost" onClick={() => router.push('/password')}>
-          كلمة المرور
-        </button>
-        <button
-          type="button"
-          className="ghost"
-          onClick={() => {
-            void api.logout().then(() => router.push('/login'));
-          }}
-        >
-          خروج
-        </button>
+  // Close drawer on escape
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDrawerOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawerOpen]);
+
+  const navItems = [
+    { key: 'queue', label: 'الطابور', count: waiting, overdue },
+    { key: 'orders', label: 'الطلبات' },
+    { key: 'products', label: 'المنتجات' },
+    { key: 'messages', label: 'الرسائل', count: inboxWaiting, overdue: inboxOverdue },
+    { key: 'reviews', label: 'التقييمات', count: reviewsPending },
+    { key: 'vault', label: 'الخزنة' },
+    { key: 'payments', label: 'طرق الدفع' },
+    { key: 'promotions', label: 'الأكواد' },
+    { key: 'launch', label: 'حالة المتجر' },
+    { key: 'redirects', label: 'التوجيهات' },
+  ] as const;
+
+  function navigate(path: string) {
+    setDrawerOpen(false);
+    router.push(`/${path}`);
+  }
+
+  return (
+    <div className="admin-layout">
+      {/* Desktop Sidebar */}
+      <aside className="admin-sidebar" aria-label="القائمة الجانبية">
+        <div className="admin-sidebar-header">
+          <span className="admin-title">لوحة التفعيل الرقمي</span>
+        </div>
+
+        <div className="admin-sidebar-user">
+          <span className="admin-user-name">{me.name}</span>
+          <span className="role-tag">{me.role}</span>
+        </div>
+
+        <nav className="admin-sidebar-nav">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`admin-sidebar-tab${current === item.key ? ' is-active' : ''}`}
+              onClick={() => navigate(item.key)}
+            >
+              <span>{item.label}</span>
+              {'count' in item && item.count !== null && item.count !== undefined && item.count > 0 ? (
+                <span className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}>
+                  {item.count}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <button type="button" className="ghost" onClick={() => navigate('password')}>
+            تغيير كلمة المرور
+          </button>
+          <button
+            type="button"
+            className="ghost btn-danger-soft"
+            onClick={() => {
+              void api.logout().then(() => router.push('/login'));
+            }}
+          >
+            تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="admin-main">
+        <header className="admin-header">
+          <div className="bar-brand">
+            <button
+              type="button"
+              className="admin-mobile-toggle"
+              aria-label="فتح قائمة الإدارة"
+              aria-expanded={drawerOpen}
+              onClick={() => setDrawerOpen(true)}
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <span className="admin-title" style={{ display: 'none' /* Only show on mobile if needed, desktop has sidebar title */ }}>
+              لوحة التحكم
+            </span>
+          </div>
+
+          <div className="admin-header-actions">
+            <button type="button" className="ghost btn-sm" onClick={() => router.push('/password')}>
+              كلمة المرور
+            </button>
+            <button
+              type="button"
+              className="ghost btn-sm btn-logout"
+              onClick={() => {
+                void api.logout().then(() => router.push('/login'));
+              }}
+            >
+              خروج
+            </button>
+          </div>
+        </header>
+
+        <main className="admin-content">
+          {children}
+        </main>
+
+        <footer className="admin-footer">
+          <p>© {new Date().getFullYear()} التفعيل الرقمي. جميع الحقوق محفوظة.</p>
+        </footer>
       </div>
-    </header>
+
+      {/* Admin Mobile Navigation Drawer */}
+      <div
+        className={`admin-drawer-overlay${drawerOpen ? ' is-open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className={`admin-drawer-panel${drawerOpen ? ' is-open' : ''}`} aria-label="قائمة الجوال">
+        <div className="admin-drawer-head">
+          <span className="admin-title">لوحة إدارة المتجر</span>
+          <button
+            type="button"
+            className="admin-drawer-close"
+            aria-label="إغلاق القائمة"
+            onClick={() => setDrawerOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="admin-drawer-user">
+          <span className="admin-user-name">{me.name}</span>
+          <span className="role-tag">{me.role}</span>
+        </div>
+
+        <nav className="admin-drawer-links">
+          {navItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`admin-drawer-tab${current === item.key ? ' is-active' : ''}`}
+              onClick={() => navigate(item.key)}
+            >
+              <span>{item.label}</span>
+              {'count' in item && item.count !== null && item.count !== undefined && item.count > 0 ? (
+                <span className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}>
+                  {item.count}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+
+        <div className="admin-drawer-foot">
+          <button type="button" className="ghost" onClick={() => navigate('password')}>
+            تغيير كلمة المرور
+          </button>
+          <button
+            type="button"
+            className="ghost btn-danger-soft"
+            onClick={() => {
+              void api.logout().then(() => router.push('/login'));
+            }}
+          >
+            تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+    </div>
   );
 }

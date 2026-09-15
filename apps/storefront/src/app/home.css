@@ -38,12 +38,14 @@
 .hero {
   background:
     radial-gradient(
-      120% 140% at 100% 0%,
-      color-mix(in srgb, var(--color-brand) 12%, transparent),
-      transparent 60%
+      80% 120% at 50% -20%,
+      color-mix(in srgb, var(--color-brand) 16%, transparent),
+      transparent 70%
     ),
     var(--color-surface);
   border-block-end: 1px solid var(--color-border);
+  position: relative;
+  overflow: hidden;
 }
 .hero-inner {
   max-width: var(--container-max);
@@ -51,21 +53,23 @@
   padding: var(--spacing-4) var(--spacing-1);
 }
 .hero h1 {
-  font-size: clamp(1.75rem, 1.2rem + 2.4vw, 3rem);
+  font-size: clamp(1.85rem, 1.3rem + 2.6vw, 3.25rem);
   margin: 0 0 var(--spacing-1);
-  max-width: 24ch;
+  max-width: 26ch;
+  letter-spacing: -0.02em;
 }
 .hero-body {
   font-size: var(--text-lg);
   color: var(--color-ink-body);
   max-width: 60ch;
   margin: 0 0 var(--spacing-2);
+  line-height: 1.6;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
 }
 .btn {
   display: inline-flex;
@@ -73,9 +77,15 @@
   justify-content: center;
   min-block-size: 48px;
   padding-inline: var(--spacing-2);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-weight: 700;
   text-decoration: none;
+  transition: all 180ms var(--ease-out);
+  box-shadow: var(--shadow-sm);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 .btn-primary {
   background: var(--color-brand);
@@ -84,10 +94,6 @@
 .btn-primary:hover {
   background: var(--color-brand-hover);
 }
-/* The shop's buy colour. Orange against a page of teal, because on a product
-   page the one control that commits money should not look like the six links
-   that do not. It is the colour the store this replaces uses for the same
-   button, and returning customers reach for it without reading it. */
 .btn-accent {
   background: var(--color-accent);
   color: #3a2400;
@@ -102,17 +108,29 @@
 }
 .btn-ghost:hover {
   border-color: var(--color-brand);
+  background: var(--color-surface);
 }
 
 .hero-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-2);
-  margin: var(--spacing-2) 0 0;
+  gap: 12px;
+  margin: var(--spacing-3) 0 0;
 }
 .hero-stats div {
   display: flex;
   flex-direction: column;
+  background: var(--color-bg);
+  padding: 12px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.hero-stats div:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-strong);
 }
 .hero-stats dt {
   font-size: var(--text-2xl);
@@ -122,7 +140,7 @@
 }
 .hero-stats dd {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-ink-muted);
 }
 
@@ -138,21 +156,34 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--spacing-1);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 48rem) {
+  .trust-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--spacing-1);
+  }
 }
 .trust-grid li {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-1);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2) var(--spacing-1);
+  box-shadow: var(--shadow-card);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms ease;
+}
+.trust-grid li:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-card-hover);
 }
 .trust-icon {
   display: grid;
   place-items: center;
-  inline-size: 40px;
-  block-size: 40px;
-  border-radius: var(--radius-sm);
+  inline-size: 42px;
+  block-size: 42px;
+  border-radius: var(--radius-md);
   background: var(--color-brand-soft);
   color: var(--color-brand-ink);
   font-size: var(--text-xl);
@@ -166,6 +197,7 @@
   margin: 0;
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
+  line-height: 1.5;
 }
 
 /* --- sections ------------------------------------------------------------- */
@@ -173,14 +205,14 @@
 .section {
   max-width: var(--container-max);
   margin-inline: auto;
-  padding: var(--spacing-2) var(--spacing-1);
+  padding: var(--spacing-3) var(--spacing-1);
 }
 .section-head {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 6px var(--spacing-1);
-  margin-block-end: var(--spacing-1);
+  gap: 8px var(--spacing-1);
+  margin-block-end: var(--spacing-2);
 }
 .section-head h2 {
   margin: 0;
@@ -199,9 +231,15 @@
   font-size: var(--text-sm);
   text-decoration: none;
   white-space: nowrap;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  transition: all 160ms ease;
 }
 .section-more:hover {
-  text-decoration: underline;
+  background: var(--color-brand);
+  color: #ffffff;
+  text-decoration: none;
 }
 
 .notice {
@@ -219,8 +257,19 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--spacing-1);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (min-width: 44rem) {
+  .category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-1);
+  }
+}
+@media (min-width: 64rem) {
+  .category-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
 .category-grid a {
   display: flex;
@@ -229,20 +278,23 @@
   block-size: 100%;
   padding: var(--spacing-1);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--color-bg);
   text-decoration: none;
   color: var(--color-ink);
+  box-shadow: var(--shadow-card);
+  transition: all 180ms ease;
 }
 .category-grid a:hover {
   border-color: var(--color-brand);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
 }
 .category-grid strong {
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
 }
 .category-grid span {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-ink-muted);
 }
 .category-grid em {
@@ -288,81 +340,157 @@
 .steps {
   background: var(--color-surface);
   max-width: none;
-  padding-block: var(--spacing-3);
+  padding-block: clamp(var(--spacing-3), 5vw, var(--spacing-4));
+  border-block: 1px solid var(--color-border);
 }
 .steps > * {
-  max-width: var(--container-max);
+  max-width: 1100px;
   margin-inline: auto;
+  padding-inline: var(--spacing-1);
 }
+.steps .section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-block-end: var(--spacing-3);
+  gap: 8px;
+}
+.steps .section-head h2 {
+  font-size: clamp(var(--text-xl), 3vw, var(--text-2xl));
+  font-weight: 800;
+  color: var(--color-ink);
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  padding-block-end: 10px;
+}
+.steps .section-head h2::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  margin-inline: auto;
+  inline-size: 48px;
+  block-size: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+}
+
 .steps-grid {
   list-style: none;
   margin: 0;
   padding: 0;
   counter-reset: none;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--spacing-1);
+  grid-template-columns: 1fr;
+  gap: var(--spacing-2);
+  max-width: 1050px;
+  margin-inline: auto;
+  justify-content: center;
 }
-/*
- * Centred, like the section it is modelled on.
- *
- * Start-aligned these were three 440px cards with the drawing and forty
- * characters of Arabic pinned to one edge and the other 40% of each card
- * empty — the content read as stranded rather than composed. Centring is also
- * what the store this replaces does with the same three steps, which is the
- * point of the exercise.
- */
+@media (min-width: 48rem) {
+  .steps-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-2);
+  }
+}
+
 .steps-grid li {
+  position: relative;
   background: var(--color-bg);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-2) var(--spacing-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-3) var(--spacing-2);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: var(--shadow-card);
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms ease;
 }
-/* The prose stops before the card does, so a two-line body breaks near its
-   middle rather than at the very edge. */
+.steps-grid li:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-card-hover);
+}
 .steps-grid li p {
-  max-inline-size: 24rem;
+  max-inline-size: 26rem;
 }
 .steps-grid h3 {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
 }
 .steps-grid p {
   margin: 0;
   color: var(--color-ink-muted);
   font-size: var(--text-sm);
+  line-height: 1.6;
 }
 
 /* --- faq ------------------------------------------------------------------ */
 
+.faq {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-block: clamp(var(--spacing-3), 4vw, var(--spacing-4));
+}
+.faq .section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-block-end: var(--spacing-3);
+  gap: 8px;
+}
+.faq .section-head h2 {
+  font-size: clamp(var(--text-xl), 3vw, var(--text-2xl));
+  font-weight: 800;
+  text-align: center;
+}
 .faq-list {
   display: grid;
-  gap: 8px;
-  max-width: 80ch;
+  gap: 12px;
+  max-width: 800px;
+  margin-inline: auto;
 }
 .faq-list details {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg);
+  box-shadow: var(--shadow-xs);
+  transition: all 160ms ease;
+}
+.faq-list details:hover {
+  border-color: var(--color-brand);
+}
+.faq-list details[open] {
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-sm);
 }
 .faq-list summary {
   cursor: pointer;
-  padding: 12px var(--spacing-1);
+  padding: 14px var(--spacing-1);
   font-weight: 700;
   color: var(--color-ink);
-  /* A question long enough to wrap must not sit under the marker. */
-  list-style-position: outside;
+  transition: color 150ms ease;
+}
+.faq-list summary:hover {
+  color: var(--color-brand-ink);
 }
 .faq-list details[open] summary {
   border-block-end: 1px solid var(--color-border);
+  color: var(--color-brand-ink);
 }
 .faq-list p {
   margin: 0;
-  padding: 12px var(--spacing-1);
+  padding: 14px var(--spacing-1);
   color: var(--color-ink-body);
+  line-height: 1.6;
 }
 
 /* --- marks on the category tiles ------------------------------------------- */
@@ -390,27 +518,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 84px;
-  block-size: 84px;
-  margin-block-end: var(--spacing-1);
-  border-radius: var(--radius-lg);
+  inline-size: 88px;
+  block-size: 88px;
+  margin-block-end: var(--spacing-2);
+  border-radius: var(--radius-xl);
   background: var(--color-brand-soft);
-  color: var(--color-brand-ink);
+  color: var(--color-brand);
+  border: 1px solid rgba(14, 116, 144, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 200ms ease;
+}
+.steps-grid li:hover .step-art {
+  transform: scale(1.06);
 }
 .steps-grid .step-number {
   position: absolute;
-  inset-block-start: -6px;
-  inset-inline-start: -6px;
+  inset-block-start: -8px;
+  inset-inline-start: -8px;
   display: grid;
   place-items: center;
-  inline-size: 26px;
-  block-size: 26px;
+  inline-size: 28px;
+  block-size: 28px;
   border-radius: 50%;
   background: var(--color-brand);
   color: var(--color-ink-inverse);
   font-family: var(--font-mono);
   font-size: var(--text-sm);
-  font-weight: 700;
+  font-weight: 800;
+  border: 2px solid var(--color-bg);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /*

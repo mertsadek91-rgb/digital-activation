@@ -6,6 +6,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
+import { MotionFadeIn } from '../../../components/motion-wrapper';
 import { ProductCard } from '../../../components/product-card';
 import { getStore } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
@@ -174,11 +175,13 @@ export default async function StorePage({ params, searchParams }: Props) {
       {store.products.length === 0 ? (
         <p className="empty">{ar ? 'لا منتجات منشورة بعد.' : 'Nothing published yet.'}</p>
       ) : (
-        <div className="grid">
-          {store.products.map((card) => (
-            <ProductCard key={card.slug} card={card} locale={locale} />
-          ))}
-        </div>
+        <MotionFadeIn>
+          <div className="grid">
+            {store.products.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
+            ))}
+          </div>
+        </MotionFadeIn>
       )}
 
       {lastPage > 1 ? (

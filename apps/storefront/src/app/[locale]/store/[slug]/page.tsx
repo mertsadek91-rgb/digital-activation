@@ -11,6 +11,7 @@ import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
 import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
+import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -143,18 +144,32 @@ export default async function ProductPage({ params }: Props) {
       </nav>
 
       <div className="product-top">
-        <div className="gallery">
-          {product.images[0] ? (
-            <Image
-              src={product.images[0].url}
-              alt={product.images[0].alt}
-              fill
-              priority
-              sizes="(max-width: 900px) 100vw, 480px"
-            />
-          ) : (
-            <div className="gallery-empty">{ar ? 'لا صورة بعد' : 'No image yet'}</div>
-          )}
+        <div className="product-media-col">
+          <div className="gallery">
+            {product.images[0] ? (
+              <Image
+                src={product.images[0].url}
+                alt={product.images[0].alt}
+                fill
+                priority
+                sizes="(max-width: 900px) 100vw, 480px"
+              />
+            ) : (
+              <div className="gallery-empty">{ar ? 'لا صورة بعد' : 'No image yet'}</div>
+            )}
+          </div>
+
+          {product.images.length > 1 ? (
+            <div className="gallery-thumbs" aria-label={ar ? 'صور إضافية' : 'Additional images'}>
+              {product.images.map((img, idx) => (
+                <div key={idx} className="thumb-item">
+                  <Image src={img.url} alt={img.alt} width={68} height={68} />
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          <ProductTrust locale={locale} hasGoldenWarranty={product.hasGoldenWarranty} />
         </div>
 
         <div className="buybox">

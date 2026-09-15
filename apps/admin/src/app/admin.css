@@ -177,20 +177,51 @@ button.linky:hover .pill {
 
 .bar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: var(--spacing-1);
-  padding-block-end: var(--spacing-1);
+  padding-block: var(--spacing-1);
   border-block-end: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.bar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.admin-title {
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--color-brand-ink);
+  white-space: nowrap;
+}
+.role-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+.btn-sm {
+  min-block-size: 34px !important;
+  padding-inline: 12px !important;
+  font-size: var(--text-xs) !important;
+}
+.btn-danger-soft {
+  background: var(--color-danger-soft) !important;
+  color: var(--color-danger) !important;
+  border: 1px solid var(--color-danger) !important;
 }
 .bar h1 {
   margin: 0;
   font-size: var(--text-2xl);
 }
 .who {
-  margin: 2px 0 0;
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
+  white-space: nowrap;
 }
 
 .chips {
@@ -205,10 +236,13 @@ button.linky:hover .pill {
   color: var(--color-ink);
   border: 1px solid var(--color-border);
   min-block-size: 36px;
+  padding-inline: 12px;
+  border-radius: var(--radius-pill);
   font-weight: 500;
   display: inline-flex;
   gap: 6px;
   align-items: center;
+  transition: all 150ms ease;
 }
 .chip:hover:not(.is-active) {
   border-color: var(--color-border-strong);
@@ -226,7 +260,14 @@ button.linky:hover .pill {
 }
 .search {
   margin-inline-start: auto;
-  min-inline-size: 16rem;
+  min-inline-size: min(16rem, 100%);
+  border-radius: var(--radius-pill);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.search:focus-visible {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+  outline: none;
 }
 
 /*
@@ -290,6 +331,12 @@ tbody td {
   padding: 10px 12px;
   border-block-end: 1px solid var(--color-border);
   vertical-align: top;
+}
+tbody tr {
+  transition: background-color 120ms ease;
+}
+tbody tr:hover:not(.drawer) {
+  background-color: var(--color-surface);
 }
 tbody tr.is-live {
   background: color-mix(in srgb, var(--color-brand-soft) 45%, transparent);
@@ -423,6 +470,14 @@ tr.drawer td > * {
 .admin-nav {
   display: flex;
   gap: 4px;
+  overflow-x: auto;
+  max-inline-size: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex: 1 1 auto;
+}
+.admin-nav::-webkit-scrollbar {
+  display: none;
 }
 .tab {
   background: transparent;
@@ -431,13 +486,18 @@ tr.drawer td > * {
   border-block-end: 2px solid transparent;
   border-radius: 0;
   font-weight: 700;
-  padding-inline: 14px;
+  padding-inline: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+  min-block-size: 44px;
 }
 .tab:hover:not(.is-active) {
   color: var(--color-ink);
+  background: var(--color-surface);
 }
 .tab.is-active {
   color: var(--color-brand-ink);
@@ -446,23 +506,174 @@ tr.drawer td > * {
 .tab-count {
   display: grid;
   place-items: center;
-  min-inline-size: 22px;
-  block-size: 22px;
-  padding-inline: 6px;
+  min-inline-size: 20px;
+  block-size: 20px;
+  padding-inline: 5px;
   border-radius: var(--radius-pill);
   background: var(--color-brand);
   color: var(--color-ink-inverse);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 /* An overdue queue is not the same colour as a busy one. */
 .tab-count.is-late {
   background: var(--color-danger);
 }
-.bar .who {
+
+.admin-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  padding: 0;
+  transition: all 150ms ease;
+}
+.admin-mobile-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-brand);
+}
+
+@media (max-width: 64rem) {
+  .admin-mobile-toggle {
+    display: inline-flex;
+  }
+  .admin-nav {
+    display: none;
+  }
+  .actions .who strong {
+    display: none;
+  }
+  .actions .who {
+    display: none;
+  }
+  .bar {
+    gap: 8px;
+  }
+}
+
+/* --- Admin Mobile Navigation Drawer --------------------------------------- */
+
+.admin-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 250ms var(--ease-out), visibility 250ms var(--ease-out);
+}
+.admin-drawer-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.admin-drawer-panel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 999;
+  inline-size: min(85vw, 320px);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-drawer);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(105%);
+  transition: transform 280ms var(--ease-out);
+  overflow-y: auto;
+}
+[dir='rtl'] .admin-drawer-panel {
+  transform: translateX(105%);
+}
+[dir='ltr'] .admin-drawer-panel {
+  transform: translateX(-105%);
+}
+.admin-drawer-panel.is-open {
+  transform: translateX(0) !important;
+}
+
+.admin-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--spacing-1);
+  border-block-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.admin-drawer-close {
+  display: grid;
+  place-items: center;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-ink);
+  cursor: pointer;
   font-size: var(--text-sm);
-  color: var(--color-ink-muted);
-  white-space: nowrap;
+}
+
+.admin-drawer-user {
+  padding: 12px var(--spacing-1);
+  border-block-end: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface-2);
+}
+.admin-user-name {
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.admin-drawer-links {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 3px;
+  flex: 1;
+}
+.admin-drawer-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink);
+  border: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: start;
+  transition: background 150ms ease;
+  min-block-size: 44px;
+}
+.admin-drawer-tab:hover {
+  background: var(--color-surface);
+}
+.admin-drawer-tab.is-active {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+
+.admin-drawer-foot {
+  padding: var(--spacing-1);
+  border-block-start: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-drawer-foot button {
+  inline-size: 100%;
 }
 
 /* --- queue ---------------------------------------------------------------- */
@@ -1292,3 +1503,522 @@ tr.drawer td > * {
 .bulk-bar button {
   white-space: nowrap;
 }
+
+/* --- Admin Shell Layout (Desktop Sidebar, Mobile Drawer) ----------------- */
+
+.admin-layout {
+  display: flex;
+  min-block-size: 100dvh;
+  background: var(--color-bg);
+}
+
+.admin-sidebar {
+  inline-size: 260px;
+  background: var(--color-surface);
+  border-inline-end: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  block-size: 100dvh;
+}
+
+.admin-sidebar-header {
+  display: flex;
+  align-items: center;
+  padding: 18px var(--spacing-1);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.admin-sidebar-user {
+  padding: 12px var(--spacing-1);
+  border-block-end: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface-2);
+}
+
+.admin-sidebar-nav {
+  flex-grow: 1;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.admin-sidebar-tab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-ink);
+  border: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: start;
+  transition: background 150ms ease;
+  min-block-size: 44px;
+}
+.admin-sidebar-tab:hover {
+  background: var(--color-surface-2);
+}
+.admin-sidebar-tab.is-active {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+
+.admin-sidebar-footer {
+  padding: var(--spacing-1);
+  border-block-start: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.admin-sidebar-footer button {
+  inline-size: 100%;
+}
+
+.admin-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0; /* prevent blowout */
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  block-size: 64px;
+  padding-inline: var(--spacing-1);
+  border-block-end: 1px solid var(--color-border);
+  background: var(--color-bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.admin-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-content {
+  flex-grow: 1;
+  padding: var(--spacing-1);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.admin-footer {
+  padding: var(--spacing-2);
+  text-align: center;
+  color: var(--color-ink-muted);
+  border-block-start: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  margin-block-start: auto;
+}
+
+/* Responsive Rules for the Shell */
+@media (max-width: 64rem) {
+  /* Hide the desktop sidebar on mobile */
+  .admin-sidebar {
+    display: none;
+  }
+}
+
+/* --- Table Refinements --------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: separate; /* Change from collapse for better border radiuses */
+  border-spacing: 0;
+  font-size: var(--text-sm);
+  min-width: 60rem;
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  text-align: start;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  font-size: var(--text-sm); /* Slightly larger */
+  white-space: nowrap;
+  border-bottom: 2px solid var(--color-border);
+  box-shadow: none; /* Removed the hacky inset shadow */
+}
+
+tbody td {
+  padding: 16px 16px; /* More vertical breathing room */
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle; /* Center vertically instead of top */
+}
+
+tbody tr:last-child td {
+  border-bottom: none; /* Clean last row */
+}
+
+tbody tr:hover:not(.drawer) {
+  background-color: var(--color-surface-2); /* Slightly darker hover for contrast */
+}
+
+.table-scroll {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-bg);
+  overflow: auto;
+  max-block-size: calc(100dvh - 12rem);
+}
+
+/* Fix action buttons wrapping their badges awkwardly */
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 36px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+}
+
+/* Modernize badges/pills inside table */
+.pill {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+/* Refine typography in columns */
+.name {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.slug {
+  font-size: 0.8rem;
+}
+
+/* Ensure empty states or zero states are distinct but not harsh */
+.num.is-zero {
+  opacity: 0.5;
+  color: inherit;
+}
+
+
+/* Additional fixes for table layout */
+th.num, td.num {
+  text-align: center; /* Centering numeric columns often looks better */
+}
+
+/* Make sure action column stays concise */
+.actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end; /* Push actions to the end */
+}
+
+/* Adjust button badge so it doesn't inflate the button too much */
+.actions button .tab-count {
+  margin-inline-start: 4px;
+}
+
+/* --- Table Refinements V2 (Overriding V1) -------------------------------- */
+
+.admin-content {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: var(--spacing-2) !important;
+}
+
+table {
+  border-collapse: collapse !important; /* Revert to collapse to fix broken row lines */
+  width: 100% !important;
+  min-width: 1000px !important; /* Allow it to be responsive but not squished */
+}
+
+thead th {
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+tbody td {
+  padding: 16px 20px !important; /* More horizontal padding to fill space */
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.table-scroll {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: none !important; 
+  /* Make sure it fills the container */
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-block-start: var(--spacing-2);
+}
+
+/* Let the search input and chips stretch naturally */
+.chips {
+  gap: 8px !important;
+}
+
+/* Adjust column widths slightly if needed */
+.name {
+  max-inline-size: 100% !important; /* Let it stretch */
+}
+
+
+/* Fix for slug alignment in RTL table */
+.slug {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  text-align: end; /* In LTR element inside RTL, 'end' might be left? No, let's just force right */
+}
+/* Actually, the best way to handle dir=ltr in RTL is to force text-align: right */
+[dir='rtl'] .slug {
+  text-align: right !important;
+}
+
+/* Also ensure the product name cell stays tidy */
+td .name, td .slug, td .meta {
+  text-align: right; /* Force all to right align in RTL so they stack neatly */
+}
+
+/* Final layout adjustments */
+tbody td {
+  vertical-align: middle !important;
+}
+
+/* Make the slug look like a URL path so it's not mistaken for broken text */
+.slug::before {
+  content: '/';
+  opacity: 0.5;
+  margin-inline-end: 2px;
+}
+
+/* Fix the massive gap between the columns and the action buttons */
+.actions {
+  justify-content: flex-start !important; /* Align buttons to the start (right in RTL) so they stick to the rest of the table */
+}
+
+/* Make sure the empty header for actions takes only necessary space */
+th:last-child, td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Also ensure vertical alignment is top if they prefer it, but middle is usually better. 
+   Let's keep middle, but ensure the name column doesn't stretch the row too much */
+.name {
+  margin-bottom: 2px !important;
+}
+
+/* Final sweep to ensure row consistency */
+tbody tr {
+  display: table-row !important;
+}
+tbody td {
+  display: table-cell !important;
+  vertical-align: middle !important;
+}
+
+/* Force gap between action buttons */
+.actions {
+  gap: 12px !important; /* Added a clear, forced gap between buttons */
+}
+
+/* --- SEO Form & Drawer Refinements --- */
+tr.drawer td {
+  padding: var(--spacing-3) !important;
+  background: var(--color-surface-2) !important;
+  border-bottom: 2px solid var(--color-border) !important;
+}
+
+/* Constrain the drawer content so it's readable and centered */
+tr.drawer td > * {
+  max-width: 48rem;
+  margin-inline: auto; /* Center the form in the massive table row */
+}
+
+/* Refine the readiness checks list to look like a neat card */
+.checks {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
+  margin-block-end: var(--spacing-3) !important;
+  box-shadow: var(--shadow-sm);
+  display: flex !important;
+  flex-direction: column;
+  gap: 8px !important;
+}
+.checks li {
+  padding: 8px 12px !important;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  align-items: center;
+  border-radius: var(--radius-sm);
+}
+
+/* Modernize the form layout */
+.paste-form {
+  background: var(--color-bg);
+  padding: var(--spacing-3) !important;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-md);
+  
+  /* Use grid for a clean stacked layout */
+  display: grid !important;
+  grid-template-columns: 1fr; /* Stack everything cleanly */
+  gap: var(--spacing-3) !important;
+  align-items: stretch !important;
+}
+
+/* Ensure the language selector sits cleanly at the top */
+.paste-form > label:first-child {
+  justify-self: flex-start;
+  min-width: 12rem;
+}
+
+/* Labels and inputs */
+.paste-form label {
+  gap: 8px !important;
+  font-weight: 500;
+  color: var(--color-ink) !important;
+}
+
+.paste-form input,
+.paste-form textarea,
+.paste-form select {
+  width: 100%;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--color-border) !important;
+  transition: border-color 0.2s;
+}
+.paste-form input:focus,
+.paste-form textarea:focus,
+.paste-form select:focus {
+  border-color: var(--color-brand) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-brand-soft);
+}
+
+.paste-form small {
+  margin-top: 4px;
+  display: block;
+}
+
+/* The Save Button */
+.paste-form button[type="submit"] {
+  justify-self: flex-end;
+  padding: 12px 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-brand);
+  color: white;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  margin-top: var(--spacing-2);
+}
+.paste-form button[type="submit"]:hover {
+  filter: brightness(0.9);
+}
+
+/* --- Rich Text Editor --- */
+.rte-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.rte-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 4px 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rte-tools, .rte-modes {
+  display: flex;
+  gap: 4px;
+}
+
+.rte-toolbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rte-toolbar button:hover:not(:disabled) {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  border-color: var(--color-border);
+}
+
+.rte-toolbar button.is-active {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  border-color: var(--color-brand);
+}
+
+.rte-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rte-textarea {
+  font-family: var(--font-mono);
+  border: none !important;
+  border-radius: 0 !important;
+  resize: vertical;
+  min-height: 200px;
+  padding: 12px 16px !important;
+  width: 100%;
+}
+
+.rte-preview {
+  padding: 12px 16px;
+  min-height: 200px;
+  max-height: 600px;
+  overflow-y: auto;
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+.rte-preview h2, .rte-preview h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+.rte-preview h2 { font-size: 1.5rem; }
+.rte-preview h3 { font-size: 1.25rem; }
+.rte-preview p { margin-bottom: 1em; }
+.rte-preview ul { margin-inline-start: 2em; margin-bottom: 1em; list-style-type: disc; }
+.rte-preview a { color: var(--color-brand); text-decoration: underline; }
+

@@ -76,15 +76,14 @@ export default function LaunchPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const blockers = (data?.checks ?? []).filter((check) => check.severity === 'blocker');
   const warnings = (data?.checks ?? []).filter((check) => check.severity === 'warning');
   const ready = (data?.checks ?? []).filter((check) => check.severity === 'ready');
 
   return (
-    <main className="shell">
-      <Nav me={me} current="launch" />
+    <Nav me={me} current="launch" >
 
       <div className="queue-head">
         <h1>حالة المتجر</h1>
@@ -146,7 +145,7 @@ export default function LaunchPage() {
           </ul>
         </section>
       ) : null}
-    </main>
+    </Nav>
   );
 }
 

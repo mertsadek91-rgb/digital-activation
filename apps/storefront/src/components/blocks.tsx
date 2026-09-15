@@ -22,6 +22,14 @@ export function Blocks({ blocks }: { blocks: Block[] }) {
   );
 }
 
+function normalizeRichHtml(html: string): string {
+  if (!html) return '';
+  // Prevent legacy inline width="100%" on icons from stretching them across the screen
+  return html
+    .replace(/<img\b([^>]*?)\bwidth=["']100%["']([^>]*?)>/gi, '<img$1$2>')
+    .replace(/<img\b([^>]*?)\bstyle=["'][^"']*width:\s*100%[^"']*["']([^>]*?)>/gi, '<img$1$2>');
+}
+
 function BlockView({ block }: { block: Block }) {
   switch (block.type) {
     case 'heading': {
@@ -29,7 +37,7 @@ function BlockView({ block }: { block: Block }) {
       return <Tag id={block.id}>{block.text}</Tag>;
     }
     case 'richText':
-      return <div className="rich" dangerouslySetInnerHTML={{ __html: block.html }} />;
+      return <div className="rich" dangerouslySetInnerHTML={{ __html: normalizeRichHtml(block.html) }} />;
     case 'answerFirst':
       return <p className="answer-first">{block.text}</p>;
     case 'steps':

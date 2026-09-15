@@ -1,0 +1,513 @@
+/*
+ * Contact Page Styles.
+ *
+ * Dedicated styling for /contact.
+ * Provides a modern 2-column layout (interactive form on one side,
+ * direct channels + self-service shortcuts on the other), responsive
+ * hero section, and FAQ accordions.
+ *
+ * Uses logical CSS properties throughout for RTL and LTR support.
+ */
+
+/* --- Contact Hero --- */
+.contact-hero {
+  text-align: center;
+  padding: clamp(var(--spacing-3), 4vw, var(--spacing-4)) var(--spacing-1) var(--spacing-2);
+  max-width: 820px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+.contact-hero h1 {
+  font-size: clamp(1.85rem, 1.4rem + 2.4vw, 3rem);
+  font-weight: 800;
+  margin: 0;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.contact-hero-lede {
+  font-size: clamp(var(--text-base), 1vw + 0.75rem, var(--text-lg));
+  color: var(--color-ink-body);
+  margin: 0;
+  line-height: 1.65;
+  max-width: 60ch;
+}
+
+.contact-sla-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-muted);
+  box-shadow: var(--shadow-xs);
+}
+
+/* --- 2-Column Contact Grid Layout --- */
+.contact-grid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-3);
+  margin-block: var(--spacing-3) var(--spacing-4);
+  align-items: start;
+}
+
+@media (min-width: 58rem) {
+  .contact-grid-layout {
+    grid-template-columns: minmax(0, 13fr) minmax(0, 10fr);
+  }
+}
+
+/* --- Contact Form Card Overhaul --- */
+.contact-form-container .contact-card,
+.contact-form-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--spacing-2) !important;
+  max-inline-size: none !important;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: clamp(var(--spacing-2), 3vw, var(--spacing-3));
+  box-shadow: var(--shadow-card);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-sizing: border-box;
+  inline-size: 100%;
+}
+
+.contact-form-container .contact-card:hover,
+.contact-form-card:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-border));
+  box-shadow: var(--shadow-card-hover);
+}
+
+.contact-card-header {
+  margin-block-end: var(--spacing-1);
+  padding-block-end: 12px;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.contact-card-header h2 {
+  margin: 0 0 4px;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-brand-ink);
+}
+
+.contact-card-header p {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+
+.contact-form-container .contact-row {
+  display: grid !important;
+  gap: var(--spacing-2) !important;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)) !important;
+  inline-size: 100%;
+}
+
+.contact-form-container .account-field {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+  inline-size: 100%;
+  box-sizing: border-box;
+}
+
+.contact-form-container .account-field input,
+.contact-form-container .account-field select,
+.contact-form-container .account-field textarea {
+  font: inherit;
+  font-size: var(--text-base);
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  min-block-size: 46px;
+  inline-size: 100%;
+  box-sizing: border-box;
+  color: var(--color-ink);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-form-container .account-field input:focus,
+.contact-form-container .account-field select:focus,
+.contact-form-container .account-field textarea:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+
+.contact-form-container .account-field textarea {
+  min-block-size: 140px;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+.contact-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-block-end: 14px;
+}
+
+.contact-field-group label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.contact-field-group input,
+.contact-field-group select,
+.contact-field-group textarea {
+  font: inherit;
+  font-size: var(--text-base);
+  padding: 11px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  min-block-size: 46px;
+  inline-size: 100%;
+  box-sizing: border-box;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-field-group input:focus,
+.contact-field-group select:focus,
+.contact-field-group textarea:focus {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+
+.contact-field-group textarea {
+  min-block-size: 140px;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+
+.contact-field-hint {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  margin-block-start: 2px;
+}
+
+/* --- Direct Channels Sidebar --- */
+.contact-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+@media (min-width: 58rem) {
+  .contact-sidebar {
+    position: sticky;
+    inset-block-start: calc(var(--header-height, 72px) + 20px);
+    align-self: start;
+  }
+}
+
+.contact-channels-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.channels-box-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--color-ink);
+  margin-block-end: 4px;
+  padding-block-end: 8px;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.channel-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-xs);
+  transition: all 180ms ease;
+}
+
+.channel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.channel-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.channel-icon-wrap {
+  display: grid;
+  place-items: center;
+  inline-size: 42px;
+  block-size: 42px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  font-size: 1.3rem;
+}
+
+.channel-whatsapp .channel-icon-wrap {
+  background: #e7f7ed;
+  color: #128c7e;
+  border: 1px solid #bcead0;
+}
+
+.channel-whatsapp:hover {
+  border-color: #25d366;
+}
+
+.channel-email .channel-icon-wrap {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, transparent);
+}
+
+.channel-email:hover {
+  border-color: var(--color-brand);
+}
+
+.channel-telegram .channel-icon-wrap {
+  background: #e8f4fb;
+  color: #0088cc;
+  border: 1px solid #c2e2f6;
+}
+
+.channel-telegram:hover {
+  border-color: #0088cc;
+}
+
+.channel-info strong {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.channel-info span {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  word-break: break-all;
+}
+
+.channel-action-badge {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 160ms ease;
+}
+
+.channel-whatsapp .channel-action-badge {
+  background: #25d366;
+  color: #ffffff;
+}
+
+.channel-whatsapp:hover .channel-action-badge {
+  background: #1eb957;
+}
+
+.channel-email .channel-action-badge {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+
+.channel-email:hover .channel-action-badge {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
+.channel-telegram .channel-action-badge {
+  background: #e8f4fb;
+  color: #0088cc;
+}
+
+.channel-telegram:hover .channel-action-badge {
+  background: #0088cc;
+  color: #ffffff;
+}
+
+/* --- Self-Service Shortcuts Box --- */
+.self-service-box {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-2);
+  box-shadow: var(--shadow-card);
+}
+
+.self-service-box h3 {
+  margin: 0 0 10px;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  color: var(--color-ink);
+  padding-block-end: 8px;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.self-service-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.self-service-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.self-service-link:hover {
+  background: var(--color-surface);
+  color: var(--color-brand);
+}
+
+.self-service-link .shortcut-icon {
+  font-size: 1rem;
+}
+
+/* --- Contact FAQ Section --- */
+.contact-faq-section {
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-block: var(--spacing-4) var(--spacing-5);
+  border-block-start: 1px solid var(--color-border);
+  margin-block-start: var(--spacing-3);
+}
+
+.contact-faq-head {
+  text-align: center;
+  max-width: 650px;
+  margin-inline: auto;
+  margin-block-end: var(--spacing-3);
+}
+
+.contact-faq-head h2 {
+  font-size: clamp(var(--text-xl), 2.5vw, var(--text-3xl));
+  font-weight: 800;
+  margin: 0 0 8px;
+  position: relative;
+  display: inline-block;
+  padding-block-end: 10px;
+}
+
+.contact-faq-head h2::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  margin-inline: auto;
+  inline-size: 48px;
+  block-size: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+}
+
+.contact-faq-head p {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.contact-faq-list {
+  max-width: 820px;
+  margin-inline: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.contact-faq-item {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-faq-item[open] {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.contact-faq-item summary {
+  padding: 14px 18px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.contact-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.contact-faq-content {
+  padding: 0 18px 16px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-body);
+  line-height: 1.6;
+}

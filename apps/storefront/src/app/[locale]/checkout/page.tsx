@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CardPayment } from '../../../components/card-payment';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
+import { ProductTrust } from '../../../components/product-trust';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatPrice } from '../../../lib/format';
 
@@ -416,6 +417,10 @@ export default function CheckoutPage() {
               <Link href={`${prefix}${ROUTES.cart}`} className="linky">
                 {ar ? 'تعديل السلة' : 'Edit cart'}
               </Link>
+
+              <div style={{ marginBlockStart: '16px' }}>
+                <ProductTrust locale={locale} showPerks={false} />
+              </div>
             </>
           ) : null}
         </aside>

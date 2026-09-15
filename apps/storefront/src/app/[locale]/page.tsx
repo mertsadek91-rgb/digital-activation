@@ -7,6 +7,7 @@ import { buildGraph, jsonld } from '@da/seo';
 import { BRAND } from '@da/ui';
 
 import { CategoryMark, StepMark } from '../../components/icons';
+import { MotionFadeIn } from '../../components/motion-wrapper';
 import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
 import { getHome } from '../../lib/api';
@@ -150,24 +151,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      <section className="trust" aria-labelledby="trust-title">
-        <h2 id="trust-title" className="visually-hidden">
-          {t('trustTitle')}
-        </h2>
-        <ul className="trust-grid">
-          {trust.map((entry) => (
-            <li key={entry.key}>
-              <span className="trust-icon" aria-hidden="true">
-                {entry.icon}
-              </span>
-              <h3>{t(`trust${entry.key}Title`)}</h3>
-              {/* A label alone is decoration. The sentence under it is the
-                  part a buyer — or an answer engine — can act on. */}
-              <p>{t(`trust${entry.key}Body`)}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <MotionFadeIn delay={0.05}>
+        <section className="trust" aria-labelledby="trust-title">
+          <h2 id="trust-title" className="visually-hidden">
+            {t('trustTitle')}
+          </h2>
+          <ul className="trust-grid">
+            {trust.map((entry) => (
+              <li key={entry.key}>
+                <span className="trust-icon" aria-hidden="true">
+                  {entry.icon}
+                </span>
+                <h3>{t(`trust${entry.key}Title`)}</h3>
+                {/* A label alone is decoration. The sentence under it is the
+                    part a buyer — or an answer engine — can act on. */}
+                <p>{t(`trust${entry.key}Body`)}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      </MotionFadeIn>
 
       {home === null ? (
         <section className="section">
@@ -176,26 +179,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       ) : (
         <>
           {home.categories.length > 0 ? (
-            <section className="section" aria-labelledby="categories-title">
-              <header className="section-head">
-                <h2 id="categories-title">{t('categoriesTitle')}</h2>
-                <p>{t('categoriesBody')}</p>
-              </header>
-              <ul className="category-grid">
-                {home.categories.map((category) => (
-                  <li key={category.slug}>
-                    <Link href={href(category.href)}>
-                      {/* The same mark the product menu uses, so a category is
-                          the same object wherever it is met. */}
-                      <CategoryMark slug={category.slug} size={30} />
-                      <strong>{category.name}</strong>
-                      {category.headline ? <span>{category.headline}</span> : null}
-                      <em>{t('productCount', { count: category.productCount })}</em>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <MotionFadeIn>
+              <section className="section" aria-labelledby="categories-title">
+                <header className="section-head">
+                  <h2 id="categories-title">{t('categoriesTitle')}</h2>
+                  <p>{t('categoriesBody')}</p>
+                </header>
+                <ul className="category-grid">
+                  {home.categories.map((category) => (
+                    <li key={category.slug}>
+                      <Link href={href(category.href)}>
+                        {/* The same mark the product menu uses, so a category is
+                            the same object wherever it is met. */}
+                        <CategoryMark slug={category.slug} size={30} />
+                        <strong>{category.name}</strong>
+                        {category.headline ? <span>{category.headline}</span> : null}
+                        <em>{t('productCount', { count: category.productCount })}</em>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </MotionFadeIn>
           ) : null}
 
           {home.bestSellers.length > 0 ? (
@@ -275,39 +280,43 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </>
       )}
 
-      <section className="section steps" aria-labelledby="steps-title">
-        <header className="section-head">
-          <h2 id="steps-title">{t('stepsTitle')}</h2>
-        </header>
-        <ol className="steps-grid">
-          {[1, 2, 3].map((n) => (
-            <li key={n}>
-              <span className="step-art" aria-hidden="true">
-                <StepMark step={n} />
-                <span className="step-number">{n}</span>
-              </span>
-              <h3>{t(`step${String(n)}Title`)}</h3>
-              <p>{t(`step${String(n)}Body`)}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <MotionFadeIn>
+        <section className="section steps" aria-labelledby="steps-title">
+          <header className="section-head">
+            <h2 id="steps-title">{t('stepsTitle')}</h2>
+          </header>
+          <ol className="steps-grid">
+            {[1, 2, 3].map((n) => (
+              <li key={n}>
+                <span className="step-art" aria-hidden="true">
+                  <StepMark step={n} />
+                  <span className="step-number">{n}</span>
+                </span>
+                <h3>{t(`step${String(n)}Title`)}</h3>
+                <p>{t(`step${String(n)}Body`)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </MotionFadeIn>
 
       {/* Rendered as text, and the same objects feed the FAQPage node above, so
           the markup cannot answer a question the page does not show. */}
-      <section className="section faq" aria-labelledby="faq-title">
-        <header className="section-head">
-          <h2 id="faq-title">{t('faqTitle')}</h2>
-        </header>
-        <div className="faq-list">
-          {faq.map((item) => (
-            <details key={item.q}>
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
+      <MotionFadeIn>
+        <section className="section faq" aria-labelledby="faq-title">
+          <header className="section-head">
+            <h2 id="faq-title">{t('faqTitle')}</h2>
+          </header>
+          <div className="faq-list">
+            {faq.map((item) => (
+              <details key={item.q}>
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </MotionFadeIn>
     </main>
   );
 }
@@ -327,21 +336,23 @@ function Rail({
   more?: { href: string; label: string };
 }) {
   return (
-    <section className="section rail">
-      <header className="section-head">
-        <h2>{title}</h2>
-        {body ? <p>{body}</p> : null}
-        {more ? (
-          <Link href={more.href} className="section-more">
-            {more.label}
-          </Link>
-        ) : null}
-      </header>
-      <div className="grid">
-        {cards.map((card) => (
-          <ProductCard key={card.slug} card={card} locale={locale} />
-        ))}
-      </div>
-    </section>
+    <MotionFadeIn>
+      <section className="section rail">
+        <header className="section-head">
+          <h2>{title}</h2>
+          {body ? <p>{body}</p> : null}
+          {more ? (
+            <Link href={more.href} className="section-more">
+              {more.label}
+            </Link>
+          ) : null}
+        </header>
+        <div className="grid">
+          {cards.map((card) => (
+            <ProductCard key={card.slug} card={card} locale={locale} />
+          ))}
+        </div>
+      </section>
+    </MotionFadeIn>
   );
 }

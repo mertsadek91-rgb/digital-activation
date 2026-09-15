@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ProductTrust } from '../../../components/product-trust';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatDelivery, formatFulfillment, formatPrice, variantLabel } from '../../../lib/format';
 
@@ -181,6 +182,10 @@ export default function CartPage() {
           <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary btn-wide">
             {ar ? 'إتمام الشراء' : 'Checkout'}
           </Link>
+
+          <div style={{ marginBlockStart: '16px' }}>
+            <ProductTrust locale={locale} showPerks={false} />
+          </div>
         </aside>
       </div>
     </main>

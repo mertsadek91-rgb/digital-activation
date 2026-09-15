@@ -88,26 +88,34 @@
  */
 .account-tabs {
   display: flex;
-  gap: var(--spacing-1);
-  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  flex-wrap: nowrap;
+  overflow-x: auto;
   margin-block-end: var(--spacing-2);
   border-block-end: 1px solid var(--color-border);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.account-tabs::-webkit-scrollbar {
+  display: none;
 }
 .account-tabs a {
-  padding-block: 10px;
+  padding-block: 12px;
   color: var(--color-ink-muted);
   text-decoration: none;
   font-weight: 500;
-  /* Drawn on the tab itself rather than on a wrapper, so the underline is as
-     wide as its word in both languages. */
+  white-space: nowrap;
+  flex-shrink: 0;
   border-block-end: 2px solid transparent;
   margin-block-end: -1px;
+  transition: color 150ms ease;
 }
 .account-tabs a:hover {
   color: var(--color-ink);
 }
 .account-tabs a[aria-current='page'] {
   color: var(--color-brand-ink);
+  font-weight: 700;
   border-block-end-color: var(--color-brand);
 }
 
@@ -144,18 +152,24 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--spacing-1);
+  gap: var(--spacing-2);
 }
 .licence-card {
   padding: var(--spacing-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-card);
+  transition: all 180ms ease;
+}
+.licence-card:hover {
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-card-hover);
 }
 /* A line still being prepared is present but quieter: it is information, not
    something to act on. */
 .licence-card.is-waiting {
-  background: var(--color-bg);
+  background: var(--color-surface);
 }
 
 .licence-head {
@@ -207,10 +221,11 @@
  */
 .licence-secret {
   margin-block-start: var(--spacing-1);
-  padding: var(--spacing-1);
-  border: 1px dashed var(--color-brand);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-brand);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-soft);
+  box-shadow: var(--shadow-xs);
 }
 .licence-secret-block + .licence-secret-block {
   margin-block-start: 10px;
@@ -270,13 +285,19 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--spacing-1);
+  gap: var(--spacing-2);
 }
 .order-history-card {
   padding: var(--spacing-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.order-history-card:hover {
+  border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-border));
+  box-shadow: var(--shadow-elevated);
 }
 /* An order that has not been paid for is present but quieter — it is a thing
    to finish, not a thing that happened. Same treatment as a licence still
@@ -358,16 +379,19 @@
 
 .contact-card {
   display: grid;
-  gap: var(--spacing-1);
-  max-inline-size: 42rem;
-  padding: var(--spacing-2);
+  gap: var(--spacing-2);
+  max-inline-size: 44rem;
+  padding: var(--spacing-3);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-card);
 }
 .contact-card h2 {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-brand-ink);
 }
 /* Two per line on a desktop, one on a phone, with no breakpoint to maintain. */
 .contact-row {

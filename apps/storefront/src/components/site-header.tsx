@@ -1,6 +1,7 @@
 'use client';
 
 import { ROUTES } from '@da/contracts';
+import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
@@ -13,6 +14,7 @@ import {
   CartIcon,
   CategoryMark,
   ChevronIcon,
+  CloseIcon,
   MailIcon,
   MenuIcon,
   SupportIcon,
@@ -21,22 +23,14 @@ import {
 import { SearchBox } from './search-box';
 
 /**
- * Site header, in two tiers.
+ * Site header, in two tiers with responsive drawer for mobile/tablet.
  *
- * Shaped after the store this replaces, deliberately: 69.6% of the old site's
- * impressions land on its home page, and the people arriving are the same
- * people. A returning customer should recognise where things are — the contact
- * details along the top, the product menu opening from a button beside the
- * name, search in the middle, the cart on the far side.
+ * Shaped after the store this replaces: 69.6% of impressions land on the home
+ * page. A returning customer recognizes where things are.
  *
- * What is *not* carried over is the weight. The old header needed a theme, a
- * mega-menu plugin and a pile of icon images; this one is markup, one inline
- * SVG set and a single boolean of state.
- *
- * The cart count is still fetched in the browser rather than rendered on the
- * server, because the cart lives behind an httpOnly cookie the API holds —
- * server rendering it would either need that cookie forwarded on every request
- * or make every page uncacheable.
+ * For mobile (< 1120px), an offcanvas drawer provides quick, thumb-friendly
+ * access to categories, pages, customer license keys, WhatsApp support,
+ * and language toggle, keeping the top header clean and uncluttered.
  */
 export interface HeaderCollection {
   slug: string;
@@ -60,6 +54,7 @@ export function SiteHeader({
   const pathname = usePathname();
   const [count, setCount] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,8 +64,6 @@ export function SiteHeader({
         const cart = await cartApi.get({ locale });
         if (!cancelled) setCount(cart.itemCount);
       } catch {
-        // A header that cannot reach the cart shows no badge. It must not show
-        // an error: nothing on the page depends on the number.
         if (!cancelled) setCount(null);
       }
     })();
@@ -79,9 +72,7 @@ export function SiteHeader({
     };
   }, [locale, pathname]);
 
-  // Any cart mutation announces itself, because this component is a sibling of
-  // the page rather than an ancestor: props cannot reach it and refreshing the
-  // server components does not re-run this effect.
+  // Listen to cart events
   useEffect(() => {
     const onChange = (event: Event): void => {
       const detail = (event as CustomEvent<CartEventDetail>).detail;
@@ -91,22 +82,38 @@ export function SiteHeader({
     return () => window.removeEventListener(CART_EVENT, onChange);
   }, []);
 
-  // Navigating closes the menu. Without this it stays open over the page it
-  // just took you to, which reads as a broken link.
+  // Navigating closes menu and drawer
   useEffect(() => {
     setMenuOpen(false);
+    setDrawerOpen(false);
   }, [pathname]);
 
-  // Escape and a click outside, because a panel that can only be closed by the
-  // control that opened it is a trap for anybody who opened it by accident.
+  // Lock body scroll when mobile drawer is open
   useEffect(() => {
-    if (!menuOpen) return;
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [drawerOpen]);
+
+  // Escape key closes menus
+  useEffect(() => {
+    if (!menuOpen && !drawerOpen) return;
 
     const onKey = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+        setDrawerOpen(false);
+      }
     };
     const onClick = (event: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
     };
 
     document.addEventListener('keydown', onKey);
@@ -115,7 +122,7 @@ export function SiteHeader({
       document.removeEventListener('keydown', onKey);
       document.removeEventListener('mousedown', onClick);
     };
-  }, [menuOpen]);
+  }, [menuOpen, drawerOpen]);
 
   return (
     <header className="site-header">
@@ -157,6 +164,16 @@ export function SiteHeader({
 
       {/* Tier two: the shop itself. */}
       <div className="site-header-inner">
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          aria-label={ar ? 'فتح القائمة' : 'Open menu'}
+          aria-expanded={drawerOpen}
+          onClick={() => setDrawerOpen(true)}
+        >
+          <MenuIcon />
+        </button>
+
         <Link href={`${prefix}${ROUTES.home}`} className="logo">
           {ar ? BRAND.nameAr : BRAND.nameEn}
         </Link>
@@ -175,9 +192,6 @@ export function SiteHeader({
               <ChevronIcon />
             </button>
 
-            {/* Rendered only when open rather than hidden with CSS: it holds
-                sixteen links, and sixteen links a keyboard can reach on every
-                page is sixteen stops before the page's own content. */}
             {menuOpen ? (
               <div className="mega-panel" id="mega-panel">
                 <ul>
@@ -209,14 +223,162 @@ export function SiteHeader({
           <Link href={`${prefix}${ROUTES.contact}`}>{ar ? 'تواصل معنا' : 'Contact'}</Link>
         </nav>
 
-        <SearchBox locale={locale} />
+        <div className="header-search-wrap">
+          <SearchBox locale={locale} />
+        </div>
 
-        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link">
+        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link" aria-label={ar ? 'السلة' : 'Cart'}>
           <CartIcon />
-          <span>{ar ? 'السلة' : 'Cart'}</span>
+          <span className="cart-label">{ar ? 'السلة' : 'Cart'}</span>
           {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
         </Link>
       </div>
+
+      {/* Mobile Navigation Drawer & Backdrop with Framer Motion */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: 'easeOut' }}
+              className="drawer-overlay is-open"
+              onClick={() => setDrawerOpen(false)}
+              aria-hidden="true"
+            />
+            <motion.aside
+              initial={{ x: ar ? '100%' : '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: ar ? '100%' : '-100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="drawer-panel is-open motion-controlled"
+              aria-label={ar ? 'قائمة التنقل' : 'Navigation Menu'}
+            >
+              <div className="drawer-head">
+                <Link
+                  href={`${prefix}${ROUTES.home}`}
+                  className="logo"
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  {ar ? BRAND.nameAr : BRAND.nameEn}
+                </Link>
+                <button
+                  type="button"
+                  className="drawer-close"
+                  aria-label={ar ? 'إغلاق القائمة' : 'Close menu'}
+                  onClick={() => setDrawerOpen(false)}
+                >
+                  <CloseIcon />
+                </button>
+              </div>
+
+              <div className="drawer-search">
+                <SearchBox locale={locale} />
+              </div>
+
+              <div className="drawer-body">
+                <nav className="drawer-section">
+                  <span className="drawer-section-title">{ar ? 'التنقل السريع' : 'Navigation'}</span>
+                  <Link
+                    href={`${prefix}${ROUTES.home}`}
+                    className="drawer-link"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    {ar ? 'الرئيسية' : 'Home'}
+                  </Link>
+                  <Link
+                    href={`${prefix}${ROUTES.store}`}
+                    className="drawer-link"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    {ar ? 'المتجر الإلكتروني' : 'Store Catalog'}
+                  </Link>
+                  <Link
+                    href={`${prefix}${ROUTES.goldenWarranty}`}
+                    className="drawer-link drawer-link-gold"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    <span>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</span>
+                    <span className="gold-pill">100%</span>
+                  </Link>
+                  <Link
+                    href={`${prefix}${ROUTES.blog}`}
+                    className="drawer-link"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    {ar ? 'المدونة والشروحات' : 'Blog'}
+                  </Link>
+                  <Link
+                    href={`${prefix}${ROUTES.contact}`}
+                    className="drawer-link"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    {ar ? 'تواصل معنا' : 'Contact Us'}
+                  </Link>
+                </nav>
+
+                {collections.length > 0 ? (
+                  <div className="drawer-section">
+                    <span className="drawer-section-title">{ar ? 'التصنيفات' : 'Categories'}</span>
+                    <ul className="drawer-cat-list">
+                      {collections.map((collection) => (
+                        <li key={collection.slug}>
+                          <Link
+                            href={`${prefix}${ROUTES.collection(collection.slug)}`}
+                            className="drawer-cat-link"
+                            onClick={() => setDrawerOpen(false)}
+                          >
+                            <CategoryMark slug={collection.slug} />
+                            <span className="drawer-cat-name">{collection.name}</span>
+                            {collection.productCount > 0 ? (
+                              <span className="drawer-cat-count">{collection.productCount}</span>
+                            ) : null}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div className="drawer-section drawer-account">
+                  <span className="drawer-section-title">{ar ? 'حسابك وتواصلك' : 'Account & Help'}</span>
+                  <Link
+                    href={`${prefix}${ROUTES.licenses}`}
+                    className="drawer-link"
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    <UserIcon />
+                    <span>{ar ? 'تراخيصي ومشترياتي' : 'My Licences & Orders'}</span>
+                  </Link>
+                  <a
+                    href={`https://wa.me/${WHATSAPP_DIAL}`}
+                    className="drawer-link drawer-link-wa"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <SupportIcon />
+                    <span dir="ltr">{WHATSAPP_SHOWN}</span>
+                  </a>
+                  <a href={`mailto:${SUPPORT_EMAIL}`} className="drawer-link">
+                    <MailIcon />
+                    <span dir="ltr">{SUPPORT_EMAIL}</span>
+                  </a>
+                  <Link
+                    href={ar ? '/en' : '/'}
+                    className="drawer-link drawer-lang"
+                    hrefLang={ar ? 'en' : 'ar'}
+                    lang={ar ? 'en' : 'ar'}
+                    onClick={() => setDrawerOpen(false)}
+                  >
+                    🌐 {ar ? 'Switch to English' : 'التحويل إلى العربية'}
+                  </Link>
+                </div>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

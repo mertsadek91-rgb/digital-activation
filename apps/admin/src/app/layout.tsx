@@ -19,3 +19,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
+// Force hot reload
+

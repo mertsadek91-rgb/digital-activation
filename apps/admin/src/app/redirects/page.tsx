@@ -62,7 +62,7 @@ export default function RedirectsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   const canWrite = ['OWNER', 'ADMIN', 'CATALOG'].includes(me.role);
 
@@ -85,8 +85,7 @@ export default function RedirectsPage() {
   const shown = showAll ? redirects : interesting;
 
   return (
-    <main className="shell">
-      <Nav me={me} current="redirects" />
+    <Nav me={me} current="redirects" >
 
       <div className="queue-head">
         <h1>التوجيهات</h1>
@@ -192,7 +191,7 @@ export default function RedirectsPage() {
           </table>
         </div>
       </section>
-    </main>
+    </Nav>
   );
 }
 

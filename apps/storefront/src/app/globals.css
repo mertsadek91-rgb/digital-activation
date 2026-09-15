@@ -4,6 +4,9 @@
 @import './home.css';
 @import './cart.css';
 @import './account.css';
+@import './warranty.css';
+@import './contact.css';
+@import './footer.css';
 
 /*
  * Tajawal, self-hosted and subset to Arabic + Latin. The legacy site made
@@ -29,6 +32,10 @@
   font-display: swap;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
@@ -37,6 +44,7 @@ body {
   font-size: var(--text-base);
   line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1,
@@ -46,4 +54,64 @@ h4 {
   color: var(--color-ink);
   line-height: var(--leading-tight);
   text-wrap: balance;
+}
+
+/* UI/UX Pro Max: Interactive elements, touch optimization & cursor feedback */
+button,
+a,
+[role='button'],
+summary {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+/* UI/UX Pro Max: Accessible keyboard navigation focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* UI/UX Pro Max: Brand selection color */
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+
+/* UI/UX Pro Max: Respect users with vestibular / motion sensitivities */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Impeccable: Themed browser surfaces (caret, scrollbar) */
+:root {
+  caret-color: var(--color-brand);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) var(--color-surface);
 }

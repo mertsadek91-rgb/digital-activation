@@ -100,7 +100,7 @@ export default function PromotionsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <main className="shell">…</main>;
+  if (!me) return <div className="admin-layout">…</div>;
 
   // The API refuses a write from anything else, so the buttons are hidden
   // rather than offered and then refused.
@@ -119,8 +119,7 @@ export default function PromotionsPage() {
   }
 
   return (
-    <main className="shell">
-      <Nav me={me} current="promotions" />
+    <Nav me={me} current="promotions" >
 
       <div className="queue-head">
         <h1>الأكواد والعروض</h1>
@@ -194,7 +193,7 @@ export default function PromotionsPage() {
           />
         ))}
       </ul>
-    </main>
+    </Nav>
   );
 }
 
