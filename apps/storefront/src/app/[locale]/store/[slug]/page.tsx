@@ -13,6 +13,7 @@ import { ProductGlyph, SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
+import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
@@ -313,6 +314,30 @@ export default async function ProductPage({ params }: Props) {
           </div>
         ) : null}
       </div>
+
+      {/* The other half of the article link: posts that name this product.
+          A shelf answers "which one"; an article answers "why this one rather
+          than that one", and the person still deciding is the one most likely
+          to leave. Empty for most products — seven posts cannot cover
+          sixty-eight — and absent rather than padded when it is. */}
+      {product.articles.length > 0 ? (
+        <section className="product-articles">
+          <h2>{ar ? 'اقرأ قبل أن تشتري' : 'Read before you buy'}</h2>
+          <ul>
+            {product.articles.map((article) => (
+              <li key={article.slug}>
+                <Link href={`${prefix}${ROUTES.post(article.slug)}`}>
+                  <strong>{article.title}</strong>
+                  {article.summary ? <span>{article.summary}</span> : null}
+                </Link>
+                {article.readingMinutes > 0 ? (
+                  <span className="post-meta">{readingLabel(article.readingMinutes, locale)}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {/* What else is on the same shelf. Absent entirely when the shelf holds
           nothing else, rather than padded out with whatever the catalog has. */}

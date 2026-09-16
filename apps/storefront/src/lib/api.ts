@@ -14,7 +14,7 @@ import {
   type CatalogCollection,
   type CatalogProductWithRelated,
   type CatalogStore,
-  type Article,
+  type ArticleWithProducts,
   type BlogIndex,
   type ContentPage,
   type Home,
@@ -25,7 +25,7 @@ import {
   catalogStoreSchema,
   type SearchResults,
   searchResultsSchema,
-  articleSchema,
+  articleWithProductsSchema,
   blogIndexSchema,
   contentPageSchema,
   productReviewsSchema,
@@ -188,8 +188,8 @@ export function getPosts(options: FetchOptions): Promise<BlogIndex | null> {
   return request('/content/posts', options, blogIndexSchema);
 }
 
-export function getPost(slug: string, options: FetchOptions): Promise<Article | null> {
-  return request(`/content/posts/${encodeURIComponent(slug)}`, options, articleSchema);
+export function getPost(slug: string, options: FetchOptions): Promise<ArticleWithProducts | null> {
+  return request(`/content/posts/${encodeURIComponent(slug)}`, options, articleWithProductsSchema);
 }
 
 export function getProduct(

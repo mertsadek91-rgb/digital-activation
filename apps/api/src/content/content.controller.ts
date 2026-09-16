@@ -3,9 +3,11 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import {
-  type Article,
+  type ArticleWithProducts,
+  type CatalogCard,
   type BlogIndex,
   type ContentPage,
+  catalogQuerySchema,
   type Suggestions,
   recordNotFoundSchema,
   submitContactSchema,
@@ -13,6 +15,8 @@ import {
 import type { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
+
+import { CatalogService } from '../catalog/catalog.service.js';
 
 import { ContactService } from './contact.service.js';
 import { ContentService } from './content.service.js';
@@ -25,6 +29,7 @@ export class ContentController {
     private readonly content: ContentService,
     private readonly contact: ContactService,
     private readonly suggestions: SuggestService,
+    private readonly catalog: CatalogService,
   ) {}
 
   @Get('pages/:slug')
@@ -43,14 +48,30 @@ export class ContentController {
     return this.content.articles(locale, preview);
   }
 
+  /**
+   * One post, with the products it is about.
+   *
+   * Joined here rather than in `ContentService` because the cards belong to the
+   * catalog and are built by the one method that builds every other card in the
+   * store — a second card builder in the content module is a second place for a
+   * price to be formatted differently from the grid one click away.
+   */
   @Get('posts/:slug')
-  @ApiOperation({ summary: 'One blog post, with the newest others' })
-  post(
+  @ApiOperation({ summary: 'One blog post, with its products and the newest others' })
+  async post(
     @Param('slug') slug: string,
     @Query('locale') locale = 'ar',
     @Query('preview') preview?: string,
-  ): Promise<Article> {
-    return this.content.article(slug, locale, preview);
+  ): Promise<ArticleWithProducts> {
+    const article = await this.content.article(slug, locale, preview);
+    const ids = await this.content.relatedProductIds(slug, locale, preview);
+    const cards = await this.catalog.cardsByIds(ids, catalogQuerySchema.parse({ locale }));
+    // In the order the linker chose, not the order the database returned them:
+    // the first link is the product the article names most squarely.
+    const products = ids
+      .map((id: string) => cards.get(id))
+      .filter((card): card is CatalogCard => card !== undefined);
+    return { ...article, products };
   }
 
   /**

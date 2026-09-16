@@ -314,10 +314,22 @@ async function main(): Promise<void> {
   await prisma.$disconnect();
 }
 
-void main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+/**
+ * Only when run directly.
+ *
+ * `readableText` is exported and another script imports it — and without this
+ * guard that import ran this whole file, so `pnpm db:article-links` printed the
+ * blog import's report before its own. Worse, both scripts read `--apply` from
+ * `process.argv`: linking articles with `--apply` would have re-run the import
+ * in write mode as a side effect, overwriting every edit made to the seven
+ * posts since they came across.
+ */
+if (require.main === module) {
+  void main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
 
 /** Unused, kept so the import matches the products import's hashing helper. */
 export const _fingerprint = (value: string): string =>

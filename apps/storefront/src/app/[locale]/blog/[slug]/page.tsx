@@ -8,6 +8,7 @@ import { BRAND } from '@da/ui';
 import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { ProductCard } from '../../../../components/product-card';
 import { getPost } from '../../../../lib/api';
 import { formatArticleDate, readingLabel } from '../../../../lib/format';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -135,6 +136,22 @@ export default async function PostPage({ params }: Props) {
           <Blocks blocks={post.blocks} />
         </div>
       </article>
+
+      {/* What the article is about, on sale.
+          `relatedProductIds` sat empty since the schema was written, so a
+          reader who had just finished the Windows 10 against 11 comparison was
+          offered no way to buy either. Absent rather than padded when the post
+          names nothing in the catalog. */}
+      {post.products.length > 0 ? (
+        <section className="post-products">
+          <h2>{ar ? 'المنتجات في هذا المقال' : 'Products in this article'}</h2>
+          <div className="related-row">
+            {post.products.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {post.more.length > 0 ? (
         <section className="post-more">

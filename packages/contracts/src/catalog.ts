@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { blockDocumentSchema, faqItemsSchema } from './blocks.js';
-import { articleCardSchema } from './content.js';
+import { articleCardSchema, articleSchema } from './content.js';
 import { localeSchema, moneySchema, paginationSchema, slugSchema } from './primitives.js';
 
 /**
@@ -197,8 +197,35 @@ export type CatalogCard = z.infer<typeof catalogCardSchema>;
  */
 export const catalogProductWithRelatedSchema = catalogProductSchema.extend({
   related: z.array(catalogCardSchema),
+  /**
+   * Posts that name this product, the other half of the same link.
+   *
+   * A shelf of licences answers "which one"; an article answers "why this one
+   * rather than that one", and the person still deciding is the one most likely
+   * to leave. Empty for most products — seven posts cannot cover sixty-eight —
+   * and the section is absent rather than padded when it is.
+   */
+  articles: z.array(articleCardSchema),
 });
 export type CatalogProductWithRelated = z.infer<typeof catalogProductWithRelatedSchema>;
+
+/**
+ * One post, plus the products it is about.
+ *
+ * Declared here rather than in `content.ts` for the same reason the product's
+ * `related` is: a card is defined in this file, and `content.ts` is imported by
+ * it. Putting the extension the other way round would make the two files
+ * import each other.
+ *
+ * `relatedProductIds` has been on `Article` since the schema was written, with
+ * a comment about keeping the category -> product -> guide loop intact, and it
+ * was empty — so a reader who had just finished the Windows 10 against 11
+ * comparison was offered no way to buy either.
+ */
+export const articleWithProductsSchema = articleSchema.extend({
+  products: z.array(catalogCardSchema),
+});
+export type ArticleWithProducts = z.infer<typeof articleWithProductsSchema>;
 
 /**
  * The store index: every published product, paginated.

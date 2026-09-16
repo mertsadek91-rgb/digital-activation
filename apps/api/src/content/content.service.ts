@@ -190,6 +190,26 @@ export class ContentService {
   }
 
   /**
+   * The products one post is linked to, in the order the linker chose.
+   *
+   * Ids rather than cards: the cards are the catalog's to build, and this
+   * module has no business formatting a price.
+   */
+  async relatedProductIds(slug: string, locale: string, preview?: string): Promise<string[]> {
+    const wanted = locale === 'en' ? Locale.EN : Locale.AR;
+    const post = await this.prisma.client.article.findFirst({
+      where: {
+        slug,
+        kind: ArticleKind.POST,
+        locale: wanted,
+        ...(this.allowDrafts(preview) ? {} : { status: PublishStatus.PUBLISHED }),
+      },
+      select: { relatedProductIds: true },
+    });
+    return post?.relatedProductIds ?? [];
+  }
+
+  /**
    * Published post slugs with their lastmod and, unlike the page equivalent,
    * the languages each one exists in.
    *

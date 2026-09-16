@@ -519,6 +519,25 @@ export class CatalogService {
       href: ROUTES.product(product.slug),
     });
 
+    /**
+     * Posts that name this product.
+     *
+     * A scalar-array containment query rather than a join table, because that
+     * is what `Article.relatedProductIds` is. Published only, and in the
+     * product's own locale: an Arabic product page offering an English article
+     * would be offering a page that does not exist.
+     */
+    const articles = await this.prisma.client.article.findMany({
+      where: {
+        kind: ArticleKind.POST,
+        status: PublishStatus.PUBLISHED,
+        locale,
+        relatedProductIds: { has: product.id },
+      },
+      orderBy: [{ publishedAt: 'desc' }],
+      take: BLOG_MORE_SIZE,
+    });
+
     return {
       slug: product.slug,
       kind: product.kind,
@@ -561,6 +580,7 @@ export class CatalogService {
       },
       isDraft: product.status !== PublishStatus.PUBLISHED,
       related,
+      articles: articles.map(toArticleCard),
     };
   }
 
