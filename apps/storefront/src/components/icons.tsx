@@ -157,7 +157,14 @@ export function WhatsAppIcon({ size = 26 }: { size?: number }) {
 
 export function TelegramIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false" fill="currentColor">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+      fill="currentColor"
+    >
       <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8-1.7 8.01c-.13.57-.47.71-.95.44l-2.6-1.92-1.25 1.21c-.14.14-.26.26-.53.26l.19-2.64 4.81-4.35c.21-.19-.05-.29-.32-.1l-5.95 3.75-2.56-.8c-.56-.17-.57-.56.12-.83l10-3.85c.46-.17.87.11.74.87z" />
     </svg>
   );
@@ -530,7 +537,14 @@ export function StcPayIcon({ className }: { className?: string }) {
 
 export function XIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" focusable="false">
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
@@ -598,3 +612,93 @@ export function CreditCardIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+/* --- a product with no photograph ------------------------------------------ */
+
+/**
+ * Which family a product belongs to, from its slug.
+ *
+ * The same nine marks the category menu uses, matched against a product slug
+ * rather than a category one — `norton-360-deluxe` and `office-2024-word-bind-mac`
+ * carry their family in their name, and the product's own category is not on
+ * the card.
+ *
+ * Exported because the placeholder below is not the only thing that wants it.
+ */
+export function familyOf(slug: string): keyof typeof MARKS {
+  const s = slug.toLowerCase();
+  if (s.includes('windows-server') || s.startsWith('windows')) return 'windows';
+  if (s.includes('office') || s.includes('microsoft-365')) return 'office';
+  if (s.includes('adobe') || s.includes('acrobat') || s.includes('creative-cloud')) return 'adobe';
+  if (s.includes('autodesk') || s.includes('autocad')) return 'autodesk';
+  if (
+    s.includes('norton') ||
+    s.includes('eset') ||
+    s.includes('mcafee') ||
+    s.includes('kaspersky') ||
+    s.includes('antivirus') ||
+    s.includes('security')
+  ) {
+    return 'antivirus';
+  }
+  if (s.includes('canva') || s.includes('subscription') || s.includes('365'))
+    return 'subscriptions';
+  if (s.includes('wordpress') || s.includes('elementor')) return 'wordpress';
+  if (s.includes('seo')) return 'seo';
+  return 'code';
+}
+
+/**
+ * What a product page shows when there is no photograph of the product.
+ *
+ * Twenty of the sixty-eight products on this store have no image and never
+ * will from the migration: the shop it replaces never photographed them. Both
+ * the card and the gallery answered that with the words "لا صورة" — which on a
+ * live shop does not read as "no photograph", it reads as broken.
+ *
+ * So: a drawing of the thing actually being sold. None of these products is a
+ * physical object; every one is a licence delivered by email, and a licence
+ * card carrying the family's mark is a more truthful picture of it than a box
+ * shot would be. It is unmistakably a graphic — nobody can take it for a
+ * photograph of a product — which is the point. It claims nothing.
+ *
+ * Drawn from the slug so it is stable: the same product gets the same card
+ * every time, and two products in the same family look like siblings.
+ */
+export function ProductGlyph({ slug, label }: { slug: string; label?: string }) {
+  const mark = MARKS[familyOf(slug)];
+
+  return (
+    <svg
+      className="product-glyph"
+      viewBox="0 0 320 320"
+      role="img"
+      aria-label={label ?? ''}
+      aria-hidden={label ? undefined : true}
+      focusable="false"
+    >
+      {/* The card. A rounded panel with a notch at the top, which is the shape
+          every activation card in this catalog's real photographs has. */}
+      <rect x="54" y="42" width="212" height="236" rx="16" className="glyph-card" />
+      <rect x="132" y="30" width="56" height="16" rx="8" className="glyph-notch" />
+
+      {/* The family mark, centred and large. `MARKS` paths are drawn on a 24px
+          grid, so the group is scaled rather than the paths rewritten. */}
+      <g transform="translate(112 96) scale(4)" fill={mark?.fill ?? 'currentColor'}>
+        {mark?.path}
+      </g>
+
+      {/* Two rules standing in for the licence key, which is what arrives. Not
+          a fake key: no characters, because a shape that looked like a key
+          would be read as one. */}
+      <rect x="92" y="216" width="136" height="9" rx="4.5" className="glyph-line" />
+      <rect
+        x="112"
+        y="236"
+        width="96"
+        height="9"
+        rx="4.5"
+        className="glyph-line glyph-line-short"
+      />
+    </svg>
+  );
+}

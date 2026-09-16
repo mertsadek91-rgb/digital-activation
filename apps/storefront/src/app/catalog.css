@@ -482,7 +482,9 @@ h1 {
   border-radius: var(--radius-xl);
   padding: 14px 16px;
   box-shadow: var(--shadow-card);
-  transition: border-color 180ms ease, box-shadow 180ms ease;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 .product-payments-card:hover {
   border-color: var(--color-border-strong);
@@ -536,7 +538,10 @@ h1 {
   padding: 6px 10px;
   min-height: 38px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
   flex: 1 1 auto;
 }
 .pay-badge:hover {
@@ -1048,32 +1053,32 @@ h1 {
 }
 
 /* Explicit icons, logos, badges, and software marks MUST NOT stretch or have card shadows */
-.prose img[src*="icon" i],
-.rich img[src*="icon" i],
-.prose img[src*="logo" i],
-.rich img[src*="logo" i],
-.prose img[src*="badge" i],
-.rich img[src*="badge" i],
-.prose img[src*="drive" i],
-.rich img[src*="drive" i],
-.prose img[src*="office" i],
-.rich img[src*="office" i],
-.prose img[src*="windows" i],
-.rich img[src*="windows" i],
-.prose img[src*="adobe" i],
-.rich img[src*="adobe" i],
-.prose img[src*="autodesk" i],
-.rich img[src*="autodesk" i],
-.prose img[src*="app" i],
-.rich img[src*="app" i],
-.prose img[alt*="icon" i],
-.rich img[alt*="icon" i],
-.prose img[alt*="logo" i],
-.rich img[alt*="logo" i],
-.prose img[alt*="أيقونة"],
-.rich img[alt*="أيقونة"],
-.prose img[alt*="شعار"],
-.rich img[alt*="شعار"] {
+.prose img[src*='icon' i],
+.rich img[src*='icon' i],
+.prose img[src*='logo' i],
+.rich img[src*='logo' i],
+.prose img[src*='badge' i],
+.rich img[src*='badge' i],
+.prose img[src*='drive' i],
+.rich img[src*='drive' i],
+.prose img[src*='office' i],
+.rich img[src*='office' i],
+.prose img[src*='windows' i],
+.rich img[src*='windows' i],
+.prose img[src*='adobe' i],
+.rich img[src*='adobe' i],
+.prose img[src*='autodesk' i],
+.rich img[src*='autodesk' i],
+.prose img[src*='app' i],
+.rich img[src*='app' i],
+.prose img[alt*='icon' i],
+.rich img[alt*='icon' i],
+.prose img[alt*='logo' i],
+.rich img[alt*='logo' i],
+.prose img[alt*='أيقونة'],
+.rich img[alt*='أيقونة'],
+.prose img[alt*='شعار'],
+.rich img[alt*='شعار'] {
   max-width: 72px !important;
   max-height: 72px !important;
   width: auto !important;
@@ -1092,18 +1097,30 @@ h1 {
   width: auto;
   max-width: 100%;
 }
-.prose img[width="16"], .rich img[width="16"],
-.prose img[width="20"], .rich img[width="20"],
-.prose img[width="24"], .rich img[width="24"],
-.prose img[width="32"], .rich img[width="32"],
-.prose img[width="40"], .rich img[width="40"],
-.prose img[width="48"], .rich img[width="48"],
-.prose img[width="56"], .rich img[width="56"],
-.prose img[width="64"], .rich img[width="64"],
-.prose img[width="72"], .rich img[width="72"],
-.prose img[width="80"], .rich img[width="80"],
-.prose img[width="96"], .rich img[width="96"],
-.prose img[width="128"], .rich img[width="128"] {
+.prose img[width='16'],
+.rich img[width='16'],
+.prose img[width='20'],
+.rich img[width='20'],
+.prose img[width='24'],
+.rich img[width='24'],
+.prose img[width='32'],
+.rich img[width='32'],
+.prose img[width='40'],
+.rich img[width='40'],
+.prose img[width='48'],
+.rich img[width='48'],
+.prose img[width='56'],
+.rich img[width='56'],
+.prose img[width='64'],
+.rich img[width='64'],
+.prose img[width='72'],
+.rich img[width='72'],
+.prose img[width='80'],
+.rich img[width='80'],
+.prose img[width='96'],
+.rich img[width='96'],
+.prose img[width='128'],
+.rich img[width='128'] {
   box-shadow: none !important;
   border-radius: 0 !important;
   max-width: 80px !important;
@@ -1320,7 +1337,9 @@ h1 {
   border-radius: var(--radius-xl);
   background: var(--color-bg);
   box-shadow: var(--shadow-sm);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 .review:hover {
   border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-border));
@@ -1519,7 +1538,9 @@ h1 {
   border-radius: var(--radius-pill);
   background: var(--color-bg);
   overflow: hidden;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 .search-box:focus-within {
   border-color: var(--color-brand);
@@ -1553,7 +1574,9 @@ h1 {
   background: transparent;
   color: var(--color-ink-muted);
   cursor: pointer;
-  transition: color 150ms ease, transform 150ms ease;
+  transition:
+    color 150ms ease,
+    transform 150ms ease;
 }
 .search-box button:hover {
   color: var(--color-brand);
@@ -1733,7 +1756,9 @@ h1 {
   backdrop-filter: blur(4px);
   opacity: 0;
   visibility: hidden;
-  transition: opacity 260ms var(--ease-out), visibility 260ms var(--ease-out);
+  transition:
+    opacity 260ms var(--ease-out),
+    visibility 260ms var(--ease-out);
 }
 .drawer-overlay.is-open {
   opacity: 1;
@@ -2040,7 +2065,9 @@ h1 {
   background: #25d366;
   color: #fff;
   box-shadow: 0 6px 18px -4px rgb(37 211 102 / 55%);
-  transition: transform 0.15s ease, inset-block-end 0.2s ease-out;
+  transition:
+    transform 0.15s ease,
+    inset-block-end 0.2s ease-out;
 }
 .whatsapp-fab:hover {
   transform: scale(1.06);
@@ -2318,7 +2345,10 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   border-radius: var(--radius-xl);
   padding: var(--spacing-2);
   box-shadow: var(--shadow-card);
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms ease;
+  transition:
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
+    border-color 200ms ease;
 }
 .post-card:hover {
   transform: translateY(-3px);
@@ -2383,7 +2413,9 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   font-weight: 700;
   font-size: var(--text-sm);
   text-decoration: none;
-  transition: gap 160ms ease, color 160ms ease;
+  transition:
+    gap 160ms ease,
+    color 160ms ease;
 }
 .post-read-link:hover {
   color: var(--color-brand-hover, var(--color-brand-ink));
@@ -2479,4 +2511,43 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
 }
 .post-more a:hover {
   color: var(--color-brand);
+}
+
+/*
+ * The drawing a product wears when it has no photograph.
+ *
+ * Twenty of this store's sixty-eight products have none and never will from the
+ * migration — the shop it replaces never took one. The alternative on screen
+ * was the words "لا صورة", which reads as a page that failed rather than a
+ * product without a picture.
+ *
+ * Tinted from the brand rather than grey: grey is what a broken image looks
+ * like, and the point of this is to look chosen.
+ */
+.product-glyph {
+  /* Square, because the viewBox is. Setting both dimensions to a percentage of
+     a box that is not square stretches the drawing — 320x498 on a 320x320
+     grid, which turns the card into a door. */
+  inline-size: min(78%, 320px);
+  block-size: auto;
+  aspect-ratio: 1;
+}
+.glyph-card {
+  fill: var(--color-surface);
+  stroke: var(--color-border-strong);
+  stroke-width: 2;
+}
+.glyph-notch {
+  fill: var(--color-border-strong);
+}
+.glyph-line {
+  fill: var(--color-border-strong);
+  opacity: 0.55;
+}
+.glyph-line-short {
+  opacity: 0.35;
+}
+/* On a card the drawing sits in a smaller box, so it takes more of it. */
+.card-media .product-glyph {
+  inline-size: 86%;
 }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { formatPrice } from '../lib/format';
 
 import { AddToCart } from './add-to-cart';
-import { BoltIcon, ShieldCheckIcon } from './icons';
+import { BoltIcon, ProductGlyph, ShieldCheckIcon } from './icons';
 import { MotionCard } from './motion-wrapper';
 
 /**
@@ -29,7 +29,7 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
   return (
     <MotionCard className="card">
       <Link href={href} className="card-link">
-        <div className="card-media" aria-hidden={card.image ? undefined : true}>
+        <div className="card-media">
           {card.image ? (
             <Image
               src={card.image.url}
@@ -38,11 +38,14 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
               sizes="(max-width: 700px) 50vw, 260px"
             />
           ) : (
-            <span className="card-media-empty">{ar ? 'لا صورة' : 'No image'}</span>
+            <ProductGlyph slug={card.slug} />
           )}
 
           {discount ? (
-            <span className="card-discount-tag" aria-label={ar ? `خصم ${discount}%` : `${discount}% discount`}>
+            <span
+              className="card-discount-tag"
+              aria-label={ar ? `خصم ${discount}%` : `${discount}% discount`}
+            >
               {ar ? `-${discount}%` : `-${discount}%`}
             </span>
           ) : null}
@@ -76,9 +79,7 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             ) : null}
             {card.salesCount > 0 ? (
               <span className="badge badge-sales">
-                {ar
-                  ? `تم بيع ${String(card.salesCount)}`
-                  : `Sold ${String(card.salesCount)}`}
+                {ar ? `تم بيع ${String(card.salesCount)}` : `Sold ${String(card.salesCount)}`}
               </span>
             ) : null}
           </div>

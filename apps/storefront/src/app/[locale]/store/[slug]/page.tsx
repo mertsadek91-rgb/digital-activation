@@ -9,7 +9,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
-import { SupportIcon } from '../../../../components/icons';
+import { ProductGlyph, SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
@@ -155,7 +155,9 @@ export default async function ProductPage({ params }: Props) {
                 sizes="(max-width: 900px) 100vw, 480px"
               />
             ) : (
-              <div className="gallery-empty">{ar ? 'لا صورة بعد' : 'No image yet'}</div>
+              /* A drawing rather than the words "no image yet", which on a live
+               shop reads as broken rather than as absent. */
+              <ProductGlyph slug={product.slug} label={product.name} />
             )}
           </div>
 
