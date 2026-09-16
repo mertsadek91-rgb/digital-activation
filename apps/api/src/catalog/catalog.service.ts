@@ -250,6 +250,28 @@ export class CatalogService {
       href: ROUTES.collection(category.slug),
     });
 
+    /**
+     * The rail. Top level only and stocked only, which is the same rule the
+     * store index and the header menu apply — three places showing three
+     * different category lists would be three answers to one question.
+     */
+    const siblings = await this.prisma.client.category
+      .findMany({
+        where: { parentId: null },
+        orderBy: [{ position: 'asc' }, { slug: 'asc' }],
+        include: {
+          translations: { where: { locale } },
+          products: { where: { product: status }, select: { productId: true } },
+        },
+      })
+      .then((rows) =>
+        rows.map((row) => ({
+          slug: row.slug,
+          name: row.translations[0]?.name ?? row.slug,
+          productCount: row.products.length,
+        })),
+      );
+
     return {
       slug: category.slug,
       locale: query.locale,
@@ -263,6 +285,13 @@ export class CatalogService {
         name: child.translations[0]?.name ?? child.slug,
         productCount: child.products.length,
       })),
+      siblings: siblings
+        .filter((entry) => entry.productCount > 0)
+        .map((entry) => ({
+          slug: entry.slug,
+          name: entry.name,
+          productCount: entry.productCount,
+        })),
       seo: {
         title: translation?.seoTitle ?? null,
         description: translation?.seoDescription ?? null,

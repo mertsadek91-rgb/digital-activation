@@ -7,6 +7,7 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { CategoryRail } from '../../../components/category-rail';
 import { ProductCard } from '../../../components/product-card';
 import { getStore } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
@@ -138,71 +139,72 @@ export default async function StorePage({ params, searchParams }: Props) {
         </p>
       </header>
 
-      {store.collections.length > 0 ? (
-        <nav className="subnav" aria-label={ar ? 'التصنيفات' : 'Collections'}>
-          {store.collections.map((collection) => (
-            <Link key={collection.slug} href={`${prefix}${ROUTES.collection(collection.slug)}`}>
-              {collection.name}
-              <span className="count">{collection.productCount}</span>
-            </Link>
-          ))}
-        </nav>
-      ) : null}
+      {/* The rail replaces the horizontal strip that was here. Same links, same
+          counts; a column at desktop width and the strip again below it. */}
+      <div className="catalog-layout">
+        <CategoryRail
+          categories={store.collections}
+          locale={locale}
+          title={ar ? 'التصنيفات' : 'Categories'}
+        />
 
-      <div className="store-bar">
-        <p className="result-count">
-          {ar
-            ? `${String(store.total)} منتجاً`
-            : `${String(store.total)} product${store.total === 1 ? '' : 's'}`}
-        </p>
+        <div className="catalog-main">
+          <div className="store-bar">
+            <p className="result-count">
+              {ar
+                ? `${String(store.total)} منتجاً`
+                : `${String(store.total)} product${store.total === 1 ? '' : 's'}`}
+            </p>
 
-        {/* Links, not a <select>: the page is server-rendered, each sort is a
+            {/* Links, not a <select>: the page is server-rendered, each sort is a
             real URL a crawler can follow, and nothing here needs JavaScript. */}
-        <nav className="sorts" aria-label={ar ? 'الترتيب' : 'Sort'}>
-          {(['position', 'newest'] as const).map((option) => (
-            <Link
-              key={option}
-              href={href({ sort: option, page: 1 })}
-              className={option === sort ? 'is-active' : undefined}
-              aria-current={option === sort ? 'true' : undefined}
-            >
-              {ar ? SORT_LABELS[option].ar : SORT_LABELS[option].en}
-            </Link>
-          ))}
-        </nav>
-      </div>
-
-      {store.products.length === 0 ? (
-        <p className="empty">{ar ? 'لا منتجات منشورة بعد.' : 'Nothing published yet.'}</p>
-      ) : (
-        <MotionFadeIn>
-          <div className="grid">
-            {store.products.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
-            ))}
+            <nav className="sorts" aria-label={ar ? 'الترتيب' : 'Sort'}>
+              {(['position', 'newest'] as const).map((option) => (
+                <Link
+                  key={option}
+                  href={href({ sort: option, page: 1 })}
+                  className={option === sort ? 'is-active' : undefined}
+                  aria-current={option === sort ? 'true' : undefined}
+                >
+                  {ar ? SORT_LABELS[option].ar : SORT_LABELS[option].en}
+                </Link>
+              ))}
+            </nav>
           </div>
-        </MotionFadeIn>
-      )}
 
-      {lastPage > 1 ? (
-        <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
-          {page > 1 ? (
-            <Link href={href({ page: page - 1 })} rel="prev">
-              {ar ? 'السابق' : 'Previous'}
-            </Link>
+          {store.products.length === 0 ? (
+            <p className="empty">{ar ? 'لا منتجات منشورة بعد.' : 'Nothing published yet.'}</p>
+          ) : (
+            <MotionFadeIn>
+              <div className="grid">
+                {store.products.map((card) => (
+                  <ProductCard key={card.slug} card={card} locale={locale} />
+                ))}
+              </div>
+            </MotionFadeIn>
+          )}
+
+          {lastPage > 1 ? (
+            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+              {page > 1 ? (
+                <Link href={href({ page: page - 1 })} rel="prev">
+                  {ar ? 'السابق' : 'Previous'}
+                </Link>
+              ) : null}
+              <span>
+                {ar
+                  ? `صفحة ${String(page)} من ${String(lastPage)}`
+                  : `Page ${String(page)} of ${String(lastPage)}`}
+              </span>
+              {page < lastPage ? (
+                <Link href={href({ page: page + 1 })} rel="next">
+                  {ar ? 'التالي' : 'Next'}
+                </Link>
+              ) : null}
+            </nav>
           ) : null}
-          <span>
-            {ar
-              ? `صفحة ${String(page)} من ${String(lastPage)}`
-              : `Page ${String(page)} of ${String(lastPage)}`}
-          </span>
-          {page < lastPage ? (
-            <Link href={href({ page: page + 1 })} rel="next">
-              {ar ? 'التالي' : 'Next'}
-            </Link>
-          ) : null}
-        </nav>
-      ) : null}
+        </div>
+      </div>
     </main>
   );
 }

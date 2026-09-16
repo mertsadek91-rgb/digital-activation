@@ -7,6 +7,7 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { CategoryRail } from '../../../../components/category-rail';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -113,58 +114,77 @@ export default async function CollectionPage({ params, searchParams }: Props) {
         {collection.headline ? <p className="lede">{collection.headline}</p> : null}
       </header>
 
-      {collection.children.length > 0 ? (
-        <nav className="subnav" aria-label={ar ? 'التصنيفات الفرعية' : 'Subcategories'}>
-          {collection.children.map((child) => (
-            <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
-              {child.name}
-              <span className="count">{child.productCount}</span>
-            </Link>
-          ))}
-        </nav>
-      ) : null}
+      <div className="catalog-layout">
+        <CategoryRail
+          categories={collection.siblings}
+          current={collection.slug}
+          locale={locale}
+          title={ar ? 'التصنيفات' : 'Categories'}
+        />
 
-      {collection.body.length > 0 ? (
-        <div className="prose">
-          <Blocks blocks={collection.body} />
-        </div>
-      ) : null}
-
-      <p className="result-count">
-        {ar
-          ? `${String(collection.total)} منتجاً`
-          : `${String(collection.total)} product${collection.total === 1 ? '' : 's'}`}
-      </p>
-
-      {collection.products.length === 0 ? (
-        <p className="empty">{ar ? 'لا منتجات في هذا التصنيف بعد.' : 'No products here yet.'}</p>
-      ) : (
-        <div className="grid">
-          {collection.products.map((card) => (
-            <ProductCard key={card.slug} card={card} locale={locale} />
-          ))}
-        </div>
-      )}
-
-      {lastPage > 1 ? (
-        <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
-          {page > 1 ? (
-            <Link href={`${prefix}${ROUTES.collection(slug)}?page=${String(page - 1)}`} rel="prev">
-              {ar ? 'السابق' : 'Previous'}
-            </Link>
+        <div className="catalog-main">
+          {collection.children.length > 0 ? (
+            <nav className="subnav" aria-label={ar ? 'التصنيفات الفرعية' : 'Subcategories'}>
+              {collection.children.map((child) => (
+                <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
+                  {child.name}
+                  <span className="count">{child.productCount}</span>
+                </Link>
+              ))}
+            </nav>
           ) : null}
-          <span>
+
+          {collection.body.length > 0 ? (
+            <div className="prose">
+              <Blocks blocks={collection.body} />
+            </div>
+          ) : null}
+
+          <p className="result-count">
             {ar
-              ? `صفحة ${String(page)} من ${String(lastPage)}`
-              : `Page ${String(page)} of ${String(lastPage)}`}
-          </span>
-          {page < lastPage ? (
-            <Link href={`${prefix}${ROUTES.collection(slug)}?page=${String(page + 1)}`} rel="next">
-              {ar ? 'التالي' : 'Next'}
-            </Link>
+              ? `${String(collection.total)} منتجاً`
+              : `${String(collection.total)} product${collection.total === 1 ? '' : 's'}`}
+          </p>
+
+          {collection.products.length === 0 ? (
+            <p className="empty">
+              {ar ? 'لا منتجات في هذا التصنيف بعد.' : 'No products here yet.'}
+            </p>
+          ) : (
+            <div className="grid">
+              {collection.products.map((card) => (
+                <ProductCard key={card.slug} card={card} locale={locale} />
+              ))}
+            </div>
+          )}
+
+          {lastPage > 1 ? (
+            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+              {page > 1 ? (
+                <Link
+                  href={`${prefix}${ROUTES.collection(slug)}?page=${String(page - 1)}`}
+                  rel="prev"
+                >
+                  {ar ? 'السابق' : 'Previous'}
+                </Link>
+              ) : null}
+              <span>
+                {ar
+                  ? `صفحة ${String(page)} من ${String(lastPage)}`
+                  : `Page ${String(page)} of ${String(lastPage)}`}
+              </span>
+              {page < lastPage ? (
+                <Link
+                  href={`${prefix}${ROUTES.collection(slug)}?page=${String(page + 1)}`}
+                  rel="next"
+                >
+                  {ar ? 'التالي' : 'Next'}
+                </Link>
+              ) : null}
+            </nav>
           ) : null}
-        </nav>
-      ) : null}
+        </div>
+      </div>
     </main>
   );
 }

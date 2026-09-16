@@ -261,6 +261,18 @@ export const catalogCollectionSchema = z.object({
   children: z.array(
     z.object({ slug: slugSchema, name: z.string(), productCount: z.number().int() }),
   ),
+  /**
+   * Every top-level category that holds stock — the same list the store index
+   * gets, carried here too.
+   *
+   * Without it a collection page is a dead end sideways: it lists its own
+   * children and nothing else, so reaching a sibling shelf means going back to
+   * the store first. The store this replaces solved that with a category rail
+   * on every catalog page, and it was right to.
+   */
+  siblings: z.array(
+    z.object({ slug: slugSchema, name: z.string(), productCount: z.number().int() }),
+  ),
   seo: z.object({ title: z.string().nullable(), description: z.string().nullable() }),
   products: z.array(catalogCardSchema),
   total: z.number().int().min(0),

@@ -2629,3 +2629,99 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* --- the category rail ----------------------------------------------------- */
+
+/*
+ * A column beside the grid at desktop width, and the horizontal strip it
+ * replaced below that.
+ *
+ * `min-inline-size: 0` on the grid side is not optional: a grid child defaults
+ * to `auto`, which refuses to shrink below its content, and a row of product
+ * cards then pushes the whole layout wider than the page instead of reflowing.
+ */
+.catalog-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-2);
+}
+@media (min-width: 64rem) {
+  .catalog-layout {
+    grid-template-columns: 15rem minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.catalog-main {
+  min-inline-size: 0;
+}
+
+.cat-rail-head {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.cat-rail ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  /* Below the breakpoint this is the strip again: one line, scrolling, with the
+     scrollbar hidden — a sidebar on a phone is a column of links pushing the
+     products it exists to help you find off the screen. */
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-block-end: 4px;
+}
+.cat-rail ul::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 64rem) {
+  .cat-rail {
+    position: sticky;
+    /* Clears the pinned shop bar rather than guessing at a number. */
+    top: calc(var(--header-height) + var(--spacing-1));
+  }
+  .cat-rail ul {
+    display: grid;
+    gap: 2px;
+    overflow: visible;
+  }
+}
+.cat-rail a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cat-rail a:hover {
+  background: var(--color-surface);
+}
+.cat-rail a.is-current {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+.cat-rail-name {
+  min-inline-size: 0;
+}
+@media (min-width: 64rem) {
+  .cat-rail-name {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+/* Information, not emphasis: a shelf with one product on it should not shout. */
+.cat-rail-count {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
