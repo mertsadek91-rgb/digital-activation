@@ -117,19 +117,32 @@ export default function RedirectsPage() {
         {view && view.notFound.length === 0 ? (
           <p className="notice">لا شيء. كل ما طُلب وُجد أو وُجّه.</p>
         ) : (
-          <ul className="notfound-list">
-            {(view?.notFound ?? []).map((row) => (
-              <NotFoundCard
-                key={row.id}
-                row={row}
-                canWrite={canWrite}
-                onCreate={(to) =>
-                  void act(`وُجّه ${row.path}`, () => api.createRedirect(row.path, to, 301))
-                }
-                onDismiss={() => void act(`أُهمل ${row.path}`, () => api.resolveNotFound(row.id))}
-              />
-            ))}
-          </ul>
+          <div className="table-scroll">
+            <table className="admin-table notfound-table">
+              <thead>
+                <tr>
+                  <th>المسار</th>
+                  <th className="num">الزيارات</th>
+                  <th>آخر طلب</th>
+                  <th>المصدر</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {(view?.notFound ?? []).map((row) => (
+                  <NotFoundRowView
+                    key={row.id}
+                    row={row}
+                    canWrite={canWrite}
+                    onCreate={(to) =>
+                      void act(`وُجّه ${row.path}`, () => api.createRedirect(row.path, to, 301))
+                    }
+                    onDismiss={() => void act(`أُهمل ${row.path}`, () => api.resolveNotFound(row.id))}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -154,7 +167,7 @@ export default function RedirectsPage() {
         </div>
 
         <div className="table-scroll">
-          <table>
+          <table className="admin-table redirects-table">
             <thead>
               <tr>
                 <th>من</th>
@@ -195,7 +208,37 @@ export default function RedirectsPage() {
   );
 }
 
-function NotFoundCard({
+/** Columns the drawer spans. */
+const NOT_FOUND_COLUMNS = 5;
+
+/**
+ * A URL as a person can read it.
+ *
+ * Every Arabic path on this store is percent-encoded on the wire, so a referer
+ * arrives as `/product/%D8%A7%D8%B4%D8%AA%D8%B1%D8%A7%D9%83…` — a hundred and
+ * forty characters of hex where a product name should be. The decision this
+ * column exists for is "did a real page link here", and it cannot be made
+ * against that. Decoding is best-effort: a malformed escape throws, and the
+ * raw value is still better than an empty cell.
+ */
+function readable(url: string): string {
+  try {
+    return decodeURIComponent(url);
+  } catch {
+    return url;
+  }
+}
+
+/*
+ * A row per path that was asked for and was not there.
+ *
+ * The decision on every one of these is the same comparison — how many times,
+ * how recently, and whether anything linked to it — and a card each put one
+ * comparison on a screen. `hits` is the column the eye runs down: a path
+ * requested forty times from a real referer is a redirect somebody owes, and
+ * one requested once with no referer is a crawler guessing.
+ */
+function NotFoundRowView({
   row,
   canWrite,
   onCreate,
@@ -210,63 +253,79 @@ function NotFoundCard({
   const [to, setTo] = useState('');
 
   return (
-    <li className="notfound-row">
-      <div>
-        <p className="slug" dir="ltr">
-          {row.path}
-        </p>
-        <p className="meta">
-          {row.hits} مرّة · آخرها {row.lastSeenAt.slice(0, 16).replace('T', ' ')}
-          {row.referer ? (
-            <>
-              {' · من '}
-              <span dir="ltr">{row.referer}</span>
-            </>
-          ) : (
-            ' · بلا مصدر'
-          )}
-        </p>
-      </div>
+    <>
+      <tr className="notfound-row">
+        <td className="notfound-path">
+          <span className="slug" dir="ltr" title={row.path}>
+            {readable(row.path)}
+          </span>
+        </td>
 
-      {canWrite ? (
-        <div className="actions">
-          <button type="button" onClick={() => setOpen(!open)}>
-            {open ? 'إلغاء' : 'وجّهه'}
-          </button>
-          <button type="button" className="ghost" onClick={onDismiss}>
-            أهمله
-          </button>
-        </div>
-      ) : null}
+        <td className="num">{row.hits}</td>
+
+        <td className="order-date" dir="ltr">
+          {row.lastSeenAt.slice(0, 16).replace('T', ' ')}
+        </td>
+
+        {/* Always a cell, never an omission: "no referer" is the fact the
+            decision turns on, and a column that disappears on some rows is a
+            column that cannot be read down. */}
+        <td className="notfound-referer">
+          {row.referer ? (
+            <span dir="ltr" title={row.referer}>
+              {readable(row.referer)}
+            </span>
+          ) : (
+            <span className="meta">بلا مصدر</span>
+          )}
+        </td>
+
+        <td className="actions">
+          {canWrite ? (
+            <>
+              <button type="button" onClick={() => setOpen(!open)}>
+                {open ? 'إلغاء' : 'وجّهه'}
+              </button>
+              <button type="button" className="ghost" onClick={onDismiss}>
+                أهمله
+              </button>
+            </>
+          ) : null}
+        </td>
+      </tr>
 
       {open ? (
-        <form
-          className="paste-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onCreate(to.trim());
-            setTo('');
-            setOpen(false);
-          }}
-        >
-          <label className="grow">
-            إلى أين؟
-            <input
-              type="text"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-              dir="ltr"
-              required
-              placeholder="/store/windows-11-pro"
-            />
-            <small>مسار في هذا الموقع. الرابط الكامل يُقبل ويُختصر إلى مساره.</small>
-          </label>
-          <button type="submit" disabled={to.trim().length < 2}>
-            احفظ التوجيه
-          </button>
-        </form>
+        <tr className="notfound-drawer">
+          <td colSpan={NOT_FOUND_COLUMNS}>
+            <form
+              className="paste-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onCreate(to.trim());
+                setTo('');
+                setOpen(false);
+              }}
+            >
+              <label className="grow">
+                إلى أين؟
+                <input
+                  type="text"
+                  value={to}
+                  onChange={(event) => setTo(event.target.value)}
+                  dir="ltr"
+                  required
+                  placeholder="/store/windows-11-pro"
+                />
+                <small>مسار في هذا الموقع. الرابط الكامل يُقبل ويُختصر إلى مساره.</small>
+              </label>
+              <button type="submit" disabled={to.trim().length < 2}>
+                احفظ التوجيه
+              </button>
+            </form>
+          </td>
+        </tr>
       ) : null}
-    </li>
+    </>
   );
 }
 

@@ -74,8 +74,27 @@ type Block = Prisma.InputJsonObject;
 
 /** A numbered or colon-terminated line is a heading in all four of these. */
 function isHeading(line: string): boolean {
-  if (/^\d+\s*[-–.)]\s*\S/.test(line)) return true;
+  /*
+   * `\S` after the separator was too generous: "3–7 Business Days" matched,
+   * the `3–` was stripped as a section number, and the English refund page
+   * grew a heading that read "7 Business Days". A digit straight after the
+   * dash is a range, not a numbered clause.
+   */
+  if (/^\d{1,2}\s*[-–.)]\s*(?!\d)\S/.test(line)) return true;
   return line.length < 80 && line.endsWith(':');
+}
+
+/**
+ * A line that is nothing but a small number.
+ *
+ * Elementor draws a numbered section as two elements — a badge holding "2" and
+ * a title beside it — so the flattened text has the number alone on its line
+ * and the heading on the next. Read separately they are a paragraph saying "2"
+ * followed by a paragraph of prose, which is how the English refund policy
+ * lost all five of its section headings.
+ */
+function isSectionNumber(line: string): boolean {
+  return /^\d{1,2}$/.test(line);
 }
 
 /** Short lines directly under a heading read as a list in the original. */
@@ -122,7 +141,19 @@ function toBlocks(text: string, title: string): Block[] {
     if (isHeading(line)) {
       flushList();
       flushParagraph();
-      blocks.push({ type: 'heading', level: 2, text: line.replace(/^\d+\s*[-–.)]\s*/, '') });
+      blocks.push({ type: 'heading', level: 2, text: line.replace(/^\d{1,2}\s*[-–.)]\s*/, '') });
+      continue;
+    }
+
+    // A bare number and the line under it are one heading, and the number is
+    // dropped: the new page numbers nothing, so keeping it would be a label
+    // pointing at a scheme that no longer exists.
+    const following = lines[index + 1];
+    if (isSectionNumber(line) && following !== undefined && following.length > 3) {
+      flushList();
+      flushParagraph();
+      blocks.push({ type: 'heading', level: 2, text: following });
+      index += 1;
       continue;
     }
 
@@ -153,18 +184,38 @@ function toBlocks(text: string, title: string): Block[] {
 }
 
 function plainText(html: string): string {
-  return html
-    .replace(/\[\/?[^\]]+\]/g, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&#8211;/g, '–')
-    .replace(/&#8217;/g, '’')
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+  return (
+    html
+      /*
+       * A stylesheet is not prose, and stripping tags is not enough to tell
+       * the difference.
+       *
+       * `<style>` has a text node inside it: remove the tags and its contents
+       * survive as text. The English refund policy carries one 5,686-character
+       * Elementor stylesheet, so it converted into eighty-two paragraphs each
+       * reading `.da-en-card{background:#fff;…}`. The page was demoted to
+       * draft rather than published, which is the only reason a payment
+       * provider never read it.
+       *
+       * These go before the tag strip, because after it there is nothing left
+       * to recognise them by. The HTML comment goes with them — this one held
+       * the author's note to themselves about where to paste the block.
+       */
+      .replace(/<style[\s\S]*?<\/style>/gi, '\n')
+      .replace(/<script[\s\S]*?<\/script>/gi, '\n')
+      .replace(/<!--[\s\S]*?-->/g, '\n')
+      .replace(/\[\/?[^\]]+\]/g, '\n')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&#8211;/g, '–')
+      .replace(/&#8217;/g, '’')
+      .replace(/&quot;/g, '"')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+  );
 }
 
 async function main(): Promise<void> {
@@ -193,6 +244,8 @@ async function main(): Promise<void> {
     byPath.set(decodeURIComponent(new URL(link).pathname), { link, content, id });
   }
 
+  const rewrite = process.argv.includes('--rewrite');
+
   let created = 0;
   let skipped = 0;
 
@@ -211,11 +264,33 @@ async function main(): Promise<void> {
 
     const existing = await prisma.page.findUnique({
       where: { slug_locale: { slug: page.slug, locale: page.locale } },
-      select: { id: true },
+      select: { id: true, status: true },
     });
-    if (existing) {
+
+    /*
+     * `--rewrite` re-converts a page that is still a draft, and only that.
+     *
+     * The plain rule — never touch a page that exists — is right, because by
+     * the second run somebody may have edited it. But it also meant that a
+     * page this script had converted *badly* could never be converted again,
+     * and the English refund policy sat as a draft full of stylesheet for
+     * exactly that reason. A published page is somebody's decision and is
+     * still never overwritten; a draft is the conversion's own output, and
+     * the conversion is allowed to correct it.
+     */
+    if (existing && !(rewrite && existing.status === PublishStatus.DRAFT)) {
       skipped += 1;
       console.log(`  kept  ${page.slug} (${page.locale}) — already present`);
+      continue;
+    }
+
+    if (existing) {
+      await prisma.page.update({
+        where: { id: existing.id },
+        data: { title: page.title, blocks },
+      });
+      created += 1;
+      console.log(`  redid ${page.slug} (${page.locale}) — ${String(blocks.length)} blocks, still a draft`);
       continue;
     }
 

@@ -77,6 +77,15 @@ const POLICY_PAGES = [
     isSpecial: true,
   },
   { slug: 'terms', ar: 'سياسة الاستخدام والخدمة', en: 'Terms of Service', isSpecial: false },
+  /*
+   * The refund policy, which was published and linked from nowhere.
+   *
+   * It is the page a buyer looks for before typing a card number and the page
+   * a payment provider asks for by URL during onboarding — and on a store
+   * selling a product that cannot be posted back, it is the one policy that
+   * answers the question everybody actually has.
+   */
+  { slug: 'refunds', ar: 'سياسة الاسترجاع', en: 'Refund Policy', isSpecial: false },
   { slug: 'privacy', ar: 'سياسة الخصوصية وأمان البيانات', en: 'Privacy Policy', isSpecial: false },
   { slug: 'contact', ar: 'مركز الدعم والتذاكر', en: 'Support Center', isSpecial: false },
 ];
