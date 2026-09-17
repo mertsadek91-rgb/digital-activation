@@ -74,6 +74,35 @@ function main(): void {
     process.exit(1);
   }
 
+  /*
+   * More than one line is not a password.
+   *
+   * This file is meant to hold one secret and nothing else, but it is a text
+   * file open in an editor and the obvious thing to do with one is paste. The
+   * first time it was used it received a block of settings — 125 characters
+   * across several lines — and this script dutifully percent-encoded the
+   * newlines and built a URL out of them. Microsoft answered `535 5.7.3
+   * Authentication unsuccessful`, which is the same thing it says to a mailbox
+   * with SMTP AUTH switched off, so the next half hour went into the Exchange
+   * admin center looking for a permission that had never been off.
+   *
+   * A tool that accepts obvious nonsense and lets the blame land somewhere
+   * else is worse than one that refuses. The file is left alone rather than
+   * shredded, because the fix is to edit it.
+   */
+  if (/[\r\n]/.test(password)) {
+    const lines = password.split(/\r?\n/).length;
+    console.error(
+      [
+        `${path.relative(ROOT, PASSWORD_FILE)} has ${String(lines)} lines. A password is one.`,
+        '',
+        'Open it and leave only the password itself — no variable name, no quotes,',
+        'no blank line after it. Nothing was written and the file is untouched.',
+      ].join('\n'),
+    );
+    process.exit(1);
+  }
+
   // 465 is implicit TLS from the first byte; 587 opens in the clear and
   // upgrades with STARTTLS. nodemailer reads that from the scheme, not the
   // port, so the scheme has to agree with the port or the handshake hangs.
