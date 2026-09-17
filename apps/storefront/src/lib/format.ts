@@ -109,11 +109,32 @@ export function formatDelivery(
   return ar ? `خلال ${window} من إتمام الشراء` : `Within ${window} of purchase`;
 }
 
-/** How the store describes the way a line is supplied. */
-export function formatFulfillment(mode: FulfillmentMode, locale: string): string {
+/**
+ * How the store describes the way a line is supplied.
+ *
+ * `inStock` is not decoration. The three variants this shop sells most —
+ * Windows 11 Pro, Windows 10 Pro, Office 2021 — are the ones kept in stock,
+ * and when the shelf is empty the page said "متوفّر لدينا — يُسلَّم فوراً"
+ * two lines above a buy box saying "غير متوفر حالياً". A specification table
+ * that contradicts the button beside it is worse than a missing row: the
+ * shopper has to decide which half of the page to believe.
+ *
+ * It is optional because the cart calls this about a line already held, where
+ * availability is settled and the mode is all there is to say.
+ */
+export function formatFulfillment(
+  mode: FulfillmentMode,
+  locale: string,
+  inStock?: boolean,
+): string {
   const ar = locale === 'ar';
   switch (mode) {
     case 'FROM_STOCK':
+      if (inStock === false) {
+        return ar
+          ? 'من مخزوننا — نفد حالياً، ويعود قريباً'
+          : 'From our own stock — none left right now';
+      }
       return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
     case 'ON_DEMAND':
       return ar

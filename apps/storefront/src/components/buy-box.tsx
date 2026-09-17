@@ -156,7 +156,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     {
       kind: 'supply',
       label: ar ? 'طريقة التوريد' : 'How it is supplied',
-      value: formatFulfillment(selected.fulfillmentMode, locale),
+      value: formatFulfillment(selected.fulfillmentMode, locale, selected.inStock),
     },
     {
       kind: 'platform',

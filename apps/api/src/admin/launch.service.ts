@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import type { LaunchCheck, LaunchReadiness } from '@da/contracts';
-import { PublishStatus } from '@da/db';
+import { FulfillmentMode, Locale, PublishStatus } from '@da/db';
 
 import { PaymentSettingsService } from '../checkout/payment-settings.service.js';
 import { MailService } from '../mail/mail.service.js';
@@ -42,6 +42,7 @@ export class LaunchService {
     const checks = [
       await this.payment(),
       await this.catalog(),
+      await this.sellable(),
       await this.policies(),
       await this.keys(),
       await this.mail(),
@@ -125,6 +126,70 @@ export class LaunchService {
       title: 'الكتالوج',
       detail: `${String(published)} من ${String(total)} منشور.`,
       fix: '/products',
+    };
+  }
+
+  /**
+   * Published, and actually buyable.
+   *
+   * These are not the same question, and the catalog check above only answers
+   * the first. A variant supplied `FROM_STOCK` needs keys in the vault; with
+   * none, the product page is complete, indexed, linked from the home page,
+   * and the add-to-cart button answers «نفدت الكمية من هذا المتغيّر».
+   *
+   * It is a warning rather than a blocker because the rest of the catalog
+   * still sells — and it is here at all because when this was written the
+   * three variants concerned were Windows 11 Pro, Windows 10 Pro and Office
+   * 2021 Pro Plus. The store could report "72 of 73 published" while the three
+   * products it is best known for could not be put in a basket.
+   *
+   * `ON_DEMAND` and `MANUAL_SETUP` are ordered after the sale and have no
+   * shelf to be empty, so they are not counted.
+   */
+  private async sellable(): Promise<LaunchCheck> {
+    const stocked = await this.prisma.client.variant.findMany({
+      where: {
+        status: PublishStatus.PUBLISHED,
+        product: { status: PublishStatus.PUBLISHED },
+        fulfillmentMode: FulfillmentMode.FROM_STOCK,
+      },
+      select: {
+        sku: true,
+        inventory: { select: { onHand: true, reserved: true } },
+        product: { select: { translations: { where: { locale: Locale.AR }, select: { name: true } } } },
+      },
+    });
+
+    const empty = stocked.filter(
+      (variant) => (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0) <= 0,
+    );
+
+    if (empty.length === 0) {
+      return {
+        key: 'sellable',
+        severity: 'ready',
+        title: 'المخزون',
+        detail:
+          stocked.length === 0
+            ? 'لا متغيّر يُباع من المخزون — كل المنشور يُطلَب من المورّد بعد الشراء.'
+            : `${String(stocked.length)} متغيّراً يُباع من المخزون، وكلّها متوفّرة.`,
+        fix: '/vault',
+      };
+    }
+
+    // Named, not counted: "three variants" sends somebody to a list to work
+    // out which three, and the names are the whole point of the warning.
+    const names = empty
+      .map((variant) => variant.product.translations[0]?.name ?? variant.sku)
+      .slice(0, 4)
+      .join('، ');
+
+    return {
+      key: 'sellable',
+      severity: 'warning',
+      title: 'منشور ولا يمكن شراؤه',
+      detail: `${String(empty.length)} من ${String(stocked.length)} متغيّراً يُباع من المخزون نفد: ${names}. صفحاتها منشورة ومفهرسة، وزرّ الشراء يرفض.`,
+      fix: '/vault',
     };
   }
 
