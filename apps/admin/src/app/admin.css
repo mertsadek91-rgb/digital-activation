@@ -2117,11 +2117,20 @@ tr.drawer td > * {
 
 /* --- Dashboard Cards Refinements (Orders, Messages, Promotions) --- */
 
-/* Constrain and organize the list of cards so they don't stretch indefinitely */
+/*
+ * `auto-fit`, not `auto-fill`.
+ *
+ * `auto-fill` keeps the tracks it could fit whether or not anything is in
+ * them. At a content width of ~1100px a `minmax(32rem, 1fr)` track list makes
+ * two, so a page holding one order drew the card at half the width with the
+ * other half blank — which is what these lists looked like on every screen
+ * where the shop had one of something. `auto-fit` collapses the empty track
+ * and lets the single card take the row.
+ */
 .queue-list {
   display: grid !important;
   /* Instead of a single stretching column, use a masonry-like grid on wide screens */
-  grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(32rem, 1fr)) !important;
   gap: var(--spacing-3) !important;
   margin-top: var(--spacing-2);
 }
@@ -2193,7 +2202,7 @@ tr.drawer td > * {
 /* 1. Launch / Readiness Rows */
 .launch-list {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr)) !important;
   gap: var(--spacing-2) !important;
 }
 .launch-row {
@@ -2226,7 +2235,7 @@ tr.drawer td > * {
 /* 2. URL Redirects / Not Found Rows */
 .notfound-list {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(32rem, 1fr)) !important;
   gap: var(--spacing-2) !important;
 }
 .notfound-row {
@@ -2251,7 +2260,7 @@ tr.drawer td > * {
 
 /* 3. Payments Grid & Vault Keys Grid */
 .pay-grid {
-  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)) !important;
 }
 .pay-localised {
   background: var(--color-bg) !important;
@@ -2268,7 +2277,7 @@ tr.drawer td > * {
 
 .key-list {
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(28rem, 1fr)) !important;
   gap: var(--spacing-2) !important;
 }
 .key-list li {
@@ -2888,7 +2897,7 @@ tr.drawer td > * {
   margin-block-end: 20px !important;
   box-shadow: var(--shadow-sm) !important;
   display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
   gap: 12px !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -3014,6 +3023,17 @@ tr.drawer td > * {
 .orders-table {
   inline-size: 100%;
   border-collapse: collapse;
+  /*
+   * A floor, so the table scrolls inside `.table-scroll` instead of crushing.
+   *
+   * Without it eight columns squeeze into whatever is left beside the sidebar:
+   * at 1150px the customer column collapsed to about thirty pixels and the
+   * email wrapped one character per line, a hundred-pixel-tall row spelling
+   * `m e r t . s a d e k` downwards. The document reported no overflow the
+   * whole time, because the scroll container was absorbing it — which is what
+   * it is for, once the table is allowed to ask for the width it needs.
+   */
+  min-inline-size: 52rem;
 }
 .orders-table th {
   text-align: start;
@@ -3053,11 +3073,21 @@ tr.drawer td > * {
   white-space: nowrap;
 }
 .order-customer {
+  min-inline-size: 15rem;
   max-inline-size: 22rem;
 }
 .order-customer strong,
 .order-customer span {
   display: block;
+}
+/*
+ * `anywhere` breaks between any two characters, which is right for an IBAN and
+ * catastrophic for an address: it is what turned this column into a vertical
+ * column of letters. `break-word` only breaks a word that would otherwise
+ * overflow, and the column is now wide enough that none does.
+ */
+.order-customer span {
+  overflow-wrap: break-word;
 }
 .order-customer strong {
   font-size: var(--text-sm);
@@ -3076,8 +3106,17 @@ tr.drawer td > * {
   font-size: var(--text-xs);
   white-space: nowrap;
 }
-.order-payments {
-  max-inline-size: 18rem;
+.orders-table td,
+.orders-table th {
+  /* Nothing in this table benefits from a cell taller than its content. */
+  vertical-align: middle;
+}
+.order-payments-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
 }
 .order-payment-tag {
   display: block;

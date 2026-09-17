@@ -176,7 +176,6 @@ export default function OrdersPage() {
                 <th>العميل</th>
                 <th className="num">البنود</th>
                 <th className="num">الإجمالي</th>
-                <th>الدفع</th>
                 <th>التاريخ</th>
                 <th />
               </tr>
@@ -209,7 +208,7 @@ export default function OrdersPage() {
 }
 
 /** The number of columns the detail row has to span. Kept beside the header. */
-const COLUMNS = 8;
+const COLUMNS = 7;
 
 function OrderRow({
   row,
@@ -305,21 +304,6 @@ function OrderRow({
 
         <td className="num order-total" dir="ltr">
           ${row.totalUsd}
-        </td>
-
-        {/* Always a cell, even when there is nothing in it. A column that
-            disappears on some rows is a column the eye cannot run down. */}
-        <td className="order-payments">
-          {row.payments.length === 0 ? (
-            <span className="meta">—</span>
-          ) : (
-            row.payments.map((payment, index) => (
-              <span key={index} className="order-payment-tag" dir="ltr">
-                {payment.provider} · {payment.state}
-                {payment.reference ? ` (${payment.reference})` : ''}
-              </span>
-            ))
-          )}
         </td>
 
         <td className="order-date" dir="ltr">
@@ -456,6 +440,29 @@ function OrderRow({
 
               {detail ? (
                 <>
+                  {/* Moved out of the row.
+                      Eight columns did not fit beside the sidebar, and this was
+                      the one that is detail rather than scan-data: it is empty
+                      on most orders, the status column already says whether
+                      payment is outstanding, and the part worth reading — the
+                      provider's reference, against a bank statement — needs
+                      more room than a cell in a list can give it. */}
+                  {row.payments.length > 0 ? (
+                    <div className="detail-section">
+                      <h3 className="detail-heading">💳 المدفوعات ({row.payments.length})</h3>
+                      <ul className="order-payments-list">
+                        {row.payments.map((payment, index) => (
+                          <li key={index} dir="ltr">
+                            <span className="order-payment-tag">
+                              {payment.provider} · {payment.state}
+                              {payment.reference ? ` (${payment.reference})` : ''}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   <div className="detail-section">
                     <h3 className="detail-heading">📦 بنود الطلب ({detail.lines.length})</h3>
                     <ul className="order-items-list">
