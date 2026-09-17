@@ -4,7 +4,6 @@ import { BRAND } from '@da/ui';
 
 import {
   BoltIcon,
-  BrandLogoIcon,
   CreditCardIcon,
   GlobeIcon,
   InstagramIcon,
@@ -16,6 +15,7 @@ import {
   XIcon,
 } from './icons';
 import { PaymentsBar } from './product-trust';
+import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
 const WHATSAPP_DIAL = '966534255367';
@@ -119,17 +119,19 @@ export function SiteFooter({
         <div className="footer-main-container">
           {/* Col 1: Brand, Trust & Social */}
           <div className="footer-brand-column">
-            <Link href={`${prefix}${ROUTES.home}`} className="footer-brand-header">
-              <span className="footer-brand-symbol">
-                <BrandLogoIcon size={34} />
-              </span>
-              <div className="footer-brand-titles">
-                <span className="footer-brand-name">{ar ? BRAND.nameAr : BRAND.nameEn}</span>
-                <span className="footer-brand-sub">
-                  {ar ? 'المنصة الرسمية للتراخيص الرقمية' : 'Official Software Activation Hub'}
-                </span>
-              </div>
+            {/* The real logo, which already contains the name — so the name is
+                not set beside it a second time. What stays is the line that
+                says what the shop is, which the mark does not. */}
+            <Link
+              href={`${prefix}${ROUTES.home}`}
+              className="footer-brand-header"
+              aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
+            >
+              <BrandLogo locale={locale} width={148} />
             </Link>
+            <p className="footer-brand-sub">
+              {ar ? 'المنصة الرسمية للتراخيص الرقمية' : 'Official Software Activation Hub'}
+            </p>
 
             <p className="footer-brand-bio">
               {ar

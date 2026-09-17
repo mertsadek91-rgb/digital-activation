@@ -20,6 +20,7 @@ import {
   SupportIcon,
   UserIcon,
 } from './icons';
+import { BrandLogo } from './brand-logo';
 import { SearchBox } from './search-box';
 
 /**
@@ -174,8 +175,12 @@ export function SiteHeader({
           <MenuIcon />
         </button>
 
-        <Link href={`${prefix}${ROUTES.home}`} className="logo">
-          {ar ? BRAND.nameAr : BRAND.nameEn}
+        <Link
+          href={`${prefix}${ROUTES.home}`}
+          className="logo"
+          aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
+        >
+          <BrandLogo locale={locale} width={100} priority />
         </Link>
 
         {collections.length > 0 ? (
@@ -227,7 +232,11 @@ export function SiteHeader({
           <SearchBox locale={locale} />
         </div>
 
-        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link" aria-label={ar ? 'السلة' : 'Cart'}>
+        <Link
+          href={`${prefix}${ROUTES.cart}`}
+          className="cart-link"
+          aria-label={ar ? 'السلة' : 'Cart'}
+        >
           <CartIcon />
           <span className="cart-label">{ar ? 'السلة' : 'Cart'}</span>
           {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
@@ -259,9 +268,10 @@ export function SiteHeader({
                 <Link
                   href={`${prefix}${ROUTES.home}`}
                   className="logo"
+                  aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
                   onClick={() => setDrawerOpen(false)}
                 >
-                  {ar ? BRAND.nameAr : BRAND.nameEn}
+                  <BrandLogo locale={locale} width={100} />
                 </Link>
                 <button
                   type="button"
@@ -279,7 +289,9 @@ export function SiteHeader({
 
               <div className="drawer-body">
                 <nav className="drawer-section">
-                  <span className="drawer-section-title">{ar ? 'التنقل السريع' : 'Navigation'}</span>
+                  <span className="drawer-section-title">
+                    {ar ? 'التنقل السريع' : 'Navigation'}
+                  </span>
                   <Link
                     href={`${prefix}${ROUTES.home}`}
                     className="drawer-link"
@@ -342,7 +354,9 @@ export function SiteHeader({
                 ) : null}
 
                 <div className="drawer-section drawer-account">
-                  <span className="drawer-section-title">{ar ? 'حسابك وتواصلك' : 'Account & Help'}</span>
+                  <span className="drawer-section-title">
+                    {ar ? 'حسابك وتواصلك' : 'Account & Help'}
+                  </span>
                   <Link
                     href={`${prefix}${ROUTES.licenses}`}
                     className="drawer-link"

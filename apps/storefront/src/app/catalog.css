@@ -2725,3 +2725,25 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * The shop's logo.
+ *
+ * `height: auto` against the width Next writes into the element, so the aspect
+ * ratio survives a stylesheet that sets one dimension — the usual way a logo
+ * ends up squashed. Capped at the source's own 200px because there is no larger
+ * original and scaling past it only softens the mark.
+ */
+.brand-logo {
+  display: block;
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: min(100%, 200px);
+}
+/* On a narrow phone the header has a menu button, a cart and a search box to
+   fit beside it. */
+@media (max-width: 26rem) {
+  .site-header .brand-logo {
+    max-inline-size: 88px;
+  }
+}

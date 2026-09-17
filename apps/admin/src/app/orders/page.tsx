@@ -105,8 +105,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <Nav me={me} current="orders" >
-
+    <Nav me={me} current="orders">
       <div className="queue-head">
         <h1>الطلبات</h1>
         <p className="who">
@@ -159,29 +158,60 @@ export default function OrdersPage() {
 
       {data && data.rows.length === 0 ? <p className="notice">لا طلبات في هذا التصنيف.</p> : null}
 
-      <ul className="queue-list">
-        {(data?.rows ?? []).map((row) => (
-          <OrderCard
-            key={row.number}
-            row={row}
-            canConfirm={canConfirm}
-            canResend={canResend}
-            onConfirm={(provider, reference) =>
-              void act(`أُكّد دفع ${row.number}`, () =>
-                api.confirmPayment(row.number, provider, reference),
-              )
-            }
-            onNote={(body) =>
-              void act(`أُضيفت ملاحظة على ${row.number}`, () => api.addOrderNote(row.number, body))
-            }
-          />
-        ))}
-      </ul>
+      {/* A row per order.
+          It was a card per order in a single narrow column: one order filled a
+          screen, the number sat at the top and the total three lines below it,
+          and the left half of the page was empty. Orders are compared — by
+          date, by amount, by who is waiting — and comparison is what a column
+          of cards makes impossible. Every field is a column now, in the same
+          place on every row whether it has a value or not, so the eye can run
+          down one of them. The detail opens underneath the row it belongs to. */}
+      {data && data.rows.length > 0 ? (
+        <div className="table-scroll">
+          <table className="orders-table">
+            <thead>
+              <tr>
+                <th>الطلب</th>
+                <th>الحالة</th>
+                <th>العميل</th>
+                <th className="num">البنود</th>
+                <th className="num">الإجمالي</th>
+                <th>الدفع</th>
+                <th>التاريخ</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.rows ?? []).map((row) => (
+                <OrderRow
+                  key={row.number}
+                  row={row}
+                  canConfirm={canConfirm}
+                  canResend={canResend}
+                  onConfirm={(provider, reference) =>
+                    void act(`أُكّد دفع ${row.number}`, () =>
+                      api.confirmPayment(row.number, provider, reference),
+                    )
+                  }
+                  onNote={(body) =>
+                    void act(`أُضيفت ملاحظة على ${row.number}`, () =>
+                      api.addOrderNote(row.number, body),
+                    )
+                  }
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </Nav>
   );
 }
 
-function OrderCard({
+/** The number of columns the detail row has to span. Kept beside the header. */
+const COLUMNS = 8;
+
+function OrderRow({
   row,
   canConfirm,
   canResend,
@@ -250,237 +280,297 @@ function OrderCard({
   const risky = row.riskLevel === 'HIGH' || row.riskLevel === 'BLOCKED';
 
   return (
-    <li className={`queue-card${risky ? ' is-overdue' : ''}`}>
-      <div className="queue-card-main">
-        <p className="queue-order">
-          <span dir="ltr">{row.number}</span>
+    <>
+      <tr className={`order-row${risky ? ' is-risky' : ''}${open ? ' is-open' : ''}`}>
+        <td>
+          <span className="order-number" dir="ltr">
+            {row.number}
+          </span>
+        </td>
+
+        <td>
           <span className={`pill ${statusPill(row.status)}`}>{STATUS_LABELS[row.status]}</span>
           {risky ? <span className="pill pill-blocked">مخاطرة {row.riskLevel}</span> : null}
           {row.waitingLines > 0 && !awaiting ? (
-            <span className="meta">{row.waitingLines} بند قيد التجهيز</span>
+            <span className="pill pill-draft">{row.waitingLines} قيد التجهيز</span>
           ) : null}
-        </p>
+        </td>
 
-        <p className="queue-product">
+        <td className="order-customer">
+          {row.customerName ? <strong>{row.customerName}</strong> : null}
+          <span dir="ltr">{row.email}</span>
+        </td>
+
+        <td className="num">{row.itemCount}</td>
+
+        <td className="num order-total" dir="ltr">
           ${row.totalUsd}
-          <span className="meta">
-            {' '}
-            · {row.itemCount} بند · {row.placedAt.slice(0, 16).replace('T', ' ')}
-          </span>
-        </p>
+        </td>
 
-        <dl className="queue-meta">
-          <div>
-            <dt>العميل</dt>
-            <dd dir="ltr">
-              {row.customerName ? `${row.customerName} · ` : ''}
-              {row.email}
-            </dd>
-          </div>
-          {row.payments.length > 0 ? (
-            <div>
-              <dt>المدفوعات</dt>
-              <dd dir="ltr">
-                {row.payments.map((payment, index) => (
-                  <span key={index} className="slug">
-                    {payment.provider} {payment.state} {payment.reference ?? '—'}
-                  </span>
-                ))}
-              </dd>
-            </div>
+        {/* Always a cell, even when there is nothing in it. A column that
+            disappears on some rows is a column the eye cannot run down. */}
+        <td className="order-payments">
+          {row.payments.length === 0 ? (
+            <span className="meta">—</span>
+          ) : (
+            row.payments.map((payment, index) => (
+              <span key={index} className="order-payment-tag" dir="ltr">
+                {payment.provider} · {payment.state}
+                {payment.reference ? ` (${payment.reference})` : ''}
+              </span>
+            ))
+          )}
+        </td>
+
+        <td className="order-date" dir="ltr">
+          {row.placedAt.slice(0, 16).replace('T', ' ')}
+        </td>
+
+        <td className="actions">
+          {awaiting && canConfirm ? (
+            <button
+              type="button"
+              className={confirming ? 'ghost is-active' : undefined}
+              onClick={() => {
+                setConfirming(!confirming);
+                setNoting(false);
+              }}
+            >
+              {confirming ? 'إلغاء' : 'أكّد الدفع'}
+            </button>
           ) : null}
-        </dl>
-      </div>
-
-      <div className="queue-actions">
-        {/* Only where it applies. A confirm button on a paid order is a button
-            whose only outcome is an error message. */}
-        {awaiting && canConfirm ? (
-          <button type="button" className="btn-primary" onClick={() => setConfirming(!confirming)}>
-            {confirming ? 'إلغاء' : 'أكّد استلام المبلغ'}
+          <button
+            type="button"
+            className={`ghost${noting ? ' is-active' : ''}`}
+            onClick={() => {
+              setNoting(!noting);
+              setConfirming(false);
+            }}
+          >
+            ملاحظة
           </button>
-        ) : null}
-        <button type="button" className="ghost" onClick={() => setNoting(!noting)}>
-          ملاحظة
-        </button>
-        <button type="button" className="ghost" onClick={() => void toggle()}>
-          {open ? 'أخفِ التفاصيل' : 'التفاصيل'}
-        </button>
-      </div>
+          <button
+            type="button"
+            className={`ghost${open ? ' is-active' : ''}`}
+            aria-expanded={open}
+            onClick={() => void toggle()}
+          >
+            {open ? 'أخفِ' : 'التفاصيل'}
+          </button>
+        </td>
+      </tr>
 
       {confirming ? (
-        <form
-          className="paste-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onConfirm(provider, reference.trim());
-            setReference('');
-            setConfirming(false);
-          }}
-        >
-          <label>
-            الطريقة
-            <select
-              value={provider}
-              onChange={(event) => setProvider(event.target.value as 'BANK_TRANSFER' | 'CRYPTO')}
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onConfirm(provider, reference.trim());
+                setReference('');
+                setConfirming(false);
+              }}
             >
-              <option value="BANK_TRANSFER">تحويل بنكي</option>
-              <option value="CRYPTO">عملة رقمية</option>
-            </select>
-          </label>
-          <label className="grow">
-            المرجع
-            <input
-              type="text"
-              value={reference}
-              onChange={(event) => setReference(event.target.value)}
-              dir="ltr"
-              required
-              minLength={3}
-              placeholder="رقم العملية في كشف الحساب"
-            />
-            <small>
-              يُفرج عن الطلب فوراً ويبدأ التجهيز — ومفتاح من المخزون يُرسَل للعميل. المرجع هو ما
-              يربط هذا التأكيد بكشف حسابك لاحقاً، فاكتبه كما هو.
-            </small>
-          </label>
-          <button type="submit" disabled={reference.trim().length < 3}>
-            أكّد وأفرِج
-          </button>
-        </form>
+              <label>
+                الطريقة
+                <select
+                  value={provider}
+                  onChange={(event) =>
+                    setProvider(event.target.value as 'BANK_TRANSFER' | 'CRYPTO')
+                  }
+                >
+                  <option value="BANK_TRANSFER">تحويل بنكي</option>
+                  <option value="CRYPTO">عملة رقمية</option>
+                </select>
+              </label>
+              <label className="grow">
+                المرجع
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(event) => setReference(event.target.value)}
+                  dir="ltr"
+                  required
+                  minLength={3}
+                  placeholder="رقم العملية في كشف الحساب"
+                />
+                <small>
+                  يُفرج عن الطلب فوراً ويبدأ التجهيز — ومفتاح من المخزون يُرسَل للعميل. المرجع هو ما
+                  يربط هذا التأكيد بكشف حسابك لاحقاً، فاكتبه كما هو.
+                </small>
+              </label>
+              <button type="submit" disabled={reference.trim().length < 3}>
+                أكّد وأفرِج
+              </button>
+            </form>
+          </td>
+        </tr>
       ) : null}
 
       {noting ? (
-        <form
-          className="paste-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onNote(body.trim());
-            setBody('');
-            setNoting(false);
-          }}
-        >
-          <label className="grow">
-            ملاحظة داخلية
-            <textarea
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              rows={3}
-              required
-              minLength={2}
-              placeholder="ما اتُّفق عليه مع العميل"
-            />
-            {/* The one rule about notes, where somebody would otherwise break
-                it: the legacy store delivered keys this way. */}
-            <small>لا تكتب هنا مفتاحاً أو كلمة مرور. التسليم يتم من الخزنة وحدها.</small>
-          </label>
-          <button type="submit" disabled={body.trim().length < 2}>
-            أضِف
-          </button>
-        </form>
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onNote(body.trim());
+                setBody('');
+                setNoting(false);
+              }}
+            >
+              <label className="grow">
+                ملاحظة داخلية
+                <textarea
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  rows={3}
+                  required
+                  minLength={2}
+                  placeholder="ما اتُّفق عليه مع العميل"
+                />
+                <small>لا تكتب هنا مفتاحاً أو كلمة مرور. التسليم يتم من الخزنة وحدها.</small>
+              </label>
+              <button type="submit" disabled={body.trim().length < 2}>
+                أضِف
+              </button>
+            </form>
+          </td>
+        </tr>
       ) : null}
 
       {open ? (
-        <div className="order-detail">
-          {detailError ? <p className="error">{detailError}</p> : null}
-          {resent ? (
-            <p className="ok-note" dir="ltr">
-              {resent}
-            </p>
-          ) : null}
-          {!detail && !detailError ? <p className="meta">…</p> : null}
-
-          {detail ? (
-            <>
-              <h3>البنود</h3>
-              <ul className="line-list">
-                {detail.lines.map((line) => (
-                  <li key={line.orderItemId}>
-                    <div>
-                      <p className="slug" dir="ltr">
-                        {line.sku}
-                      </p>
-                      <p className="meta">
-                        {line.productName}
-                        {line.qty > 1 ? ` · ×${String(line.qty)}` : ''} · {line.fulfillmentState}
-                        {line.deliveredAt
-                          ? ` · ${line.deliveredAt.slice(0, 16).replace('T', ' ')}`
-                          : ''}
-                      </p>
-                    </div>
-                    {/* Only on a delivered line. On anything else the API
-                        refuses, and a button whose only outcome is an error is
-                        worse than no button. */}
-                    {canResend && line.fulfillmentState === 'DELIVERED' ? (
-                      <button
-                        type="button"
-                        disabled={busy !== null}
-                        onClick={() => void resend(line.orderItemId)}
-                      >
-                        {busy === line.orderItemId ? '…' : 'أعِد إرسال الترخيص'}
-                      </button>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-
-              {/*
-                The half of "لم يصلني المفتاح" that is answerable without
-                touching the vault: whether the message went out, where, and
-                whether it failed.
-              */}
-              <h3>الرسائل</h3>
-              {detail.emails.length === 0 ? (
-                <p className="meta">لم تُرسَل أي رسالة على هذا الطلب بعد.</p>
-              ) : (
-                <ul className="mail-log">
-                  {detail.emails.map((mail, index) => (
-                    <li
-                      key={index}
-                      className={(mail.error ?? mail.bouncedAt) ? 'is-bad' : undefined}
-                    >
-                      <span className="slug" dir="ltr">
-                        {mail.template}
-                      </span>
-                      <span dir="ltr">{mail.to}</span>
-                      <span className="meta">{mail.sentAt.slice(0, 16).replace('T', ' ')}</span>
-                      <span className="meta">
-                        {mail.error ??
-                          (mail.bouncedAt ? 'ارتدّت' : mail.deliveredAt ? 'وصلت' : 'أُرسلت')}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {detail.notes.length > 0 ? (
-                <>
-                  <h3>الملاحظات</h3>
-                  <ul className="note-list">
-                    {detail.notes.map((note) => (
-                      <li key={note.id}>
-                        <p>{note.body}</p>
-                        <p className="meta">
-                          {note.author ?? 'غير معروف'} ·{' '}
-                          {note.createdAt.slice(0, 16).replace('T', ' ')}
-                          {note.isCustomerVisible ? ' · ظاهرة للعميل' : ''}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-
-              {detail.activationEmail ? (
-                <p className="meta">
-                  بريد التفعيل: <span dir="ltr">{detail.activationEmail}</span>
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <div className="order-detail">
+              {detailError ? <p className="error">{detailError}</p> : null}
+              {resent ? (
+                <p className="ok-note" dir="ltr">
+                  {resent}
                 </p>
               ) : null}
-            </>
-          ) : null}
-        </div>
+              {!detail && !detailError ? (
+                <p className="meta loading-box">جاري تحميل تفاصيل الطلب…</p>
+              ) : null}
+
+              {detail ? (
+                <>
+                  <div className="detail-section">
+                    <h3 className="detail-heading">📦 بنود الطلب ({detail.lines.length})</h3>
+                    <ul className="order-items-list">
+                      {detail.lines.map((line) => (
+                        <li key={line.orderItemId} className="order-item-card">
+                          <div className="order-item-desc">
+                            <div className="order-item-header">
+                              <span className="order-item-name">{line.productName}</span>
+                              {line.qty > 1 ? (
+                                <span className="item-qty-tag">×{line.qty}</span>
+                              ) : null}
+                            </div>
+                            <div className="order-item-meta">
+                              <span className="item-sku-tag" dir="ltr">
+                                {line.sku}
+                              </span>
+                              <span
+                                className={`pill item-state-pill pill-${line.fulfillmentState.toLowerCase()}`}
+                              >
+                                {line.fulfillmentState}
+                              </span>
+                              {line.deliveredAt ? (
+                                <span className="item-deliv-date">
+                                  سُلّم: {line.deliveredAt.slice(0, 16).replace('T', ' ')}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                          {canResend && line.fulfillmentState === 'DELIVERED' ? (
+                            <button
+                              type="button"
+                              className="ghost btn-resend"
+                              disabled={busy !== null}
+                              onClick={() => void resend(line.orderItemId)}
+                            >
+                              {busy === line.orderItemId ? '…' : 'أعِد إرسال الترخيص'}
+                            </button>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="detail-section">
+                    <h3 className="detail-heading">✉️ سجل الرسائل ({detail.emails.length})</h3>
+                    {detail.emails.length === 0 ? (
+                      <p className="meta empty-state-text">لم تُرسَل أي رسالة على هذا الطلب بعد.</p>
+                    ) : (
+                      <ul className="order-mails-list">
+                        {detail.emails.map((mail, index) => (
+                          <li
+                            key={index}
+                            className={`order-mail-item ${(mail.error ?? mail.bouncedAt) ? 'is-bad' : ''}`}
+                          >
+                            <div className="mail-primary">
+                              <span className="mail-template" dir="ltr">
+                                {mail.template}
+                              </span>
+                              <span className="mail-to" dir="ltr">
+                                {mail.to}
+                              </span>
+                              <span className="mail-date">
+                                {mail.sentAt.slice(0, 16).replace('T', ' ')}
+                              </span>
+                            </div>
+                            <span
+                              className={`pill mail-status ${mail.error || mail.bouncedAt ? 'pill-blocked' : 'pill-published'}`}
+                            >
+                              {mail.error ??
+                                (mail.bouncedAt ? 'ارتدّت' : mail.deliveredAt ? 'وصلت' : 'أُرسلت')}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {detail.notes.length > 0 ? (
+                    <div className="detail-section">
+                      <h3 className="detail-heading">💬 الملاحظات ({detail.notes.length})</h3>
+                      <ul className="order-notes-list">
+                        {detail.notes.map((note) => (
+                          <li key={note.id} className="order-note-item">
+                            <p className="note-text">{note.body}</p>
+                            <div className="note-meta-row">
+                              <span className="note-author">{note.author ?? 'غير معروف'}</span>
+                              <span>·</span>
+                              <span className="note-date">
+                                {note.createdAt.slice(0, 16).replace('T', ' ')}
+                              </span>
+                              {note.isCustomerVisible ? (
+                                <span className="pill pill-published">ظاهرة للعميل</span>
+                              ) : (
+                                <span className="pill pill-draft">داخلية</span>
+                              )}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {detail.activationEmail ? (
+                    <div className="order-activation-banner">
+                      <span>بريد التفعيل:</span>
+                      <strong dir="ltr">{detail.activationEmail}</strong>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          </td>
+        </tr>
       ) : null}
-    </li>
+    </>
   );
 }
 

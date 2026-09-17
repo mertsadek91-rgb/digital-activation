@@ -2114,3 +2114,1021 @@ tr.drawer td > * {
   font-size: var(--text-sm);
   word-break: break-all;
 }
+
+/* --- Dashboard Cards Refinements (Orders, Messages, Promotions) --- */
+
+/* Constrain and organize the list of cards so they don't stretch indefinitely */
+.queue-list {
+  display: grid !important;
+  /* Instead of a single stretching column, use a masonry-like grid on wide screens */
+  grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr)) !important;
+  gap: var(--spacing-3) !important;
+  margin-top: var(--spacing-2);
+}
+
+/* Make the cards themselves look premium */
+.queue-card {
+  display: flex !important;
+  flex-direction: column;
+  padding: var(--spacing-3) !important;
+  background: var(--color-bg) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.queue-card:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-2px);
+}
+
+/* Emphasize the overdue state nicely */
+.queue-card.is-overdue {
+  border-inline-start: 6px solid var(--color-danger) !important;
+}
+
+/* Make the top product/order info clear */
+.queue-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex-grow: 1;
+}
+
+/* Organize the meta info grid at the bottom of the card */
+.queue-meta {
+  margin-top: var(--spacing-3) !important;
+  padding-top: var(--spacing-2) !important;
+  border-top: 1px solid var(--color-border-soft);
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: var(--spacing-3) !important;
+}
+.queue-meta div {
+  flex: 1 1 120px;
+}
+
+/* Ensure actions within cards are well-spaced and at the bottom right */
+.queue-card > .actions {
+  margin-top: var(--spacing-3);
+  padding-top: var(--spacing-2);
+  border-top: 1px solid var(--color-border-soft);
+  justify-content: flex-end;
+  width: 100%;
+}
+
+/* Headings and filters above lists */
+.queue-head {
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-3) !important;
+}
+
+/* --- Unified Modern Refinements for Remaining Pages (Launch, Vault, Redirects, Payments) --- */
+
+/* 1. Launch / Readiness Rows */
+.launch-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)) !important;
+  gap: var(--spacing-2) !important;
+}
+.launch-row {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+.launch-row:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.launch-row.is-blocker {
+  border-inline-start: 4px solid var(--color-danger) !important;
+}
+.launch-row.is-warning {
+  border-inline-start: 4px solid var(--color-warning) !important;
+}
+.launch-row.is-ready {
+  border-inline-start: 4px solid var(--color-success) !important;
+  opacity: 0.8;
+}
+
+/* 2. URL Redirects / Not Found Rows */
+.notfound-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(32rem, 1fr)) !important;
+  gap: var(--spacing-2) !important;
+}
+.notfound-row {
+  background: var(--color-bg) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--spacing-2) !important;
+}
+.notfound-row > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.notfound-row .actions {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+/* 3. Payments Grid & Vault Keys Grid */
+.pay-grid {
+  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr)) !important;
+}
+.pay-localised {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 20px !important;
+  box-shadow: var(--shadow-sm);
+}
+.pay-field {
+  background: var(--color-surface) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+}
+
+.key-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr)) !important;
+  gap: var(--spacing-2) !important;
+}
+.key-list li {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Modern Card Actions & Message Body Polish --- */
+
+.queue-card > .queue-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+  margin-top: var(--spacing-3) !important;
+  padding-top: var(--spacing-2) !important;
+  border-top: 1px solid var(--color-border) !important;
+  width: 100% !important;
+}
+
+.queue-actions button,
+.queue-actions a.btn-primary {
+  min-block-size: 36px !important;
+  padding-inline: 14px !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-size: var(--text-xs) !important;
+}
+
+.message-body {
+  margin: var(--spacing-2) 0 0 !important;
+  padding: 14px 16px !important;
+  background: var(--color-surface) !important;
+  border-radius: var(--radius-md) !important;
+  border-inline-start: 4px solid var(--color-brand) !important;
+  line-height: 1.6 !important;
+  font-size: var(--text-sm) !important;
+  color: var(--color-ink) !important;
+}
+
+/* Premium Auth Card */
+.auth {
+  background: radial-gradient(
+    circle at top,
+    var(--color-surface) 0%,
+    var(--color-bg) 100%
+  ) !important;
+}
+
+.auth-card {
+  inline-size: min(100%, 28rem) !important;
+  padding: var(--spacing-4) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-strong, #10b981));
+}
+
+.auth-card h1 {
+  font-size: var(--text-2xl) !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  margin-bottom: var(--spacing-2) !important;
+}
+
+.auth-card button[type='submit'] {
+  min-block-size: 44px !important;
+  font-size: var(--text-base) !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md) !important;
+  margin-top: var(--spacing-2) !important;
+}
+
+/* ==========================================================================
+   Comprehensive Orders Page & Order Card Redesign
+   ========================================================================== */
+
+/* 1. Page Header & Store Filter Bar */
+.store-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  padding: 12px 18px !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  margin-bottom: 24px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.sorts {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+}
+
+.sorts .tab {
+  border: none !important;
+  background: transparent !important;
+  color: var(--color-ink-muted) !important;
+  padding: 8px 18px !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 700 !important;
+  min-block-size: 38px !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.sorts .tab:hover:not(.is-active) {
+  background: var(--color-surface) !important;
+  color: var(--color-ink) !important;
+}
+
+.sorts .tab.is-active {
+  background: var(--color-brand) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--color-brand) 35%, transparent) !important;
+}
+
+.lookup-form {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.lookup-form input[type='search'] {
+  min-inline-size: 18rem !important;
+  padding: 9px 16px !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-pill) !important;
+  background: var(--color-surface) !important;
+  font-size: var(--text-sm) !important;
+  transition: all 0.2s ease !important;
+}
+
+.lookup-form input[type='search']:focus {
+  background: var(--color-bg) !important;
+  border-color: var(--color-brand) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 25%, transparent) !important;
+}
+
+.lookup-form button {
+  min-block-size: 40px !important;
+  padding-inline: 20px !important;
+  border-radius: var(--radius-pill) !important;
+  font-weight: 700 !important;
+  font-size: var(--text-sm) !important;
+  background: var(--color-brand-soft) !important;
+  color: var(--color-brand-ink) !important;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.lookup-form button:hover {
+  background: var(--color-brand) !important;
+  color: #ffffff !important;
+}
+
+/* 2. Full-Width Orders List (Eliminates phantom column empty space) */
+.orders-queue-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 3. The Order Card */
+.order-card {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 24px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease !important;
+}
+
+.order-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.order-card.is-overdue {
+  border-inline-start: 6px solid var(--color-danger) !important;
+}
+
+.order-card.is-open {
+  border-color: color-mix(in srgb, var(--color-brand) 40%, var(--color-border)) !important;
+}
+
+/* 3.1 Order Card Header */
+.order-card-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  flex-wrap: wrap !important;
+}
+
+.order-primary-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.order-number-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.order-number {
+  font-family: var(--font-mono) !important;
+  font-size: 1.3rem !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.order-date-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+  font-weight: 500 !important;
+}
+
+.order-price-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 8px 18px !important;
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 28%, transparent) !important;
+  border-radius: var(--radius-pill) !important;
+}
+
+.order-price-value {
+  font-family: var(--font-sans) !important;
+  font-size: 1.45rem !important;
+  font-weight: 800 !important;
+  color: var(--color-brand-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* 3.2 Order Card Body & Customer Info */
+.order-card-body {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 24px !important;
+  margin-top: 18px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid var(--color-border) !important;
+}
+
+.order-info-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: var(--color-surface) !important;
+  padding: 8px 14px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.order-info-title {
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+  color: var(--color-ink-muted) !important;
+  white-space: nowrap !important;
+}
+
+.order-info-text {
+  font-size: var(--text-sm) !important;
+  color: var(--color-ink) !important;
+}
+
+.order-payments-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.order-payment-tag {
+  font-size: var(--text-xs) !important;
+  font-family: var(--font-mono) !important;
+  background: var(--color-bg) !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+/* 3.3 Order Action Bar */
+.order-actions-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  margin-top: 18px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid var(--color-border) !important;
+  flex-wrap: wrap !important;
+}
+
+.order-actions-bar button {
+  min-block-size: 38px !important;
+  padding-inline: 16px !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.order-actions-bar .btn-confirm-pay {
+  background: var(--color-brand) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-brand) 30%, transparent) !important;
+}
+.order-actions-bar .btn-confirm-pay:hover {
+  background: var(--color-brand-hover) !important;
+}
+
+.order-actions-bar button.ghost {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-ink) !important;
+}
+.order-actions-bar button.ghost:hover {
+  background: var(--color-surface-2) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.order-actions-bar button.ghost.is-active {
+  background: var(--color-brand-soft) !important;
+  color: var(--color-brand-ink) !important;
+  border-color: var(--color-brand) !important;
+}
+
+/* 3.4 Order Action Inline Form */
+.order-action-form {
+  background: var(--color-surface) !important;
+  padding: 16px 20px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  margin-top: 16px !important;
+}
+
+/* 4. Expanded Order Details */
+.order-detail {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 24px !important;
+  margin-top: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+.detail-section {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+.detail-heading {
+  margin: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+/* 4.1 Order Items List */
+.order-items-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.order-item-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 14px !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 14px 18px !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.order-item-desc {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.order-item-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.order-item-name {
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+}
+
+.item-qty-tag {
+  font-size: var(--text-xs) !important;
+  font-weight: 800 !important;
+  background: var(--color-brand-soft) !important;
+  color: var(--color-brand-ink) !important;
+  padding: 2px 8px !important;
+  border-radius: var(--radius-pill) !important;
+}
+
+.order-item-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+.item-sku-tag {
+  font-family: var(--font-mono) !important;
+  font-size: var(--text-xs) !important;
+  background: var(--color-surface) !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.item-deliv-date {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.btn-resend {
+  min-block-size: 34px !important;
+  padding-inline: 14px !important;
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* 4.2 Order Emails List */
+.order-mails-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.order-mail-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 14px !important;
+}
+
+.mail-primary {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.mail-template {
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink) !important;
+}
+
+.mail-to {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.mail-date {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+/* 4.3 Order Notes */
+.order-notes-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.order-note-item {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.note-text {
+  margin: 0 !important;
+  font-size: var(--text-sm) !important;
+  color: var(--color-ink) !important;
+  line-height: 1.5 !important;
+}
+
+.note-meta-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.order-activation-banner {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 12px 16px !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  font-size: var(--text-sm) !important;
+}
+
+/* ==========================================================================
+   Full-Width Drawer & Overflow Fix (Products & Vault)
+   ========================================================================== */
+
+/* 1. Eliminate arbitrary 48rem width cap on drawer rows */
+tr.drawer td {
+  padding: 20px 24px !important;
+  background: var(--color-surface-2) !important;
+  border-bottom: 2px solid var(--color-border) !important;
+  box-sizing: border-box !important;
+}
+
+tr.drawer td > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-inline: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. Multi-column, full-width readiness checklist */
+.checks {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 18px 22px !important;
+  margin-block-end: 20px !important;
+  box-shadow: var(--shadow-sm) !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.checks li {
+  padding: 10px 14px !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  border-radius: var(--radius-md) !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+}
+
+/* 3. Full-width form layout with zero overflow */
+.paste-form {
+  background: var(--color-bg) !important;
+  padding: 24px 28px !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border) !important;
+  box-shadow: var(--shadow-sm) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.paste-form label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.paste-form .grow {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Force all inputs to strictly respect border-box and container boundaries */
+.paste-form input,
+.paste-form textarea,
+.paste-form select {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--color-border-strong) !important;
+  background: var(--color-bg) !important;
+  color: var(--color-ink) !important;
+  font-size: var(--text-sm) !important;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s !important;
+}
+
+.paste-form textarea {
+  font-family: var(--font-mono) !important;
+  min-height: 140px !important;
+  resize: vertical !important;
+  line-height: 1.5 !important;
+}
+
+.paste-form input:focus,
+.paste-form textarea:focus,
+.paste-form select:focus {
+  border-color: var(--color-brand) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent) !important;
+}
+
+/* Rich Text Editor full containment */
+.rte-container,
+.rte-toolbar,
+.rte-textarea,
+.rte-preview {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Vault Key Entry Form specific styles */
+.vault-section .paste-form textarea {
+  min-height: 200px !important;
+  font-size: 0.85rem !important;
+}
+
+/* --- orders --------------------------------------------------------------- */
+
+/*
+ * A row per order.
+ *
+ * It was a card per order stacked in one narrow column: a single order filled
+ * the screen, its number sat at the top and its total three lines below, and
+ * half the page was empty. Orders are read by comparison — which is oldest,
+ * which is largest, who is still waiting — and a column of cards makes every
+ * one of those comparisons impossible.
+ *
+ * Every field has a column, and the cell is rendered whether or not it has a
+ * value: a column that vanishes on some rows is a column the eye cannot run
+ * down. The detail opens in a row beneath the one it belongs to, spanning the
+ * full width, so nothing shifts sideways when it does.
+ */
+.orders-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+.orders-table th {
+  text-align: start;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-block-end: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.orders-table th.num,
+.orders-table td.num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.orders-table td {
+  padding: 10px;
+  border-block-end: 1px solid var(--color-border);
+  vertical-align: top;
+  font-size: var(--text-sm);
+}
+.order-row:hover > td {
+  background: var(--color-surface);
+}
+/* A risky order is marked on the row, not only in a pill, because the pill is
+   one cell and the decision is about the whole order. */
+.order-row.is-risky > td {
+  background: #fff8f5;
+}
+.order-row.is-open > td {
+  border-block-end-color: transparent;
+}
+
+.orders-table .order-number {
+  font-family: Consolas, Menlo, monospace;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.order-customer {
+  max-inline-size: 22rem;
+}
+.order-customer strong,
+.order-customer span {
+  display: block;
+}
+.order-customer strong {
+  font-size: var(--text-sm);
+}
+.order-customer span {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+.order-total {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.order-date {
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.order-payments {
+  max-inline-size: 18rem;
+}
+.order-payment-tag {
+  display: block;
+}
+.order-payment-tag {
+  font-size: var(--text-xs);
+  font-family: Consolas, Menlo, monospace;
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+/*
+ * Spacing inside a cell, without turning the cell into a flex container.
+ *
+ * `display: flex` on a `td` takes it out of the table layout algorithm, so its
+ * width stops being negotiated with the header above it and the column drifts
+ * out of line. Margins do the same job and leave the cell a cell.
+ */
+.orders-table td:nth-child(2) {
+  max-inline-size: 13rem;
+}
+.orders-table td:nth-child(2) .pill {
+  margin-inline-end: 4px;
+  margin-block-end: 4px;
+}
+/* The three controls sat edge to edge: `white-space: nowrap` keeps them on one
+   line and says nothing about the space between them, and buttons with no gap
+   read as one segmented control rather than three separate decisions — one of
+   which releases money. */
+/* The three controls sat edge to edge: `white-space: nowrap` keeps them on one
+   line and says nothing about the space between them, and buttons with no gap
+   read as one segmented control rather than three separate decisions — one of
+   which releases money. */
+.orders-table td.actions {
+  white-space: nowrap;
+  text-align: end;
+}
+.orders-table td.actions button {
+  min-block-size: 32px;
+  font-size: var(--text-xs);
+  padding-inline: 12px;
+}
+.orders-table td.actions button + button {
+  margin-inline-start: 8px;
+}
+
+/* The drawer: forms and the full detail, under the row they belong to. */
+.order-drawer > td {
+  padding: 0 10px 14px;
+  background: var(--color-surface);
+}
+.order-drawer .order-detail,
+.order-drawer .order-action-form {
+  margin-block-start: 0;
+}

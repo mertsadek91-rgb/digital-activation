@@ -2,6 +2,12 @@
 @import '@da/ui/tokens.css';
 @import './admin.css';
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   background: var(--color-surface);
