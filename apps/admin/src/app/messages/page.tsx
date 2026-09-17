@@ -104,11 +104,10 @@ export default function MessagesPage() {
 
   return (
     <Nav
-        me={me}
-        current="messages"
-        {...(inbox ? { messagesWaiting: inbox.waiting, messagesOverdue: inbox.overdue } : {})}
-      >
-
+      me={me}
+      current="messages"
+      {...(inbox ? { messagesWaiting: inbox.waiting, messagesOverdue: inbox.overdue } : {})}
+    >
       <div className="queue-head">
         <h1>الرسائل</h1>
         <p className="who">
@@ -144,21 +143,45 @@ export default function MessagesPage() {
         </p>
       ) : null}
 
-      <ul className="queue-list">
-        {(inbox?.rows ?? []).map((row) => (
-          <MessageCard
-            key={row.id}
-            row={row}
-            canWork={canWork}
-            onMark={(status) => void mark(row, status)}
-          />
-        ))}
-      </ul>
+      {/* A row per message.
+          The card carried the whole message text, so five messages were five
+          screens and the oldest — the one that matters — was furthest from the
+          eye. The wait is a column now; the message opens under the row that
+          owns it. */}
+      {inbox && inbox.rows.length > 0 ? (
+        <div className="table-scroll">
+          <table className="admin-table messages-table">
+            <thead>
+              <tr>
+                <th>الموضوع</th>
+                <th>المُرسِل</th>
+                <th>البريد</th>
+                <th>رقم الطلب</th>
+                <th>الانتظار</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {(inbox?.rows ?? []).map((row) => (
+                <MessageRow
+                  key={row.id}
+                  row={row}
+                  canWork={canWork}
+                  onMark={(status) => void mark(row, status)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </Nav>
   );
 }
 
-function MessageCard({
+/** Columns the drawer spans. */
+const COLUMNS = 6;
+
+function MessageRow({
   row,
   canWork,
   onMark,
@@ -168,6 +191,14 @@ function MessageCard({
   onMark: (status: 'NEW' | 'HANDLED') => void;
 }) {
   const [copied, setCopied] = useState<string | null>(null);
+  /**
+   * Whether the message itself is showing.
+   *
+   * Closed by default, which is the whole point of the row: the card carried
+   * the entire message body, so five messages were five screens and the oldest
+   * — the one that matters — was furthest from the eye.
+   */
+  const [open, setOpen] = useState(false);
   const handled = row.status === 'HANDLED';
   const overdue = !handled && row.waitingSeconds > CONTACT_REPLY_HOURS * 3600;
 
@@ -182,115 +213,96 @@ function MessageCard({
   }
 
   return (
-    <li className={`queue-card${overdue ? ' is-overdue' : ''}${handled ? ' is-settled' : ''}`}>
-      <div className="queue-card-main">
-        <p className="queue-order">
+    <>
+      <tr className={`message-row${overdue ? ' is-overdue' : ''}${handled ? ' is-settled' : ''}`}>
+        <td>
           <span className={`pill ${TOPIC_TONE[row.topic]}`}>{TOPIC_LABELS[row.topic]}</span>
           {overdue ? <span className="pill pill-blocked">متأخّرة</span> : null}
-          {handled ? (
-            <span className="meta">أُجيبت{row.handledBy ? ` — ${row.handledBy}` : ''}</span>
-          ) : null}
-        </p>
+        </td>
 
-        <p className="queue-product">
-          {row.name}
-          {row.customer ? (
-            // Who they are, without a search: a message from somebody with
-            // eleven orders behind them is not the same message.
-            <span className="meta">
-              {' '}
-              — عميل، {row.customer.orderCount} طلباً بقيمة ${row.customer.totalSpentUsd}
-            </span>
-          ) : (
-            <span className="meta"> — لا حساب بهذا البريد</span>
-          )}
-        </p>
+        <td className="message-sender">
+          <strong>{row.name}</strong>
+          {/* Who they are, without a search: a message from somebody with
+              eleven orders behind them is not the same message. */}
+          <span className="meta">
+            {row.customer
+              ? `عميل · ${String(row.customer.orderCount)} طلباً بقيمة $${row.customer.totalSpentUsd}`
+              : 'لا حساب بهذا البريد'}
+          </span>
+        </td>
 
-        <dl className="queue-meta">
-          <div>
-            <dt>البريد</dt>
-            <dd dir="ltr">
-              {row.email}
-              <button
-                type="button"
-                className="linky"
-                onClick={() => void copy(row.email, 'البريد')}
-              >
-                نسخ
-              </button>
-            </dd>
-          </div>
+        <td className="queue-mail">
+          <span dir="ltr">{row.email}</span>
+          <button type="button" className="linky" onClick={() => void copy(row.email, 'البريد')}>
+            نسخ
+          </button>
           {row.phone ? (
-            <div>
-              <dt>الهاتف</dt>
-              <dd dir="ltr">
-                {row.phone}
-                <button
-                  type="button"
-                  className="linky"
-                  onClick={() => void copy(row.phone ?? '', 'الهاتف')}
-                >
-                  نسخ
-                </button>
-              </dd>
-            </div>
+            <span className="meta" dir="ltr">
+              {row.phone}
+            </span>
           ) : null}
-          {row.orderNumber ? (
-            <div className="queue-activation">
-              <dt>رقم الطلب</dt>
-              <dd dir="ltr">
-                {row.orderNumber}
-                <button
-                  type="button"
-                  className="linky"
-                  onClick={() => void copy(row.orderNumber ?? '', 'رقم الطلب')}
-                >
-                  نسخ
-                </button>
-              </dd>
-            </div>
-          ) : null}
-          <div>
-            <dt>الانتظار</dt>
-            <dd className={overdue ? 'is-late' : undefined}>
-              {waitLabel(row.waitingSeconds)} · {row.createdAt.slice(0, 16).replace('T', ' ')}
-            </dd>
-          </div>
-        </dl>
+        </td>
 
-        {/* The message, whole and unedited. A preview is a row somebody has to
-            open to understand, and there are never enough of these to justify
-            making that the default. */}
-        <p className="message-body" dir={row.locale === 'en' ? 'ltr' : 'rtl'}>
-          {row.message}
-        </p>
+        <td className="order-number" dir="ltr">
+          {row.orderNumber ?? <span className="meta">—</span>}
+        </td>
 
-        {copied ? <p className="ok-note">نُسخ {copied}</p> : null}
-      </div>
+        <td className={`queue-wait${overdue ? ' is-late' : ''}`}>
+          <strong>{waitLabel(row.waitingSeconds)}</strong>
+          <span className="meta" dir="ltr">
+            {row.createdAt.slice(0, 16).replace('T', ' ')}
+          </span>
+        </td>
 
-      {canWork ? (
-        <div className="queue-actions">
-          {/* Opens the reply in whatever mail client the person already uses,
-              with the subject and the address filled in. The panel does not
-              send mail: a half-built client here is where a reply gets lost. */}
-          <a
-            className="btn-primary"
-            href={`mailto:${row.email}?subject=${encodeURIComponent(`بخصوص رسالتك — ${TOPIC_LABELS[row.topic]}`)}`}
+        <td className="actions">
+          <button
+            type="button"
+            className={`ghost${open ? ' is-active' : ''}`}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
           >
-            ردّ بالبريد
-          </a>
-          {handled ? (
-            <button type="button" className="ghost" onClick={() => onMark('NEW')}>
-              أعِدها للانتظار
-            </button>
-          ) : (
-            <button type="button" className="ghost" onClick={() => onMark('HANDLED')}>
-              وسمها كمُجابة
-            </button>
-          )}
-        </div>
+            {open ? 'أخفِ' : 'اقرأ'}
+          </button>
+          {canWork ? (
+            <>
+              {/* Opens the reply in whatever mail client the person already
+                  uses. The panel does not send mail: a half-built client here
+                  is where a reply gets lost. */}
+              <a
+                className="ghost as-button"
+                href={`mailto:${row.email}?subject=${encodeURIComponent(`بخصوص رسالتك — ${TOPIC_LABELS[row.topic]}`)}`}
+              >
+                ردّ
+              </a>
+              {handled ? (
+                <button type="button" className="ghost" onClick={() => onMark('NEW')}>
+                  أعِدها
+                </button>
+              ) : (
+                <button type="button" onClick={() => onMark('HANDLED')}>
+                  أُجيبت
+                </button>
+              )}
+            </>
+          ) : null}
+        </td>
+      </tr>
+
+      {open ? (
+        <tr className="message-drawer">
+          <td colSpan={COLUMNS}>
+            {/* The message, whole and unedited. A preview is a row somebody has
+                to open to understand — so it opens, rather than being trimmed
+                to a line that means nothing. */}
+            <p className="message-body" dir={row.locale === 'en' ? 'ltr' : 'rtl'}>
+              {row.message}
+            </p>
+            {handled && row.handledBy ? <p className="meta">أُجيبت — {row.handledBy}</p> : null}
+            {copied ? <p className="ok-note">نُسخ {copied}</p> : null}
+          </td>
+        </tr>
       ) : null}
-    </li>
+    </>
   );
 }
 

@@ -168,7 +168,7 @@ export default function OrdersPage() {
           down one of them. The detail opens underneath the row it belongs to. */}
       {data && data.rows.length > 0 ? (
         <div className="table-scroll">
-          <table className="orders-table">
+          <table className="admin-table orders-table">
             <thead>
               <tr>
                 <th>الطلب</th>

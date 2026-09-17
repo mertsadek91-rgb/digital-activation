@@ -3095,7 +3095,6 @@ tr.drawer td > * {
 .order-customer span {
   color: var(--color-ink-muted);
   font-size: var(--text-xs);
-  overflow-wrap: anywhere;
 }
 .order-total {
   font-weight: 700;
@@ -3145,10 +3144,6 @@ tr.drawer td > * {
    line and says nothing about the space between them, and buttons with no gap
    read as one segmented control rather than three separate decisions — one of
    which releases money. */
-/* The three controls sat edge to edge: `white-space: nowrap` keeps them on one
-   line and says nothing about the space between them, and buttons with no gap
-   read as one segmented control rather than three separate decisions — one of
-   which releases money. */
 .orders-table td.actions {
   white-space: nowrap;
   text-align: end;
@@ -3170,4 +3165,321 @@ tr.drawer td > * {
 .order-drawer .order-detail,
 .order-drawer .order-action-form {
   margin-block-start: 0;
+}
+
+
+/* --- the panel's lists, as tables ---------------------------------------- */
+
+/*
+ * The queue, the inbox and the moderation screen.
+ *
+ * All three were a card per row, and all three were the same mistake: a card
+ * is a thing you look at, and every one of these screens is a thing you look
+ * *down*. Which line has waited longest, which message is oldest, which review
+ * is the two-star one — none of those questions can be answered by a column of
+ * cards, and each of them is the reason the screen exists.
+ *
+ * The shared element rules above already give every table its sticky header,
+ * its hover and its padding. What is left here is the width each one needs and
+ * the two or three cells that stack.
+ */
+.admin-table {
+  inline-size: 100%;
+}
+/*
+ * A floor per table, so a narrow window scrolls the table inside its box
+ * instead of crushing seven columns into whatever is left beside the sidebar.
+ * The number is the columns, not a guess: the queue carries an email twice.
+ */
+.queue-table {
+  min-inline-size: 72rem;
+}
+.messages-table,
+.reviews-table {
+  min-inline-size: 60rem;
+}
+
+/*
+ * The drawer cell is both the first and the last cell in its row, so the
+ * `td:last-child { width: 1%; white-space: nowrap }` rule that keeps the
+ * actions column tight was also being applied to it — a message body on one
+ * unwrappable line, pushing the table several screens wide. A cell that spans
+ * the table is never the actions cell.
+ */
+.admin-table td[colspan] {
+  inline-size: auto;
+  white-space: normal;
+}
+.queue-drawer > td,
+.message-drawer > td,
+.review-drawer > td {
+  padding: 4px 16px 18px;
+  background: var(--color-surface);
+  border-block-end: 1px solid var(--color-border);
+}
+/* The row above owns the drawer, so the line between them would be a lie. */
+.queue-row:has(+ .queue-drawer) > td,
+.message-row:has(+ .message-drawer) > td,
+.review-row:has(+ .review-drawer) > td {
+  border-block-end-color: transparent;
+}
+
+/* Two buttons with no gap read as one segmented control. */
+.admin-table td.actions {
+  text-align: end;
+}
+.admin-table td.actions button + button {
+  margin-inline-start: 8px;
+}
+
+/* Cells that stack. `display: block` on the spans, never `flex` on the cell:
+   a flex `td` leaves the table layout and its column stops lining up with the
+   header above it. */
+.queue-product-cell span,
+.message-sender span,
+.message-sender strong,
+.review-product span,
+.review-product strong,
+.queue-mail span,
+.queue-wait span,
+.queue-wait strong {
+  display: block;
+}
+.queue-product-cell,
+.message-sender,
+.review-product {
+  min-inline-size: 13rem;
+  max-inline-size: 22rem;
+}
+.queue-product-cell,
+.review-product {
+  min-inline-size: 16rem;
+  max-inline-size: 18rem;
+}
+
+/*
+ * An order number is one token. Left to wrap it broke across three lines —
+ * `DA-` / `DEMO-` / `00001` — and a three-line cell sets the height of every
+ * other cell in its row, which is how a 40px row became 177px. The rule
+ * existed, scoped to the orders table; it belongs to the class.
+ */
+.order-number {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  white-space: nowrap;
+}
+/* The card's product name was `--text-lg`, which is a heading. In a row it is
+   a cell like the others. */
+.admin-table .queue-product {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  display: block;
+}
+/*
+ * Two lines, then an ellipsis.
+ *
+ * These names carry the Arabic and the English title in one string and run to
+ * eleven words; at full length one of them is taller than everything else in
+ * the row put together. Two lines is enough to tell two products apart, the
+ * SKU underneath is the identifier a supplier order is actually placed on, and
+ * the full name is on the element's `title` for anyone who wants it.
+ */
+.admin-table .queue-product,
+.review-product strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-sku {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+/*
+ * Seven columns, two of which are email addresses, against the width left
+ * beside the sidebar. Asked for what it wanted the table ran 160px wider than
+ * the box and the actions column — the only part of the row that does
+ * anything — was the part that fell off the edge. So the addresses are given
+ * a ceiling and allowed to wrap instead.
+ */
+.queue-mail {
+  min-inline-size: 11rem;
+  max-inline-size: 14rem;
+}
+.queue-mail span {
+  overflow-wrap: break-word;
+}
+.queue-mail .linky {
+  font-size: var(--text-xs);
+  padding: 0;
+}
+
+/* The one number the queue exists for. */
+.queue-wait strong {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.queue-wait .meta,
+.review-product .slug,
+.message-sender .meta {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.queue-wait.is-late strong {
+  color: var(--color-danger);
+}
+
+/* Late, and settled. Marked on the row rather than in a pill, because both are
+   facts about the whole line and a pill is one cell of it. */
+.queue-row.is-overdue > td,
+.message-row.is-overdue > td {
+  background: #fff8f5;
+}
+.queue-row.is-settled > td,
+.message-row.is-settled > td,
+.review-row.is-settled > td {
+  color: var(--color-ink-muted);
+}
+
+/* Stars, then the number. Five identical glyphs cannot be counted at a glance
+   and cannot be read aloud at all, so the figure is beside them. */
+.review-rating {
+  white-space: nowrap;
+  min-inline-size: 7rem;
+}
+.review-rating span:first-child {
+  color: #d9a406;
+  letter-spacing: 1px;
+}
+.review-rating .meta {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.review-title {
+  margin: 0;
+  font-weight: 700;
+}
+.review-drawer .message-body {
+  max-inline-size: 80ch;
+}
+
+/*
+ * The order-number column, as narrow as its one unwrappable token.
+ *
+ * `width: 1%` is the table-layout idiom for "give this column its minimum and
+ * hand the rest to the others" — the same rule that already keeps the actions
+ * column tight. Without it the leftover width was landing here, seventy pixels
+ * of nothing beside a thirteen-character number, while the table ran past the
+ * edge of its box at the far end.
+ */
+.queue-table td:first-child:not([colspan]),
+.queue-table th:first-child {
+  inline-size: 1%;
+}
+
+/*
+ * Tighter gutters on the three dense tables.
+ *
+ * 20px each side is right for a five-column table and wrong for this one:
+ * across seven columns it is 280px of padding, and the table was overrunning
+ * its box by nineteen. `!important` because the rule it is undoing carries it
+ * too — the cost of the layered overrides above, paid once here rather than by
+ * unpicking them.
+ */
+.admin-table td,
+.admin-table th {
+  padding-inline: 14px !important;
+}
+
+/*
+ * The reply link, which is a link because it is a `mailto:` — and was styled
+ * like neither.
+ *
+ * Every button rule in this file is written `button.ghost`, so an anchor
+ * wearing the same class inherits none of them: it rendered as eleven pixels
+ * of bare text wedged between two real buttons. `.as-button` is the class that
+ * was already on it; this is the rule it was missing.
+ */
+a.as-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 36px;
+  padding-inline: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: var(--text-xs);
+  text-decoration: none;
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+}
+a.as-button.ghost {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-border-strong);
+}
+a.as-button.ghost:hover {
+  background: var(--color-surface-2);
+}
+
+/* Spacing between the controls in an actions cell, whichever element they
+   happen to be: the reply control is an anchor, so `button + button` skipped
+   the gap on either side of it. */
+.admin-table td.actions > * + * {
+  margin-inline-start: 8px;
+}
+
+/* --- products ------------------------------------------------------------ */
+
+/*
+ * The column that says which product this is was 145px wide; the column of
+ * buttons was 424. Seventy-two rows at a quarter of a thousand pixels each is
+ * eighteen thousand pixels of scrolling, nearly all of it a product name
+ * wrapped nine times inside a column narrower than the word "المخزون".
+ *
+ * So: the name gets the width, the numbers give theirs up (`width: 1%` is the
+ * table idiom for "your minimum, no more"), and the name itself is clamped to
+ * two lines with the whole of it on `title`. The slug underneath is the
+ * identifier anyway.
+ */
+.products-table td:first-child:not([colspan]),
+.products-table th:first-child {
+  min-inline-size: 19rem;
+}
+.products-table td.num,
+.products-table th.num {
+  inline-size: 1%;
+  white-space: nowrap;
+}
+.products-table .name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-weight: 600;
+}
+
+/*
+ * The three product controls, allowed to wrap.
+ *
+ * `nowrap` kept them on one line and that line was 436px — forty percent of
+ * the table, spent on buttons, while the table overran its box by 132 and the
+ * leftmost button fell off the edge. The row is already tall enough for two
+ * lines of them, so they take two lines and the product name takes the width
+ * back. The labels are left alone: "نصوص SEO" and "شرح التفعيل" say which tab
+ * they open, and an abbreviation that saves 60px costs more than it saves.
+ */
+.products-table td.actions {
+  white-space: normal;
+  /* Wide enough for the two long labels side by side. Narrower and all three
+     stack, which costs more row height than the width it saves. */
+  min-inline-size: 16rem;
+  max-inline-size: 17rem;
+}
+.products-table td.actions > * {
+  margin-block: 3px;
 }

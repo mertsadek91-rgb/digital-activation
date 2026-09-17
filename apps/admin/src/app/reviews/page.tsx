@@ -160,22 +160,46 @@ export default function ReviewsPage() {
         </p>
       ) : null}
 
-      <ul className="queue-list">
-        {(list?.rows ?? []).map((row) => (
-          <ReviewCard
-            key={row.id}
-            row={row}
-            canWork={canWork}
-            onModerate={(next) => void moderate(row, next)}
-            onReply={(body) => void reply(row, body)}
-          />
-        ))}
-      </ul>
+      {/* A row per review.
+          Moderation is a judgement made across reviews — this rating against
+          that one, this buyer's history against another's — and a card each
+          put one decision on a screen. The rating and the buyer are columns;
+          the review text opens under its own row. */}
+      {list && list.rows.length > 0 ? (
+        <div className="table-scroll">
+          <table className="admin-table reviews-table">
+            <thead>
+              <tr>
+                <th>الحالة</th>
+                <th className="num">التقييم</th>
+                <th>المنتج</th>
+                <th>المشتري</th>
+                <th>التاريخ</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {(list?.rows ?? []).map((row) => (
+                <ReviewRow
+                  key={row.id}
+                  row={row}
+                  canWork={canWork}
+                  onModerate={(next) => void moderate(row, next)}
+                  onReply={(body) => void reply(row, body)}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </Nav>
   );
 }
 
-function ReviewCard({
+/** Columns the drawer spans. */
+const COLUMNS = 6;
+
+function ReviewRow({
   row,
   canWork,
   onModerate,
@@ -188,106 +212,129 @@ function ReviewCard({
 }) {
   const [draft, setDraft] = useState(row.storeReply ?? '');
   const [replying, setReplying] = useState(false);
+  /**
+   * Whether the review text is showing.
+   *
+   * Closed. It was open for anything still pending, on the theory that a
+   * review nobody has read should not have to be asked for — but the pending
+   * tab is the tab this screen opens on, so every row was open and the screen
+   * was the column of cards it had just stopped being. The rating, the product
+   * and the buyer are on the row; the words are one click away.
+   */
+  const [open, setOpen] = useState(false);
 
   return (
-    <li className={`queue-card${row.status === 'PENDING' ? '' : ' is-settled'}`}>
-      <div className="queue-card-main">
-        <p className="queue-order">
+    <>
+      <tr className={`review-row${row.status === 'PENDING' ? '' : ' is-settled'}`}>
+        <td>
           <span className={`pill ${STATUS_TONE[row.status]}`}>{STATUS_LABELS[row.status]}</span>
-          {/* The rating as a number as well as stars: five identical glyphs
-              are hard to count at a glance and impossible to read aloud. */}
-          <span className="pill pill-ready">
-            {'★'.repeat(row.rating).padEnd(5, '☆')} {row.rating}/5
+        </td>
+
+        {/* The rating as a number as well as stars: five identical glyphs are
+            hard to count at a glance and impossible to read aloud. */}
+        <td className="num review-rating">
+          <span aria-hidden="true">{'★'.repeat(row.rating).padEnd(5, '☆')}</span>
+          <span className="meta">{row.rating}/5</span>
+        </td>
+
+        <td className="review-product">
+          <strong title={row.productName}>{row.productName}</strong>
+          <span className="slug" dir="ltr">
+            {row.productSlug}
           </span>
-          <span className="meta">{row.createdAt.slice(0, 16).replace('T', ' ')}</span>
-        </p>
+        </td>
 
-        <p className="queue-product">
-          {row.productName}
-          <span className="meta"> — {row.productSlug}</span>
-        </p>
+        <td className="queue-mail">
+          {row.customerName ? <strong>{row.customerName}</strong> : null}
+          <span dir="ltr">{row.customerEmail}</span>
+          <span className="meta" dir="ltr">
+            {row.orderNumber}
+          </span>
+        </td>
 
-        <dl className="queue-meta">
-          <div>
-            <dt>الطلب</dt>
-            <dd dir="ltr">{row.orderNumber}</dd>
-          </div>
-          <div>
-            <dt>المشتري</dt>
-            <dd dir="ltr">
-              {row.customerName ? `${row.customerName} · ` : ''}
-              {row.customerEmail}
-            </dd>
-          </div>
-          <div>
-            {/* Always set in practice — a review cannot exist without a
-                delivered line — and shown because it is the fact the whole
-                feature rests on. */}
-            <dt>سُلّم في</dt>
-            <dd>{row.deliveredAt ? row.deliveredAt.slice(0, 10) : '—'}</dd>
-          </div>
-        </dl>
+        <td className="order-date" dir="ltr">
+          {row.createdAt.slice(0, 16).replace('T', ' ')}
+        </td>
 
-        {row.title ? <p className="queue-product">{row.title}</p> : null}
-
-        <p className="message-body" dir={row.locale === 'en' ? 'ltr' : 'rtl'}>
-          {row.body}
-        </p>
-
-        {row.storeReply ? (
-          <p className="message-body" dir="auto">
-            ردّ المتجر: {row.storeReply}
-          </p>
-        ) : null}
-
-        {replying ? (
-          <form
-            className="paste-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (draft.trim().length < 2) return;
-              onReply(draft.trim());
-              setReplying(false);
-            }}
+        <td className="actions">
+          <button
+            type="button"
+            className={`ghost${open ? ' is-active' : ''}`}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
           >
-            <label className="grow">
-              <span>ردّ المتجر — يُنشر تحت التقييم كما هو</span>
-              <textarea
-                value={draft}
-                rows={3}
-                onChange={(event) => setDraft(event.target.value)}
-                dir="rtl"
-              />
-            </label>
-            <div className="queue-actions">
-              <button type="submit">احفظ الردّ</button>
-              <button type="button" className="ghost" onClick={() => setReplying(false)}>
-                إلغاء
-              </button>
-            </div>
-          </form>
-        ) : null}
-      </div>
+            {open ? 'أخفِ' : 'اقرأ'}
+          </button>
+          {canWork ? (
+            <>
+              {row.status !== 'APPROVED' ? (
+                <button type="button" onClick={() => onModerate('APPROVED')}>
+                  انشر
+                </button>
+              ) : null}
+              {row.status !== 'REJECTED' ? (
+                <button type="button" className="ghost" onClick={() => onModerate('REJECTED')}>
+                  ارفض
+                </button>
+              ) : null}
+            </>
+          ) : null}
+        </td>
+      </tr>
 
-      {canWork ? (
-        <div className="queue-actions">
-          {row.status !== 'APPROVED' ? (
-            <button type="button" onClick={() => onModerate('APPROVED')}>
-              انشر
-            </button>
-          ) : null}
-          {row.status !== 'REJECTED' ? (
-            <button type="button" className="ghost" onClick={() => onModerate('REJECTED')}>
-              ارفض
-            </button>
-          ) : null}
-          {!replying ? (
-            <button type="button" className="ghost" onClick={() => setReplying(true)}>
-              {row.storeReply ? 'عدّل الردّ' : 'ردّ المتجر'}
-            </button>
-          ) : null}
-        </div>
+      {open ? (
+        <tr className="review-drawer">
+          <td colSpan={COLUMNS}>
+            {row.title ? <p className="review-title">{row.title}</p> : null}
+            <p className="message-body" dir={row.locale === 'en' ? 'ltr' : 'rtl'}>
+              {row.body}
+            </p>
+            {row.deliveredAt ? (
+              <p className="meta">سُلّم في {row.deliveredAt.slice(0, 10)}</p>
+            ) : null}
+
+            {row.storeReply ? (
+              <p className="message-body" dir="auto">
+                ردّ المتجر: {row.storeReply}
+              </p>
+            ) : null}
+
+            {canWork && !replying ? (
+              <button type="button" className="ghost" onClick={() => setReplying(true)}>
+                {row.storeReply ? 'عدّل الردّ' : 'ردّ المتجر'}
+              </button>
+            ) : null}
+
+            {replying ? (
+              <form
+                className="paste-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (draft.trim().length < 2) return;
+                  onReply(draft.trim());
+                  setReplying(false);
+                }}
+              >
+                <label className="grow">
+                  <span>ردّ المتجر — يُنشر تحت التقييم كما هو</span>
+                  <textarea
+                    value={draft}
+                    rows={3}
+                    onChange={(event) => setDraft(event.target.value)}
+                    dir="rtl"
+                  />
+                </label>
+                <div className="queue-actions">
+                  <button type="submit">احفظ الردّ</button>
+                  <button type="button" className="ghost" onClick={() => setReplying(false)}>
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            ) : null}
+          </td>
+        </tr>
       ) : null}
-    </li>
+    </>
   );
 }

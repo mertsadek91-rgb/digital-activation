@@ -300,7 +300,7 @@ export default function ProductsPage() {
       ) : null}
 
       <div className="table-scroll">
-        <table>
+        <table className="admin-table products-table">
           <thead>
             <tr>
               <th>المنتج</th>
@@ -367,7 +367,9 @@ function ProductRow({
     <>
       <tr className={row.status === 'PUBLISHED' ? 'is-live' : undefined}>
         <td>
-          <span className="name">{row.nameAr}</span>
+          <span className="name" title={row.nameAr}>
+            {row.nameAr}
+          </span>
           <span className="slug" dir="ltr">
             {row.slug}
           </span>

@@ -92,8 +92,7 @@ export default function QueuePage() {
   if (!me) return <div className="admin-layout">…</div>;
 
   return (
-    <Nav me={me} current="queue" {...(queue ? { waiting: queue.waiting, overdue } : {})} >
-
+    <Nav me={me} current="queue" {...(queue ? { waiting: queue.waiting, overdue } : {})}>
       <div className="queue-head">
         <h1>طابور التسليم</h1>
         <p className="who">
@@ -122,27 +121,53 @@ export default function QueuePage() {
         <p className="notice">لا شيء في الانتظار. كل الطلبات المدفوعة سُلّمت.</p>
       ) : null}
 
-      <ul className="queue-list">
-        {(queue?.rows ?? []).map((row) => (
-          <QueueCard
-            key={row.orderItemId}
-            row={row}
-            canWork={canWork}
-            onFulfil={(secret, cost) =>
-              void act(`سُلّم ${row.sku}`, () => api.fulfil(row.orderItemId, secret, cost))
-            }
-            onDeliver={() => void act(`أُرسل ${row.sku}`, () => api.deliver(row.orderItemId))}
-            onFail={(reason) =>
-              void act(`وُسم ${row.sku} كمتعذّر`, () => api.failLine(row.orderItemId, reason))
-            }
-          />
-        ))}
-      </ul>
+      {/* A row per line waiting.
+          It was a card each, ~290px tall to carry four facts, two to a row —
+          six lines filled three screens. A queue is worked from the top down
+          and the question at every row is the same: how long has this one been
+          waiting against what it was promised. That is a column to run an eye
+          down, not a figure buried in the third block of a card. */}
+      {queue && queue.rows.length > 0 ? (
+        <div className="table-scroll">
+          <table className="admin-table queue-table">
+            <thead>
+              <tr>
+                <th>الطلب</th>
+                <th>المنتج</th>
+                <th>الحالة</th>
+                <th>الانتظار</th>
+                <th>بريد الإيصال</th>
+                <th>بريد التفعيل</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {(queue?.rows ?? []).map((row) => (
+                <QueueRow
+                  key={row.orderItemId}
+                  row={row}
+                  canWork={canWork}
+                  onFulfil={(secret, cost) =>
+                    void act(`سُلّم ${row.sku}`, () => api.fulfil(row.orderItemId, secret, cost))
+                  }
+                  onDeliver={() => void act(`أُرسل ${row.sku}`, () => api.deliver(row.orderItemId))}
+                  onFail={(reason) =>
+                    void act(`وُسم ${row.sku} كمتعذّر`, () => api.failLine(row.orderItemId, reason))
+                  }
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
     </Nav>
   );
 }
 
-function QueueCard({
+/** Columns the drawer has to span. Kept beside the header it mirrors. */
+const COLUMNS = 7;
+
+function QueueRow({
   row,
   canWork,
   onFulfil,
@@ -181,221 +206,249 @@ function QueueCard({
   }
 
   return (
-    <li className={`queue-card${row.overdue ? ' is-overdue' : ''}${settled ? ' is-settled' : ''}`}>
-      <div className="queue-card-main">
-        <p className="queue-order">
-          <span dir="ltr">{row.orderNumber}</span>
+    <>
+      <tr className={`queue-row${row.overdue ? ' is-overdue' : ''}${settled ? ' is-settled' : ''}`}>
+        <td>
+          <span className="order-number" dir="ltr">
+            {row.orderNumber}
+          </span>
+        </td>
+
+        <td className="queue-product-cell">
+          <span className="queue-product" title={row.productName}>
+            {row.productName}
+            {row.qty > 1 ? <span className="meta"> × {row.qty}</span> : null}
+          </span>
+          <span className="line-sku" dir="ltr">
+            {row.sku}
+          </span>
+        </td>
+
+        <td>
           <span className={`pill ${statePill(row.state)}`}>{stateLabel(row.state)}</span>
           {row.overdue ? <span className="pill pill-blocked">متأخّر</span> : null}
-        </p>
+        </td>
 
-        <p className="queue-product">
-          {row.productName}
-          {row.qty > 1 ? <span className="meta"> × {row.qty}</span> : null}
-        </p>
-        <p className="slug" dir="ltr">
-          {row.sku}
-        </p>
+        {/* The one number this screen exists for: waited against promised. */}
+        <td className={`queue-wait${row.overdue ? ' is-late' : ''}`}>
+          <strong>{waitLabel(row.waitingSeconds)}</strong>
+          <span className="meta">وُعد بـ{waitLabel(row.deliverySlaSeconds)}</span>
+        </td>
 
-        <dl className="queue-meta">
-          <div>
-            <dt>الانتظار</dt>
-            <dd className={row.overdue ? 'is-late' : undefined}>
-              {waitLabel(row.waitingSeconds)} / وُعد بـ{waitLabel(row.deliverySlaSeconds)}
-            </dd>
-          </div>
-          <div>
-            <dt>بريد الإيصال</dt>
-            <dd dir="ltr">
-              {row.email}
+        <td className="queue-mail">
+          <span dir="ltr">{row.email}</span>
+          <button type="button" className="linky" onClick={() => void copy(row.email, 'البريد')}>
+            نسخ
+          </button>
+        </td>
+
+        {/* The field a supplier order cannot be placed without. Always a cell,
+            so the column stays readable down the page; a dash where the line
+            does not need one. */}
+        <td className="queue-mail">
+          {row.requiresActivationEmail ? (
+            <>
+              <span dir="ltr">{row.activationEmail ?? '— لم يُسجّل —'}</span>
+              {row.activationEmail ? (
+                <button
+                  type="button"
+                  className="linky"
+                  onClick={() => void copy(row.activationEmail ?? '', 'بريد التفعيل')}
+                >
+                  نسخ
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <span className="meta">—</span>
+          )}
+        </td>
+
+        <td className="actions">
+          {canWork && !settled ? (
+            <>
+              {row.hasKey ? (
+                <button type="button" onClick={onDeliver}>
+                  أرسل المفتاح
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(!open);
+                    setFailing(false);
+                  }}
+                >
+                  {open ? 'إلغاء' : isAccount ? 'بيانات الحساب' : 'ألصق الكود'}
+                </button>
+              )}
               <button
                 type="button"
-                className="linky"
-                onClick={() => void copy(row.email, 'البريد')}
+                className="ghost"
+                onClick={() => {
+                  setFailing(!failing);
+                  setOpen(false);
+                }}
               >
-                نسخ
+                تعذّر
               </button>
-            </dd>
-          </div>
-          {/* The one field the supplier order cannot be placed without, so it
-              sits on the row rather than a click away. */}
-          {row.requiresActivationEmail ? (
-            <div className="queue-activation">
-              <dt>بريد التفعيل</dt>
-              <dd dir="ltr">
-                {row.activationEmail ?? '— لم يُسجّل —'}
-                {row.activationEmail ? (
-                  <button
-                    type="button"
-                    className="linky"
-                    onClick={() => void copy(row.activationEmail ?? '', 'بريد التفعيل')}
-                  >
-                    نسخ
-                  </button>
-                ) : null}
-              </dd>
-            </div>
+            </>
           ) : null}
-        </dl>
+        </td>
+      </tr>
 
-        {copied ? <p className="ok-note">نُسخ {copied}</p> : null}
-      </div>
-
-      {canWork && !settled ? (
-        <div className="queue-actions">
-          {/* A line that already has a key needs sending, not buying. Two
-              different jobs, so two different buttons. */}
-          {row.hasKey ? (
-            <button type="button" className="btn-primary" onClick={onDeliver}>
-              أرسل المفتاح
-            </button>
-          ) : (
-            <button type="button" className="btn-primary" onClick={() => setOpen(!open)}>
-              {open ? 'إلغاء' : isAccount ? 'أدخل بيانات الحساب' : 'ألصق كود المورّد'}
-            </button>
-          )}
-          <button type="button" className="ghost" onClick={() => setFailing(!failing)}>
-            تعذّر
-          </button>
-        </div>
+      {copied ? (
+        <tr className="queue-drawer">
+          <td colSpan={COLUMNS}>
+            <p className="ok-note">نُسخ {copied}</p>
+          </td>
+        </tr>
       ) : null}
 
       {open ? (
-        <form
-          className="paste-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onFulfil(
-              isAccount
-                ? {
-                    kind: 'ACCOUNT_CREDENTIALS',
-                    username: username.trim(),
-                    password: password.trim(),
-                  }
-                : { kind: 'ACTIVATION_KEY', key: code.trim() },
-              cost.trim() || undefined,
-            );
-            setCode('');
-            setUsername('');
-            setPassword('');
-            setCost('');
-            setOpen(false);
-          }}
-        >
-          {/* Two shapes, because the supplier sends two. An account pasted into
+        <tr className="queue-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onFulfil(
+                  isAccount
+                    ? {
+                        kind: 'ACCOUNT_CREDENTIALS',
+                        username: username.trim(),
+                        password: password.trim(),
+                      }
+                    : { kind: 'ACTIVATION_KEY', key: code.trim() },
+                  cost.trim() || undefined,
+                );
+                setCode('');
+                setUsername('');
+                setPassword('');
+                setCost('');
+                setOpen(false);
+              }}
+            >
+              {/* Two shapes, because the supplier sends two. An account pasted into
               one box would have to be split by guesswork somewhere, and the
               guess would be wrong on the passwords that contain a colon. */}
-          {isAccount ? (
-            <>
-              <label className="grow">
-                اسم المستخدم / البريد
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  dir="ltr"
-                  required
-                  minLength={3}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="account@example.com"
-                />
-              </label>
-              <label className="grow">
-                كلمة المرور
-                {/* type=text on purpose: the person pasting it has to be able
+              {isAccount ? (
+                <>
+                  <label className="grow">
+                    اسم المستخدم / البريد
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      dir="ltr"
+                      required
+                      minLength={3}
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="account@example.com"
+                    />
+                  </label>
+                  <label className="grow">
+                    كلمة المرور
+                    {/* type=text on purpose: the person pasting it has to be able
                     to check it against what the supplier sent, and a masked
                     field is where a transposed character survives to the
                     customer. */}
+                    <input
+                      type="text"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      dir="ltr"
+                      required
+                      minLength={4}
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="كلمة المرور كما وردت"
+                    />
+                    <small>
+                      يُشفّران معاً في الخزنة ويُرسَلان للعميل بعنوانَين منفصلَين في البريد. لن
+                      يُكتبا في أي سجل.
+                    </small>
+                  </label>
+                </>
+              ) : (
+                <label className="grow">
+                  كود المورّد
+                  <textarea
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                    rows={3}
+                    dir="ltr"
+                    required
+                    minLength={4}
+                    // Nothing remembers this field. A browser that autofills a
+                    // licence key into the next order is a licence sold twice.
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="الصق الكود كما ورد من المورّد"
+                  />
+                  <small>
+                    يُشفّر في الخزنة ويُرسَل للعميل مباشرة. لن يُكتب في أي سجل، ولن يُعلَّم السطر
+                    مُسلَّماً إلا إذا خرج البريد فعلاً.
+                  </small>
+                </label>
+              )}
+              <label>
+                التكلفة (اختياري)
                 <input
                   type="text"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  value={cost}
+                  onChange={(event) => setCost(event.target.value)}
+                  placeholder="42.00"
                   dir="ltr"
-                  required
-                  minLength={4}
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="كلمة المرور كما وردت"
+                  pattern="\d+(\.\d{1,2})?"
                 />
-                <small>
-                  يُشفّران معاً في الخزنة ويُرسَلان للعميل بعنوانَين منفصلَين في البريد. لن يُكتبا
-                  في أي سجل.
-                </small>
               </label>
-            </>
-          ) : (
-            <label className="grow">
-              كود المورّد
-              <textarea
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                rows={3}
-                dir="ltr"
-                required
-                minLength={4}
-                // Nothing remembers this field. A browser that autofills a
-                // licence key into the next order is a licence sold twice.
-                autoComplete="off"
-                spellCheck={false}
-                placeholder="الصق الكود كما ورد من المورّد"
-              />
-              <small>
-                يُشفّر في الخزنة ويُرسَل للعميل مباشرة. لن يُكتب في أي سجل، ولن يُعلَّم السطر
-                مُسلَّماً إلا إذا خرج البريد فعلاً.
-              </small>
-            </label>
-          )}
-          <label>
-            التكلفة (اختياري)
-            <input
-              type="text"
-              value={cost}
-              onChange={(event) => setCost(event.target.value)}
-              placeholder="42.00"
-              dir="ltr"
-              pattern="\d+(\.\d{1,2})?"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={
-              isAccount
-                ? username.trim().length < 3 || password.trim().length < 4
-                : code.trim().length < 4
-            }
-          >
-            حفظ وإرسال
-          </button>
-        </form>
+              <button
+                type="submit"
+                disabled={
+                  isAccount
+                    ? username.trim().length < 3 || password.trim().length < 4
+                    : code.trim().length < 4
+                }
+              >
+                حفظ وإرسال
+              </button>
+            </form>
+          </td>
+        </tr>
       ) : null}
 
       {failing ? (
-        <form
-          className="paste-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            onFail(reason);
-            setFailing(false);
-          }}
-        >
-          <label className="grow">
-            السبب
-            <select value={reason} onChange={(event) => setReason(event.target.value)}>
-              {FAIL_REASONS.map((entry) => (
-                <option key={entry} value={entry}>
-                  {entry}
-                </option>
-              ))}
-            </select>
-            <small>سيُبلَّغ العميل بأن هذا البند تعذّر وأننا نتابعه.</small>
-          </label>
-          <button type="submit" className="ghost">
-            تأكيد التعذّر
-          </button>
-        </form>
+        <tr className="queue-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onFail(reason);
+                setFailing(false);
+              }}
+            >
+              <label className="grow">
+                السبب
+                <select value={reason} onChange={(event) => setReason(event.target.value)}>
+                  {FAIL_REASONS.map((entry) => (
+                    <option key={entry} value={entry}>
+                      {entry}
+                    </option>
+                  ))}
+                </select>
+                <small>سيُبلَّغ العميل بأن هذا البند تعذّر وأننا نتابعه.</small>
+              </label>
+              <button type="submit" className="ghost">
+                تأكيد التعذّر
+              </button>
+            </form>
+          </td>
+        </tr>
       ) : null}
-    </li>
+    </>
   );
 }
 

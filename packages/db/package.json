@@ -31,6 +31,7 @@
     "pages": "tsx scripts/legacy/pages.ts",
     "seo": "tsx scripts/seo/index.ts",
     "bodies": "tsx scripts/seo/bodies.ts",
+    "demo": "tsx scripts/demo.ts",
     "redirects": "tsx scripts/legacy/redirects.ts",
     "articles": "tsx scripts/legacy/articles.ts",
     "article-links": "tsx scripts/legacy/article-links.ts"
