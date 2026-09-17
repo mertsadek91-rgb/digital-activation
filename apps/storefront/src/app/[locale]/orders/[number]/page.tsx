@@ -166,8 +166,8 @@ export default function OrderPage() {
           with the activation steps here. */}
       <p className="lede">
         {ar
-          ? 'المفتاح يُرسَل إلى بريدك — احفظ تلك الرسالة. خطوات التفعيل موجودة هنا في صفحة طلبك. ومعظم منتجاتنا تُطلَب من المورّد بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
-          : 'Your key is sent to your email — keep that message. The activation steps stay here on your order page. And most of our products are ordered from the supplier after payment, so your licence term does not start before you use it.'}
+          ? 'المفتاح يُرسَل إلى بريدك — احفظ تلك الرسالة. خطوات التفعيل موجودة هنا في صفحة طلبك. ومعظم منتجاتنا تُجهَّز بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
+          : 'Your key is sent to your email — keep that message. The activation steps stay here on your order page. And most of our products are prepared after payment, so your licence term does not start before you use it.'}
       </p>
 
       {/* The answer to "I deleted the email", one click away rather than a

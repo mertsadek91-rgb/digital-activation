@@ -125,8 +125,8 @@ export function orderReceived(input: {
 
   const activation = input.activationEmail
     ? ar
-      ? `<p style="background:#fdf1dc;padding:12px;border-radius:5px;">سيُفعَّل الترخيص على: <strong dir="ltr">${escape(input.activationEmail)}</strong><br>إن كان هذا غير صحيح، راسِلنا قبل أن نطلبه من المورّد.</p>`
-      : `<p style="background:#fdf1dc;padding:12px;border-radius:5px;">The licence will be activated on: <strong dir="ltr">${escape(input.activationEmail)}</strong><br>If that is wrong, reply before we place the supplier order.</p>`
+      ? `<p style="background:#fdf1dc;padding:12px;border-radius:5px;">سيُفعَّل الترخيص على: <strong dir="ltr">${escape(input.activationEmail)}</strong><br>إن كان هذا غير صحيح، راسِلنا قبل أن نبدأ التجهيز.</p>`
+      : `<p style="background:#fdf1dc;padding:12px;border-radius:5px;">The licence will be activated on: <strong dir="ltr">${escape(input.activationEmail)}</strong><br>If that is wrong, reply before we start preparing it.</p>`
     : '';
 
   const body = ar
@@ -135,14 +135,14 @@ export function orderReceived(input: {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
 <p style="margin:16px 0 0;font-size:17px;"><strong>الإجمالي: ${escape(input.total)}</strong></p>
 ${activation}
-<p>معظم منتجاتنا تُطلَب من المورّد بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه. المدّة المذكورة أمام كل سطر هي المدّة التي نعمل بها.</p>
+<p>معظم منتجاتنا تُجهَّز بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه. المدّة المذكورة أمام كل سطر هي المدّة التي نعمل بها.</p>
 ${button(input.orderUrl, 'تابع حالة الطلب')}`
     : `<h1 style="margin:0 0 8px;font-size:20px;">We have your payment</h1>
 <p style="margin:0 0 16px;color:${MUTED};">Order <strong dir="ltr">${escape(input.orderNumber)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${rows}</table>
 <p style="margin:16px 0 0;font-size:17px;"><strong>Total: ${escape(input.total)}</strong></p>
 ${activation}
-<p>Most of our products are ordered from the supplier after payment, so your licence term does not start before you use it. The window shown next to each line is the one we work to.</p>
+<p>Most of our products are prepared after payment, so your licence term does not start before you use it. The window shown next to each line is the one we work to.</p>
 ${button(input.orderUrl, 'Track your order')}`;
 
   const text = ar
@@ -157,7 +157,7 @@ ${button(input.orderUrl, 'Track your order')}`;
         `الإجمالي: ${input.total}`,
         input.activationEmail ? `سيُفعَّل الترخيص على: ${input.activationEmail}` : '',
         '',
-        'معظم منتجاتنا تُطلَب من المورّد بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.',
+        'معظم منتجاتنا تُجهَّز بعد الدفع، حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.',
         input.orderUrl,
       ]
         .filter(Boolean)
@@ -173,7 +173,7 @@ ${button(input.orderUrl, 'Track your order')}`;
         `Total: ${input.total}`,
         input.activationEmail ? `The licence will be activated on: ${input.activationEmail}` : '',
         '',
-        'Most of our products are ordered from the supplier after payment, so your licence term does not start before you use it.',
+        'Most of our products are prepared after payment, so your licence term does not start before you use it.',
         input.orderUrl,
       ]
         .filter(Boolean)
@@ -214,8 +214,39 @@ export function transferInstructions(input: {
   fields: { label: string; value: string }[];
   afterPaying: string;
   orderUrl: string;
+  /**
+   * What the money is for.
+   *
+   * Not decoration, and the reason is measured rather than argued. Without it
+   * this message is an account number, a large figure and a button — which is
+   * the shape of a payment-redirection fraud, and Gmail files it accordingly.
+   * A plain test message from the same mailbox, the same domain and the same
+   * SPF and DKIM reached the inbox on the same afternoon that this one reached
+   * the spam folder. The authentication was never the difference.
+   *
+   * It is also the question the buyer has. An invoice says what was bought.
+   */
+  lines: OrderLineView[];
 }): Rendered {
   const ar = input.locale === 'ar';
+
+  const lineRows = input.lines
+    .map(
+      (line) => `<tr>
+        <td style="padding:8px 0;border-bottom:1px solid ${BORDER};">
+          <strong style="color:${INK};">${escape(line.productName)}</strong><br>
+          <span style="color:${MUTED};font-size:13px;">${escape(line.sku)} × ${String(line.qty)}</span>
+        </td>
+        <td align="${ar ? 'left' : 'right'}" style="padding:8px 0;border-bottom:1px solid ${BORDER};white-space:nowrap;">${escape(line.lineTotal)}</td>
+      </tr>`,
+    )
+    .join('');
+
+  const ordered =
+    input.lines.length > 0
+      ? `<p style="margin:16px 0 4px;color:${MUTED};">${ar ? 'ما ستدفع مقابله:' : 'What you are paying for:'}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 8px;">${lineRows}</table>`
+      : '';
 
   const rows = input.fields
     .map(
@@ -237,6 +268,7 @@ export function transferInstructions(input: {
     ? `<h1 style="margin:0 0 8px;font-size:20px;">تفاصيل التحويل لطلبك</h1>
 <p style="margin:0 0 16px;color:${MUTED};">رقم الطلب <strong dir="ltr">${escape(input.orderNumber)}</strong></p>
 ${note}
+${ordered}
 <p style="margin:0 0 4px;font-size:17px;"><strong>المبلغ المطلوب: ${escape(input.total)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">${rows}</table>
 ${after}
@@ -245,6 +277,7 @@ ${button(input.orderUrl, 'تابع حالة الطلب')}`
     : `<h1 style="margin:0 0 8px;font-size:20px;">Transfer details for your order</h1>
 <p style="margin:0 0 16px;color:${MUTED};">Order <strong dir="ltr">${escape(input.orderNumber)}</strong></p>
 ${note}
+${ordered}
 <p style="margin:0 0 4px;font-size:17px;"><strong>Amount to send: ${escape(input.total)}</strong></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">${rows}</table>
 ${after}
@@ -257,6 +290,15 @@ ${button(input.orderUrl, 'Track your order')}`;
       : `Transfer details for order ${input.orderNumber}`,
     '',
     input.headline,
+    ...(input.lines.length > 0
+      ? [
+          ar ? 'ما ستدفع مقابله:' : 'What you are paying for:',
+          ...input.lines.map(
+            (line) => `- ${line.productName} (${line.sku} × ${String(line.qty)}) — ${line.lineTotal}`,
+          ),
+          '',
+        ]
+      : []),
     ar ? `المبلغ المطلوب: ${input.total}` : `Amount to send: ${input.total}`,
     '',
     ...input.fields.map((field) => `${field.label}: ${field.value}`),

@@ -34,7 +34,7 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
 const STATE_AR: Record<LicenceRow['state'], string> = {
   PENDING: 'قيد التجهيز',
   AUTO_ASSIGNED: 'جاهز — يُرسَل الآن',
-  MANUAL_QUEUE: 'قيد الطلب من المورّد',
+  MANUAL_QUEUE: 'قيد التجهيز',
   DELIVERED: 'تم التسليم',
   FAILED: 'تعذّر — فريقنا يتابعه',
 };
@@ -42,7 +42,7 @@ const STATE_AR: Record<LicenceRow['state'], string> = {
 const STATE_EN: Record<LicenceRow['state'], string> = {
   PENDING: 'Being prepared',
   AUTO_ASSIGNED: 'Ready — sending now',
-  MANUAL_QUEUE: 'Being ordered from the supplier',
+  MANUAL_QUEUE: 'Being prepared',
   DELIVERED: 'Delivered',
   FAILED: 'Failed — our team is on it',
 };
@@ -133,8 +133,8 @@ export default function LicensesPage() {
       {list && list.waiting > 0 ? (
         <p className="notice notice-warn">
           {ar
-            ? `${String(list.waiting)} بند قيد التجهيز. معظم منتجاتنا تُطلَب من المورّد بعد الدفع، وسيصلك البريد فور جهوزيته.`
-            : `${String(list.waiting)} item being prepared. Most of our products are ordered from the supplier after payment; the email arrives as soon as it is ready.`}
+            ? `${String(list.waiting)} بند قيد التجهيز. معظم منتجاتنا تُجهَّز بعد الدفع، وسيصلك البريد فور جهوزيته.`
+            : `${String(list.waiting)} item being prepared. Most of our products are prepared after payment; the email arrives as soon as it is ready.`}
         </p>
       ) : null}
 

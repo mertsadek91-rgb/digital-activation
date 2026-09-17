@@ -134,8 +134,8 @@ export default async function StorePage({ params, searchParams }: Props) {
         <h1>{ar ? 'المتجر' : 'Store'}</h1>
         <p className="lede">
           {ar
-            ? 'تراخيص ومفاتيح تفعيل أصلية، تصل على بريدك. أغلبها يُطلَب من المورّد بعد الدفع حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
-            : 'Genuine licences and activation keys, delivered to your email. Most are ordered from the supplier after payment, so your licence term does not start before you use it.'}
+            ? 'تراخيص ومفاتيح تفعيل أصلية، تصل على بريدك. أغلبها يُجهَّز بعد الدفع حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
+            : 'Genuine licences and activation keys, delivered to your email. Most are prepared after payment, so your licence term does not start before you use it.'}
         </p>
       </header>
 

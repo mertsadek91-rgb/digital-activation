@@ -15,6 +15,7 @@ import {
 } from '@da/contracts';
 
 import { AuditService } from '../auth/audit.service.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { StripeService } from './stripe.service.js';
@@ -152,8 +153,14 @@ export class PaymentSettingsService {
         blocker: this.stripe.payable
           ? null
           : this.stripe.configured
-            ? 'STRIPE_PUBLISHABLE_KEY غير مضبوط، فلا شيء يؤكّد الدفع في المتصفّح.'
-            : 'مفاتيح Stripe غير مضبوطة على الخادم.',
+            ? say(
+                'STRIPE_PUBLISHABLE_KEY غير مضبوط، فلا شيء يؤكّد الدفع في المتصفّح.',
+                'STRIPE_PUBLISHABLE_KEY is not set, so nothing confirms the payment in the browser.',
+              )
+            : say(
+                'مفاتيح Stripe غير مضبوطة على الخادم.',
+                'The Stripe keys are not set on the server.',
+              ),
       },
       {
         provider: 'PAYPAL',
@@ -161,7 +168,7 @@ export class PaymentSettingsService {
         warning: null,
         // Stated rather than hidden: PayPal is an agreed provider that is not
         // wired, and a blank row would read as a bug in this screen.
-        blocker: 'PayPal لم يُربط بعد.',
+        blocker: say('PayPal لم يُربط بعد.', 'PayPal is not wired up yet.'),
       },
       ...manualProviders.map((provider) => this.manualStatus(provider, settings[provider])),
     ];
@@ -179,8 +186,14 @@ export class PaymentSettingsService {
         isOffered: false,
         blocker:
           provider === 'BANK_TRANSFER'
-            ? 'لا يوجد حقل مكتمل: التحويل يحتاج اسماً ورقم حساب أو آيبان.'
-            : 'لا يوجد حقل مكتمل: التحويل يحتاج شبكة وعنوان محفظة.',
+            ? say(
+                'لا يوجد حقل مكتمل: التحويل يحتاج اسماً ورقم حساب أو آيبان.',
+                'No field is filled in: a transfer needs a name and an account number or IBAN.',
+              )
+            : say(
+                'لا يوجد حقل مكتمل: التحويل يحتاج شبكة وعنوان محفظة.',
+                'No field is filled in: a transfer needs a network and a wallet address.',
+              ),
         warning: null,
       };
     }
@@ -188,11 +201,55 @@ export class PaymentSettingsService {
       return {
         provider,
         isOffered: false,
-        blocker: 'البيانات مكتملة لكن الطريقة موقوفة.',
+        blocker: say(
+          'البيانات مكتملة لكن الطريقة موقوفة.',
+          'The details are complete but the method is switched off.',
+        ),
         warning: null,
       };
     }
-    return { provider, isOffered: true, blocker: null, warning: this.thinness(provider, fields) };
+    return {
+      provider,
+      isOffered: true,
+      blocker: null,
+      warning: this.wordless(method) ?? this.thinness(provider, fields),
+    };
+  }
+
+  /**
+   * An offered method whose two prose fields say nothing.
+   *
+   * These are the only sentences in the instructions email. With them empty —
+   * or filled with a field label, which is what happened the first time this
+   * store was configured — the message that goes out is an account number, a
+   * large figure and a button, and nothing else. That is the shape of a
+   * payment-redirection fraud, and it was filed as spam by the first inbox it
+   * reached, while a plain test message from the same mailbox, the same domain
+   * and the same SPF and DKIM landed in that inbox minutes later.
+   *
+   * A label repeated as a headline is the specific mistake worth naming,
+   * because it does not look empty in the panel: every box has something in
+   * it. The check is a comparison against the labels the owner themselves
+   * typed, so it needs no dictionary and no guess about wording.
+   */
+  private wordless(method: ManualPaymentSetting): string | null {
+    const labels = new Set(
+      method.fields.flatMap((field) => [field.label.ar.trim(), field.label.en.trim()]).filter(Boolean),
+    );
+    const isProse = (text: I18nString): boolean => {
+      const value = (text.ar.trim() || text.en.trim()).trim();
+      return value !== '' && !labels.has(value);
+    };
+
+    const missing: string[] = [];
+    if (!isProse(method.headline)) missing.push(say('السطر التمهيدي', 'the opening line'));
+    if (!isProse(method.afterPaying)) missing.push(say('ماذا بعد التحويل', 'what happens next'));
+    if (missing.length === 0) return null;
+
+    return say(
+      `${missing.join(' و')} فارغ أو يكرّر تسمية حقل. الرسالة التي تصل المشتري ستكون رقم حساب ومبلغاً بلا جملة واحدة تشرحهما، وهذا يُصنَّف بريداً مزعجاً.`,
+      `${missing.join(' and ')} is empty or repeats a field label. The email the buyer receives will be an account number and an amount with not one sentence explaining them, which gets filed as spam.`,
+    );
   }
 
   /**
@@ -209,10 +266,16 @@ export class PaymentSettingsService {
     fields: ManualPaymentSetting['fields'],
   ): string | null {
     if (provider === 'BANK_TRANSFER' && fields.length < 3) {
-      return 'التحويل معروض بحقل أو حقلين. أكثر البنوك تطلب اسم صاحب الحساب واسم البنك إلى جانب الآيبان، وترفض الحوالة إن لم يطابق الاسم.';
+      return say(
+        'التحويل معروض بحقل أو حقلين. أكثر البنوك تطلب اسم صاحب الحساب واسم البنك إلى جانب الآيبان، وترفض الحوالة إن لم يطابق الاسم.',
+        'The transfer is offered with only one or two fields. Most banks want the account holder and the bank name beside the IBAN, and refuse the transfer when the name does not match.',
+      );
     }
     if (provider === 'CRYPTO' && fields.length < 2) {
-      return 'العنوان وحده لا يكفي: أضِف الشبكة (مثل TRC-20)، فالإرسال على الشبكة الخطأ يضيّع المبلغ.';
+      return say(
+        'العنوان وحده لا يكفي: أضِف الشبكة (مثل TRC-20)، فالإرسال على الشبكة الخطأ يضيّع المبلغ.',
+        'The address alone is not enough: add the network (TRC-20, say), because sending on the wrong network loses the money.',
+      );
     }
     return null;
   }

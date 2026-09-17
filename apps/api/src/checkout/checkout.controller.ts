@@ -197,6 +197,21 @@ export class CheckoutController {
             value: field.value,
           })),
           afterPaying: instructions.afterPaying,
+          /*
+           * What the money is for.
+           *
+           * `supplyNote` is empty here on purpose: this email is sent before
+           * payment, and "ordered from the supplier after purchase" is a
+           * promise about a sale that has not happened yet. `order.received`
+           * says it, once the money has actually arrived.
+           */
+          lines: order.lines.map((line) => ({
+            productName: line.productName,
+            sku: line.sku,
+            qty: line.qty,
+            lineTotal: `$${line.lineTotal.amount}`,
+            supplyNote: '',
+          })),
           orderUrl: new URL(
             ROUTES.order(order.number),
             process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',

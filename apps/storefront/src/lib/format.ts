@@ -121,6 +121,15 @@ export function formatDelivery(
  *
  * It is optional because the cart calls this about a line already held, where
  * availability is settled and the mode is all there is to say.
+ *
+ * None of these strings says "supplier". Where the shop buys from is the
+ * shop's business, and a buyer told their key is "being ordered from the
+ * supplier" learns two things they did not ask about — that the shop does not
+ * hold it, and that somebody else does — in place of the one thing they want,
+ * which is when it arrives. The waiting state is "قيد التجهيز", being
+ * prepared. The comments in this file still say supplier, because why a line
+ * is bought after the sale rather than before it is something the next person
+ * editing this code has to understand; the rule is about the strings.
  */
 export function formatFulfillment(
   mode: FulfillmentMode,
@@ -138,8 +147,8 @@ export function formatFulfillment(
       return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
     case 'ON_DEMAND':
       return ar
-        ? 'يُطلَب من المورّد بعد الشراء، حتى لا تبدأ مدّة الترخيص قبل أن تستخدمه'
-        : 'Ordered from the supplier after purchase, so the licence term does not start before you use it';
+        ? 'يُجهَّز بعد الشراء، حتى لا تبدأ مدّة الترخيص قبل أن تستخدمه'
+        : 'Prepared after purchase, so the licence term does not start before you use it';
     case 'MANUAL_SETUP':
       return ar
         ? 'يُجهَّز يدوياً على بياناتك بعد الشراء'
@@ -183,7 +192,7 @@ export function formatActivation(method: string, locale: string): string {
  *
  * Moved here from the order confirmation page when the account area grew an
  * order list, because the two pages show the same order and a customer who
- * reads "قيد الطلب من المورّد" on one and something else on the other reads it
+ * reads "قيد التجهيز" on one and something else on the other reads it
  * as two different things happening.
  */
 const STATUS_AR: Record<string, string> = {
@@ -202,7 +211,7 @@ const STATUS_AR: Record<string, string> = {
 const STATE_AR: Record<string, string> = {
   PENDING: 'في الانتظار',
   AUTO_ASSIGNED: 'تم تخصيص المفتاح',
-  MANUAL_QUEUE: 'قيد الطلب من المورّد',
+  MANUAL_QUEUE: 'قيد التجهيز',
   DELIVERED: 'تم التسليم',
   FAILED: 'تعذّر — فريقنا يتابعه',
 };
@@ -210,7 +219,7 @@ const STATE_AR: Record<string, string> = {
 const STATE_EN: Record<string, string> = {
   PENDING: 'Pending',
   AUTO_ASSIGNED: 'Key assigned',
-  MANUAL_QUEUE: 'Being ordered from the supplier',
+  MANUAL_QUEUE: 'Being prepared',
   DELIVERED: 'Delivered',
   FAILED: 'Failed — our team is on it',
 };
