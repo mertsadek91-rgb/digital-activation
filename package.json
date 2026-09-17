@@ -15,6 +15,7 @@
     "typecheck": "turbo run typecheck && tsc -p tsconfig.json",
     "env:check": "tsx scripts/env-check.ts",
     "secrets:generate": "tsx scripts/generate-secrets.ts",
+    "smtp:set": "tsx scripts/set-smtp.ts",
     "test": "turbo run test",
     "clean": "turbo run clean && rimraf node_modules",
     "db:generate": "pnpm --filter @da/db run generate",
