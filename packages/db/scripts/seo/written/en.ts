@@ -37,7 +37,15 @@
  */
 import type { Block } from '../body.js';
 
+import { OFFICE_2024 } from './office-2024.js';
+import { SECURITY_AND_ACCOUNTS } from './security-and-accounts.js';
+import { WINDOWS_SERVER } from './windows-server.js';
+
 export const EN_WRITTEN: Record<string, Block[]> = {
+  ...OFFICE_2024,
+  ...SECURITY_AND_ACCOUNTS,
+  ...WINDOWS_SERVER,
+
   // --- Windows ---------------------------------------------------------------
 
   'windows-11-pro': [
