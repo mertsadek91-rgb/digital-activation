@@ -21,6 +21,7 @@ export function AccountNav({ ar, prefix }: { ar: boolean; prefix: string }) {
   const pathname = usePathname();
   const licences = `${prefix}${ROUTES.licenses}`;
   const orders = `${prefix}${ROUTES.accountOrders}`;
+  const forYou = `${prefix}${ROUTES.forYou}`;
 
   return (
     <nav className="account-tabs">
@@ -29,6 +30,9 @@ export function AccountNav({ ar, prefix }: { ar: boolean; prefix: string }) {
       </Link>
       <Link href={orders} aria-current={pathname === orders ? 'page' : undefined}>
         {ar ? 'طلباتي' : 'My orders'}
+      </Link>
+      <Link href={forYou} aria-current={pathname === forYou ? 'page' : undefined}>
+        {ar ? 'مختارة لك' : 'Chosen for you'}
       </Link>
     </nav>
   );

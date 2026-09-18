@@ -19,12 +19,14 @@ import {
   type EditReview,
   type LicenceList,
   type OwnReview,
+  type ForYou,
   type ReviewableList,
   type SubmitReview,
   accountOrderListSchema,
   customerMeSchema,
   customerSecretsSchema,
   exchangeResultSchema,
+  forYouSchema,
   licenceListSchema,
   loginLinkResultSchema,
   ownReviewSchema,
@@ -86,6 +88,10 @@ export const accountApi = {
   licences: (): Promise<LicenceList> => request('/account/licences', licenceListSchema),
 
   orders: (): Promise<AccountOrderList> => request('/account/orders', accountOrderListSchema),
+
+  /** Renewals due and products from brands this customer already buys. */
+  forYou: (locale: 'ar' | 'en'): Promise<ForYou> =>
+    request(`/account/for-you?locale=${locale}`, forYouSchema),
 
   reveal: (orderItemId: string): Promise<CustomerSecret[]> =>
     request(`/account/licences/${encodeURIComponent(orderItemId)}/reveal`, customerSecretsSchema, {

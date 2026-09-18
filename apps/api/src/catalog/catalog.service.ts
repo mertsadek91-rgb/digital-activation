@@ -734,6 +734,41 @@ export class CatalogService {
     );
   }
 
+  /**
+   * Cards for a set of products, in the order asked for.
+   *
+   * Public because the account area needs to draw the same tile the catalog
+   * draws — the price in the reader's currency, the hero image, the stock line
+   * — and the alternative was a second card builder that would disagree with
+   * this one about a sale price within a month.
+   *
+   * Published only: a suggestion is a link, and a link to a draft is a 404.
+   *
+   * Keyed by product id rather than returned as a list, because an unpublished
+   * one simply is not in the answer — and a caller matching a list back to its
+   * own ranking by position would silently attach the wrong reason to the
+   * wrong product the first time that happened.
+   */
+  async cardsForProducts(
+    productIds: string[],
+    query: CatalogQuery,
+  ): Promise<Map<string, CatalogCard>> {
+    if (productIds.length === 0) return new Map();
+
+    const locale = query.locale === 'en' ? Locale.EN : Locale.AR;
+    const [products, fx] = await Promise.all([
+      this.prisma.client.product.findMany({
+        where: { id: { in: productIds }, status: PublishStatus.PUBLISHED },
+        include: this.cardInclude(locale).product.include,
+      }),
+      this.fxTable(),
+    ]);
+
+    return new Map(
+      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+    );
+  }
+
   private cardInclude(locale: Locale) {
     return {
       product: {

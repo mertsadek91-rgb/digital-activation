@@ -12,6 +12,7 @@ export * from './account.js';
 export * from './admin.js';
 export * from './catalog.js';
 export * from './catalog-edit.js';
+export * from './for-you.js';
 export * from './product-content.js';
 export * from './cart.js';
 export * from './checkout.js';

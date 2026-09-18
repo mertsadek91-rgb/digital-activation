@@ -427,3 +427,70 @@
   block-size: 1px;
   overflow: hidden;
 }
+
+/* --- chosen for you ------------------------------------------------------- */
+
+.for-you-section { margin-block: var(--space-5, 32px); }
+.for-you-section h2 {
+  margin: 0 0 var(--space-3, 16px);
+  font-size: 1.25rem;
+}
+
+/*
+ * A renewal is a date, so the date leads.
+ *
+ * The days left sit in their own column at the start of the row, big and in
+ * one glance, because that is the number the decision turns on: renew now, or
+ * next month. The product is beside it, not above it — a customer scanning
+ * four expiring licences reads the column, not four cards.
+ */
+.renewal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3, 16px);
+}
+.renewal-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: var(--space-3, 16px);
+  align-items: center;
+  padding: var(--space-3, 16px);
+  border: 1px solid #e2e5e4;
+  border-inline-start: 4px solid #a07c1a;
+  border-radius: 12px;
+  background: #fff;
+}
+.renewal-row.is-lapsed { border-inline-start-color: #b4231d; background: #fdf6f5; }
+
+.renewal-when {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.renewal-when strong { font-size: 0.8rem; color: #6b7472; font-weight: 600; }
+.renewal-days {
+  font-size: 2.1rem;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #a07c1a;
+}
+.renewal-row.is-lapsed .renewal-days { color: #b4231d; }
+.renewal-what { min-inline-size: 0; }
+
+/* The reason, under the tile it explains. Without it the grid is an advert. */
+.for-you-tile { display: grid; gap: 6px; align-content: start; }
+.for-you-reason {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7472;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .renewal-row { grid-template-columns: 1fr; }
+  .renewal-when { justify-items: start; text-align: start; }
+}

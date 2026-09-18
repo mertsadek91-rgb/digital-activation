@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Query,
   Post,
   Req,
   Res,
@@ -16,9 +17,12 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   type AccountOrderList,
   CUSTOMER_SESSION_HOURS,
+  type CatalogQuery,
+  catalogQuerySchema,
   type CustomerMe,
   type LicenceList,
   type OwnReview,
+  type ForYou,
   type ReviewableList,
   editReviewSchema,
   exchangeLoginTokenSchema,
@@ -31,6 +35,7 @@ import { ZodPipe } from '../common/zod.pipe.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 
 import { AccountService, type CustomerActor } from './account.service.js';
+import { ForYouService } from './for-you.service.js';
 
 const SESSION_COOKIE = 'da_customer';
 
@@ -51,6 +56,7 @@ export class AccountController {
   constructor(
     private readonly account: AccountService,
     private readonly reviews: ReviewsService,
+    private readonly recommendations: ForYouService,
   ) {}
 
   private actor(request: FastifyRequest, customerId: string): CustomerActor {
@@ -193,6 +199,23 @@ export class AccountController {
    * these are, and there is nothing to enumerate — the set is whatever this
    * one customer bought, so asking twice returns the same thing.
    */
+  /**
+   * Suggestions built from what this customer already owns.
+   *
+   * Behind the same session as everything else here: it is a description of
+   * somebody's purchase history, and the only person entitled to read it is
+   * the person who made it.
+   */
+  @Get('for-you')
+  @ApiOperation({ summary: 'Renewals due and products from brands already bought' })
+  async forYou(
+    @Req() request: FastifyRequest,
+    @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery,
+  ): Promise<ForYou> {
+    const session = await this.require(request);
+    return this.recommendations.forYou(session.customerId, query);
+  }
+
   @Get('orders')
   @ApiOperation({ summary: "The customer's own orders. Never a licence." })
   async orders(@Req() request: FastifyRequest): Promise<AccountOrderList> {

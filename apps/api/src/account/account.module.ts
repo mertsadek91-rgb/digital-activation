@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { CatalogModule } from '../catalog/catalog.module.js';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
 import { MailModule } from '../mail/mail.module.js';
 import { ReviewsModule } from '../reviews/reviews.module.js';
@@ -7,6 +8,7 @@ import { VaultModule } from '../vault/vault.module.js';
 
 import { AccountController } from './account.controller.js';
 import { AccountService } from './account.service.js';
+import { ForYouService } from './for-you.service.js';
 
 /**
  * The customer's own area: sign in by emailed link, read your own licences.
@@ -18,8 +20,8 @@ import { AccountService } from './account.service.js';
  * both of them.
  */
 @Module({
-  imports: [VaultModule, FulfillmentModule, MailModule, ReviewsModule],
+  imports: [VaultModule, FulfillmentModule, MailModule, ReviewsModule, CatalogModule],
   controllers: [AccountController],
-  providers: [AccountService],
+  providers: [AccountService, ForYouService],
 })
 export class AccountModule {}
