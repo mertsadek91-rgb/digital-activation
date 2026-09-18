@@ -30,6 +30,7 @@
     "staff": "tsx scripts/create-staff.ts",
     "pages": "tsx scripts/legacy/pages.ts",
     "seo": "tsx scripts/seo/index.ts",
+    "seo-audit": "tsx scripts/seo/audit.ts",
     "bodies": "tsx scripts/seo/bodies.ts",
     "demo": "tsx scripts/demo.ts",
     "redirects": "tsx scripts/legacy/redirects.ts",

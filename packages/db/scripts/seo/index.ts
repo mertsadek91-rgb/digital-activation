@@ -1,9 +1,10 @@
 /**
  * Proposes the SEO title and meta description the publish gate refuses on.
  *
- *   pnpm db:seo            report only, writes nothing
- *   pnpm db:seo --apply    write to the database
+ *   pnpm db:seo              report only, writes nothing
+ *   pnpm db:seo --apply      write to the database
  *   pnpm db:seo --locale=en  one locale instead of both
+ *   pnpm db:seo --tighten    also re-propose copy that is over the ceiling
  *
  * 35 of the 73 products in this catalog are held out of the store by nothing
  * but those two fields, and every English translation is missing both. The
@@ -36,6 +37,22 @@ import { Locale, prisma } from '../../src/index.js';
 import { type Lang, type ProductFacts, propose } from './copy.js';
 
 /**
+ * `--tighten` exists because the floor and the ceiling are different rules.
+ *
+ * The gate refuses an *absent* title, so this script only ever filled gaps —
+ * anything above the floor was a person's words and was left alone, which is
+ * the right default and is why it is still the default. But 25 Arabic titles
+ * and 6 descriptions came through the WooCommerce import above the width a
+ * search result shows, and a title Google cuts at 60 characters has lost its
+ * tail whether a person wrote it or not. Truncation is not a matter of taste.
+ *
+ * So the ceiling is opt-in, prints the old text beside the new with both
+ * lengths, and still writes nothing without --apply. What it must never do is
+ * make things worse: a replacement is only offered when it is genuinely
+ * shorter than what is there and still clears the floor.
+ */
+
+/**
  * The gate's thresholds, copied rather than imported.
  *
  * They belong to READINESS_RULES and SEO_LENGTH_GUIDE in
@@ -63,6 +80,9 @@ interface Row {
   /** What is already there and is being kept. */
   keptTitle: string | null;
   keptDescription: string | null;
+  /** What is being replaced, on a --tighten run. Null when the field was empty. */
+  replacedTitle: string | null;
+  replacedDescription: string | null;
 }
 
 const problems: { kind: string; detail: string }[] = [];
@@ -71,8 +91,14 @@ function needs(value: string | null, min: number): boolean {
   return (value ?? '').trim().length < min;
 }
 
+/** Over the width a search result shows, so its tail is being cut off. */
+function overflows(value: string | null, max: number): boolean {
+  return (value ?? '').trim().length > max;
+}
+
 async function main(): Promise<void> {
   const apply = process.argv.includes('--apply');
+  const tighten = process.argv.includes('--tighten');
   const only = process.argv.find((argument) => argument.startsWith('--locale='))?.slice(9);
   const langs: Lang[] = only === 'ar' ? ['ar'] : only === 'en' ? ['en'] : ['ar', 'en'];
 
@@ -140,9 +166,40 @@ async function main(): Promise<void> {
       if (needs(translation.seoDescription, READINESS_RULES.seoDescriptionMinLength)) {
         fields.push('seoDescription');
       }
-      if (fields.length === 0) continue;
 
       const proposal = propose(facts, lang, READINESS_RULES, SEO_LENGTH_GUIDE);
+
+      /*
+       * The ceiling pass, and the two guards on it.
+       *
+       * Shorter, or it is not an improvement — `propose` fits to the ceiling
+       * but a hand-written title can already be under it in a way the
+       * generator cannot beat. And still above the floor, because a proposal
+       * that would not publish is a bug rather than a suggestion; the gate is
+       * re-run on the result below for exactly that reason.
+       */
+      if (tighten) {
+        const currentTitle = (translation.seoTitle ?? '').trim();
+        const currentMeta = (translation.seoDescription ?? '').trim();
+        if (
+          !fields.includes('seoTitle') &&
+          overflows(currentTitle, SEO_LENGTH_GUIDE.seoTitleMax) &&
+          proposal.seoTitle.length < currentTitle.length &&
+          proposal.seoTitle.length >= READINESS_RULES.seoTitleMinLength
+        ) {
+          fields.push('seoTitle');
+        }
+        if (
+          !fields.includes('seoDescription') &&
+          overflows(currentMeta, SEO_LENGTH_GUIDE.seoDescriptionMax) &&
+          proposal.seoDescription.length < currentMeta.length &&
+          proposal.seoDescription.length >= READINESS_RULES.seoDescriptionMinLength
+        ) {
+          fields.push('seoDescription');
+        }
+      }
+
+      if (fields.length === 0) continue;
 
       // The gate is the only test this script can run on itself, so it runs
       // it: a proposal that would not publish is a bug, not a suggestion.
@@ -169,6 +226,14 @@ async function main(): Promise<void> {
         keptDescription: fields.includes('seoDescription')
           ? null
           : (translation.seoDescription?.trim() ?? null),
+        replacedTitle:
+          fields.includes('seoTitle') && (translation.seoTitle ?? '').trim().length > 0
+            ? (translation.seoTitle ?? '').trim()
+            : null,
+        replacedDescription:
+          fields.includes('seoDescription') && (translation.seoDescription ?? '').trim().length > 0
+            ? (translation.seoDescription ?? '').trim()
+            : null,
       });
 
       if (!apply) continue;
@@ -225,11 +290,24 @@ function report(rows: Row[], apply: boolean): void {
     const mark = (field: 'seoTitle' | 'seoDescription'): string =>
       row.fields.includes(field) ? '+' : ' ';
 
+    // The replaced text above the replacement, because a tightening run is
+    // read as a comparison — "is the shorter one still the right sentence" —
+    // and that question cannot be answered from the new text alone.
+    if (row.replacedTitle !== null) {
+      console.log(
+        `  ${row.lang}  - title  [${String(row.replacedTitle.length).padStart(3)}] ${row.replacedTitle}`,
+      );
+    }
     console.log(
       `  ${row.lang}  ${mark('seoTitle')} title  [${String(row.seoTitle.length).padStart(3)}] ${
         row.keptTitle ?? row.seoTitle
       }`,
     );
+    if (row.replacedDescription !== null) {
+      console.log(
+        `      - meta   [${String(row.replacedDescription.length).padStart(3)}] ${row.replacedDescription}`,
+      );
+    }
     console.log(
       `      ${mark('seoDescription')} meta   [${String(row.seoDescription.length).padStart(3)}] ${
         row.keptDescription ?? row.seoDescription
