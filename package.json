@@ -32,6 +32,7 @@
     "db:pages": "pnpm --filter @da/db run pages",
     "db:seo": "pnpm --filter @da/db run seo",
     "db:seo-audit": "pnpm --filter @da/db run seo-audit",
+    "db:written": "pnpm --filter @da/db run written",
     "db:redirects": "pnpm --filter @da/db run redirects",
     "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",
