@@ -32,6 +32,7 @@
     "seo": "tsx scripts/seo/index.ts",
     "seo-audit": "tsx scripts/seo/audit.ts",
     "written": "tsx scripts/seo/written/apply.ts",
+    "short": "tsx scripts/seo/written/short.ts",
     "bodies": "tsx scripts/seo/bodies.ts",
     "demo": "tsx scripts/demo.ts",
     "redirects": "tsx scripts/legacy/redirects.ts",
