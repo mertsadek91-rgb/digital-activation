@@ -279,6 +279,9 @@ importers:
       '@aws-sdk/client-kms':
         specifier: 'catalog:'
         version: 3.1130.0
+      '@aws-sdk/client-s3':
+        specifier: 'catalog:'
+        version: 3.1129.0
       '@da/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -360,6 +363,9 @@ importers:
       rxjs:
         specifier: 'catalog:'
         version: 7.8.2
+      sharp:
+        specifier: 'catalog:'
+        version: 0.35.4(@types/node@22.20.1)
       stripe:
         specifier: 'catalog:'
         version: 22.6.1(@types/node@22.20.1)

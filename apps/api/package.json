@@ -13,6 +13,7 @@
   "dependencies": {
     "@da/contracts": "workspace:*",
     "@aws-sdk/client-kms": "catalog:",
+    "@aws-sdk/client-s3": "catalog:",
     "@da/db": "workspace:*",
     "@da/i18n": "workspace:*",
     "@da/seo": "workspace:*",
@@ -36,6 +37,7 @@
     "otplib": "catalog:",
     "pino": "catalog:",
     "qrcode": "catalog:",
+    "sharp": "catalog:",
     "reflect-metadata": "catalog:",
     "resend": "catalog:",
     "rxjs": "catalog:",

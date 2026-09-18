@@ -12,6 +12,7 @@ import { CheckoutModule } from './checkout/checkout.module.js';
 import { ContentModule } from './content/content.module.js';
 import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
 import { MailModule } from './mail/mail.module.js';
+import { MediaModule } from './media/media.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -58,6 +59,7 @@ import { VaultModule } from './vault/vault.module.js';
     ContentModule,
     VaultModule,
     MailModule,
+    MediaModule,
     FulfillmentModule,
     AuthModule,
     AdminModule,
