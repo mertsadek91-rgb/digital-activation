@@ -22,6 +22,8 @@ import { ProductContentService } from './product-content.service.js';
 import { PromotionsController } from './promotions.controller.js';
 import { PromotionsService } from './promotions.service.js';
 import { ReviewsAdminController } from './reviews.controller.js';
+import { TaxonomyController } from './taxonomy.controller.js';
+import { TaxonomyService } from './taxonomy.service.js';
 
 @Module({
   imports: [AuthModule, VaultModule, CheckoutModule, FulfillmentModule, ReviewsModule, MailModule],
@@ -29,12 +31,13 @@ import { ReviewsAdminController } from './reviews.controller.js';
     AdminController,
     CatalogEditController,
     ProductContentController,
+    TaxonomyController,
     OrdersController,
     ReviewsAdminController,
     PromotionsController,
     LaunchController,
     DashboardController,
   ],
-  providers: [AdminService, CatalogEditService, ProductContentService, OrdersService, PromotionsService, LaunchService, DashboardService],
+  providers: [AdminService, CatalogEditService, ProductContentService, TaxonomyService, OrdersService, PromotionsService, LaunchService, DashboardService],
 })
 export class AdminModule {}
