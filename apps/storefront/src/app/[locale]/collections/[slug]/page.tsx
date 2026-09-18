@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
+import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
@@ -140,11 +141,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">
-            {ar
-              ? `${String(collection.total)} منتجاً`
-              : `${String(collection.total)} product${collection.total === 1 ? '' : 's'}`}
-          </p>
+          <p className="result-count">{productCount(collection.total, locale)}</p>
 
           {collection.products.length === 0 ? (
             <p className="empty">

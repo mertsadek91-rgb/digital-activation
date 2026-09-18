@@ -9,3 +9,4 @@
  * first. One implementation, in the service that owns the money.
  */
 export * from './arabic.js';
+export * from './counted.js';

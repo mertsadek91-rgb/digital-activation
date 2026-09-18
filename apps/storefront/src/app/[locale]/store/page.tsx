@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
+import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { MotionFadeIn } from '../../../components/motion-wrapper';
@@ -150,11 +151,7 @@ export default async function StorePage({ params, searchParams }: Props) {
 
         <div className="catalog-main">
           <div className="store-bar">
-            <p className="result-count">
-              {ar
-                ? `${String(store.total)} منتجاً`
-                : `${String(store.total)} product${store.total === 1 ? '' : 's'}`}
-            </p>
+            <p className="result-count">{productCount(store.total, locale)}</p>
 
             {/* Links, not a <select>: the page is server-rendered, each sort is a
             real URL a crawler can follow, and nothing here needs JavaScript. */}

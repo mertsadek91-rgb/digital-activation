@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
+import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
@@ -183,11 +184,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">
-            {ar
-              ? `${String(brand.total)} منتجاً`
-              : `${String(brand.total)} product${brand.total === 1 ? '' : 's'}`}
-          </p>
+          <p className="result-count">{productCount(brand.total, locale)}</p>
 
           {brand.products.length === 0 ? (
             <p className="empty">
