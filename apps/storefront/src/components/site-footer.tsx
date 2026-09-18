@@ -45,13 +45,23 @@ const PROMISES = [
   {
     kind: 'payments',
     badgeTheme: 'teal',
-    ar: 'دفع آمن ومتعدد',
-    en: 'Secure & Multi-Payments',
-    // Named five card networks the shop cannot take — the payment bar below
-    // this strip is driven by what is configured, and naming them in prose
-    // here would put the claim straight back on every page.
-    subAr: 'الدفع عبر اتصال مشفّر، وبياناتك لا تُخزَّن عندنا',
-    subEn: 'Paid over an encrypted connection; we store no card details',
+    /*
+     * "ومتعدد" — and several — has gone, because there is one.
+     *
+     * This strip once named five card networks the shop cannot take. Those
+     * were removed and the count survived, which is the same claim with the
+     * evidence taken out. One method is configured today, and a promise of
+     * several on every page of the site is a promise the checkout then breaks.
+     *
+     * The card line went with it for the same reason: "we store no card
+     * details" is perfectly true and tells a reader that cards are taken. The
+     * payment bar lower down is driven by what is actually configured; this
+     * strip now says only what stays true however that bar turns out.
+     */
+    ar: 'دفع آمن',
+    en: 'Secure payment',
+    subAr: 'الدفع عبر اتصال مشفّر، ولا نحتفظ ببيانات الدفع عندنا',
+    subEn: 'Paid over an encrypted connection; we keep no payment details',
     icon: CreditCardIcon,
   },
   {

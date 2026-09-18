@@ -7,6 +7,7 @@ import { buildGraph, jsonld } from '@da/seo';
 import { BRAND } from '@da/ui';
 
 import { CategoryMark, StepMark } from '../../components/icons';
+import { HeroSlider } from '../../components/hero-slider';
 import { MotionFadeIn } from '../../components/motion-wrapper';
 import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
@@ -115,39 +116,40 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       <section className="hero">
         <div className="hero-inner">
-          <h1>{t('heroHeadline')}</h1>
-          <p className="hero-body">{t('heroBody')}</p>
+          <div className="hero-content">
+            <h1>{t('heroHeadline')}</h1>
+            <p className="hero-body">{t('heroBody')}</p>
 
-          <div className="hero-actions">
-            <Link href={href(ROUTES.store)} className="btn btn-primary">
-              {t('heroCta')}
-            </Link>
-            <Link href={href(ROUTES.goldenWarranty)} className="btn btn-ghost">
-              {t('heroCtaSecondary')}
-            </Link>
+            <div className="hero-actions">
+              <Link href={href(ROUTES.store)} className="btn btn-primary">
+                {t('heroCta')}
+              </Link>
+              <Link href={href(ROUTES.goldenWarranty)} className="btn btn-ghost">
+                {t('heroCtaSecondary')}
+              </Link>
+            </div>
+
+            {home ? (
+              <dl className="hero-stats">
+                <div>
+                  <dt>{home.productCount}</dt>
+                  <dd>{t('statProducts')}</dd>
+                </div>
+                <div>
+                  <dt>{home.brands.length}</dt>
+                  <dd>{t('statBrands')}</dd>
+                </div>
+                <div>
+                  <dt>5</dt>
+                  <dd>{t('statDelivery')}</dd>
+                </div>
+              </dl>
+            ) : null}
           </div>
 
-          {/* Read from the catalog, so the page cannot advertise a range it
-              does not stock. */}
-          {home ? (
-            <dl className="hero-stats">
-              <div>
-                <dt>{home.productCount}</dt>
-                <dd>{t('statProducts')}</dd>
-              </div>
-              <div>
-                <dt>{home.brands.length}</dt>
-                <dd>{t('statBrands')}</dd>
-              </div>
-              <div>
-                {/* Just the number. "< 5" reads as "5 >" in RTL — the bracket
-                    is bidi-neutral and reorders to the wrong side of the
-                    digit — so the qualifier lives in the label as a word. */}
-                <dt>5</dt>
-                <dd>{t('statDelivery')}</dd>
-              </div>
-            </dl>
-          ) : null}
+          <div className="hero-slider-container">
+            <HeroSlider locale={locale} />
+          </div>
         </div>
       </section>
 
@@ -187,14 +189,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </header>
                 <ul className="category-grid">
                   {home.categories.map((category) => (
-                    <li key={category.slug}>
-                      <Link href={href(category.href)}>
-                        {/* The same mark the product menu uses, so a category is
-                            the same object wherever it is met. */}
-                        <CategoryMark slug={category.slug} size={30} />
-                        <strong>{category.name}</strong>
-                        {category.headline ? <span>{category.headline}</span> : null}
-                        <em>{t('productCount', { count: category.productCount })}</em>
+                    <li key={category.slug} className="category-card-item">
+                      <Link href={href(category.href)} className="category-card-link">
+                        <div className="cat-icon-badge">
+                          <CategoryMark slug={category.slug} size={30} />
+                        </div>
+                        <div className="cat-card-body">
+                          <strong className="cat-name">{category.name}</strong>
+                          {category.headline ? (
+                            <span className="cat-headline">{category.headline}</span>
+                          ) : null}
+                        </div>
+                        <div className="cat-card-footer">
+                          <span className="cat-count-badge">
+                            {t('productCount', { count: category.productCount })}
+                          </span>
+                          <span className="cat-arrow" aria-hidden="true">
+                            {locale === 'ar' ? '←' : '→'}
+                          </span>
+                        </div>
                       </Link>
                     </li>
                   ))}
