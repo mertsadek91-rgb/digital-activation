@@ -37,12 +37,18 @@
  */
 import type { Block } from '../body.js';
 
+import { ANTIVIRUS } from './antivirus.js';
+import { DEV_AND_TOOLS } from './dev-and-tools.js';
 import { OFFICE_2024 } from './office-2024.js';
+import { PDF_AND_DESIGN } from './pdf-and-design.js';
 import { SECURITY_AND_ACCOUNTS } from './security-and-accounts.js';
 import { WINDOWS_SERVER } from './windows-server.js';
 
 export const EN_WRITTEN: Record<string, Block[]> = {
+  ...ANTIVIRUS,
+  ...DEV_AND_TOOLS,
   ...OFFICE_2024,
+  ...PDF_AND_DESIGN,
   ...SECURITY_AND_ACCOUNTS,
   ...WINDOWS_SERVER,
 
