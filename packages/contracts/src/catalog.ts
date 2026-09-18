@@ -126,6 +126,17 @@ export const catalogProductSchema = z.object({
     .array(z.object({ step: z.number().int(), text: z.string(), assetId: z.string().optional() }))
     .nullable(),
   downloadUrl: z.string().nullable(),
+  /**
+   * What this licence will not do.
+   *
+   * Region locks, edition limits — "not for Windows 10 Home". The column held
+   * these from the first migration and nothing rendered them, which is the
+   * expensive way round: the shopper finds out after paying, and a refund
+   * costs more than a sale not made.
+   */
+  warnings: z
+    .array(z.object({ text: z.string(), severity: z.enum(['note', 'critical']) }))
+    .default([]),
 
   brand: z.object({ slug: slugSchema, name: z.string() }).nullable(),
   breadcrumbs: z.array(catalogBreadcrumbSchema),

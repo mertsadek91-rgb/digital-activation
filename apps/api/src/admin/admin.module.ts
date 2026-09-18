@@ -17,6 +17,8 @@ import { LaunchController } from './launch.controller.js';
 import { LaunchService } from './launch.service.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersService } from './orders.service.js';
+import { ProductContentController } from './product-content.controller.js';
+import { ProductContentService } from './product-content.service.js';
 import { PromotionsController } from './promotions.controller.js';
 import { PromotionsService } from './promotions.service.js';
 import { ReviewsAdminController } from './reviews.controller.js';
@@ -26,12 +28,13 @@ import { ReviewsAdminController } from './reviews.controller.js';
   controllers: [
     AdminController,
     CatalogEditController,
+    ProductContentController,
     OrdersController,
     ReviewsAdminController,
     PromotionsController,
     LaunchController,
     DashboardController,
   ],
-  providers: [AdminService, CatalogEditService, OrdersService, PromotionsService, LaunchService, DashboardService],
+  providers: [AdminService, CatalogEditService, ProductContentService, OrdersService, PromotionsService, LaunchService, DashboardService],
 })
 export class AdminModule {}

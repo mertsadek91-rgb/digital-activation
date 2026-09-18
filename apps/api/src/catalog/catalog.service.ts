@@ -577,6 +577,7 @@ export class CatalogService {
       faq: parseFaq(translation?.faq ?? null),
       activationSteps: parseSteps(translation?.activationSteps ?? null),
       downloadUrl: translation?.downloadUrl ?? null,
+      warnings: parseWarnings(translation?.warnings ?? null),
       brand: product.brand
         ? {
             slug: product.brand.slug,
@@ -824,4 +825,21 @@ export class CatalogService {
       isDraft: product.status !== PublishStatus.PUBLISHED,
     };
   }
+}
+
+/**
+ * Product warnings, as the page shows them.
+ *
+ * Anything without text is dropped rather than rendered empty: a warning box
+ * containing nothing reads as a warning the shopper failed to understand.
+ */
+function parseWarnings(value: unknown): { text: string; severity: 'note' | 'critical' }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (entry === null || typeof entry !== 'object') return [];
+    const record = entry as Record<string, unknown>;
+    const text = typeof record.text === 'string' ? record.text.trim() : '';
+    if (text === '') return [];
+    return [{ text, severity: record.severity === 'critical' ? 'critical' : 'note' }];
+  });
 }

@@ -2747,3 +2747,60 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
     max-inline-size: 88px;
   }
 }
+
+/*
+ * What this licence will not do.
+ *
+ * The column held these from the first migration and nothing rendered them,
+ * which is the expensive way round: the shopper finds out after paying. Two
+ * severities, drawn differently on purpose — a region lock is a refusal and an
+ * edition note is an aside, and one border colour for both would teach a
+ * reader to skip whichever they saw first.
+ */
+.product-warnings {
+  margin-block: var(--space-4, 24px);
+}
+.product-warnings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.product-warnings li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+.product-warnings li span {
+  inline-size: 22px;
+  block-size: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+.product-warnings .warning-critical {
+  background: #fdf0ee;
+  border: 1px solid #f0c4bd;
+  color: #7d2119;
+}
+.product-warnings .warning-critical span {
+  background: #b4231d;
+  color: #fff;
+}
+.product-warnings .warning-note {
+  background: #fdf7e8;
+  border: 1px solid #efdcaf;
+  color: #6b5312;
+}
+.product-warnings .warning-note span {
+  background: #a07c1a;
+  color: #fff;
+}

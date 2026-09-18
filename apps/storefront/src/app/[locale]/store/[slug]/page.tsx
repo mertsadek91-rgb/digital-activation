@@ -251,6 +251,27 @@ export default async function ProductPage({ params }: Props) {
         </section>
       ) : null}
 
+      {/*
+        What this licence will not do.
+        
+        Above the description rather than below it, because the sentence that
+        matters here — "not for Windows 10 Home", "region-locked to the GCC" —
+        is the one a shopper needs before they decide, not after. A refund
+        costs more than a sale not made.
+      */}
+      {product.warnings.length > 0 ? (
+        <section className="product-warnings" aria-label={ar ? 'قبل الشراء' : 'Before you buy'}>
+          <ul>
+            {product.warnings.map((warning) => (
+              <li key={warning.text} className={`warning-${warning.severity}`}>
+                <span aria-hidden="true">{warning.severity === 'critical' ? '!' : 'i'}</span>
+                {warning.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {/* The description and the reviews side by side, which is how the store
           this replaces lays out the same two things — and it is the right
           arrangement for a page whose description runs to two screens: stacked,
