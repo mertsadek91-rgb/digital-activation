@@ -21,6 +21,19 @@ import { notFoundMetadata, robotsMeta } from '../../../lib/seo';
  * One URL per page in both languages. The API falls back to the other locale
  * when a translation has not been written, because answering in the wrong
  * language beats a 404 on a page the header links to in both.
+ *
+ * What that fallback must not do is pretend. `/en/privacy` and `/en/terms`
+ * both answer 200 with Arabic bodies today, because no English text exists for
+ * either — and the page said nothing about it. An English-speaking customer was
+ * handed a privacy policy and terms of use they could not read, with no sign
+ * that a translation was missing rather than that the shop writes its legal
+ * pages in Arabic on purpose.
+ *
+ * So the page says so, in the language that was asked for, and marks the body
+ * with the language it is actually in so a screen reader and a browser's
+ * translate prompt both get it right. The canonical follows the content rather
+ * than the URL: two URLs serving one Arabic document are one page, and telling
+ * a crawler otherwise earns a duplicate rather than a second listing.
  */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -41,13 +54,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const path = `/${page.slug}`;
   const links = alternates(SITE_URL, path);
+  // The locale the body is in, which is not always the one that was asked for.
+  const served = page.locale === 'en' ? 'en' : 'ar';
 
   return {
     title: page.seo.title ?? page.title,
     description: page.seo.description,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, path, served),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
   };
@@ -68,6 +83,9 @@ export default async function ContentPage({ params }: Props) {
 
   const ar = locale === 'ar';
   const prefix = ar ? '' : `/${locale}`;
+  // Requested against served. Equal on every page that has been translated.
+  const served = page.locale === 'en' ? 'en' : 'ar';
+  const translated = served === (ar ? 'ar' : 'en');
   const url = new URL(`${prefix}/${page.slug}`, SITE_URL).toString();
 
   // The FAQ blocks become FAQPage markup — the one part of a page like this
@@ -91,7 +109,21 @@ export default async function ContentPage({ params }: Props) {
         <h1>{page.title}</h1>
       </header>
 
-      <div className="prose">
+      {translated ? null : (
+        <p className="notice-untranslated">
+          {ar
+            ? 'لم تُترجَم هذه الصفحة إلى العربية بعد، وما تقرأه أدناه هو النسخة الإنجليزية.'
+            : 'This page has not been translated into English yet. What follows is the Arabic version.'}{' '}
+          <a href={`${served === 'ar' ? '' : '/en'}/${page.slug}`} hrefLang={served}>
+            {served === 'ar' ? 'النسخة العربية' : 'English version'}
+          </a>
+        </p>
+      )}
+
+      {/* `lang` and `dir` follow the text, not the route: an Arabic body inside
+          an English page is still Arabic, and saying otherwise mis-renders the
+          punctuation and tells a screen reader to read it in the wrong voice. */}
+      <div className="prose" lang={served} dir={served === 'ar' ? 'rtl' : 'ltr'}>
         <Blocks blocks={page.blocks} />
       </div>
     </main>

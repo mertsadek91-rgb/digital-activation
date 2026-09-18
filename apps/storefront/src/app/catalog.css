@@ -1005,6 +1005,23 @@ h1 {
 
 /* --- prose ----------------------------------------------------------------- */
 
+/* Shown only on a page whose translation has not been written — two of them
+   today, the privacy policy and the terms. Stated plainly rather than styled
+   as an error: nothing is broken, the text is simply not in that language
+   yet. */
+.notice-untranslated {
+  padding: var(--spacing-1);
+  margin-block-end: var(--spacing-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+.notice-untranslated a {
+  color: var(--color-brand);
+}
+
 .prose {
   max-width: 72ch;
   line-height: 1.75;
