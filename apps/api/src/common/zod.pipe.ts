@@ -17,12 +17,28 @@ export class ZodPipe<T> implements PipeTransform<unknown, T> {
     const result = this.schema.safeParse(value);
     if (result.success) return result.data;
 
+    /*
+     * The schema's own words, not "Invalid request".
+     *
+     * The issues were being sent and the message was not: every panel in this
+     * repo reads `message` to put something on screen, so a price refused for
+     * being below its own strike-through arrived as "Invalid request" beside a
+     * form with fourteen fields in it. The reasons were in the payload the
+     * whole time, one key away from being read.
+     *
+     * `issues` stays, because a client that wants to mark the offending field
+     * needs the path; `message` is now the same thing said in one line.
+     */
+    const issues = result.error.issues.map((issue) => ({
+      path: issue.path.join('.'),
+      message: issue.message,
+    }));
+
     throw new BadRequestException({
-      message: 'Invalid request',
-      issues: result.error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-      })),
+      // Joined rather than only the first: a form sent with two bad fields is
+      // sent back twice if it is corrected one at a time.
+      message: issues.map((issue) => issue.message).join(' · ') || 'Invalid request',
+      issues,
     });
   }
 }

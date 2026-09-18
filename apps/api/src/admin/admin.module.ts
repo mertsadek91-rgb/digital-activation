@@ -9,6 +9,10 @@ import { VaultModule } from '../vault/vault.module.js';
 
 import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
+import { CatalogEditController } from './catalog-edit.controller.js';
+import { CatalogEditService } from './catalog-edit.service.js';
+import { DashboardController } from './dashboard.controller.js';
+import { DashboardService } from './dashboard.service.js';
 import { LaunchController } from './launch.controller.js';
 import { LaunchService } from './launch.service.js';
 import { OrdersController } from './orders.controller.js';
@@ -21,11 +25,13 @@ import { ReviewsAdminController } from './reviews.controller.js';
   imports: [AuthModule, VaultModule, CheckoutModule, FulfillmentModule, ReviewsModule, MailModule],
   controllers: [
     AdminController,
+    CatalogEditController,
     OrdersController,
     ReviewsAdminController,
     PromotionsController,
     LaunchController,
+    DashboardController,
   ],
-  providers: [AdminService, OrdersService, PromotionsService, LaunchService],
+  providers: [AdminService, CatalogEditService, OrdersService, PromotionsService, LaunchService, DashboardService],
 })
 export class AdminModule {}
