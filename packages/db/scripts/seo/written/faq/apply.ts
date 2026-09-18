@@ -34,9 +34,21 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '..', '..', '..', '.env')
 
 import { Locale, prisma, PublishStatus } from '../../../../src/index.js';
 
+import { FAQ_OFFICE_2024 } from './office-2024.js';
+import { FAQ_RDS_CALS } from './rds-cals.js';
+import { FAQ_SECURITY } from './security.js';
+import { FAQ_TOOLS } from './tools.js';
+import { FAQ_WINDOWS_SERVER } from './windows-server.js';
 import { WINDOWS_AND_OFFICE } from './windows-and-office.js';
 
-const FAQ = { ...WINDOWS_AND_OFFICE };
+const FAQ = {
+  ...WINDOWS_AND_OFFICE,
+  ...FAQ_OFFICE_2024,
+  ...FAQ_WINDOWS_SERVER,
+  ...FAQ_RDS_CALS,
+  ...FAQ_SECURITY,
+  ...FAQ_TOOLS,
+};
 
 async function main(): Promise<void> {
   const apply = process.argv.includes('--apply');
