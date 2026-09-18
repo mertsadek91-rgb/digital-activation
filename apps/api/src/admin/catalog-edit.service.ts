@@ -1,13 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type {
+  CreateProduct,
+  CreateVariant,
+  CreatedProduct,
   ProductIdentity,
   ProductTerms,
   SetProductIdentity,
   SetVariantTerms,
   VariantTerms,
 } from '@da/contracts';
-import { Locale, Prisma } from '@da/db';
+import { Locale, Prisma, PublishStatus } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { say } from '../common/panel-locale.js';
@@ -31,6 +34,158 @@ export class CatalogEditService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
   ) {}
+
+  // --- creating -------------------------------------------------------------
+
+  /**
+   * A new product, with the one variant that makes it a product.
+   *
+   * Both in a single transaction. A product with no variant has no price,
+   * cannot be bought and cannot be published — it is a name, not a product —
+   * and leaving one behind because the second call failed would put a thing in
+   * the catalog that every screen afterwards has to make excuses for.
+   *
+   * Always a draft, and the first variant is a draft too. The publish gate
+   * wants a title, a meta description, a hero image and 120 words; a product
+   * born published is born broken in public.
+   */
+  async createProduct(
+    input: CreateProduct,
+    actorId: string | undefined,
+  ): Promise<CreatedProduct> {
+    const sku = normaliseSku(input.variant.sku);
+    const [slugTaken, skuTaken] = await Promise.all([
+      this.prisma.client.product.count({ where: { slug: input.slug } }),
+      this.prisma.client.variant.count({ where: { sku } }),
+    ]);
+    if (slugTaken > 0) {
+      throw new BadRequestException(
+        say('هذا الرابط مستخدم لمنتج آخر.', 'Another product already has that URL.'),
+      );
+    }
+    if (skuTaken > 0) {
+      throw new BadRequestException(
+        say('هذا الرمز مستخدم لمتغيّر آخر.', 'Another variant already has that SKU.'),
+      );
+    }
+    if (input.categoryIds.length > 0) {
+      const found = await this.prisma.client.category.count({
+        where: { id: { in: input.categoryIds } },
+      });
+      if (found !== new Set(input.categoryIds).size) {
+        throw new BadRequestException(say('قسم غير موجود.', 'One of those categories does not exist.'));
+      }
+    }
+
+    const product = await this.prisma.client.$transaction(async (tx) => {
+      const created = await tx.product.create({
+        data: {
+          slug: input.slug,
+          kind: input.kind,
+          status: PublishStatus.DRAFT,
+          ...(input.brandId ? { brandId: input.brandId } : {}),
+          // The first category is the primary one unless somebody says
+          // otherwise later: a product in exactly one section has an obvious
+          // answer, and leaving it null means no breadcrumb at all.
+          ...(input.categoryIds[0] ? { primaryCategoryId: input.categoryIds[0] } : {}),
+          translations: {
+            create: [
+              { locale: Locale.AR, name: input.nameAr },
+              ...(input.nameEn ? [{ locale: Locale.EN, name: input.nameEn }] : []),
+            ],
+          },
+          ...(input.categoryIds.length > 0
+            ? { categories: { create: input.categoryIds.map((categoryId) => ({ categoryId })) } }
+            : {}),
+        },
+      });
+
+      await tx.variant.create({
+        data: {
+          productId: created.id,
+          sku,
+          priceUsd: new Prisma.Decimal(input.variant.priceUsd),
+          licensePeriodUnit: input.variant.licensePeriodUnit,
+          // The same normalisation the edit form applies: a count beside
+          // LIFETIME is a count of nothing.
+          licensePeriodValue:
+            input.variant.licensePeriodUnit === 'LIFETIME'
+              ? null
+              : (input.variant.licensePeriodValue ?? 1),
+          deviceCount: input.variant.deviceCount,
+          platform: input.variant.platform,
+          activationMethod: input.variant.activationMethod,
+          fulfillmentMode: input.variant.fulfillmentMode,
+          // The only variant there is, so it is the one the page opens on.
+          isDefault: true,
+          status: PublishStatus.DRAFT,
+        },
+      });
+
+      return created;
+    });
+
+    await this.audit.record({
+      actorId,
+      action: 'product.created',
+      entity: 'Product',
+      entityId: product.id,
+      after: { slug: input.slug, sku, kind: input.kind, nameAr: input.nameAr },
+    });
+
+    return { slug: input.slug, sku };
+  }
+
+  /** A second variant on a product that already exists. */
+  async createVariant(
+    slug: string,
+    input: CreateVariant,
+    actorId: string | undefined,
+  ): Promise<ProductTerms> {
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      select: { id: true, variants: { select: { position: true } } },
+    });
+    if (!product) throw new NotFoundException(say('لا يوجد منتج بهذا الرابط.', 'No such product.'));
+
+    const sku = normaliseSku(input.sku);
+    const taken = await this.prisma.client.variant.count({ where: { sku } });
+    if (taken > 0) {
+      throw new BadRequestException(
+        say('هذا الرمز مستخدم لمتغيّر آخر.', 'Another variant already has that SKU.'),
+      );
+    }
+
+    const variant = await this.prisma.client.variant.create({
+      data: {
+        productId: product.id,
+        sku,
+        priceUsd: new Prisma.Decimal(input.priceUsd),
+        licensePeriodUnit: input.licensePeriodUnit,
+        licensePeriodValue:
+          input.licensePeriodUnit === 'LIFETIME' ? null : (input.licensePeriodValue ?? 1),
+        deviceCount: input.deviceCount,
+        platform: input.platform,
+        activationMethod: input.activationMethod,
+        fulfillmentMode: input.fulfillmentMode,
+        // Never the default: the product already has one, and silently moving
+        // which variant a page opens on is not what "add" means.
+        isDefault: false,
+        position: product.variants.reduce((high, row) => Math.max(high, row.position), -1) + 1,
+        status: PublishStatus.DRAFT,
+      },
+    });
+
+    await this.audit.record({
+      actorId,
+      action: 'variant.created',
+      entity: 'Variant',
+      entityId: variant.id,
+      after: { productSlug: slug, sku, priceUsd: input.priceUsd },
+    });
+
+    return this.terms(slug);
+  }
 
   // --- identity -------------------------------------------------------------
 
@@ -377,4 +532,18 @@ export class CatalogEditService {
 
     return this.terms(variant.product.slug);
   }
+}
+
+/**
+ * A SKU, as it is stored.
+ *
+ * The contract upper-cases too, and that guards exactly one door: a request
+ * that came through the validation pipe. A SKU is the string somebody reads
+ * off a supplier invoice and types into the fulfilment queue at two in the
+ * morning, and `Office-365` and `OFFICE-365` existing as two variants is a
+ * mistake that surfaces only once a key has gone to the wrong customer — so
+ * the rule lives here as well, where the row is actually written.
+ */
+function normaliseSku(sku: string): string {
+  return sku.trim().toUpperCase();
 }

@@ -1,11 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import {
+  type CreateProduct,
+  type CreateVariant,
+  type CreatedProduct,
   type ProductIdentity,
   type ProductTerms,
   type SetProductIdentity,
   type SetVariantTerms,
+  createProductSchema,
+  createVariantSchema,
   setProductIdentitySchema,
   setVariantTermsSchema,
 } from '@da/contracts';
@@ -28,6 +33,34 @@ import { CatalogEditService } from './catalog-edit.service.js';
 @UseGuards(StaffGuard)
 export class CatalogEditController {
   constructor(private readonly edit: CatalogEditService) {}
+
+  /**
+   * A new product and the one variant that makes it one.
+   *
+   * OWNER and ADMIN only, one role narrower than editing. Adding a row to the
+   * catalog is not the same decision as correcting a price on a row that is
+   * already there, and CATALOG is the role for the second.
+   */
+  @Post('products')
+  @Roles('OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Create a draft product with its first variant' })
+  create(
+    @Body(new ZodPipe(createProductSchema)) body: CreateProduct,
+    @Req() request: StaffRequest,
+  ): Promise<CreatedProduct> {
+    return this.edit.createProduct(body, request.staff?.sub);
+  }
+
+  @Post('products/:slug/variants')
+  @Roles('OWNER', 'ADMIN')
+  @ApiOperation({ summary: 'Add another variant to an existing product' })
+  addVariant(
+    @Param('slug') slug: string,
+    @Body(new ZodPipe(createVariantSchema)) body: CreateVariant,
+    @Req() request: StaffRequest,
+  ): Promise<ProductTerms> {
+    return this.edit.createVariant(slug, body, request.staff?.sub);
+  }
 
   @Get('products/:slug/identity')
   @ApiOperation({ summary: 'Name, slug, kind, brand and categories' })

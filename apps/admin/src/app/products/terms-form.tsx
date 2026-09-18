@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProductTerms, SetVariantTerms, VariantTerms } from '@da/contracts';
+import type { CreateVariant, ProductTerms, SetVariantTerms, VariantTerms } from '@da/contracts';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -88,7 +88,164 @@ export function TermsForm({
           onError={onError}
         />
       ))}
+
+      {canWrite ? (
+        <NewVariant
+          slug={slug}
+          onCreated={(next) => {
+            setData(next);
+            onSaved();
+          }}
+          onError={onError}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/**
+ * A second edition of the same product.
+ *
+ * Only the four fields that differ between editions — the SKU, the price, the
+ * term and how it is supplied. Everything else is copied from nothing and set
+ * in the card the new variant appears in, which is right there.
+ */
+function NewVariant({
+  slug,
+  onCreated,
+  onError,
+}: {
+  slug: string;
+  onCreated: (next: ProductTerms) => void;
+  onError: (message: string) => void;
+}) {
+  const t = useT('products');
+  const c = useT('common');
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [sku, setSku] = useState('');
+  const [priceUsd, setPriceUsd] = useState('');
+  const [unit, setUnit] = useState<CreateVariant['licensePeriodUnit']>('LIFETIME');
+  const [periodValue, setPeriodValue] = useState(1);
+  const [supply, setSupply] = useState<CreateVariant['fulfillmentMode']>('ON_DEMAND');
+
+  if (!open) {
+    return (
+      <button type="button" className="ghost new-variant-open" onClick={() => setOpen(true)}>
+        {t('addVariant')}
+      </button>
+    );
+  }
+
+  async function create(): Promise<void> {
+    setSaving(true);
+    try {
+      onCreated(
+        await api.createVariant(slug, {
+          sku: sku.trim().toUpperCase(),
+          priceUsd: priceUsd.trim(),
+          licensePeriodUnit: unit,
+          licensePeriodValue: unit === 'LIFETIME' ? null : periodValue,
+          deviceCount: 1,
+          platform: 'WINDOWS',
+          activationMethod: 'RETAIL_ONLINE',
+          fulfillmentMode: supply,
+        }),
+      );
+      setOpen(false);
+      setSku('');
+      setPriceUsd('');
+    } catch (caught) {
+      onError(caught instanceof Error ? caught.message : c('actionFailed'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const ready = sku.trim().length >= 3 && priceUsd.trim() !== '';
+
+  return (
+    <section className="variant-card is-new">
+      <header>
+        <strong>{t('newVariantHeading')}</strong>
+      </header>
+      <p className="lede-sm">{t('newVariantLede')}</p>
+
+      <div className="terms-grid">
+        <label>
+          <span>SKU</span>
+          <input
+            id={`new-variant-sku-${slug}`}
+            type="text"
+            dir="ltr"
+            value={sku}
+            onChange={(event) => setSku(event.target.value.toUpperCase())}
+          />
+        </label>
+        <label>
+          <span>{t('price')}</span>
+          <input
+            id={`new-variant-price-${slug}`}
+            type="text"
+            inputMode="decimal"
+            dir="ltr"
+            value={priceUsd}
+            onChange={(event) => setPriceUsd(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>{t('periodUnit')}</span>
+          <select
+            id={`new-variant-unit-${slug}`}
+            value={unit}
+            onChange={(event) => setUnit(event.target.value as CreateVariant['licensePeriodUnit'])}
+          >
+            {PERIOD_UNITS.map((value) => (
+              <option key={value} value={value}>
+                {t(`unit_${value}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+        {unit === 'LIFETIME' ? null : (
+          <label>
+            <span>{t('periodValue')}</span>
+            <input
+              id={`new-variant-period-${slug}`}
+              type="number"
+              min={1}
+              max={120}
+              dir="ltr"
+              value={periodValue}
+              onChange={(event) => setPeriodValue(Number(event.target.value))}
+            />
+          </label>
+        )}
+        <label>
+          <span>{t('supplyMode')}</span>
+          <select
+            id={`new-variant-supply-${slug}`}
+            value={supply}
+            onChange={(event) => setSupply(event.target.value as CreateVariant['fulfillmentMode'])}
+          >
+            {SUPPLY.map((value) => (
+              <option key={value} value={value}>
+                {t(`supply_${value}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="terms-save">
+        <button type="button" onClick={() => void create()} disabled={!ready || saving}>
+          {saving ? c('loading') : t('createVariant')}
+        </button>
+        <button type="button" className="ghost" onClick={() => setOpen(false)}>
+          {c('cancel')}
+        </button>
+      </div>
+    </section>
   );
 }
 
