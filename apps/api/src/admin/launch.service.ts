@@ -3,8 +3,10 @@ import { Injectable } from '@nestjs/common';
 import type { LaunchCheck, LaunchReadiness } from '@da/contracts';
 import { FulfillmentMode, Locale, PublishStatus } from '@da/db';
 
+import { AuditService } from '../auth/audit.service.js';
 import { PaymentSettingsService } from '../checkout/payment-settings.service.js';
 import { MailService } from '../mail/mail.service.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { VaultService } from '../vault/vault.service.js';
 
@@ -33,6 +35,7 @@ import { VaultService } from '../vault/vault.service.js';
 export class LaunchService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly audit: AuditService,
     private readonly payments: PaymentSettingsService,
     private readonly vault: VaultService,
     private readonly mailer: MailService,
@@ -47,6 +50,7 @@ export class LaunchService {
       await this.keys(),
       await this.mail(),
       await this.redirects(),
+      await this.ledger(),
     ];
 
     return { canSell: checks.every((check) => check.severity !== 'blocker'), checks };
@@ -67,8 +71,11 @@ export class LaunchService {
       return {
         key: 'payment',
         severity: 'ready',
-        title: 'طرق الدفع',
-        detail: `${String(offered.length)} طريقة معروضة: ${offered.map((m) => m.provider).join('، ')}.`,
+        title: say('طرق الدفع', 'Payment methods'),
+        detail: say(
+          `${String(offered.length)} طريقة معروضة: ${offered.map((m) => m.provider).join('، ')}.`,
+          `${String(offered.length)} offered: ${offered.map((m) => m.provider).join(', ')}.`,
+        ),
         fix: '/payments',
       };
     }
@@ -76,7 +83,7 @@ export class LaunchService {
     return {
       key: 'payment',
       severity: 'blocker',
-      title: 'لا توجد طريقة دفع',
+      title: say('لا توجد طريقة دفع', 'No payment method'),
       // Every reason, not a count. "Four methods are off" sends somebody to
       // open four screens; the reasons say which one is closest to working.
       detail: view.methods
@@ -104,8 +111,11 @@ export class LaunchService {
       return {
         key: 'catalog',
         severity: 'blocker',
-        title: 'لا منتج منشور',
-        detail: `${String(total)} منتجاً في الكتالوج، ولا واحد منشور. لا شيء يمكن شراؤه.`,
+        title: say('لا منتج منشور', 'No published product'),
+        detail: say(
+          `${String(total)} منتجاً في الكتالوج، ولا واحد منشور. لا شيء يمكن شراؤه.`,
+          `${String(total)} products in the catalog and not one published. There is nothing to buy.`,
+        ),
         fix: '/products',
       };
     }
@@ -114,8 +124,11 @@ export class LaunchService {
       return {
         key: 'catalog',
         severity: 'warning',
-        title: 'الكتالوج رقيق',
-        detail: `${String(published)} من ${String(total)} منشور. الباقي محجوب ببوّابة النشر — العنوان والوصف وSEO.`,
+        title: say('الكتالوج رقيق', 'Thin catalog'),
+        detail: say(
+          `${String(published)} من ${String(total)} منشور. الباقي محجوب ببوّابة النشر — العنوان والوصف وSEO.`,
+          `${String(published)} of ${String(total)} published. The rest are held by the publish gate — title, description and SEO.`,
+        ),
         fix: '/products',
       };
     }
@@ -123,8 +136,11 @@ export class LaunchService {
     return {
       key: 'catalog',
       severity: 'ready',
-      title: 'الكتالوج',
-      detail: `${String(published)} من ${String(total)} منشور.`,
+      title: say('الكتالوج', 'Catalog'),
+      detail: say(
+        `${String(published)} من ${String(total)} منشور.`,
+        `${String(published)} of ${String(total)} published.`,
+      ),
       fix: '/products',
     };
   }
@@ -156,7 +172,9 @@ export class LaunchService {
       select: {
         sku: true,
         inventory: { select: { onHand: true, reserved: true } },
-        product: { select: { translations: { where: { locale: Locale.AR }, select: { name: true } } } },
+        product: {
+          select: { translations: { where: { locale: Locale.AR }, select: { name: true } } },
+        },
       },
     });
 
@@ -168,11 +186,17 @@ export class LaunchService {
       return {
         key: 'sellable',
         severity: 'ready',
-        title: 'المخزون',
+        title: say('المخزون', 'Stock'),
         detail:
           stocked.length === 0
-            ? 'لا متغيّر يُباع من المخزون — كل المنشور يُطلَب من المورّد بعد الشراء.'
-            : `${String(stocked.length)} متغيّراً يُباع من المخزون، وكلّها متوفّرة.`,
+            ? say(
+                'لا متغيّر يُباع من المخزون — كل المنشور يُطلَب من المورّد بعد الشراء.',
+                'No variant sells from stock — everything published is ordered from the supplier after the sale.',
+              )
+            : say(
+                `${String(stocked.length)} متغيّراً يُباع من المخزون، وكلّها متوفّرة.`,
+                `${String(stocked.length)} variants sell from stock, and all of them are in stock.`,
+              ),
         fix: '/vault',
       };
     }
@@ -182,13 +206,16 @@ export class LaunchService {
     const names = empty
       .map((variant) => variant.product.translations[0]?.name ?? variant.sku)
       .slice(0, 4)
-      .join('، ');
+      .join(say('، ', ', '));
 
     return {
       key: 'sellable',
       severity: 'warning',
-      title: 'منشور ولا يمكن شراؤه',
-      detail: `${String(empty.length)} من ${String(stocked.length)} متغيّراً يُباع من المخزون نفد: ${names}. صفحاتها منشورة ومفهرسة، وزرّ الشراء يرفض.`,
+      title: say('منشور ولا يمكن شراؤه', 'Published and unbuyable'),
+      detail: say(
+        `${String(empty.length)} من ${String(stocked.length)} متغيّراً يُباع من المخزون نفد: ${names}. صفحاتها منشورة ومفهرسة، وزرّ الشراء يرفض.`,
+        `${String(empty.length)} of ${String(stocked.length)} stocked variants have run out: ${names}. Their pages are published and indexed, and the buy button refuses.`,
+      ),
       fix: '/vault',
     };
   }
@@ -220,8 +247,11 @@ export class LaunchService {
       return {
         key: 'policies',
         severity: 'ready',
-        title: 'صفحات السياسات',
-        detail: 'الاسترجاع والشروط والخصوصية منشورة.',
+        title: say('صفحات السياسات', 'Policy pages'),
+        detail: say(
+          'الاسترجاع والشروط والخصوصية منشورة.',
+          'Refunds, terms and privacy are all published.',
+        ),
         fix: null,
       };
     }
@@ -229,8 +259,11 @@ export class LaunchService {
     return {
       key: 'policies',
       severity: 'warning',
-      title: 'صفحات السياسات',
-      detail: `غير منشورة: ${missing.join('، ')}. مزوّد الدفع يقرأها قبل أن يعتمد المتجر.`,
+      title: say('صفحات السياسات', 'Policy pages'),
+      detail: say(
+        `غير منشورة: ${missing.join('، ')}. مزوّد الدفع يقرأها قبل أن يعتمد المتجر.`,
+        `Not published: ${missing.join(', ')}. A payment provider reads these before approving the store.`,
+      ),
       fix: null,
     };
   }
@@ -248,8 +281,11 @@ export class LaunchService {
       return {
         key: 'vault',
         severity: 'blocker',
-        title: 'الخزنة لا تستجيب',
-        detail: 'لا يمكن ختم مفتاح ولا فتحه، فلا تسليم. راجِع DATABASE_URL_VAULT.',
+        title: say('الخزنة لا تستجيب', 'The vault does not answer'),
+        detail: say(
+          'لا يمكن ختم مفتاح ولا فتحه، فلا تسليم. راجِع DATABASE_URL_VAULT.',
+          'No key can be sealed or opened, so nothing can be delivered. Check DATABASE_URL_VAULT.',
+        ),
         fix: '/vault',
       };
     }
@@ -258,9 +294,11 @@ export class LaunchService {
       return {
         key: 'vault',
         severity: 'warning',
-        title: 'مفتاح الخزنة الرئيسي محلّي',
-        detail:
+        title: say('مفتاح الخزنة الرئيسي محلّي', 'The vault master key is local'),
+        detail: say(
           'KEK_PROVIDER=local يضع المفتاح الذي يفكّ كل التراخيص في متغيّر بيئة على نفس الخادم. الإنتاج يرفضه ولن يُقلِع.',
+          'KEK_PROVIDER=local puts the key that decrypts every licence in an environment variable on the same host. Production refuses it and will not boot.',
+        ),
         fix: null,
       };
     }
@@ -268,8 +306,8 @@ export class LaunchService {
     return {
       key: 'vault',
       severity: 'ready',
-      title: 'الخزنة',
-      detail: 'تستجيب، والمفتاح على KMS.',
+      title: say('الخزنة', 'Vault'),
+      detail: say('تستجيب، والمفتاح على KMS.', 'It answers, and the key is on KMS.'),
       fix: '/vault',
     };
   }
@@ -293,14 +331,17 @@ export class LaunchService {
     const { ok, detail } = await this.mailer.selfTest();
 
     return ok
-      ? { key: 'mail', severity: 'ready', title: 'البريد', detail, fix: null }
+      ? { key: 'mail', severity: 'ready', title: say('البريد', 'Email'), detail, fix: null }
       : {
           key: 'mail',
           severity: 'blocker',
-          title: 'البريد لا يُرسَل',
+          title: say('البريد لا يُرسَل', 'Email does not send'),
           // The transport is named beside the reason because the fix differs:
           // a dead SMTP host and a refused Resend key are not the same job.
-          detail: `${detail} (MAIL_TRANSPORT=${transport}) — والمنتج نفسه يصل بالبريد.`,
+          detail: say(
+            `${detail} (MAIL_TRANSPORT=${transport}) — والمنتج نفسه يصل بالبريد.`,
+            `${detail} (MAIL_TRANSPORT=${transport}) — and the product itself arrives by email.`,
+          ),
           fix: null,
         };
   }
@@ -312,6 +353,69 @@ export class LaunchService {
    * precisely what makes it worth a line here: nothing breaks when it is
    * missing, and the old site's rankings simply evaporate.
    */
+  /**
+   * Whether the record of what was done to this store still holds together.
+   *
+   * `AuditLog` is hash-chained so that a row removed from the middle breaks
+   * every hash after it. That detection was written, and then never called
+   * from anywhere — which is why three rows from 11–12 September went missing
+   * for a week without anyone being told. A tamper-evident log nobody reads is
+   * a log, not a record.
+   *
+   * A warning, not a blocker: a store with a gap in its audit trail can still
+   * take an order honestly, and refusing to open over a past event nobody can
+   * now undo would be the wrong trade. It is on this screen because this is
+   * the screen somebody actually looks at.
+   */
+  private async ledger(): Promise<LaunchCheck> {
+    const chain = await this.audit.verifyChain();
+
+    if (chain.ok) {
+      return {
+        key: 'ledger',
+        severity: 'ready',
+        title: say('سجلّ التدقيق', 'Audit trail'),
+        detail: say(
+          `${String(chain.rows)} سطراً، والسلسلة متّصلة بالكامل.`,
+          `${String(chain.rows)} entries, and the chain is unbroken.`,
+        ),
+        fix: null,
+      };
+    }
+
+    // Counted separately because they are different events, and the wording a
+    // person needs differs with them: rows that are gone, against rows that
+    // are merely out of order.
+    const parts: string[] = [];
+    if (chain.missing.length > 0) {
+      parts.push(
+        say(
+          `${String(chain.missing.length)} سطراً يشير إلى سلف غير موجود — أي أن أسطراً كُتبت ثم حُذفت`,
+          `${String(chain.missing.length)} entries point at a predecessor that is gone — rows were written and then removed`,
+        ),
+      );
+    }
+    if (chain.mismatched.length > 0) {
+      parts.push(
+        say(
+          `${String(chain.mismatched.length)} سطراً ارتبط بالرأس نفسه ككاتب آخر`,
+          `${String(chain.mismatched.length)} entries chained onto the same head as another writer`,
+        ),
+      );
+    }
+
+    return {
+      key: 'ledger',
+      severity: 'warning',
+      title: say('سجلّ التدقيق', 'Audit trail'),
+      detail: say(
+        `${parts.join('، ')}. من أصل ${String(chain.rows)} سطراً.`,
+        `${parts.join(', ')}. Out of ${String(chain.rows)} entries.`,
+      ),
+      fix: null,
+    };
+  }
+
   private async redirects(): Promise<LaunchCheck> {
     const [active, unresolved] = await Promise.all([
       this.prisma.client.redirect.count({ where: { isActive: true } }),
@@ -322,8 +426,11 @@ export class LaunchService {
       return {
         key: 'redirects',
         severity: 'warning',
-        title: 'التوجيهات',
-        detail: `${String(active)} توجيهاً فعّالاً · ${String(unresolved)} مسار طُلب ولم يُوجد.`,
+        title: say('التوجيهات', 'Redirects'),
+        detail: say(
+          `${String(active)} توجيهاً فعّالاً · ${String(unresolved)} مسار طُلب ولم يُوجد.`,
+          `${String(active)} active redirects · ${String(unresolved)} paths asked for and not found.`,
+        ),
         fix: '/redirects',
       };
     }
@@ -331,8 +438,11 @@ export class LaunchService {
     return {
       key: 'redirects',
       severity: 'ready',
-      title: 'التوجيهات',
-      detail: `${String(active)} توجيهاً فعّالاً، ولا مسار بلا جواب.`,
+      title: say('التوجيهات', 'Redirects'),
+      detail: say(
+        `${String(active)} توجيهاً فعّالاً، ولا مسار بلا جواب.`,
+        `${String(active)} active redirects, and no path without an answer.`,
+      ),
       fix: '/redirects',
     };
   }

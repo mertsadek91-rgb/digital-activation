@@ -68,3 +68,32 @@ GRANT USAGE ON SCHEMA public TO da_vault;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO da_vault;
 ALTER DEFAULT PRIVILEGES FOR ROLE da IN SCHEMA public
   GRANT SELECT ON TABLES TO da_vault;
+
+-- --- the ledgers cannot be rewritten by the application ---------------------
+--
+-- `AuditLog` carries a hash chain so that a row removed from the middle breaks
+-- every hash after it, and `StockMovement` is the ledger that answers "where
+-- did this key go" without trusting a mutable counter. Both were append-only
+-- by convention only: the services never call update or delete, but `da_app`
+-- held both grants, with no trigger and no row-level security behind them. A
+-- single injected statement, a stray raw query, or a console open on the app
+-- connection could edit or erase either one.
+--
+-- The chain proved the point before this was written. Three audit rows from
+-- 11–12 September are missing: their successors carry a `hashPrev` that no
+-- surviving row's `hash` matches, and a successor can only have read a hash
+-- that was committed at the time. So the rows existed, and then did not.
+--
+-- Same reasoning as the vault above, and the same remedy: withhold the grant
+-- and the guarantee stops depending on every future caller's restraint.
+-- `KeyAccessLog` is who-read-which-key and is only ever appended to, so UPDATE
+-- goes too; `LicenseKey` keeps UPDATE because its states genuinely move
+-- (AVAILABLE -> RESERVED -> ASSIGNED -> DELIVERED).
+--
+-- `prisma migrate` owns these tables and can still correct them. Re-run this
+-- file (`pnpm db:roles`) after a migration that recreates one, or the default
+-- privileges above will hand the grants back.
+REVOKE UPDATE, DELETE ON public."AuditLog"       FROM da_app;
+REVOKE UPDATE, DELETE ON public."StockMovement"  FROM da_app;
+REVOKE UPDATE, DELETE ON public."KeyImportBatch" FROM da_app;
+REVOKE UPDATE ON vault."KeyAccessLog" FROM da_vault;

@@ -70,19 +70,49 @@ export class AuditService {
     });
   }
 
-  /** Walks the chain and reports the first row whose hash does not verify. */
-  async verifyChain(limit = 1000): Promise<{ ok: boolean; brokenAt?: string }> {
+  /**
+   * Walks the chain and reports every row whose link does not hold.
+   *
+   * The two failures it separates are not the same event. A `mismatch` is a
+   * row whose predecessor exists but is not the row before it — two writers
+   * read the same head and chained onto it, which reorders history without
+   * removing any of it. A `missing` parent is a row pointing at a hash no
+   * surviving row carries, and a successor can only have read a hash that was
+   * committed when it read: that row existed, and does not now.
+   *
+   * Reported in full rather than stopping at the first, because the count is
+   * the thing somebody needs — one break is an incident, a scatter of them is
+   * a pattern — and the whole table is walked, since a cap that silently hides
+   * the end of the chain is worse than a slow query on a table this size.
+   */
+  async verifyChain(): Promise<{
+    ok: boolean;
+    rows: number;
+    missing: string[];
+    mismatched: string[];
+  }> {
     const rows = await this.prisma.client.auditLog.findMany({
       orderBy: { createdAt: 'asc' },
-      take: limit,
       select: { id: true, hash: true, hashPrev: true },
     });
 
-    let expectedPrev: string | null = null;
-    for (const row of rows) {
-      if (row.hashPrev !== expectedPrev) return { ok: false, brokenAt: row.id };
-      expectedPrev = row.hash;
+    const known = new Set(rows.map((row) => row.hash));
+    const missing: string[] = [];
+    const mismatched: string[] = [];
+
+    for (let index = 1; index < rows.length; index += 1) {
+      const row = rows[index];
+      if (row === undefined) continue;
+      if (row.hashPrev === rows[index - 1]?.hash) continue;
+      if (row.hashPrev === null || !known.has(row.hashPrev)) missing.push(row.id);
+      else mismatched.push(row.id);
     }
-    return { ok: true };
+
+    return {
+      ok: missing.length === 0 && mismatched.length === 0,
+      rows: rows.length,
+      missing,
+      mismatched,
+    };
   }
 }
