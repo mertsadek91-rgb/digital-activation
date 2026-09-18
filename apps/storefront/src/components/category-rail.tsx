@@ -26,12 +26,20 @@ export function CategoryRail({
   current,
   locale,
   title,
+  hrefFor = ROUTES.collection,
 }: {
   categories: { slug: string; name: string; productCount: number }[];
   /** The shelf being looked at, so the rail says where you are. */
   current?: string;
   locale: string;
   title: string;
+  /**
+   * How a slug becomes a path. The brand hub is the same list of shelves with
+   * the same counts and the same "where am I" rule, differing only in what a
+   * row points at — so it takes this rail rather than a near-copy of it that
+   * would drift the first time either one is touched.
+   */
+  hrefFor?: (slug: string) => string;
 }) {
   if (categories.length === 0) return null;
   const prefix = locale === 'en' ? `/${locale}` : '';
@@ -45,7 +53,7 @@ export function CategoryRail({
           return (
             <li key={category.slug}>
               <Link
-                href={`${prefix}${ROUTES.collection(category.slug)}`}
+                href={`${prefix}${hrefFor(category.slug)}`}
                 className={active ? 'is-current' : undefined}
                 // The current page is still a link — it is the heading of the
                 // list as much as a destination — but it says so.

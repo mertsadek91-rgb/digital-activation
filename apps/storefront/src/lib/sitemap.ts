@@ -51,13 +51,16 @@ export const STATIC_PATHS: { path: string; changeFrequency: 'daily' | 'weekly' }
   { path: ROUTES.blog, changeFrequency: 'weekly' },
 ];
 
-export type Section = 'pages' | 'products' | 'collections' | 'posts';
+export type Section = 'pages' | 'products' | 'collections' | 'brands' | 'posts';
 
 /** How often each kind of page genuinely changes. A guess here is noise. */
 const CHANGE_FREQUENCY: Record<Section, 'daily' | 'weekly' | 'monthly'> = {
   pages: 'daily',
   products: 'weekly',
   collections: 'weekly',
+  // A brand page changes when its shelf does, which is when a product is
+  // published or retired — the same cadence as a collection.
+  brands: 'weekly',
   // A post is written once and edited rarely. Claiming weekly would be the
   // kind of guess that teaches a crawler to ignore the field entirely.
   posts: 'monthly',
@@ -186,7 +189,9 @@ export async function sectionUrls(section: Section): Promise<SitemapUrl[] | null
 
   const data = await feed();
   if (!data) return null;
-  return toUrls(section === 'products' ? data.products : data.collections, section);
+  const rows =
+    section === 'products' ? data.products : section === 'brands' ? data.brands : data.collections;
+  return toUrls(rows, section);
 }
 
 /**
@@ -237,7 +242,7 @@ export async function serveSection(section: Section): Promise<Response> {
 export async function serveIndex(): Promise<Response> {
   if (!indexable()) return notFound();
 
-  const sections: Section[] = ['pages', 'products', 'collections', 'posts'];
+  const sections: Section[] = ['pages', 'products', 'collections', 'brands', 'posts'];
   const present: string[] = [];
   for (const section of sections) {
     const urls = await sectionUrls(section);

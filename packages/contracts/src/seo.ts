@@ -111,6 +111,7 @@ export type SitemapEntry = z.infer<typeof sitemapEntrySchema>;
 export const sitemapFeedSchema = z.object({
   products: z.array(sitemapEntrySchema),
   collections: z.array(sitemapEntrySchema),
+  brands: z.array(sitemapEntrySchema),
 });
 export type SitemapFeed = z.infer<typeof sitemapFeedSchema>;
 

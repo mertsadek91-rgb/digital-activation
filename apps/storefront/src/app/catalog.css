@@ -29,6 +29,29 @@
 .page-head {
   margin-block-end: var(--spacing-2);
 }
+
+/* A brand's heading carries a logo beside the name where there is one, and
+   stacks under it on a phone — the name is what identifies the page, so it
+   never gets pushed below the fold by a mark. No brand carries a logo yet;
+   the row still has to hold when one does. */
+.brand-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-1);
+}
+.brand-logo {
+  width: auto;
+  height: 48px;
+  max-width: 160px;
+  object-fit: contain;
+}
+.brand-site {
+  display: inline-block;
+  margin-block-start: var(--spacing-half);
+  font-size: var(--text-sm);
+  color: var(--color-brand);
+}
 h1 {
   font-size: var(--text-3xl);
   margin: 0 0 var(--spacing-half);

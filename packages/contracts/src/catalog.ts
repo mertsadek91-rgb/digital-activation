@@ -243,8 +243,8 @@ export type ArticleWithProducts = z.infer<typeof articleWithProductsSchema>;
  *
  * Carries the collection list beside the grid because it is the page a visitor
  * lands on from the header with no idea what is sold here. Collections are the
- * only navigation this catalog has — there are no brand pages yet — so a store
- * page without them is a wall of 73 cards with no way in.
+ * only navigation this catalog has that covers everything — brands cover 71 of
+ * 72 — so a store page without them is a wall of 73 cards with no way in.
  */
 export const catalogStoreSchema = z.object({
   products: z.array(catalogCardSchema),
@@ -291,6 +291,41 @@ export const catalogCollectionSchema = z.object({
   perPage: z.number().int().min(1),
 });
 export type CatalogCollection = z.infer<typeof catalogCollectionSchema>;
+
+/**
+ * One brand's hub — every product this store carries from that maker.
+ *
+ * `BrandTranslation.intro` has carried the comment "the /brands/<slug> page
+ * body" since the first migration, and the page it names was never built. The
+ * home page prints a strip of 15 brand links and every product page prints its
+ * maker above the title; all of them pointed at a 404, on 71 of 72 published
+ * products.
+ *
+ * Deliberately not a copy of the collection shape. A brand has no tree, so
+ * there are no children and no sibling rail to carry — what belongs beside it
+ * is the other brands, which is a different question with a different answer.
+ * `website` is the maker's own site, which a collection has no equivalent of
+ * and which is the one outbound link a brand page owes its visitor.
+ */
+export const catalogBrandSchema = z.object({
+  slug: slugSchema,
+  locale: localeSchema,
+  name: z.string(),
+  website: z.string().nullable(),
+  logo: catalogImageSchema.nullable(),
+  intro: blockDocumentSchema,
+  breadcrumbs: z.array(catalogBreadcrumbSchema),
+  /** Every other brand that has something published, for sideways navigation. */
+  siblings: z.array(
+    z.object({ slug: slugSchema, name: z.string(), productCount: z.number().int() }),
+  ),
+  seo: z.object({ title: z.string().nullable(), description: z.string().nullable() }),
+  products: z.array(catalogCardSchema),
+  total: z.number().int().min(0),
+  page: z.number().int().min(1),
+  perPage: z.number().int().min(1),
+});
+export type CatalogBrand = z.infer<typeof catalogBrandSchema>;
 
 // --- home -------------------------------------------------------------------
 

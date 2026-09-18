@@ -84,6 +84,15 @@ export class CatalogController {
     return this.catalog.collection(slug, query);
   }
 
+  @Get('brands/:slug')
+  @ApiOperation({ summary: 'One brand with a page of product cards' })
+  brand(
+    @Param('slug') slug: string,
+    @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery,
+  ) {
+    return this.catalog.brand(slug, query);
+  }
+
   @Get('products/:slug')
   @ApiOperation({ summary: 'One product with all its variants and prices' })
   product(

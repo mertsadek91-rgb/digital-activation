@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
+  type CatalogBrand,
   type CatalogCard,
   type CatalogCollection,
   type CatalogProduct,
@@ -297,6 +298,97 @@ export class CatalogService {
         description: translation?.seoDescription ?? null,
       },
       products: links.map((link) => this.toCard(link.product, query.currency, fx)),
+      total,
+      page: query.page,
+      perPage: query.perPage,
+    };
+  }
+
+  // --- brand ----------------------------------------------------------------
+
+  /**
+   * One maker's shelf.
+   *
+   * The link has been on every product page and in the home page's brand strip
+   * since the storefront was built, and there was nothing behind it: 71 of the
+   * 72 published products carried a brand line that led to a 404.
+   *
+   * Not modelled on the collection. A brand has no tree, so there is no child
+   * list and no parent breadcrumb to build; what a visitor wants sideways from
+   * Norton is Adobe, not a sub-Norton. `intro` is the field the schema already
+   * reserved for this page's body, unused until now — so a brand with nothing
+   * written renders its grid and no empty prose block, rather than a heading
+   * over white space.
+   */
+  async brand(slug: string, query: CatalogQuery): Promise<CatalogBrand> {
+    const locale = this.localeFor(query);
+    const status = this.statusFilter(query);
+
+    const brand = await this.prisma.client.brand.findUnique({
+      where: { slug },
+      include: {
+        translations: { where: { locale } },
+        logo: { include: { alts: { where: { locale } } } },
+      },
+    });
+
+    if (!brand) throw new NotFoundException(`No brand with slug "${slug}"`);
+
+    const translation = brand.translations[0];
+    const where = { brandId: brand.id, ...status };
+
+    const total = await this.prisma.client.product.count({ where });
+    const products = await this.prisma.client.product.findMany({
+      where,
+      orderBy: this.productOrder(query),
+      skip: (query.page - 1) * query.perPage,
+      take: query.perPage,
+      include: this.cardInclude(locale).product.include,
+    });
+
+    const fx = await this.fxTable();
+
+    // Only brands that have something published. An inactive maker still in
+    // the table (this catalog has two with zero products) is a link to an
+    // empty shelf, and a visitor discovers that by clicking it.
+    const siblings = await this.prisma.client.brand.findMany({
+      where: { id: { not: brand.id }, isActive: true, products: { some: status } },
+      orderBy: [{ position: 'asc' }, { slug: 'asc' }],
+      include: {
+        translations: { where: { locale } },
+        _count: { select: { products: { where: status } } },
+      },
+    });
+
+    return {
+      slug: brand.slug,
+      locale: query.locale,
+      name: translation?.name ?? brand.name,
+      website: brand.website,
+      logo: brand.logo
+        ? {
+            url: this.assetUrl(brand.logo.key),
+            alt: brand.logo.alts[0]?.alt ?? (translation?.name ?? brand.name),
+            width: brand.logo.width,
+            height: brand.logo.height,
+          }
+        : null,
+      intro: parseBlocks(translation?.intro ?? null),
+      breadcrumbs: [
+        { name: locale === Locale.AR ? 'الرئيسية' : 'Home', href: ROUTES.home },
+        { name: locale === Locale.AR ? 'المتجر' : 'Store', href: ROUTES.store },
+        { name: translation?.name ?? brand.name, href: ROUTES.brand(brand.slug) },
+      ],
+      siblings: siblings.map((entry) => ({
+        slug: entry.slug,
+        name: entry.translations[0]?.name ?? entry.name,
+        productCount: entry._count.products,
+      })),
+      seo: {
+        title: translation?.seoTitle ?? null,
+        description: translation?.seoDescription ?? null,
+      },
+      products: products.map((product) => this.toCard(product, query.currency, fx)),
       total,
       page: query.page,
       perPage: query.perPage,
@@ -655,6 +747,14 @@ export class CatalogService {
       select: { slug: true, updatedAt: true },
     });
 
+    // Same rule as a category: a maker with nothing published renders an empty
+    // shelf, and this catalog has two of those.
+    const brands = await this.prisma.client.brand.findMany({
+      where: { isActive: true, products: { some: { status: PublishStatus.PUBLISHED } } },
+      orderBy: { slug: 'asc' },
+      select: { slug: true, updatedAt: true },
+    });
+
     return {
       products: products.map((product) => {
         const key = product.media[0]?.asset.key;
@@ -670,6 +770,10 @@ export class CatalogService {
       collections: categories.map((category) => ({
         path: ROUTES.collection(category.slug),
         lastModified: category.updatedAt.toISOString(),
+      })),
+      brands: brands.map((brand) => ({
+        path: ROUTES.brand(brand.slug),
+        lastModified: brand.updatedAt.toISOString(),
       })),
     };
   }

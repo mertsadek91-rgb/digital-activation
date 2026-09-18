@@ -11,6 +11,7 @@
  * neither state needs remembering.
  */
 import {
+  type CatalogBrand,
   type CatalogCollection,
   type CatalogProductWithRelated,
   type CatalogStore,
@@ -20,6 +21,7 @@ import {
   type Home,
   type ProductReviews,
   type RedirectTarget,
+  catalogBrandSchema,
   catalogCollectionSchema,
   catalogProductWithRelatedSchema,
   catalogStoreSchema,
@@ -144,6 +146,10 @@ export function getCollection(
     options,
     catalogCollectionSchema,
   );
+}
+
+export function getBrand(slug: string, options: FetchOptions): Promise<CatalogBrand | null> {
+  return request(`/catalog/brands/${encodeURIComponent(slug)}`, options, catalogBrandSchema);
 }
 
 /**
