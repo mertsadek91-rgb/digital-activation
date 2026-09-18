@@ -5,6 +5,7 @@ import { ContactStatus as Status, ContactTopic as Topic, Locale } from '@da/db';
 
 import { MailService } from '../mail/mail.service.js';
 import { contactAck, contactToStore } from '../mail/templates.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -122,7 +123,8 @@ export class ContactService {
       where: { id: input.id },
       select: { id: true },
     });
-    if (!existing) throw new NotFoundException('لا توجد رسالة بهذا المعرّف.');
+    if (!existing)
+      throw new NotFoundException(say('لا توجد رسالة بهذا المعرّف.', 'No message with that id.'));
 
     const row = await this.prisma.client.contactMessage.update({
       where: { id: input.id },

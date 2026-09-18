@@ -885,7 +885,6 @@ tr.drawer td > * {
 
 /* --- redirects ------------------------------------------------------------- */
 
-
 /* --- payment methods ------------------------------------------------------- */
 
 .pay-status-list {
@@ -1550,6 +1549,23 @@ tr.drawer td > * {
   background: var(--color-brand-soft);
   color: var(--color-brand-ink);
   font-weight: 700;
+}
+
+/*
+ * The language switch, at the foot of the nav rather than in the header.
+ *
+ * It belongs beside "change password" and "sign out": all three are settings
+ * about the person signed in rather than about the shop, and none of them is
+ * touched more than once in a session. Putting it in the header would give a
+ * control used twice a year the same weight as the queue count.
+ *
+ * `margin-inline: auto` and a fitted width keep the pair centred in the
+ * column, since the pill is narrower than the full-width buttons beneath it.
+ */
+.admin-locale-switch {
+  margin: var(--spacing-1) var(--spacing-1) 0;
+  inline-size: fit-content;
+  margin-inline: auto;
 }
 
 .admin-sidebar-footer {
@@ -2386,7 +2402,7 @@ tr.drawer td > * {
 
 .lookup-form {
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-end !important;
   gap: 8px !important;
   margin: 0 !important;
 }
@@ -3131,7 +3147,6 @@ tr.drawer td > * {
   margin-block-start: 0;
 }
 
-
 /* --- the panel's lists, as tables ---------------------------------------- */
 
 /*
@@ -3480,4 +3495,1842 @@ a.as-button.ghost:hover {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* --- dashboard ------------------------------------------------------------ */
+
+/*
+ * The front page.
+ *
+ * Read rather than worked, so it is the one screen here allowed some air: the
+ * rest of this panel is a tool and packs its rows, and a page somebody looks
+ * at for ten seconds before deciding what to do needs its figures to separate
+ * at a glance.
+ *
+ * Logical properties throughout, like everything else — the chart is the only
+ * element that is physically left-to-right, and it says why in its own file.
+ */
+
+.dash-head-actions {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dash-stamp {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 10px;
+  margin-block: var(--spacing-1);
+}
+.dash-figure {
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-xs);
+}
+.dash-figure-label {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+/* Proportional figures, not tabular: these are display-size numbers standing
+   alone rather than a column that has to align, and `tabular-nums` makes a
+   figure like 121 look gapped at this size. */
+.dash-figure-value {
+  margin: 2px 0 4px;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-ink);
+  line-height: var(--leading-tight);
+}
+.dash-figure-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.dash-delta {
+  margin: 0 0 2px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+/* Direction is in the arrow and in the sign as well as the colour, so this
+   survives being printed, being colour-blind, and being looked at quickly. */
+.dash-delta.is-up {
+  color: var(--color-success);
+}
+.dash-delta.is-down {
+  color: var(--color-danger);
+}
+.dash-delta.is-flat {
+  color: var(--color-ink-muted);
+}
+.dash-delta-note {
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+
+.dash-gross {
+  margin-block-end: var(--spacing-2);
+}
+
+.dash-chart-section {
+  padding: 14px 16px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.dash-chart-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+}
+.dash-chart {
+  position: relative;
+  margin-block-start: 6px;
+}
+.dash-chart-svg {
+  inline-size: 100%;
+  block-size: auto;
+  display: block;
+  touch-action: pan-y;
+}
+.dash-chart-svg:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* Hairline and solid, one step off the surface: the grid is there to be read
+   past, not at. */
+.dash-grid {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+.dash-axis {
+  fill: var(--color-ink-muted);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.dash-area {
+  fill: var(--color-brand);
+  fill-opacity: 0.1;
+}
+.dash-line {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+/* The ring is the surface colour, so a dot stays legible where it sits on the
+   line it belongs to. */
+.dash-dot {
+  fill: var(--color-brand);
+  stroke: var(--color-bg);
+  stroke-width: 2;
+}
+.dash-dot.is-live {
+  fill: var(--color-brand-ink);
+}
+.dash-crosshair {
+  stroke: var(--color-border-strong);
+  stroke-width: 1;
+}
+.dash-point-label {
+  fill: var(--color-ink);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+.dash-tip {
+  position: absolute;
+  inset-block-start: 0;
+  display: grid;
+  gap: 1px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dash-tip strong {
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+/*
+ * What is waiting, as rows rather than cards.
+ *
+ * Not the launch checklist's classes, which a later block in this file turns
+ * into a grid of stacked cards with `!important`. That is right for six
+ * paragraphs of explanation and wrong for eight one-line counts — borrowed
+ * here it made every row three times taller than its own text.
+ *
+ * The severities are this page's own too: urgent, due, idle, rather than
+ * blocker/warning/ready. These are quantities of work, not verdicts.
+ */
+.dash-attention-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.dash-attention {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.dash-attention.is-urgent {
+  border-inline-start: 3px solid var(--color-danger);
+}
+.dash-attention.is-due {
+  border-inline-start: 3px solid var(--color-warning);
+}
+.dash-attention.is-idle {
+  background: var(--color-surface);
+}
+.dash-attention-count {
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+  min-inline-size: 1.75rem;
+  text-align: center;
+}
+/* Takes the slack, so every button lands on the same edge and the column of
+   them can be run down without reading the sentences. */
+.dash-attention-text {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-ink-body);
+}
+
+.dash-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--spacing-1);
+  align-items: start;
+}
+/*
+ * These tables live in a card beside another card, not across the viewport,
+ * so the list screens' arrangement is wrong for them twice over: the
+ * full-height scroll box, and the 1000px floor a later block in this file
+ * puts on every table with `!important`. That floor is right for the orders
+ * screen, which has eight columns and its own width to ask for; here it made
+ * a three-column table scroll sideways inside a half-width card, with the
+ * revenue — the column the table exists for — off the edge.
+ */
+.dash-table {
+  max-block-size: none;
+  overflow: visible;
+}
+.dash-table table {
+  min-width: 0 !important;
+}
+/*
+ * A long product name wraps rather than widening the column, and stops at two
+ * lines. This catalog's names run to a hundred characters — the Arabic name
+ * and the English one on the same line — and one of them unclamped sets the
+ * height of every row beside it.
+ */
+.dash-table .name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-inline-size: none;
+}
+/*
+ * The second line of a cell: a SKU, an email. Deliberately not `.slug`, which
+ * draws a leading slash — right for a URL path and a lie on an email address.
+ */
+/* Money and counts line up under their headings, the way the orders table
+   already does it: a column of figures is read by comparison. */
+.dash-table th.num,
+.dash-table td.num {
+  text-align: end;
+}
+.dash-sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  overflow-wrap: anywhere;
+}
+.dash-waiting {
+  display: block;
+  margin-block-start: 2px;
+}
+
+.dash-lifetime {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 10px;
+  margin: 0 0 var(--spacing-1);
+}
+.dash-lifetime div {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.dash-lifetime dt {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.dash-lifetime dd {
+  margin: 2px 0 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* ==========================================================================
+   Executive Dashboard UI Design (http://localhost:3001/dashboard)
+   ========================================================================== */
+
+/* 1. Header & Actions */
+.dash-head-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-inline-start: auto !important;
+  flex-wrap: wrap !important;
+}
+
+.dash-stamp {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+  background: var(--color-surface) !important;
+  padding: 4px 10px !important;
+  border-radius: var(--radius-pill) !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+/* 2. Top KPI Figures Grid */
+.dash-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  gap: 16px !important;
+  margin-block-start: 18px !important;
+  margin-block-end: 8px !important;
+  width: 100% !important;
+}
+
+.dash-figure {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 20px 22px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.dash-figure:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.dash-figure::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--color-brand) 40%, transparent);
+}
+
+.dash-figure-label {
+  margin: 0 !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: var(--color-ink-muted) !important;
+  letter-spacing: 0.01em !important;
+}
+
+.dash-figure-value {
+  margin: 4px 0 !important;
+  font-size: 1.85rem !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-sans) !important;
+  font-variant-numeric: tabular-nums !important;
+  line-height: 1.2 !important;
+}
+
+.dash-delta {
+  margin: 0 !important;
+  font-size: var(--text-xs) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 700 !important;
+}
+
+.dash-delta.is-up {
+  color: var(--color-success) !important;
+}
+
+.dash-delta.is-down {
+  color: var(--color-danger) !important;
+}
+
+.dash-delta.is-flat {
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-delta bdi {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  background: var(--color-surface) !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--color-border) !important;
+}
+
+.dash-delta.is-up bdi {
+  background: var(--color-success-soft) !important;
+  border-color: color-mix(in srgb, var(--color-success) 25%, transparent) !important;
+}
+
+.dash-delta.is-down bdi {
+  background: var(--color-danger-soft) !important;
+  border-color: color-mix(in srgb, var(--color-danger) 25%, transparent) !important;
+}
+
+.dash-delta-note {
+  font-weight: 500 !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-figure-note {
+  margin: 6px 0 0 !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-gross {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+  margin: 0 0 20px 0 !important;
+}
+
+/* 3. Revenue Line Chart Section */
+.dash-chart-section {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 24px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  margin-block: 20px !important;
+}
+
+.dash-chart-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-wrap: wrap !important;
+  gap: 12px !important;
+  margin-bottom: 18px !important;
+}
+
+.dash-chart-head h2 {
+  margin: 0 !important;
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+}
+
+.dash-chart-head .lede-sm {
+  margin: 4px 0 0 !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-chart {
+  position: relative !important;
+  width: 100% !important;
+  background: radial-gradient(circle at top right, color-mix(in srgb, var(--color-brand) 5%, transparent) 0%, transparent 70%) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 0 !important;
+}
+
+.dash-chart-svg {
+  width: 100% !important;
+  height: auto !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+.dash-grid {
+  stroke: var(--color-border) !important;
+  stroke-dasharray: 4 4 !important;
+  stroke-width: 1 !important;
+  opacity: 0.8 !important;
+}
+
+.dash-axis {
+  fill: var(--color-ink-muted) !important;
+  font-size: 11px !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 500 !important;
+}
+
+.dash-area {
+  fill: color-mix(in srgb, var(--color-brand) 14%, transparent) !important;
+}
+
+.dash-line {
+  fill: none !important;
+  stroke: var(--color-brand) !important;
+  stroke-width: 3 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.dash-dot {
+  fill: var(--color-bg) !important;
+  stroke: var(--color-brand) !important;
+  stroke-width: 2.5 !important;
+}
+
+.dash-dot.is-live {
+  fill: var(--color-brand) !important;
+  stroke: #ffffff !important;
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) !important;
+}
+
+.dash-crosshair {
+  stroke: var(--color-brand) !important;
+  stroke-dasharray: 3 3 !important;
+  stroke-width: 1.5 !important;
+  opacity: 0.7 !important;
+}
+
+.dash-point-label {
+  fill: var(--color-brand-ink) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  font-family: var(--font-sans) !important;
+}
+
+/* Interactive Floating Tooltip */
+.dash-tip {
+  position: absolute !important;
+  top: 10px !important;
+  background: var(--color-ink) !important;
+  color: #ffffff !important;
+  padding: 8px 14px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  font-size: 12px !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+  white-space: nowrap !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.dash-tip strong {
+  font-size: 13px !important;
+  color: #ffffff !important;
+}
+
+.dash-tip span {
+  opacity: 0.85 !important;
+  font-size: 11px !important;
+}
+
+/* 4. Attention / Action Required Items */
+.dash-attention-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 14px 0 0 0 !important;
+}
+
+.dash-attention {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 14px 18px !important;
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.15s ease !important;
+}
+
+.dash-attention:hover {
+  transform: translateX(-2px) !important;
+}
+
+.dash-attention.is-blocker {
+  border-inline-start: 5px solid var(--color-danger) !important;
+  background: color-mix(in srgb, var(--color-danger-soft) 25%, var(--color-bg)) !important;
+}
+
+.dash-attention.is-warning {
+  border-inline-start: 5px solid var(--color-warning) !important;
+  background: color-mix(in srgb, var(--color-warning-soft) 25%, var(--color-bg)) !important;
+}
+
+.dash-attention.is-ready {
+  border-inline-start: 5px solid var(--color-success) !important;
+}
+
+.dash-attention-count {
+  min-inline-size: 32px !important;
+  block-size: 32px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 9999px !important;
+  background: var(--color-surface-2) !important;
+  color: var(--color-ink) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 800 !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-attention.is-blocker .dash-attention-count {
+  background: var(--color-danger) !important;
+  color: #ffffff !important;
+}
+
+.dash-attention.is-warning .dash-attention-count {
+  background: var(--color-warning) !important;
+  color: var(--color-ink) !important;
+}
+
+.dash-attention-text {
+  flex-grow: 1 !important;
+  font-size: var(--text-sm) !important;
+  font-weight: 600 !important;
+  color: var(--color-ink) !important;
+}
+
+/* 5. Two-Column Split (Top Products & Recent Orders) */
+.dash-split {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)) !important;
+  gap: 20px !important;
+  margin-block: 24px !important;
+  width: 100% !important;
+}
+
+.dash-split .vault-section {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 22px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.dash-split .vault-section h2 {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  margin: 0 0 4px 0 !important;
+}
+
+.dash-table {
+  margin-top: 14px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  overflow: auto !important;
+  background: var(--color-bg) !important;
+  max-block-size: 380px !important;
+}
+
+.dash-table table {
+  min-width: 100% !important;
+}
+
+.dash-sub {
+  display: block !important;
+  font-size: var(--text-xs) !important;
+  font-family: var(--font-mono) !important;
+  color: var(--color-ink-muted) !important;
+  margin-top: 2px !important;
+}
+
+.dash-waiting {
+  display: block !important;
+  font-size: 0.72rem !important;
+  color: var(--color-danger) !important;
+  font-weight: 700 !important;
+  margin-top: 2px !important;
+}
+
+/* 6. Lifetime Stats Strip */
+.dash-lifetime {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+  gap: 16px !important;
+  margin: 18px 0 !important;
+  padding: 0 !important;
+}
+
+.dash-lifetime div {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.dash-lifetime dt {
+  font-size: var(--text-xs) !important;
+  font-weight: 700 !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-lifetime dd {
+  margin: 0 !important;
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-sans) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+
+/* ==========================================================================
+   Reorganized Dash Split: Best Sellers & Latest Orders
+   ========================================================================== */
+
+.dash-widget {
+  background: var(--color-bg) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 22px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.dash-widget-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.dash-widget-header h2 {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  margin: 0 !important;
+}
+
+.dash-widget-header .lede-sm {
+  margin: 4px 0 0 0 !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+/* Best Sellers List */
+.dash-top-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.dash-top-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px 16px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease !important;
+}
+
+.dash-top-item:hover {
+  background: var(--color-bg) !important;
+  border-color: var(--color-brand) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+.dash-top-rank {
+  min-inline-size: 28px !important;
+  block-size: 28px !important;
+  border-radius: var(--radius-pill) !important;
+  background: var(--color-brand-soft) !important;
+  color: var(--color-brand-ink) !important;
+  font-size: var(--text-xs) !important;
+  font-weight: 800 !important;
+  display: grid !important;
+  place-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-top-info {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex-grow: 1 !important;
+  min-width: 0 !important;
+}
+
+.dash-top-name {
+  font-size: var(--text-sm) !important;
+  font-weight: 700 !important;
+  color: var(--color-ink) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: start !important;
+}
+
+.dash-top-sku {
+  font-size: 0.72rem !important;
+  font-family: var(--font-mono) !important;
+  color: var(--color-ink-muted) !important;
+  text-align: start !important;
+}
+
+.dash-top-metrics {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+.dash-top-revenue {
+  font-size: var(--text-sm) !important;
+  font-weight: 800 !important;
+  color: var(--color-brand-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.dash-top-qty {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+  font-weight: 600 !important;
+}
+
+/* Latest Orders List */
+.dash-recent-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.dash-recent-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--color-border) !important;
+  background: var(--color-surface) !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease !important;
+}
+
+.dash-recent-item:hover {
+  background: var(--color-bg) !important;
+  border-color: var(--color-brand) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px) !important;
+}
+
+.dash-recent-row-top {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+}
+
+.dash-recent-id-status {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.dash-recent-number {
+  font-family: var(--font-mono) !important;
+  font-weight: 800 !important;
+  font-size: var(--text-sm) !important;
+  color: var(--color-ink) !important;
+}
+
+.dash-recent-amount {
+  font-size: var(--text-sm) !important;
+  font-weight: 800 !important;
+  color: var(--color-ink) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.dash-recent-row-bottom {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+.dash-recent-email {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.dash-recent-meta {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-inline-start: auto !important;
+}
+
+.dash-recent-date {
+  font-size: var(--text-xs) !important;
+  color: var(--color-ink-muted) !important;
+}
+
+
+/*
+ * The payments save bar, which follows the reader.
+ *
+ * This page is 2,100px tall. The bank fields are at the top and the only
+ * button that keeps them was at the very bottom, past a second payment method
+ * the shop does not use — so the form was filled in correctly, abandoned, and
+ * lost, with nothing on screen having suggested there was anything to lose.
+ *
+ * Sticky only while dirty. A bar that is always there is furniture; one that
+ * arrives when the form changes is itself the notice that the form has
+ * changed.
+ */
+.pay-save {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-start: var(--spacing-3);
+}
+.pay-save.is-dirty {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 5;
+  margin-inline: calc(var(--spacing-3) * -1);
+  padding: 14px var(--spacing-3);
+  background: var(--color-bg);
+  border-block-start: 1px solid var(--color-border-strong);
+  box-shadow: 0 -6px 18px rgb(0 0 0 / 8%);
+}
+.pay-save.is-dirty .meta {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* --- product images ------------------------------------------------------- */
+
+.images-form h3 {
+  margin: 0 0 4px;
+  font-size: var(--text-lg);
+}
+
+/*
+ * The drop zone. A dashed edge, because the area accepts something rather
+ * than containing something — the one place in this panel where that reading
+ * is literally true.
+ */
+.image-drop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-block-size: 84px;
+  margin-block: var(--spacing-2);
+  padding: 16px;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink-muted);
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.image-drop.is-over {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+  color: var(--color-ink);
+}
+
+.image-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+/*
+ * A row per picture: thumbnail beside its fields.
+ *
+ * Not a grid of tiles. Alt text in two languages is the work on this screen —
+ * it is what the publish gate reads and what a blind shopper and a crawler
+ * both get — and a tile grid has nowhere to put two text inputs. So the
+ * picture is the small half and the writing is the large one.
+ */
+.image-item {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.image-item.is-hero {
+  border-color: var(--color-brand);
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.image-thumb {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+.image-thumb img {
+  inline-size: 120px;
+  block-size: 120px;
+  object-fit: contain;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.image-body { min-inline-size: 0; display: grid; gap: 6px; align-content: start; }
+.image-alts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--spacing-1);
+}
+.image-alts label,
+.image-variant {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.image-alts input,
+.image-variant select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.image-variant { max-inline-size: 22rem; }
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 4px;
+}
+.image-actions button {
+  min-block-size: 32px;
+  font-size: var(--text-xs);
+  padding-inline: 12px;
+}
+
+@media (max-width: 640px) {
+  .image-item { grid-template-columns: 1fr; }
+  .image-thumb { justify-items: start; }
+}
+
+/* --- product terms and identity ------------------------------------------- */
+
+.terms-form h3,
+.identity-form h3 {
+  margin: 0 0 4px;
+  font-size: var(--text-lg);
+}
+
+/*
+ * One card per variant, because one save button over four of them makes a
+ * typo a four-product mistake. The dirty state is on the card's edge rather
+ * than only on its button: at four variants the button that matters may be
+ * off screen while the card that changed is not.
+ */
+.variant-card {
+  margin-block-start: var(--spacing-2);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.variant-card.is-dirty {
+  border-color: var(--color-brand);
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+.variant-card > header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-block-end: var(--spacing-2);
+  padding-block-end: 10px;
+  border-block-end: 1px solid var(--color-border);
+}
+.variant-card > header strong {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.terms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--spacing-3) var(--spacing-2);
+  align-items: start;
+}
+.terms-grid label,
+.identity-form .check,
+.terms-checks .check {
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-ink);
+  min-inline-size: 0;
+}
+.terms-grid input,
+.terms-grid select {
+  font: inherit;
+  inline-size: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  min-block-size: 44px;
+}
+.terms-grid input:focus-visible,
+.terms-grid select:focus-visible {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+.terms-grid small { color: var(--color-ink-muted); font-size: var(--text-xs); }
+.terms-grid small.warn { color: var(--color-danger); }
+
+.terms-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-block-start: var(--spacing-3);
+}
+.terms-checks .check,
+.identity-form > .check {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  background: var(--color-surface);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.terms-checks .check:hover,
+.identity-form > .check:hover {
+  background: var(--color-surface-2);
+}
+
+.terms-save {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-start: var(--spacing-3);
+  padding-block-start: var(--spacing-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.category-picker {
+  margin-block-start: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-3);
+  background: var(--color-surface);
+}
+.category-picker legend {
+  padding-inline: 8px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.category-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.category-chips .chip {
+  padding: 6px 14px;
+  min-block-size: 34px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+}
+
+/*
+ * The slug sits apart from the grid: it is the one field on this screen whose
+ * mistake is public and permanent, and putting it in the same row of boxes as
+ * "devices" would say it carries the same weight.
+ */
+.slug-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-block-start: var(--spacing-3);
+  padding: var(--spacing-3);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.slug-field code {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--color-bg);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.slug-field input {
+  font: inherit;
+  flex: 1 1 18rem;
+  padding: 10px 14px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  min-block-size: 44px;
+  transition: box-shadow 150ms ease;
+}
+.slug-field input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-danger-soft);
+}
+.slug-field .meta-warn { flex-basis: 100%; margin-block-start: 4px; }
+
+/* --- product description -------------------------------------------------- */
+
+.content-head {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.content-head h3 { margin: 0 0 4px; font-size: var(--text-lg); }
+.content-locale { display: grid; gap: 4px; font-size: var(--text-xs); color: var(--color-ink-muted); }
+.content-locale select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+/*
+ * The word count, beside the writing rather than at the end of it.
+ *
+ * It is the number the publish gate decides on, and the whole reason the
+ * English catalog sat unpublished for weeks. Red while short, so the person
+ * typing knows before they save rather than after the gate refuses.
+ */
+.word-count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-muted);
+}
+.word-count.is-short { color: var(--color-danger); font-weight: 600; }
+
+.block-list {
+  list-style: none;
+  margin: var(--spacing-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-2);
+  counter-reset: block;
+}
+.block-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  padding: var(--spacing-2);
+}
+.block-item > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  margin-block-end: var(--spacing-1);
+  padding-block-end: 8px;
+  border-block-end: 1px solid var(--color-border);
+}
+.block-item > header strong { font-size: var(--text-sm); }
+.block-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.block-actions button { min-block-size: 30px; font-size: var(--text-xs); padding-inline: 10px; }
+
+.block-item textarea,
+.block-fields input,
+.block-fields select,
+.row-list input,
+.row-list textarea,
+.row-list select,
+.download-field input,
+.warnings-field input,
+.warnings-field select {
+  font: inherit;
+  inline-size: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.block-item textarea { resize: vertical; min-block-size: 80px; }
+
+.block-fields { display: flex; gap: var(--spacing-1); flex-wrap: wrap; align-items: flex-start; }
+.block-fields label,
+.row-list label,
+.download-field,
+.warnings-field label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  min-inline-size: 0;
+}
+.block-fields .grow,
+.row-list .grow { flex: 1 1 16rem; }
+
+.row-list { display: grid; gap: var(--spacing-1); }
+/* Label, value and a remove button on one line — the shape of the thing being
+   edited, so a table reads as a table while it is written. */
+.row-list-row {
+  display: flex;
+  gap: var(--spacing-1);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.row-list-row > label { flex: 1 1 12rem; }
+.row-list-row > button { min-block-size: 36px; font-size: var(--text-xs); margin-block-start: 22px; }
+
+.block-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-block-start: var(--spacing-2);
+  padding-block-start: var(--spacing-2);
+  border-block-start: 1px dashed var(--color-border-strong);
+}
+.block-add button { min-block-size: 32px; font-size: var(--text-xs); padding-inline: 12px; }
+
+.warnings-field {
+  margin-block-start: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
+  display: grid;
+  gap: var(--spacing-1);
+}
+.warnings-field legend { padding-inline: 6px; font-size: var(--text-xs); color: var(--color-ink-muted); }
+
+.download-field { margin-block-start: var(--spacing-2); max-inline-size: 34rem; }
+
+/* --- creating a product --------------------------------------------------- */
+
+/*
+ * The form replaces the list rather than opening beside it.
+ *
+ * A half-typed product lost to a filter click is the kind of thing somebody
+ * does not try twice, and the list has nothing to say while a new product is
+ * being written.
+ */
+.new-product {
+  margin-block: var(--spacing-2);
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+.new-product h2 { margin: 0 0 4px; font-size: var(--text-lg); }
+.new-product h3 {
+  margin-block: var(--spacing-3) 4px;
+  padding-block-start: var(--spacing-2);
+  border-block-start: 1px dashed var(--color-border-strong);
+  font-size: var(--text-md, 1rem);
+}
+.new-product .notice { margin-block-start: var(--spacing-2); }
+
+/* The add-variant card, marked as not-yet-real by a dashed edge. */
+.variant-card.is-new {
+  border-style: dashed;
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+}
+.new-variant-open {
+  margin-block-start: var(--spacing-2);
+  min-block-size: 36px;
+  font-size: var(--text-xs);
+}
+
+/* --- sections and links --------------------------------------------------- */
+
+.categories-table { min-inline-size: 48rem; }
+.categories-table td:first-child strong,
+.categories-table td:first-child span { display: block; }
+/* A section with no published product is a page in the navigation with
+   nothing on it. Worth seeing at a glance down the column. */
+.categories-table td.is-empty-section { color: var(--color-danger); font-weight: 600; }
+.category-drawer > td { padding: 4px 14px 16px; background: var(--color-surface); }
+.category-row:has(+ .category-drawer) > td { border-block-end-color: transparent; }
+
+.links-form h3 { margin: 0 0 4px; font-size: var(--text-lg); }
+.link-list {
+  list-style: none;
+  margin: var(--spacing-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.link-what { flex: 1 1 16rem; min-inline-size: 0; display: grid; gap: 2px; }
+.link-what .slug { font-size: var(--text-xs); }
+.link-discount {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-brand);
+  white-space: nowrap;
+}
+.link-add {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-1);
+  flex-wrap: wrap;
+  margin-block-start: var(--spacing-2);
+  padding-block-start: var(--spacing-2);
+  border-block-start: 1px dashed var(--color-border-strong);
+}
+.link-add label { display: grid; gap: 4px; font-size: var(--text-xs); color: var(--color-ink-muted); }
+.link-add .grow { flex: 1 1 16rem; }
+.link-add input,
+.link-add select {
+  font: inherit;
+  inline-size: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.link-add button {
+  margin-block-start: 22px;
+}
+
+/* --- the product's own page ---------------------------------------------- */
+
+/*
+ * One button per row, and it is a link.
+ *
+ * The row used to hold eight buttons and a column sized for them. With one,
+ * the column gives its width back to the product name — which is what the
+ * earlier rule above was trying to do around the eight.
+ */
+.products-table td.actions {
+  min-inline-size: 0;
+  max-inline-size: none;
+  inline-size: 1%;
+  white-space: nowrap;
+}
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 36px;
+  padding-inline: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.button-link:hover {
+  background: var(--color-brand-hover);
+  color: var(--color-ink-inverse);
+}
+.name-link {
+  color: inherit;
+  text-decoration: none;
+}
+.name-link:hover .name {
+  color: var(--color-brand-ink);
+  text-decoration: underline;
+}
+.readiness-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+.readiness-link:hover .pill {
+  box-shadow: 0 0 0 2px var(--color-border-strong);
+}
+.row-gaps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 4px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-basis: 100%;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  text-decoration: none;
+}
+.back-link:hover {
+  color: var(--color-brand-ink);
+  text-decoration: underline;
+}
+
+.edit-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  margin-block-end: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+.edit-title {
+  flex: 1 1 20rem;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.edit-title h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+  letter-spacing: -0.01em;
+}
+.edit-title .slug {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.edit-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 6px;
+}
+.edit-pills a.pill {
+  text-decoration: none;
+}
+.edit-pills a.pill:hover {
+  box-shadow: 0 0 0 2px var(--color-border-strong);
+}
+.edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.edit-actions .locale-switch {
+  align-items: center;
+  gap: 4px;
+  background: var(--color-surface);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+}
+.edit-actions .locale-switch .meta {
+  margin-inline-end: 8px;
+  margin-inline-start: 8px;
+  font-weight: 600;
+}
+.edit-actions .locale-switch .chip {
+  min-block-size: 32px;
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+}
+.edit-actions .locale-switch .chip.is-active {
+  background: var(--color-bg);
+  color: var(--color-brand-ink);
+  box-shadow: var(--shadow-xs);
+  font-weight: 700;
+}
+
+/*
+ * The rail and the sections.
+ */
+.edit-layout {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: var(--spacing-3);
+  align-items: start;
+}
+.edit-nav {
+  position: sticky;
+  inset-block-start: calc(64px + var(--spacing-2));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+.edit-nav a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-block-size: 40px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 150ms ease;
+}
+.edit-nav a:hover {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+.edit-nav a.is-active {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+.edit-sections {
+  display: grid;
+  gap: var(--spacing-3);
+  min-inline-size: 0;
+}
+.edit-section {
+  padding: var(--spacing-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+  scroll-margin-block-start: calc(64px + var(--spacing-2));
+  transition: border-color 200ms ease;
+}
+.edit-section:target {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+.edit-section > h3,
+.edit-section .content-form h3,
+.edit-section .images-form h3,
+.edit-section .links-form h3 {
+  margin: 0 0 8px;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-ink);
+  letter-spacing: -0.01em;
+}
+.edit-section .lede-sm {
+  margin-block-end: var(--spacing-3);
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.edit-section .paste-form {
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+.edit-section .checks {
+  margin-block-end: 0 !important;
+  box-shadow: none !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.edit-section .checks li {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edit-section .checks li.blocker {
+  border-inline-start: 4px solid var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger-soft) 30%, var(--color-surface));
+}
+.edit-section .checks li.warning {
+  border-inline-start: 4px solid var(--color-warning);
+}
+.edit-section .checks li.passed {
+  border-inline-start: 4px solid var(--color-success);
+}
+.edit-section .checks a.check-key {
+  color: var(--color-brand-ink);
+  font-weight: 700;
+  text-decoration: underline dotted;
+}
+.edit-section .checks a.check-key:hover {
+  text-decoration-style: solid;
+}
+.edit-section .paste-form .terms-save button[type='submit'] {
+  margin-top: 0;
+}
+
+.stock-list {
+  display: grid;
+  gap: var(--spacing-2);
+}
+.stock-card {
+  margin-block-start: 0;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.stock-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+.stock-fields label {
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.stock-fields .grow {
+  flex: 1 1 16rem;
+}
+.stock-fields input,
+.stock-fields select {
+  font: inherit;
+  min-block-size: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.stock-fields input:focus-visible,
+.stock-fields select:focus-visible {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--color-brand-soft);
+}
+.stock-fields button {
+  min-block-size: 44px;
+  margin-block-start: 26px;
+}
+
+@media (max-width: 64rem) {
+  .edit-layout {
+    grid-template-columns: 1fr;
+  }
+  .edit-nav {
+    position: static;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .edit-nav a {
+    min-block-size: 34px;
+    font-size: var(--text-xs);
+    padding: 6px 12px;
+  }
+  .edit-head {
+    padding: var(--spacing-2);
+  }
 }

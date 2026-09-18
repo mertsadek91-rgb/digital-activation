@@ -10,6 +10,7 @@ import type {
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -31,6 +32,8 @@ import { Nav } from '../nav';
  */
 export default function VaultPage() {
   const router = useRouter();
+  const t = useT('vault');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [stock, setStock] = useState<VaultStockRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +48,9 @@ export default function VaultPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل الخزنة.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -68,7 +71,7 @@ export default function VaultPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canStock = ['OWNER', 'ADMIN', 'FULFILLMENT'].includes(me.role);
   // Not FULFILLMENT: changing the shape changes how every future key for the
@@ -79,29 +82,26 @@ export default function VaultPage() {
   const others = (stock ?? []).filter((row) => row.mode !== 'FROM_STOCK');
 
   return (
-    <Nav me={me} current="vault" >
-
-      <h1>الخزنة</h1>
+    <Nav me={me} current="vault">
+      <h1>{t('title')}</h1>
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
 
       <section className="vault-section">
-        <h2>مخزون المفاتيح</h2>
-        <p className="lede-sm">
-          المتغيّرات المحفوظة لديك. الباقي يُطلَب من المورّد عند الشراء ولا يحتاج مخزوناً.
-        </p>
+        <h2>{t('stockHeading')}</h2>
+        <p className="lede-sm"> {t('stockLede')}</p>
 
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>المتغيّر</th>
-                <th>يُسلَّم كـ</th>
-                <th className="num">متاح</th>
-                <th className="num">مخصّص</th>
-                <th className="num">مُسلَّم</th>
-                <th className="num">ملغى</th>
-                <th className="num">منتهٍ</th>
+                <th>{t('colVariant')}</th>
+                <th>{t('colDeliveredAs')}</th>
+                <th className="num">{t('colAvailable')}</th>
+                <th className="num">{t('colAssigned')}</th>
+                <th className="num">{t('colDelivered')}</th>
+                <th className="num">{t('colRevoked')}</th>
+                <th className="num">{t('colExpired')}</th>
                 <th />
               </tr>
             </thead>
@@ -117,7 +117,12 @@ export default function VaultPage() {
                   onImported={(result) => {
                     setError(null);
                     setNote(
-                      `${row.sku}: أُدخل ${String(result.imported)}، تُجوهل ${String(result.duplicatesSkipped)} مكرّراً و${String(result.invalidSkipped)} غير صالح`,
+                      t('imported', {
+                        sku: row.sku,
+                        imported: result.imported,
+                        duplicates: result.duplicatesSkipped,
+                        invalid: result.invalidSkipped,
+                      }),
                     );
                     void load();
                   }}
@@ -127,7 +132,8 @@ export default function VaultPage() {
               {stocked.length === 0 && stock ? (
                 <tr>
                   <td colSpan={8} className="meta">
-                    لا متغيّر محفوظ. كل المنتجات حسب الطلب حالياً.
+                    {' '}
+                    {t('noStockedVariants')}
                   </td>
                 </tr>
               ) : null}
@@ -140,7 +146,7 @@ export default function VaultPage() {
             that decision. */}
         {others.length > 0 ? (
           <details className="vault-others">
-            <summary>{others.length} متغيّراً حسب الطلب — لا تحتاج مخزوناً</summary>
+            <summary>{t('othersSummary', { count: others.length })}</summary>
             <ul className="vault-other-list">
               {others.map((row) => (
                 <li key={row.variantId}>
@@ -148,7 +154,8 @@ export default function VaultPage() {
                     {row.sku}
                   </span>
                   <span className="meta">
-                    {row.mode === 'ON_DEMAND' ? 'حسب الطلب' : 'تجهيز يدوي'}
+                    {' '}
+                    {row.mode === 'ON_DEMAND' ? t('modeOnDemand') : t('modeManual')}
                   </span>
                   {/* Editable here too. These 92 never hold stock, but the
                       supplier still sends back either a key or an account, and
@@ -162,10 +169,11 @@ export default function VaultPage() {
                   />
                   {Object.keys(row.counts).length > 0 ? (
                     <span className="meta">
-                      يحتوي{' '}
-                      {Object.entries(row.counts)
-                        .map(([k, v]) => `${k}:${String(v)}`)
-                        .join(' ')}
+                      {t('contains', {
+                        counts: Object.entries(row.counts)
+                          .map(([k, v]) => `${k}:${String(v)}`)
+                          .join(' '),
+                      })}
                     </span>
                   ) : null}
                 </li>
@@ -176,11 +184,8 @@ export default function VaultPage() {
       </section>
 
       <section className="vault-section">
-        <h2>مفاتيح طلب</h2>
-        <p className="lede-sm">
-          ابدأ من رقم الطلب الذي أرسله العميل. تُعرض المعرّفات والحالات فقط — قراءة مفتاح إجراء
-          منفصل يحتاج سبباً ورمز مصادقة حديثاً.
-        </p>
+        <h2>{t('lookupHeading')}</h2>
+        <p className="lede-sm"> {t('lookupLede')}</p>
         <OrderLookup canReveal={canReveal} onError={setError} onNote={setNote} />
       </section>
     </Nav>
@@ -210,6 +215,7 @@ function KindPicker({
   onError: (message: string | null) => void;
   onNote: (message: string) => void;
 }) {
+  const t = useT('vault');
   const [busy, setBusy] = useState(false);
 
   if (!canEdit) {
@@ -217,7 +223,7 @@ function KindPicker({
       <span
         className={`pill ${row.credentialKind === 'ACCOUNT_CREDENTIALS' ? 'pill-ready' : 'pill-published'}`}
       >
-        {kindLabel(row.credentialKind)}
+        {kindLabel(row.credentialKind, t)}
       </span>
     );
   }
@@ -227,7 +233,7 @@ function KindPicker({
       className="kind-picker"
       value={row.credentialKind}
       disabled={busy}
-      aria-label={`نوع التسليم لـ ${row.sku}`}
+      aria-label={t('kindPickerLabel', { sku: row.sku })}
       onChange={(event) => {
         const next = event.target.value as CredentialKind;
         if (next === row.credentialKind) return;
@@ -236,17 +242,17 @@ function KindPicker({
         void api
           .setCredentialKind(row.sku, next)
           .then(() => {
-            onNote(`${row.sku}: يُسلَّم الآن كـ${kindLabel(next)}`);
+            onNote(t('kindChanged', { sku: row.sku, kind: kindLabel(next, t) }));
             onSaved();
           })
           .catch((caught: unknown) => {
-            onError(caught instanceof Error ? caught.message : 'تعذّر تغيير نوع التسليم.');
+            onError(caught instanceof Error ? caught.message : t('kindChangeFailed'));
           })
           .finally(() => setBusy(false));
       }}
     >
-      <option value="ACTIVATION_KEY">مفتاح تفعيل</option>
-      <option value="ACCOUNT_CREDENTIALS">اسم مستخدم وكلمة مرور</option>
+      <option value="ACTIVATION_KEY">{t('kindActivationKey')}</option>
+      <option value="ACCOUNT_CREDENTIALS">{t('kindAccountCredentials')}</option>
     </select>
   );
 }
@@ -272,6 +278,8 @@ function StockRow({
   onError: (message: string | null) => void;
   onNote: (message: string) => void;
 }) {
+  const t = useT('vault');
+  const c = useT('common');
   const [open, setOpen] = useState(false);
   const [codes, setCodes] = useState('');
   const [cost, setCost] = useState('');
@@ -310,7 +318,7 @@ function StockRow({
         <td className="actions">
           {canStock ? (
             <button type="button" className="ghost" onClick={() => setOpen(!open)}>
-              {open ? 'إلغاء' : isAccount ? 'أدخل حسابات' : 'أدخل مفاتيح'}
+              {open ? c('cancel') : isAccount ? t('enterAccounts') : t('enterKeys')}
             </button>
           ) : null}
         </td>
@@ -339,13 +347,14 @@ function StockRow({
                     setOpen(false);
                   })
                   .catch((caught: unknown) => {
-                    onError(caught instanceof Error ? caught.message : 'تعذّر إدخال المفاتيح.');
+                    onError(caught instanceof Error ? caught.message : t('importFailed'));
                   })
                   .finally(() => setBusy(false));
               }}
             >
               <label className="grow">
-                {isAccount ? 'الحسابات — حساب في كل سطر' : 'المفاتيح — مفتاح في كل سطر'}
+                {' '}
+                {isAccount ? t('accountsLabel') : t('keysLabel')}
                 <textarea
                   value={codes}
                   onChange={(event) => setCodes(event.target.value)}
@@ -362,19 +371,17 @@ function StockRow({
                   }
                 />
                 <small>
-                  {lines > 0 ? `${String(lines)} سطراً. ` : ''}
+                  {' '}
+                  {lines > 0 ? t('lineCount', { count: lines }) : ''}
                   {/* The split rule, stated where it is used. A password with a
                       colon in it is normal, and "first separator wins" is the
-                      only reading that survives one. */}
-                  {isAccount
-                    ? 'يُفصل اسم المستخدم عن كلمة المرور عند أول فاصل (: أو | أو مسافة)، وكل ما بعده كلمة المرور. السطر بلا فاصل يُحتسب غير صالح ولا يُخزَّن. '
-                    : ''}
-                  المكرّر يُكتشَف بالبصمة دون فكّ تشفير أي شيء، ويُتجاهل — لأن تخزين المفتاح مرّتين
-                  يعني بيعه مرّتين.
+                      only reading that survives one. */}{' '}
+                  {isAccount ? t('accountSplitHint') : ''}
+                  {t('duplicateHint')}
                 </small>
               </label>
               <label>
-                التكلفة للوحدة (اختياري)
+                {t('unitCost')}
                 <input
                   type="text"
                   value={cost}
@@ -385,17 +392,17 @@ function StockRow({
                 />
               </label>
               <label>
-                ينتهي في (اختياري)
+                {t('expiresAt')}
                 <input
                   type="date"
                   value={expires}
                   onChange={(event) => setExpires(event.target.value)}
                   dir="ltr"
                 />
-                <small>للمفاتيح التي يجب تفعيلها قبل تاريخ.</small>
+                <small>{t('expiresHint')}</small>
               </label>
               <button type="submit" disabled={busy || lines === 0}>
-                {busy ? '...' : 'أدخل إلى الخزنة'}
+                {busy ? c('busy') : t('importSubmit')}
               </button>
             </form>
           </td>
@@ -421,6 +428,8 @@ function OrderLookup({
   onError: (message: string | null) => void;
   onNote: (message: string) => void;
 }) {
+  const t = useT('vault');
+  const c = useT('common');
   const [number, setNumber] = useState('');
   const [lines, setLines] = useState<OrderKeysRow[] | null>(null);
   const [reason, setReason] = useState('');
@@ -442,13 +451,13 @@ function OrderLookup({
     try {
       setLines(await api.orderKeys(number.trim()));
     } catch (caught) {
-      onError(caught instanceof Error ? caught.message : 'تعذّر العثور على الطلب.');
+      onError(caught instanceof Error ? caught.message : t('lookupFailed'));
     }
   }
 
   async function reveal(keyId: string): Promise<void> {
     if (reason.trim().length < 3) {
-      onError('اكتب سبب القراءة أولاً — يُسجَّل مع اسمك.');
+      onError(t('reasonFirst'));
       return;
     }
     try {
@@ -464,7 +473,7 @@ function OrderLookup({
         setStepUp({ keyId });
         return;
       }
-      onError(caught instanceof Error ? caught.message : 'تعذّرت قراءة المفتاح.');
+      onError(caught instanceof Error ? caught.message : t('revealFailed'));
     }
   }
 
@@ -472,7 +481,7 @@ function OrderLookup({
     <>
       <form className="lookup-form" onSubmit={(event) => void lookup(event)}>
         <label>
-          رقم الطلب
+          {t('orderNumber')}
           <input
             type="text"
             value={number}
@@ -482,21 +491,23 @@ function OrderLookup({
             required
           />
         </label>
-        <button type="submit">ابحث</button>
+        <button type="submit">{c('search')}</button>
       </form>
 
-      {lines && lines.length === 0 ? <p className="notice">لا بنود في هذا الطلب.</p> : null}
+      {lines && lines.length === 0 ? <p className="notice">{t('noLines')}</p> : null}
 
       {(lines ?? []).map((line) => (
         <div key={line.orderItemId} className="key-line">
           <p className="queue-product">{line.productName}</p>
           <p className="slug" dir="ltr">
-            {line.sku} · {line.state}
-            {line.deliveredAt ? ` · سُلّم ${line.deliveredAt.slice(0, 16).replace('T', ' ')}` : ''}
+            {line.sku} · {line.state}{' '}
+            {line.deliveredAt
+              ? t('deliveredAt', { at: line.deliveredAt.slice(0, 16).replace('T', ' ') })
+              : ''}
           </p>
 
           {line.keys.length === 0 ? (
-            <p className="meta">لا مفتاح مرتبط بهذا البند.</p>
+            <p className="meta">{t('noKeyForLine')}</p>
           ) : (
             <ul className="key-list">
               {line.keys.map((key) => (
@@ -513,7 +524,7 @@ function OrderLookup({
                         className="ghost"
                         onClick={() => void reveal(key.licenseKeyId)}
                       >
-                        اقرأ المفتاح
+                        {t('readKey')}
                       </button>
                       <button
                         type="button"
@@ -522,10 +533,10 @@ function OrderLookup({
                           void api
                             .keyHistory(key.licenseKeyId)
                             .then((rows) => setHistory({ id: key.licenseKeyId, rows }))
-                            .catch(() => onError('تعذّر تحميل سجل المفتاح.'));
+                            .catch(() => onError(t('historyFailed')));
                         }}
                       >
-                        السجل
+                        {t('history')}
                       </button>
                     </>
                   ) : null}
@@ -539,23 +550,23 @@ function OrderLookup({
                         {shown.secret.kind === 'ACCOUNT_CREDENTIALS' ? (
                           <>
                             <p>
-                              <span>اسم المستخدم</span>
+                              <span>{t('revealUsername')}</span>
                               <strong dir="ltr">{shown.secret.username}</strong>
                             </p>
                             <p>
-                              <span>كلمة المرور</span>
+                              <span>{t('revealPassword')}</span>
                               <strong dir="ltr">{shown.secret.password}</strong>
                             </p>
                           </>
                         ) : (
                           <p>
-                            <span>مفتاح التفعيل</span>
+                            <span>{t('revealKey')}</span>
                             <strong dir="ltr">{shown.secret.key}</strong>
                           </p>
                         )}
                       </div>
                       <button type="button" className="linky" onClick={() => setShown(null)}>
-                        أخفِ
+                        {c('hide')}
                       </button>
                     </div>
                   ) : null}
@@ -578,12 +589,12 @@ function OrderLookup({
 
       {canReveal && lines && lines.length > 0 ? (
         <label className="reason-field">
-          سبب القراءة — يُسجَّل مع اسمك ووقتك
+          {t('reasonLabel')}
           <input
             type="text"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
-            placeholder="العميل يقول إن المفتاح لا يُفعَّل"
+            placeholder={t('reasonPlaceholder')}
           />
         </label>
       ) : null}
@@ -597,12 +608,12 @@ function OrderLookup({
               .stepUp(totp)
               .then(() => reveal(stepUp.keyId))
               .catch((caught: unknown) => {
-                onError(caught instanceof Error ? caught.message : 'رمز غير صحيح.');
+                onError(caught instanceof Error ? caught.message : t('stepUpBadCode'));
               });
           }}
         >
           <label>
-            أدخل رمز المصادقة لقراءة المفتاح
+            {t('stepUpLabel')}
             <input
               type="text"
               inputMode="numeric"
@@ -614,14 +625,11 @@ function OrderLookup({
               dir="ltr"
               autoFocus
               required
-            />
-            <small>
-              مرّ أكثر من ربع ساعة على آخر تحقّق. التسجيل يثبت من أنت؛ هذا الرمز يثبت أنك على
-              المفاتيح الآن.
-            </small>
+            />{' '}
+            <small>{t('stepUpHint')}</small>
           </label>
           <button type="submit" disabled={totp.length !== 6}>
-            تحقّق واقرأ
+            {t('stepUpSubmit')}
           </button>
           <button
             type="button"
@@ -629,10 +637,10 @@ function OrderLookup({
             onClick={() => {
               setStepUp(null);
               setTotp('');
-              onNote('أُلغيت القراءة.');
+              onNote(t('revealCancelled'));
             }}
           >
-            إلغاء
+            {c('cancel')}
           </button>
         </form>
       ) : null}
@@ -641,6 +649,6 @@ function OrderLookup({
 }
 
 /** What the customer will receive, in two words. */
-function kindLabel(kind: CredentialKind): string {
-  return kind === 'ACCOUNT_CREDENTIALS' ? 'مستخدم وكلمة مرور' : 'مفتاح تفعيل';
+function kindLabel(kind: CredentialKind, t: ReturnType<typeof useT<'vault'>>): string {
+  return kind === 'ACCOUNT_CREDENTIALS' ? t('kindShortAccount') : t('kindShortKey');
 }

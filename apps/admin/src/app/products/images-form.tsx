@@ -339,7 +339,7 @@ function ImageRow({
         ) : null}
 
         {image.usedByProducts > 1 ? (
-          <p className="meta-warn">{t('imageSharedNote', { count: image.usedByProducts })}</p>
+          <p className="meta-warn">{t.tp('imageSharedNote', image.usedByProducts)}</p>
         ) : null}
 
         {canWrite ? (

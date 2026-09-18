@@ -4,6 +4,7 @@ import type { LaunchCheck, LaunchReadiness, StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -32,14 +33,10 @@ const SEVERITY_PILL: Record<LaunchCheck['severity'], string> = {
   ready: 'pill-published',
 };
 
-const SEVERITY_LABEL: Record<LaunchCheck['severity'], string> = {
-  blocker: 'مانع',
-  warning: 'تنبيه',
-  ready: 'جاهز',
-};
-
 export default function LaunchPage() {
   const router = useRouter();
+  const t = useT('launch');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [data, setData] = useState<LaunchReadiness | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -53,9 +50,9 @@ export default function LaunchPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر قراءة حالة المتجر.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -76,23 +73,22 @@ export default function LaunchPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const blockers = (data?.checks ?? []).filter((check) => check.severity === 'blocker');
   const warnings = (data?.checks ?? []).filter((check) => check.severity === 'warning');
   const ready = (data?.checks ?? []).filter((check) => check.severity === 'ready');
 
   return (
-    <Nav me={me} current="launch" >
-
+    <Nav me={me} current="launch">
       <div className="queue-head">
-        <h1>حالة المتجر</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
           {data
             ? data.canSell
-              ? 'المتجر يستطيع استقبال طلب الآن.'
-              : `${String(blockers.length)} مانع يقف بين المتجر وأول طلب.`
-            : '…'}
+              ? t('canSell')
+              : t.tp('blockersWaiting', blockers.length)
+            : c('loading')}
         </p>
       </div>
 
@@ -104,15 +100,13 @@ export default function LaunchPage() {
       */}
       {data ? (
         <p className={`launch-verdict${data.canSell ? ' is-ready' : ''}`}>
-          {data.canSell
-            ? 'يمكن شراء منتج من هذا المتجر الآن: هناك طريقة دفع معروضة ومنتج منشور والخزنة تستجيب.'
-            : 'لا يمكن إتمام عملية شراء الآن. الموانع أدناه تُصلَح كلٌّ منها في شاشة واحدة.'}
+          {data.canSell ? t('verdictReady') : t('verdictBlocked')}
         </p>
       ) : null}
 
       {blockers.length > 0 ? (
         <section className="vault-section">
-          <h2>موانع</h2>
+          <h2>{t('blockersHeading')}</h2>
           <ul className="launch-list">
             {blockers.map((check) => (
               <CheckRow key={check.key} check={check} onGo={(path) => router.push(path)} />
@@ -123,10 +117,8 @@ export default function LaunchPage() {
 
       {warnings.length > 0 ? (
         <section className="vault-section">
-          <h2>تنبيهات</h2>
-          <p className="lede-sm">
-            لا يمنع أيٌّ منها البيع. كلٌّ منها شيء يُكلِّف لاحقاً أكثر ممّا يُكلِّف الآن.
-          </p>
+          <h2>{t('warningsHeading')}</h2>
+          <p className="lede-sm">{t('warningsLede')}</p>
           <ul className="launch-list">
             {warnings.map((check) => (
               <CheckRow key={check.key} check={check} onGo={(path) => router.push(path)} />
@@ -137,7 +129,7 @@ export default function LaunchPage() {
 
       {ready.length > 0 ? (
         <section className="vault-section">
-          <h2>جاهز</h2>
+          <h2>{t('readyHeading')}</h2>
           <ul className="launch-list">
             {ready.map((check) => (
               <CheckRow key={check.key} check={check} onGo={(path) => router.push(path)} />
@@ -150,12 +142,20 @@ export default function LaunchPage() {
 }
 
 function CheckRow({ check, onGo }: { check: LaunchCheck; onGo: (path: string) => void }) {
+  const t = useT('launch');
+
+  const severityLabel: Record<LaunchCheck['severity'], string> = {
+    blocker: t('severityBlocker'),
+    warning: t('severityWarning'),
+    ready: t('severityReady'),
+  };
+
   return (
     <li className={`launch-row is-${check.severity}`}>
       <div>
         <p className="launch-title">
           <span className={`pill ${SEVERITY_PILL[check.severity]}`}>
-            {SEVERITY_LABEL[check.severity]}
+            {severityLabel[check.severity]}
           </span>
           <strong>{check.title}</strong>
         </p>
@@ -168,7 +168,7 @@ function CheckRow({ check, onGo }: { check: LaunchCheck; onGo: (path: string) =>
           worse than a sentence that says where to go. */}
       {check.fix ? (
         <button type="button" onClick={() => onGo(check.fix ?? '/')}>
-          افتح الشاشة
+          {t('openScreen')}
         </button>
       ) : null}
     </li>

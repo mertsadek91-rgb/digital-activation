@@ -11,6 +11,7 @@ import { DEFAULT_PROMOTION_RULES, promotionRulesSchema } from '@da/contracts';
 import { OrderStatus, Prisma } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -146,7 +147,10 @@ export class PromotionsService {
       });
       // Named rather than silently reused: two campaigns sharing one code means
       // the second one's numbers are the first one's numbers.
-      if (clash) throw new BadRequestException(`الكود ${body.code} مستخدم بالفعل.`);
+      if (clash)
+        throw new BadRequestException(
+          say(`الكود ${body.code} مستخدم بالفعل.`, `The code ${body.code} is already in use.`),
+        );
     }
 
     const promotion = await this.prisma.client.promotion.create({
@@ -199,7 +203,8 @@ export class PromotionsService {
       where: { id: input.id },
       select: { id: true, isActive: true, value: true, endsAt: true },
     });
-    if (!existing) throw new NotFoundException('لا يوجد عرض بهذا المعرّف.');
+    if (!existing)
+      throw new NotFoundException(say('لا يوجد عرض بهذا المُعرّف.', 'No offer with that id.'));
 
     const promotion = await this.prisma.client.promotion.update({
       where: { id: input.id },

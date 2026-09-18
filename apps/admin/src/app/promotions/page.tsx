@@ -4,6 +4,7 @@ import type { AdminPromotion, AdminPromotionList, StaffMe } from '@da/contracts'
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -28,13 +29,13 @@ import { Nav } from '../nav';
  * this screen in a hurry is that a code is being shared where it should not
  * be, and every second of that is money.
  */
-const STATE_LABELS: Record<AdminPromotion['state'], string> = {
-  LIVE: 'فعّال',
-  SCHEDULED: 'مجدول',
-  EXPIRED: 'منتهٍ',
-  EXHAUSTED: 'استُهلك',
-  OFF: 'موقوف',
-};
+const STATE_KEYS = {
+  LIVE: 'stateLive',
+  SCHEDULED: 'stateScheduled',
+  EXPIRED: 'stateExpired',
+  EXHAUSTED: 'stateExhausted',
+  OFF: 'stateOff',
+} as const satisfies Record<AdminPromotion['state'], string>;
 
 const STATE_PILL: Record<AdminPromotion['state'], string> = {
   LIVE: 'pill-published',
@@ -44,23 +45,25 @@ const STATE_PILL: Record<AdminPromotion['state'], string> = {
   OFF: 'pill-blocked',
 };
 
-const TYPE_LABELS: Record<AdminPromotion['type'], string> = {
-  PERCENT: 'نسبة مئوية',
-  FIXED: 'مبلغ ثابت',
-  FREE_ITEM: 'منتج مجاني',
-  BUNDLE_DISCOUNT: 'خصم حزمة',
-};
+const TYPE_KEYS = {
+  PERCENT: 'typePercent',
+  FIXED: 'typeFixed',
+  FREE_ITEM: 'typeFreeItem',
+  BUNDLE_DISCOUNT: 'typeBundleDiscount',
+} as const satisfies Record<AdminPromotion['type'], string>;
 
 const FILTERS = [
-  { key: 'live', label: 'فعّالة' },
-  { key: 'scheduled', label: 'مجدولة' },
-  { key: 'finished', label: 'منتهية' },
-  { key: 'off', label: 'موقوفة' },
-  { key: 'all', label: 'الكل' },
-];
+  { key: 'live', label: 'filterLive' },
+  { key: 'scheduled', label: 'filterScheduled' },
+  { key: 'finished', label: 'filterFinished' },
+  { key: 'off', label: 'filterOff' },
+  { key: 'all', label: 'filterAll' },
+] as const;
 
 export default function PromotionsPage() {
   const router = useRouter();
+  const t = useT('promotions');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [data, setData] = useState<AdminPromotionList | null>(null);
   const [filter, setFilter] = useState('live');
@@ -77,9 +80,9 @@ export default function PromotionsPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل العروض.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [filter, router]);
+  }, [filter, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -100,7 +103,7 @@ export default function PromotionsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   // The API refuses a write from anything else, so the buttons are hidden
   // rather than offered and then refused.
@@ -114,24 +117,28 @@ export default function PromotionsPage() {
       setNote(label);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذّر تنفيذ الإجراء.');
+      setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }
 
   return (
-    <Nav me={me} current="promotions" >
-
+    <Nav me={me} current="promotions">
       <div className="queue-head">
-        <h1>الأكواد والعروض</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
+          {' '}
           {data
-            ? `${String(data.counts.live)} فعّال · ${String(data.counts.scheduled)} مجدول · ${String(data.counts.all)} إجمالاً`
-            : '…'}
+            ? t('summary', {
+                live: data.counts.live,
+                scheduled: data.counts.scheduled,
+                all: data.counts.all,
+              })
+            : c('loading')}
         </p>
       </div>
 
       <div className="store-bar">
-        <nav className="sorts" aria-label="تصفية">
+        <nav className="sorts" aria-label={c('filter')}>
           {FILTERS.map((entry) => (
             <button
               key={entry.key}
@@ -139,39 +146,34 @@ export default function PromotionsPage() {
               className={`tab${filter === entry.key ? ' is-active' : ''}`}
               onClick={() => setFilter(entry.key)}
             >
-              {entry.label}
+              {t(entry.label)}
             </button>
           ))}
         </nav>
 
         {canWrite ? (
           <button type="button" className="ghost" onClick={() => setCreating(!creating)}>
-            {creating ? 'إلغاء' : 'كود جديد'}
+            {creating ? c('cancel') : t('newCode')}
           </button>
         ) : null}
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
-      {!canWrite ? (
-        <p className="notice">
-          دورك <strong>{me.role}</strong> يسمح بالقراءة. إنشاء الأكواد وتعديلها لمالك المتجر والمدير
-          فقط — من يستطيع تغيير سعر يستطيع أيضاً إعطاء المتجر بكود.
-        </p>
-      ) : null}
+      {!canWrite ? <p className="notice"> {t('roleReadonly', { role: me.role })}</p> : null}
 
       {creating ? (
         <NewPromotion
           onCancel={() => setCreating(false)}
           onCreated={(code) => {
             setCreating(false);
-            void act(`أُنشئ ${code}`, () => Promise.resolve());
+            void act(t('created', { code }), () => Promise.resolve());
           }}
           onError={setError}
         />
       ) : null}
 
-      {data && data.rows.length === 0 ? <p className="notice">لا أكواد في هذا التصنيف.</p> : null}
+      {data && data.rows.length === 0 ? <p className="notice">{t('empty')}</p> : null}
 
       <ul className="queue-list">
         {(data?.rows ?? []).map((row) => (
@@ -181,12 +183,14 @@ export default function PromotionsPage() {
             canWrite={canWrite}
             onToggle={() =>
               void act(
-                row.isActive ? `أُوقف ${row.code ?? row.name}` : `فُعّل ${row.code ?? row.name}`,
+                row.isActive
+                  ? t('turnedOff', { code: row.code ?? row.name })
+                  : t('turnedOn', { code: row.code ?? row.name }),
                 () => api.updatePromotion(row.id, { isActive: !row.isActive }),
               )
             }
             onLimit={(usageLimit) =>
-              void act(`عُدّل حدّ ${row.code ?? row.name}`, () =>
+              void act(t('limitChanged', { code: row.code ?? row.name }), () =>
                 api.updatePromotion(row.id, { usageLimit }),
               )
             }
@@ -208,6 +212,8 @@ function PromotionCard({
   onToggle: () => void;
   onLimit: (usageLimit: number | null) => void;
 }) {
+  const t = useT('promotions');
+  const c = useT('common');
   const [limiting, setLimiting] = useState(false);
   const [limit, setLimit] = useState(String(row.usageLimit ?? ''));
 
@@ -219,10 +225,10 @@ function PromotionCard({
       <div className="queue-card-main">
         <p className="queue-order">
           <span dir="ltr" className="coupon-code">
-            {row.code ?? '— تلقائي —'}
+            {row.code ?? t('automatic')}
           </span>
-          <span className={`pill ${STATE_PILL[row.state]}`}>{STATE_LABELS[row.state]}</span>
-          <span className="meta">{TYPE_LABELS[row.type]}</span>
+          <span className={`pill ${STATE_PILL[row.state]}`}>{t(STATE_KEYS[row.state])}</span>
+          <span className="meta">{t(TYPE_KEYS[row.type])}</span>
         </p>
 
         <p className="queue-product">
@@ -233,42 +239,43 @@ function PromotionCard({
         <dl className="queue-meta">
           {/* What it has done, which is the only reason to look at a live code. */}
           <div>
-            <dt>استُخدم</dt>
+            <dt>{t('redeemed')}</dt>{' '}
             <dd>
-              {row.redeemed}
-              {row.usageLimit === null ? ' مرّة' : ` من ${String(row.usageLimit)}`}
+              {row.usageLimit === null
+                ? t.tp('redeemedTimes', row.redeemed)
+                : t('redeemedOfLimit', { count: row.redeemed, limit: row.usageLimit })}
             </dd>
           </div>
           <div>
-            <dt>الخصم المُعطى</dt>
+            <dt>{t('discountGiven')}</dt>
             <dd dir="ltr">${row.discountedUsd}</dd>
           </div>
           <div>
-            <dt>الإيراد المصاحب</dt>
+            <dt>{t('revenueAlongside')}</dt>
             <dd dir="ltr">${row.revenueUsd}</dd>
           </div>
           {row.endsAt ? (
             <div>
-              <dt>ينتهي</dt>
+              <dt>{t('endsAt')}</dt>
               <dd>{row.endsAt.slice(0, 10)}</dd>
             </div>
           ) : null}
           {row.rules.minTotalUsd !== undefined ? (
             <div>
-              <dt>حدّ أدنى للسلة</dt>
+              <dt>{t('minCart')}</dt>
               <dd dir="ltr">${row.rules.minTotalUsd}</dd>
             </div>
           ) : null}
           {row.rules.maxDiscountUsd !== undefined ? (
             <div>
-              <dt>سقف الخصم</dt>
+              <dt>{t('maxDiscount')}</dt>
               <dd dir="ltr">${row.rules.maxDiscountUsd}</dd>
             </div>
           ) : null}
           {row.rules.firstOrderOnly ? (
             <div>
-              <dt>الشرط</dt>
-              <dd>الطلب الأول فقط</dd>
+              <dt>{t('condition')}</dt>
+              <dd>{t('firstOrderOnlyValue')}</dd>
             </div>
           ) : null}
         </dl>
@@ -278,10 +285,10 @@ function PromotionCard({
         <div className="actions">
           {/* The control somebody opens this screen in a hurry to use. */}
           <button type="button" onClick={onToggle}>
-            {row.isActive ? 'أوقفه' : 'فعّله'}
+            {row.isActive ? t('turnOff') : t('turnOn')}
           </button>
           <button type="button" onClick={() => setLimiting(!limiting)}>
-            {limiting ? 'إلغاء' : 'حدّ الاستخدام'}
+            {limiting ? c('cancel') : t('usageLimit')}
           </button>
 
           {limiting ? (
@@ -299,11 +306,11 @@ function PromotionCard({
                 min={1}
                 value={limit}
                 onChange={(event) => setLimit(event.target.value)}
-                placeholder="بلا حدّ"
-                aria-label="حدّ الاستخدام"
+                placeholder={t('noLimit')}
+                aria-label={t('usageLimit')}
               />
               <button type="submit" className="ghost">
-                احفظ
+                {c('save')}
               </button>
             </form>
           ) : null}
@@ -332,6 +339,8 @@ function NewPromotion({
   onCreated: (code: string) => void;
   onError: (message: string) => void;
 }) {
+  const t = useT('promotions');
+  const c = useT('common');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [type, setType] = useState<'PERCENT' | 'FIXED'>('PERCENT');
@@ -373,7 +382,7 @@ function NewPromotion({
       });
       onCreated(code.trim() || name.trim());
     } catch (caught) {
-      onError(caught instanceof Error ? caught.message : 'تعذّر إنشاء الكود.');
+      onError(caught instanceof Error ? caught.message : t('createFailed'));
     } finally {
       setBusy(false);
     }
@@ -381,11 +390,8 @@ function NewPromotion({
 
   return (
     <section className="vault-section">
-      <h2>كود جديد</h2>
-      <p className="lede-sm">
-        النوع والكود لا يُعدَّلان بعد الإنشاء: كلاهما مكتوب على كل طلب استُخدم فيه، وتغييرهما يعيد
-        كتابة ما حدث. الإيقاف هو ما يُتراجَع عنه.
-      </p>
+      <h2>{t('newHeading')}</h2>
+      <p className="lede-sm"> {t('newLede')}</p>
 
       <form
         className="promo-form"
@@ -395,7 +401,7 @@ function NewPromotion({
         }}
       >
         <label className="field">
-          <span>الكود</span>
+          <span>{t('codeLabel')}</span>
           <input
             dir="ltr"
             value={code}
@@ -403,33 +409,33 @@ function NewPromotion({
             placeholder="RAMADAN20"
             maxLength={40}
           />
-          <small>حروف لاتينية وأرقام وشرطات. يُكتب بخط اليد عن لافتة، فلا مسافات فيه.</small>
+          <small>{t('codeHint')}</small>
         </label>
 
         <label className="field">
-          <span>الاسم الداخلي</span>
+          <span>{t('nameLabel')}</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="حملة رمضان"
+            placeholder={t('namePlaceholder')}
             required
             maxLength={120}
           />
         </label>
 
         <label className="field">
-          <span>النوع</span>
+          <span>{t('typeLabel')}</span>
           <select
             value={type}
             onChange={(event) => setType(event.target.value === 'FIXED' ? 'FIXED' : 'PERCENT')}
           >
-            <option value="PERCENT">نسبة مئوية</option>
-            <option value="FIXED">مبلغ ثابت بالدولار</option>
+            <option value="PERCENT">{t('typePercent')}</option>
+            <option value="FIXED">{t('typeFixedUsd')}</option>
           </select>
         </label>
 
         <label className="field">
-          <span>{percent ? 'النسبة' : 'المبلغ'}</span>
+          <span>{percent ? t('percentLabel') : t('amountLabel')}</span>
           <input
             type="number"
             min="0"
@@ -439,29 +445,29 @@ function NewPromotion({
             onChange={(event) => setValue(event.target.value)}
             required
           />
-          {tooHigh ? <small className="bad">النسبة لا تتجاوز 100.</small> : null}
+          {tooHigh ? <small className="bad">{t('percentTooHigh')}</small> : null}
         </label>
 
         <label className="field">
-          <span>ينتهي في</span>
+          <span>{t('endsAtLabel')}</span>
           <input type="date" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} />
-          <small>اتركه فارغاً لكود بلا نهاية.</small>
+          <small>{t('endsAtHint')}</small>
         </label>
 
         <label className="field">
-          <span>عدد الاستخدامات</span>
+          <span>{t('usageCountLabel')}</span>
           <input
             type="number"
             min="1"
             dir="ltr"
             value={usageLimit}
             onChange={(event) => setUsageLimit(event.target.value)}
-            placeholder="بلا حدّ"
+            placeholder={t('noLimit')}
           />
         </label>
 
         <label className="field">
-          <span>حدّ أدنى للسلة ($)</span>
+          <span>{t('minCartLabel')}</span>
           <input
             type="number"
             min="0"
@@ -469,14 +475,14 @@ function NewPromotion({
             dir="ltr"
             value={minTotal}
             onChange={(event) => setMinTotal(event.target.value)}
-            placeholder="بلا حدّ"
+            placeholder={t('noLimit')}
           />
         </label>
 
         {/* The one field that stops a percentage code costing more than it
             earns on a large cart. */}
         <label className="field">
-          <span>سقف الخصم ($)</span>
+          <span>{t('maxDiscountLabel')}</span>
           <input
             type="number"
             min="0"
@@ -484,9 +490,9 @@ function NewPromotion({
             dir="ltr"
             value={maxDiscount}
             onChange={(event) => setMaxDiscount(event.target.value)}
-            placeholder="بلا سقف"
+            placeholder={t('noCeiling')}
           />
-          <small>يحمي هامشك: 20% بسقف $10 على سلة $200 تعني $10.</small>
+          <small>{t('maxDiscountHint')}</small>
         </label>
 
         <label className="check">
@@ -495,15 +501,15 @@ function NewPromotion({
             checked={firstOrderOnly}
             onChange={(event) => setFirstOrderOnly(event.target.checked)}
           />
-          <span>للطلب الأول فقط</span>
+          <span>{t('firstOrderOnly')}</span>
         </label>
 
         <div className="actions">
           <button type="submit" disabled={busy || tooHigh}>
-            {busy ? '…' : 'أنشئ'}
+            {busy ? c('loading') : t('create')}
           </button>
           <button type="button" className="ghost" onClick={onCancel}>
-            إلغاء
+            {c('cancel')}
           </button>
         </div>
       </form>

@@ -5,6 +5,7 @@ import { CONTACT_REPLY_HOURS } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -28,13 +29,13 @@ import { Nav } from '../nav';
  * message past it is late, and late is the only thing on this screen that is
  * allowed to be loud.
  */
-const TOPIC_LABELS: Record<ContactMessageRow['topic'], string> = {
-  ORDER: 'استفسار عن طلب',
-  ACTIVATION: 'مشكلة تفعيل',
-  PRESALE: 'سؤال قبل الشراء',
-  BUSINESS: 'مبيعات الشركات',
-  OTHER: 'أخرى',
-};
+const TOPIC_KEYS = {
+  ORDER: 'topicOrder',
+  ACTIVATION: 'topicActivation',
+  PRESALE: 'topicPresale',
+  BUSINESS: 'topicBusiness',
+  OTHER: 'topicOther',
+} as const satisfies Record<ContactMessageRow['topic'], string>;
 
 /** Activation problems first among equals: those are keys somebody paid for. */
 const TOPIC_TONE: Record<ContactMessageRow['topic'], string> = {
@@ -47,6 +48,8 @@ const TOPIC_TONE: Record<ContactMessageRow['topic'], string> = {
 
 export default function MessagesPage() {
   const router = useRouter();
+  const t = useT('messages');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [inbox, setInbox] = useState<ContactList | null>(null);
   const [includeHandled, setIncludeHandled] = useState(false);
@@ -62,9 +65,9 @@ export default function MessagesPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل الرسائل.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [includeHandled, router]);
+  }, [includeHandled, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -85,7 +88,7 @@ export default function MessagesPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canWork = ['OWNER', 'ADMIN', 'SUPPORT'].includes(me.role);
 
@@ -94,11 +97,13 @@ export default function MessagesPage() {
     try {
       await api.setMessageStatus(row.id, status);
       setNote(
-        status === 'HANDLED' ? `وُسمت رسالة ${row.name} كمُجابة` : `أُعيدت رسالة ${row.name}`,
+        status === 'HANDLED'
+          ? t('markedHandled', { name: row.name })
+          : t('markedReopened', { name: row.name }),
       );
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحديث الرسالة.');
+      setError(caught instanceof Error ? caught.message : t('updateFailed'));
     }
   }
 
@@ -109,13 +114,13 @@ export default function MessagesPage() {
       {...(inbox ? { messagesWaiting: inbox.waiting, messagesOverdue: inbox.overdue } : {})}
     >
       <div className="queue-head">
-        <h1>الرسائل</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
-          {inbox ? `${String(inbox.waiting)} رسالة تنتظر` : '…'}
+          {inbox ? t.tp('waiting', inbox.waiting) : c('loading')}
           {inbox && inbox.overdue > 0 ? (
             <strong className="overdue-count">
               {' '}
-              · {inbox.overdue} تجاوزت {CONTACT_REPLY_HOURS} ساعة
+              · {t('overdue', { count: inbox.overdue, hours: CONTACT_REPLY_HOURS })}
             </strong>
           ) : null}
         </p>
@@ -125,22 +130,16 @@ export default function MessagesPage() {
             checked={includeHandled}
             onChange={(event) => setIncludeHandled(event.target.checked)}
           />
-          <span>اعرض المُجابة أيضاً</span>
+          <span>{t('showHandled')}</span>
         </label>
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
-      {!canWork ? (
-        <p className="notice">
-          دورك <strong>{me.role}</strong> يسمح بالقراءة دون تعليم الرسائل.
-        </p>
-      ) : null}
+      {!canWork ? <p className="notice"> {t('roleReadonly', { role: me.role })}</p> : null}
 
       {inbox && inbox.rows.length === 0 ? (
-        <p className="notice">
-          {includeHandled ? 'لا رسائل بعد.' : 'لا رسائل تنتظر. كل ما وصل أُجيب عليه.'}
-        </p>
+        <p className="notice"> {includeHandled ? t('emptyAll') : t('emptyWaiting')}</p>
       ) : null}
 
       {/* A row per message.
@@ -153,11 +152,11 @@ export default function MessagesPage() {
           <table className="admin-table messages-table">
             <thead>
               <tr>
-                <th>الموضوع</th>
-                <th>المُرسِل</th>
-                <th>البريد</th>
-                <th>رقم الطلب</th>
-                <th>الانتظار</th>
+                <th>{t('colTopic')}</th>
+                <th>{t('colSender')}</th>
+                <th>{t('colEmail')}</th>
+                <th>{t('colOrderNumber')}</th>
+                <th>{t('colWait')}</th>
                 <th />
               </tr>
             </thead>
@@ -190,6 +189,8 @@ function MessageRow({
   canWork: boolean;
   onMark: (status: 'NEW' | 'HANDLED') => void;
 }) {
+  const t = useT('messages');
+  const c = useT('common');
   const [copied, setCopied] = useState<string | null>(null);
   /**
    * Whether the message itself is showing.
@@ -216,8 +217,8 @@ function MessageRow({
     <>
       <tr className={`message-row${overdue ? ' is-overdue' : ''}${handled ? ' is-settled' : ''}`}>
         <td>
-          <span className={`pill ${TOPIC_TONE[row.topic]}`}>{TOPIC_LABELS[row.topic]}</span>
-          {overdue ? <span className="pill pill-blocked">متأخّرة</span> : null}
+          <span className={`pill ${TOPIC_TONE[row.topic]}`}>{t(TOPIC_KEYS[row.topic])}</span>
+          {overdue ? <span className="pill pill-blocked">{t('overduePill')}</span> : null}
         </td>
 
         <td className="message-sender">
@@ -225,16 +226,20 @@ function MessageRow({
           {/* Who they are, without a search: a message from somebody with
               eleven orders behind them is not the same message. */}
           <span className="meta">
+            {' '}
             {row.customer
-              ? `عميل · ${String(row.customer.orderCount)} طلباً بقيمة $${row.customer.totalSpentUsd}`
-              : 'لا حساب بهذا البريد'}
+              ? t('customerSummary', {
+                  orders: row.customer.orderCount,
+                  spent: row.customer.totalSpentUsd,
+                })
+              : t('noAccount')}
           </span>
         </td>
 
         <td className="queue-mail">
           <span dir="ltr">{row.email}</span>
-          <button type="button" className="linky" onClick={() => void copy(row.email, 'البريد')}>
-            نسخ
+          <button type="button" className="linky" onClick={() => void copy(row.email, c('email'))}>
+            {c('copy')}
           </button>
           {row.phone ? (
             <span className="meta" dir="ltr">
@@ -248,7 +253,7 @@ function MessageRow({
         </td>
 
         <td className={`queue-wait${overdue ? ' is-late' : ''}`}>
-          <strong>{waitLabel(row.waitingSeconds)}</strong>
+          <strong>{waitLabel(row.waitingSeconds, c)}</strong>
           <span className="meta" dir="ltr">
             {row.createdAt.slice(0, 16).replace('T', ' ')}
           </span>
@@ -261,7 +266,7 @@ function MessageRow({
             aria-expanded={open}
             onClick={() => setOpen(!open)}
           >
-            {open ? 'أخفِ' : 'اقرأ'}
+            {open ? c('hide') : c('read')}
           </button>
           {canWork ? (
             <>
@@ -270,17 +275,19 @@ function MessageRow({
                   is where a reply gets lost. */}
               <a
                 className="ghost as-button"
-                href={`mailto:${row.email}?subject=${encodeURIComponent(`بخصوص رسالتك — ${TOPIC_LABELS[row.topic]}`)}`}
+                href={`mailto:${row.email}?subject=${encodeURIComponent(
+                  t('replySubject', { topic: t(TOPIC_KEYS[row.topic]) }),
+                )}`}
               >
-                ردّ
+                {t('reply')}
               </a>
               {handled ? (
                 <button type="button" className="ghost" onClick={() => onMark('NEW')}>
-                  أعِدها
+                  {t('reopen')}
                 </button>
               ) : (
                 <button type="button" onClick={() => onMark('HANDLED')}>
-                  أُجيبت
+                  {t('markHandled')}
                 </button>
               )}
             </>
@@ -297,8 +304,10 @@ function MessageRow({
             <p className="message-body" dir={row.locale === 'en' ? 'ltr' : 'rtl'}>
               {row.message}
             </p>
-            {handled && row.handledBy ? <p className="meta">أُجيبت — {row.handledBy}</p> : null}
-            {copied ? <p className="ok-note">نُسخ {copied}</p> : null}
+            {handled && row.handledBy ? (
+              <p className="meta">{t('handledBy', { name: row.handledBy })}</p>
+            ) : null}
+            {copied ? <p className="ok-note">{c('copied', { label: copied })}</p> : null}
           </td>
         </tr>
       ) : null}
@@ -307,12 +316,11 @@ function MessageRow({
 }
 
 /** A wait in the units a person reads, not seconds. */
-function waitLabel(seconds: number): string {
-  if (seconds < 60) return 'أقل من دقيقة';
+function waitLabel(seconds: number, c: ReturnType<typeof useT<'common'>>): string {
+  if (seconds < 60) return c('waitUnderMinute');
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${String(minutes)} دقيقة`;
+  if (minutes < 60) return c.tp('waitMinutes', minutes);
   const hours = Math.floor(seconds / 3600);
-  if (hours < 24) return hours === 1 ? 'ساعة' : `${String(hours)} ساعات`;
-  const days = Math.floor(hours / 24);
-  return days === 1 ? 'يوم' : `${String(days)} أيام`;
+  if (hours < 24) return c.tp('waitHours', hours);
+  return c.tp('waitDays', Math.floor(hours / 24));
 }

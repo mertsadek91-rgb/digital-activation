@@ -2,6 +2,8 @@ import { BadRequestException } from '@nestjs/common';
 
 import type { CredentialKind, SecretInput } from '@da/contracts';
 
+import { say } from '../common/panel-locale.js';
+
 /**
  * The shape of a sealed payload, in one place.
  *
@@ -28,15 +30,24 @@ const NEWLINE = /[\r\n]/;
 export function canonical(secret: SecretInput): string {
   if (secret.kind === 'ACTIVATION_KEY') {
     const key = secret.key.trim();
-    if (key.length < 4) throw new BadRequestException('الكود قصير جداً.');
-    if (NEWLINE.test(key)) throw new BadRequestException('الكود يحتوي على سطر جديد.');
+    if (key.length < 4)
+      throw new BadRequestException(say('الكود قصير جداً.', 'That code is too short.'));
+    if (NEWLINE.test(key))
+      throw new BadRequestException(
+        say('الكود يحتوي على سطر جديد.', 'That code contains a line break.'),
+      );
     return key;
   }
 
   const username = secret.username.trim();
   const password = secret.password.trim();
   if (NEWLINE.test(username) || NEWLINE.test(password)) {
-    throw new BadRequestException('اسم المستخدم أو كلمة المرور يحتوي على سطر جديد.');
+    throw new BadRequestException(
+      say(
+        'اسم المستخدم أو كلمة المرور يحتوي على سطر جديد.',
+        'The username or the password contains a line break.',
+      ),
+    );
   }
   return `${username}\n${password}`;
 }

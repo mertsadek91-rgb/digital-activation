@@ -6,6 +6,7 @@ import { FulfillmentState, Locale, OrderStatus, type Prisma } from '@da/db';
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -89,7 +90,10 @@ export class OrdersService {
         notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
       },
     });
-    if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${number}`);
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${number}`, `No order numbered ${number}`),
+      );
 
     return {
       ...this.toRow(order),
@@ -180,7 +184,10 @@ export class OrdersService {
       where: { id: input.orderItemId, order: { number: input.number } },
       select: { id: true },
     });
-    if (!item) throw new NotFoundException('لا يوجد هذا البند في هذا الطلب.');
+    if (!item)
+      throw new NotFoundException(
+        say('لا يوجد هذا البند في هذا الطلب.', 'That line is not on this order.'),
+      );
 
     const result = await this.fulfillment.resendLicence({
       orderItemId: item.id,
@@ -226,11 +233,17 @@ export class OrdersService {
       where: { number: input.number },
       select: { status: true, totalUsd: true, currency: true },
     });
-    if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${input.number}`);
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${input.number}`, `No order numbered ${input.number}`),
+      );
 
     if (order.status !== OrderStatus.PENDING_PAYMENT) {
       throw new BadRequestException(
-        `هذا الطلب في حالة ${order.status}، فلا ينتظر تأكيد دفع. راجِع سجلّ المدفوعات.`,
+        say(
+          `هذا الطلب في حالة ${order.status}، فلا ينتظر تأكيد دفع. راجِع سجلّ المدفوعات.`,
+          `This order is ${order.status}, so it is not awaiting a payment confirmation. Check the payments log.`,
+        ),
       );
     }
 
@@ -279,7 +292,10 @@ export class OrdersService {
       where: { number: input.number },
       select: { id: true },
     });
-    if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${input.number}`);
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${input.number}`, `No order numbered ${input.number}`),
+      );
 
     const note = await this.prisma.client.orderNote.create({
       data: {

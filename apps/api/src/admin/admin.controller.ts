@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type AdminProductList,
   type AdminProductQuery,
+  type AdminProductRow,
   type ProductCopy,
   type Readiness,
   type SetProductCopy,
@@ -39,6 +40,12 @@ export class AdminController {
     @Query(new ZodPipe(adminProductQuerySchema)) query: AdminProductQuery,
   ): Promise<AdminProductList> {
     return this.admin.list(query);
+  }
+
+  @Get('products/:slug')
+  @ApiOperation({ summary: 'One product, in the shape the list uses' })
+  product(@Param('slug') slug: string, @Query('locale') locale = 'ar'): Promise<AdminProductRow> {
+    return this.admin.row(slug, locale);
   }
 
   @Get('products/:slug/readiness')

@@ -4,6 +4,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module.js';
+import { registerPanelLocale } from './common/panel-locale.js';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -30,6 +31,10 @@ async function bootstrap(): Promise<void> {
   // The admin holds its session in httpOnly cookies rather than in JavaScript's
   // reach, so the server has to be able to read and set them.
   await app.register(fastifyCookie);
+
+  // The reader's language, made ambient for the rest of the request. The hook
+  // itself lives beside the storage it opens, where it can be tested.
+  registerPanelLocale(app.getHttpAdapter().getInstance());
 
   app.enableCors({
     origin: [process.env.STOREFRONT_URL, process.env.ADMIN_URL].filter(Boolean) as string[],

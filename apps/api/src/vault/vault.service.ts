@@ -9,6 +9,8 @@ import {
 import type { CredentialKind, SecretInput } from '@da/contracts';
 import { ActorType, KeyAccessAction, LicenseKeyState, Prisma } from '@da/db';
 
+import { say } from '../common/panel-locale.js';
+
 import { type ParsedSecret, canonical, fieldCount, parse } from './credential.js';
 import { KekService, fingerprint, open, seal } from './kek.js';
 import { VaultPrismaService } from './vault-prisma.service.js';
@@ -72,7 +74,12 @@ export class VaultService {
   private requireFreshTotp(actor: Actor): void {
     const age = Math.floor(Date.now() / 1000) - actor.totpAt;
     if (age > STEP_UP_WINDOW_SECONDS) {
-      throw new ForbiddenException('يتطلّب هذا الإجراء إعادة إدخال رمز المصادقة الثنائية.');
+      throw new ForbiddenException(
+        say(
+          'يتطلّب هذا الإجراء إعادة إدخال رمز المصادقة الثنائية.',
+          'This action needs your two-factor code again.',
+        ),
+      );
     }
   }
 
@@ -293,7 +300,9 @@ export class VaultService {
       select: { id: true },
     });
     if (taken) {
-      throw new BadRequestException('هذا السطر مرتبط بمفتاح بالفعل.');
+      throw new BadRequestException(
+        say('هذا السطر مرتبط بمفتاح بالفعل.', 'This line already has a key bound to it.'),
+      );
     }
 
     const print = fingerprint(value);
@@ -306,8 +315,11 @@ export class VaultService {
       // stock. Either way, pasting it onto a second order sells it twice.
       throw new BadRequestException(
         duplicate.orderItemId
-          ? 'هذا الكود مُسلَّم لطلب آخر بالفعل.'
-          : 'هذا الكود موجود في الخزنة بالفعل.',
+          ? say(
+              'هذا الكود مُسلّم لطلب آخر بالفعل.',
+              'This code has already been delivered to another order.',
+            )
+          : say('هذا الكود موجود في الخزنة بالفعل.', 'This code is already in the vault.'),
       );
     }
 
@@ -354,7 +366,9 @@ export class VaultService {
       where: { orderItemId: input.orderItemId },
     });
     if (rows.length === 0) {
-      throw new NotFoundException('لا يوجد مفتاح مرتبط بهذا السطر.');
+      throw new NotFoundException(
+        say('لا يوجد مفتاح مرتبط بهذا السطر.', 'No key is bound to this line.'),
+      );
     }
 
     const opened: { licenseKeyId: string; secret: ParsedSecret }[] = [];
@@ -421,7 +435,8 @@ export class VaultService {
     const row = await this.vault.client.licenseKey.findUnique({
       where: { id: input.licenseKeyId },
     });
-    if (!row) throw new NotFoundException('لا يوجد مفتاح بهذا المعرّف.');
+    if (!row)
+      throw new NotFoundException(say('لا يوجد مفتاح بهذا المعرّف.', 'No key with that id.'));
 
     await this.log(row.id, KeyAccessAction.REVEAL, input.actor);
     return parse(row.kind, await open(row, this.kek));
@@ -449,7 +464,9 @@ export class VaultService {
       },
     });
     if (rows.length === 0) {
-      throw new NotFoundException('لا يوجد مفتاح جاهز على هذا البند بعد.');
+      throw new NotFoundException(
+        say('لا يوجد مفتاح جاهز على هذا البند بعد.', 'No key is ready on this line yet.'),
+      );
     }
 
     const opened: ParsedSecret[] = [];

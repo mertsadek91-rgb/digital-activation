@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 
 /**
@@ -18,6 +19,8 @@ import { api, ApiError } from '../../lib/api';
  */
 export default function PasswordPage() {
   const router = useRouter();
+  const t = useT('password');
+  const c = useT('common');
   const [forced, setForced] = useState<boolean | null>(null);
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
@@ -50,14 +53,14 @@ export default function PasswordPage() {
       await api.changePassword(current, next);
       router.push('/products');
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'تعذّر الاتصال بالخدمة.');
+      setError(caught instanceof ApiError ? caught.message : c('serviceUnreachable'));
       setCurrent('');
     } finally {
       setBusy(false);
     }
   }
 
-  if (forced === null) return <main className="auth">…</main>;
+  if (forced === null) return <main className="auth">{c('loading')}</main>;
 
   return (
     <main className="auth">
@@ -67,17 +70,12 @@ export default function PasswordPage() {
         }}
         className="auth-card"
       >
-        <h1>{forced ? 'اختر كلمة مرور خاصة بك' : 'تغيير كلمة المرور'}</h1>
+        <h1>{forced ? t('titleForced') : t('titleRoutine')}</h1>
 
-        {forced ? (
-          <p className="enroll-lede">
-            كلمة المرور التي دخلت بها وُلِّدت تلقائياً وظهرت على الشاشة، فهي رمز تسجيل لا كلمة مرور.
-            لن تعمل أي صفحة في اللوحة قبل استبدالها.
-          </p>
-        ) : null}
+        {forced ? <p className="enroll-lede">{t('forcedLede')}</p> : null}
 
         <label>
-          كلمة المرور الحالية
+          {t('current')}
           <input
             type="password"
             value={current}
@@ -89,7 +87,7 @@ export default function PasswordPage() {
         </label>
 
         <label>
-          كلمة المرور الجديدة
+          {t('next')}
           <input
             type="password"
             value={next}
@@ -104,13 +102,11 @@ export default function PasswordPage() {
             characters with a digit and a symbol bolted on, and composition
             rules only ever teach people to write Password1!. */}
         <p className="enroll-hint">
-          {tooShort
-            ? `${String(next.length)} من 12 حرفاً على الأقل — جملة قصيرة أفضل من كلمة معقّدة.`
-            : 'اثنا عشر حرفاً على الأقل. جملة تتذكّرها أقوى من كلمة قصيرة برموز.'}
+          {tooShort ? t('tooShort', { length: next.length }) : t('lengthHint')}
         </p>
 
         <label>
-          تأكيد كلمة المرور الجديدة
+          {t('confirm')}
           <input
             type="password"
             value={confirm}
@@ -120,17 +116,14 @@ export default function PasswordPage() {
             dir="ltr"
           />
         </label>
-        {mismatch ? <p className="error">الكلمتان غير متطابقتين.</p> : null}
+        {mismatch ? <p className="error">{t('mismatch')}</p> : null}
 
         {error ? <p className="error">{error}</p> : null}
 
-        <p className="enroll-hint">
-          سيتم إنهاء كل الجلسات الأخرى عند الحفظ — وهذا هو المقصود: إن كانت الكلمة القديمة قد
-          انكشفت، فهذه اللحظة التي تُغلق فيها.
-        </p>
+        <p className="enroll-hint">{t('sessionsNotice')}</p>
 
         <button type="submit" disabled={busy || !ready}>
-          {busy ? '...' : 'حفظ كلمة المرور'}
+          {busy ? c('busy') : t('submit')}
         </button>
       </form>
     </main>

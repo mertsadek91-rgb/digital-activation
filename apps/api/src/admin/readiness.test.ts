@@ -1,6 +1,8 @@
 import { Locale } from '@da/db';
 import { describe, expect, it } from 'vitest';
 
+import { runWithPanelLocale } from '../common/panel-locale.js';
+
 import { assessProduct } from './readiness.js';
 
 /**
@@ -160,8 +162,19 @@ describe('assessProduct', () => {
 });
 
 describe('assessProduct reasons', () => {
-  it('writes the reasons in Arabic when Arabic is the locale being assessed', () => {
-    const readiness = assessProduct(withTranslation({ seoDescription: null }), Locale.AR);
+  /**
+   * The reason follows the reader, not the content.
+   *
+   * These two used to be the same thing: the wording was picked by the locale
+   * being assessed, on the reasoning that an Arabic page's problems belong
+   * with the Arabic page. That only held while every reader was Arabic. An
+   * English-speaking editor auditing the Arabic catalog got a list of blockers
+   * they could not act on, which is the failure the gate exists to prevent.
+   */
+  it('writes the reasons in Arabic for an Arabic reader', () => {
+    const readiness = runWithPanelLocale('ar', () =>
+      assessProduct(withTranslation({ seoDescription: null }), Locale.AR),
+    );
     const check = readiness.checks.find((entry) => entry.key === 'seoDescription');
 
     expect(readiness.locale).toBe('ar');
@@ -169,10 +182,9 @@ describe('assessProduct reasons', () => {
     expect(check?.detail).not.toMatch(/[A-Za-z]{4,}/);
   });
 
-  it('writes them in English when English is the locale being assessed', () => {
-    const readiness = assessProduct(
-      withTranslation({ seoDescription: null }, Locale.EN),
-      Locale.EN,
+  it('writes them in English for an English reader', () => {
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ seoDescription: null }, Locale.EN), Locale.EN),
     );
     const check = readiness.checks.find((entry) => entry.key === 'seoDescription');
 
@@ -182,8 +194,44 @@ describe('assessProduct reasons', () => {
     );
   });
 
+  it('answers an English reader in English about the Arabic copy', () => {
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ seoDescription: null }), Locale.AR),
+    );
+    const check = readiness.checks.find((entry) => entry.key === 'seoDescription');
+
+    // Still judging the Arabic translation — only the wording moved.
+    expect(readiness.locale).toBe('ar');
+    expect(check?.detail).toBe(
+      'No meta description. Every legacy category page shipped without one and none of them ever ranked.',
+    );
+  });
+
+  it('answers an Arabic reader in Arabic about the English copy', () => {
+    const readiness = runWithPanelLocale('ar', () =>
+      assessProduct(withTranslation({ seoDescription: null }, Locale.EN), Locale.EN),
+    );
+    const check = readiness.checks.find((entry) => entry.key === 'seoDescription');
+
+    expect(readiness.locale).toBe('en');
+    expect(check?.detail).toContain('لا يوجد وصف ميتا');
+  });
+
+  it('falls back to Arabic when nothing says who is reading', () => {
+    // Outside a request: the scheduled jobs and these tests. Nothing there has
+    // a reader to ask.
+    const check = assessProduct(
+      withTranslation({ seoDescription: null }, Locale.EN),
+      Locale.EN,
+    ).checks.find((entry) => entry.key === 'seoDescription');
+
+    expect(check?.detail).toContain('لا يوجد وصف ميتا');
+  });
+
   it('says how short a title is, so the editor knows how much to add', () => {
-    const readiness = assessProduct(withTranslation({ seoTitle: 'Win 11' }, Locale.EN), Locale.EN);
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ seoTitle: 'Win 11' }, Locale.EN), Locale.EN),
+    );
 
     expect(readiness.checks.find((entry) => entry.key === 'seoTitle')?.detail).toBe(
       'SEO title is 6 characters; 20 is the minimum.',
@@ -191,9 +239,8 @@ describe('assessProduct reasons', () => {
   });
 
   it('counts the words it actually found when it refuses a thin body', () => {
-    const readiness = assessProduct(
-      withTranslation({ body: [{ text: 'one two three' }] }, Locale.EN),
-      Locale.EN,
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ body: [{ text: 'one two three' }] }, Locale.EN), Locale.EN),
     );
 
     expect(readiness.checks.find((entry) => entry.key === 'body')?.detail).toBe(
@@ -203,7 +250,9 @@ describe('assessProduct reasons', () => {
 
   it('counts FAQ questions and answers towards the body, because the page shows them', () => {
     const faqBody = [{ items: [{ q: 'one two three four', a: 'five six seven eight' }] }];
-    const readiness = assessProduct(withTranslation({ body: faqBody }, Locale.EN), Locale.EN);
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ body: faqBody }, Locale.EN), Locale.EN),
+    );
 
     expect(readiness.checks.find((entry) => entry.key === 'body')?.detail).toBe(
       'Description is 8 words; 120 is the minimum.',
@@ -213,9 +262,8 @@ describe('assessProduct reasons', () => {
   it('counts no words at all when the body column holds something unreadable', () => {
     // A legacy import can leave anything in a Json column. Counting must fail
     // closed — zero words, blocked — rather than throw in the admin list.
-    const readiness = assessProduct(
-      withTranslation({ body: 'not a block document' }, Locale.EN),
-      Locale.EN,
+    const readiness = runWithPanelLocale('en', () =>
+      assessProduct(withTranslation({ body: 'not a block document' }, Locale.EN), Locale.EN),
     );
 
     expect(readiness.checks.find((entry) => entry.key === 'body')?.detail).toBe(

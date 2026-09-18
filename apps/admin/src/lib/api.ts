@@ -9,34 +9,73 @@
  * session, only ride it, and SameSite=strict stops it doing that from anywhere
  * else.
  */
+import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
+
 import type {
+  AdminCategoryList,
+  AdminDashboard,
   AdminOrderDetail,
   AdminOrderList,
   AdminProductList,
+  AdminProductRow,
   AdminPromotion,
   AdminPromotionList,
   AdminReviewList,
   ContactList,
+  CreateCategory,
+  CreatedProduct,
+  CreateProduct,
+  CreateProductLink,
   CreatePromotion,
+  CreateVariant,
   CredentialKind,
   ImportResult,
   LaunchReadiness,
   OrderKeysRow,
   PaymentSettings,
   PaymentSettingsView,
+  ProductContent,
   ProductCopy,
+  ProductIdentity,
+  ProductImages,
+  ProductLinks,
+  ProductTerms,
   Queue,
   Readiness,
   RedirectsView,
-  UpdatePromotion,
   RevealResult,
   SecretInput,
+  SetCategory,
+  SetProductContent,
+  SetProductIdentity,
+  SetVariantTerms,
   StaffLoginResult,
   StaffMe,
+  UpdatePromotion,
   VaultStockRow,
 } from '@da/contracts';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+
+/**
+ * The reader's language, on every request.
+ *
+ * The API writes some of what this panel shows — the launch checks, the
+ * publish gate's refusals, every error message — and until it was told who
+ * was reading, all of it came back in Arabic. Read from the cookie rather
+ * than threaded down from React, because this module is imported by screens
+ * that are not inside the provider (and because a fetch helper taking a
+ * locale argument at seventy call sites is a worse trade).
+ *
+ * `Accept-Language` is on the CORS safelist, so sending it does not add a
+ * preflight to requests that did not have one.
+ */
+function readerLanguage(): string {
+  if (typeof document === 'undefined') return DEFAULT_ADMIN_LOCALE;
+  const match = new RegExp(`(?:^|; )${ADMIN_LOCALE_COOKIE}=([^;]*)`).exec(document.cookie);
+  const value = match?.[1];
+  return toAdminLocale(value === undefined ? undefined : decodeURIComponent(value));
+}
 
 export class ApiError extends Error {
   constructor(
@@ -66,7 +105,7 @@ async function refreshSession(): Promise<boolean> {
       const response = await fetch(`${API}/v1/auth/staff/refresh`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', 'accept-language': readerLanguage() },
         // An empty body, not no body. Fastify refuses a POST that declares
         // `application/json` and sends nothing — "Body cannot be empty when
         // content-type is set to 'application/json'" — so the refresh answered
@@ -103,10 +142,24 @@ async function refreshSession(): Promise<boolean> {
  * permission error into a loop.
  */
 async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
+  /*
+   * `content-type: application/json` only when there is JSON to declare.
+   *
+   * It was sent on every request, and Fastify's JSON parser refuses a body of
+   * zero bytes — so a DELETE with no payload announced JSON, sent none, and
+   * came back 400 Bad Request with nothing on screen to explain it. The first
+   * time this bit was the token-refresh POST, and it was fixed there by giving
+   * that one request a literal `{}` body: a fix for one caller instead of for
+   * the reason, and the next caller without a body hit the same wall.
+   */
   const response = await fetch(`${API}/v1${path}`, {
     ...init,
     credentials: 'include',
-    headers: { 'content-type': 'application/json', ...init?.headers },
+    headers: {
+      ...(init?.body === undefined ? {} : { 'content-type': 'application/json' }),
+      'accept-language': readerLanguage(),
+      ...init?.headers,
+    },
   });
 
   // Never on the auth routes themselves: refreshing a failed login is a loop,
@@ -133,6 +186,16 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
 }
 
 export const api = {
+  /**
+   * The front page's numbers, in one call.
+   *
+   * One request rather than the six this screen would otherwise make: every
+   * figure on it has to agree with every other, and six round trips across a
+   * midnight is six chances for the headline to disagree with the chart under
+   * it.
+   */
+  dashboard: () => request<AdminDashboard>('/admin/dashboard'),
+
   login: (email: string, password: string, totp?: string) =>
     request<StaffLoginResult>('/auth/staff/login', {
       method: 'POST',
@@ -170,6 +233,16 @@ export const api = {
     search.set('locale', params.locale ?? 'ar');
     return request<AdminProductList>(`/admin/products?${search.toString()}`);
   },
+
+  /**
+   * One product's row, for the editor page's header.
+   *
+   * Same shape as a list row, from the same code on the server, so the status
+   * pill and the blocker count at the top of the editor cannot disagree with
+   * the list the person came from.
+   */
+  product: (slug: string, locale: 'ar' | 'en' = 'ar') =>
+    request<AdminProductRow>(`/admin/products/${encodeURIComponent(slug)}?locale=${locale}`),
 
   /**
    * The gate, for one locale.
@@ -215,6 +288,129 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
+
+  // --- description, FAQ, warnings -------------------------------------------
+
+  productContent: (slug: string, locale: 'ar' | 'en') =>
+    request<ProductContent>(
+      `/admin/products/${encodeURIComponent(slug)}/content?locale=${locale}`,
+    ),
+
+  setProductContent: (slug: string, patch: SetProductContent) =>
+    request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  // --- sections and links ----------------------------------------------------
+
+  categories: () => request<AdminCategoryList>('/admin/categories'),
+
+  createCategory: (body: CreateCategory) =>
+    request<AdminCategoryList>('/admin/categories', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  setCategory: (id: string, patch: SetCategory) =>
+    request<AdminCategoryList>(`/admin/categories/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  productLinks: (slug: string) =>
+    request<ProductLinks>(`/admin/products/${encodeURIComponent(slug)}/links`),
+
+  addProductLink: (slug: string, body: CreateProductLink) =>
+    request<ProductLinks>(`/admin/products/${encodeURIComponent(slug)}/links`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  removeProductLink: (id: string) =>
+    request<ProductLinks>(`/admin/links/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
+  // --- creating -------------------------------------------------------------
+
+  createProduct: (body: CreateProduct) =>
+    request<CreatedProduct>('/admin/products', { method: 'POST', body: JSON.stringify(body) }),
+
+  createVariant: (slug: string, body: CreateVariant) =>
+    request<ProductTerms>(`/admin/products/${encodeURIComponent(slug)}/variants`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  // --- identity and terms ---------------------------------------------------
+  //
+  // Both writes return the whole object: a slug change moves the product, and
+  // setting one variant as default unsets another.
+
+  productIdentity: (slug: string) =>
+    request<ProductIdentity>(`/admin/products/${encodeURIComponent(slug)}/identity`),
+
+  setProductIdentity: (slug: string, patch: SetProductIdentity) =>
+    request<ProductIdentity>(`/admin/products/${encodeURIComponent(slug)}/identity`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  productTerms: (slug: string) =>
+    request<ProductTerms>(`/admin/products/${encodeURIComponent(slug)}/terms`),
+
+  setVariantTerms: (sku: string, patch: SetVariantTerms) =>
+    request<ProductTerms>(`/admin/variants/${encodeURIComponent(sku)}/terms`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  // --- images ---------------------------------------------------------------
+  //
+  // Every write returns the whole list rather than the row it touched: setting
+  // a hero unsets another, a delete promotes the next picture, and an upload
+  // changes the order. A client that patched one item into its own state would
+  // be right about that item and wrong about the rest.
+
+  productImages: (slug: string) =>
+    request<ProductImages>(`/admin/products/${encodeURIComponent(slug)}/images`),
+
+  uploadProductImage: (
+    slug: string,
+    body: {
+      dataUrl: string;
+      filename?: string;
+      alt?: { ar: string; en: string };
+      variantId?: string;
+      isHero?: boolean;
+    },
+  ) =>
+    request<ProductImages>(`/admin/products/${encodeURIComponent(slug)}/images`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  patchProductImage: (
+    id: string,
+    patch: {
+      isHero?: boolean;
+      position?: number;
+      variantId?: string | null;
+      alt?: { ar: string; en: string };
+    },
+  ) =>
+    request<ProductImages>(`/admin/images/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  reorderProductImages: (slug: string, ids: string[]) =>
+    request<ProductImages>(`/admin/products/${encodeURIComponent(slug)}/images/order`, {
+      method: 'PATCH',
+      body: JSON.stringify({ ids }),
+    }),
+
+  removeProductImage: (id: string) =>
+    request<ProductImages>(`/admin/images/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   activationSteps: (slug: string, locale: 'ar' | 'en') =>
     request<{ steps: string[] }>(

@@ -16,19 +16,25 @@ import { parseActivationSteps } from '../common/activation-steps.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { VaultService } from '../vault/vault.service.js';
 
+import { say } from '../common/panel-locale.js';
 import { assessProduct, bodyText } from './readiness.js';
 import { readBody, writeBody } from './rich-text.js';
 
 /**
  * The admin API.
  *
- * Two kinds of message come out of here, and they follow different rules.
- * A readiness *detail* describes content in a particular locale and is written
- * in that locale, because "the English description is 40 words" belongs with
- * the English page. An operational refusal — not ready to publish, no such
- * SKU, stock below what carts hold — is panel chrome, and the panel is Arabic
- * for an Arabic-speaking team, so those are Arabic regardless of which
- * locale's content is being edited.
+ * Two kinds of message come out of here, and they used to follow different
+ * rules. A readiness *detail* describes content in a particular locale; an
+ * operational refusal — not ready to publish, no such SKU, stock below what
+ * carts hold — is panel chrome. The chrome was Arabic on the grounds that the
+ * team reading it was, and the readiness details followed the locale being
+ * assessed.
+ *
+ * Both now follow the reader instead, through `say()` and `panelLocale()`.
+ * The old split only held while there was one kind of reader: it meant an
+ * English-speaking editor auditing the Arabic catalog got the refusal and the
+ * reason in a language they could not act on, which is the same failure the
+ * publish gate exists to prevent.
  */
 @Injectable()
 export class AdminService {
@@ -193,8 +199,31 @@ export class AdminService {
       where: { slug },
       include: this.include,
     });
-    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
     return assessProduct(product, this.localeFor({ locale }));
+  }
+
+  /**
+   * One product, in the list's own shape.
+   *
+   * The editor page opens on a single product and needs the same summary the
+   * list draws for it — status, stock, blocker count — without loading the
+   * whole list to find one row in it. Same `toRow`, so the two screens can
+   * never disagree about what a product's state is.
+   */
+  async row(slug: string, locale: string): Promise<AdminProductRow> {
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      include: this.include,
+    });
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
+    return this.toRow(product, this.localeFor({ locale }));
   }
 
   /**
@@ -215,7 +244,10 @@ export class AdminService {
       where: { slug },
       include: this.include,
     });
-    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
 
     const readiness = assessProduct(product, this.localeFor({ locale }));
 
@@ -229,7 +261,7 @@ export class AdminService {
         .map((check) => check.detail)
         .filter((detail): detail is string => detail !== null);
       throw new BadRequestException({
-        message: 'هذا المنتج غير جاهز للنشر.',
+        message: say('هذا المنتج غير جاهز للنشر.', 'This product is not ready to publish.'),
         blockers,
       });
     }
@@ -282,14 +314,20 @@ export class AdminService {
       where: { sku },
       include: { inventory: true },
     });
-    if (!variant) throw new NotFoundException(`لا يوجد متغيّر بالرمز "${sku}"`);
+    if (!variant)
+      throw new NotFoundException(
+        say(`لا يوجد متغيّر بالرمز "${sku}"`, `No variant with the SKU "${sku}"`),
+      );
 
     const previous = variant.inventory?.onHand ?? 0;
     const reserved = variant.inventory?.reserved ?? 0;
 
     if (onHand < reserved) {
       throw new BadRequestException(
-        `${String(reserved)} من هذا المتغيّر محجوزة في سلات قيد الشراء، فلا يمكن أن ينزل المخزون دون هذا الرقم.`,
+        say(
+          `${String(reserved)} من هذا المتغيّر محجوزة في سلات قيد الشراء، فلا يمكن أن ينزل المخزون دون هذا الرقم.`,
+          `${String(reserved)} of this variant are reserved in carts being checked out, so stock cannot go below that number.`,
+        ),
       );
     }
 
@@ -339,10 +377,19 @@ export class AdminService {
       where: { slug },
       include: this.include,
     });
-    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
 
     const translation = product.translations.find((entry) => entry.locale === target);
-    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+    if (!translation)
+      throw new NotFoundException(
+        say(
+          `لا توجد ترجمة ${target} لهذا المنتج بعد.`,
+          `This product has no ${target} translation yet.`,
+        ),
+      );
 
     const body = readBody(translation.body);
 
@@ -378,18 +425,30 @@ export class AdminService {
       where: { slug },
       select: { id: true },
     });
-    if (!product) throw new NotFoundException(`لا يوجد منتج بالرابط "${slug}"`);
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
 
     const translation = await this.prisma.client.productTranslation.findUnique({
       where: { productId_locale: { productId: product.id, locale: target } },
       select: { id: true, body: true, seoTitle: true, seoDescription: true, shortDesc: true },
     });
-    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+    if (!translation)
+      throw new NotFoundException(
+        say(
+          `لا توجد ترجمة ${target} لهذا المنتج بعد.`,
+          `This product has no ${target} translation yet.`,
+        ),
+      );
 
     const existing = readBody(translation.body);
     if (input.body !== undefined && !existing.editable) {
       throw new BadRequestException(
-        `وصف هذا المنتج يحتوي على كتل لا يحرّرها هذا الصندوق (${existing.otherBlocks.join('، ')}). عدّل بقية الحقول، واترك الوصف كما هو.`,
+        say(
+          `وصف هذا المنتج يحتوي على كتل لا يحرّرها هذا الصندوق (${existing.otherBlocks.join('، ')}). عدّل بقية الحقول، واترك الوصف كما هو.`,
+          `This product's description holds blocks this box cannot edit (${existing.otherBlocks.join(', ')}). Edit the other fields and leave the description as it is.`,
+        ),
       );
     }
 
@@ -448,7 +507,13 @@ export class AdminService {
       where: { product: { slug }, locale: target },
       select: { activationSteps: true },
     });
-    if (!translation) throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+    if (!translation)
+      throw new NotFoundException(
+        say(
+          `لا توجد ترجمة ${target} لهذا المنتج بعد.`,
+          `This product has no ${target} translation yet.`,
+        ),
+      );
     return { steps: parseActivationSteps(translation.activationSteps) };
   }
 
@@ -471,7 +536,10 @@ export class AdminService {
       where: { sku },
       select: { id: true, sku: true, credentialKind: true },
     });
-    if (!variant) throw new NotFoundException(`لا يوجد متغيّر بالرمز "${sku}"`);
+    if (!variant)
+      throw new NotFoundException(
+        say(`لا يوجد متغيّر بالرمز "${sku}"`, `No variant with the SKU "${sku}"`),
+      );
     if (variant.credentialKind === credentialKind) {
       return { sku: variant.sku, credentialKind };
     }
@@ -482,7 +550,10 @@ export class AdminService {
       .reduce((sum, row) => sum + row.count, 0);
     if (live > 0) {
       throw new BadRequestException(
-        `الخزنة تحتفظ بـ${String(live)} مفتاحاً لهذا المتغيّر بالشكل الحالي. اسحبها أو ألغِها قبل تغيير نوع التسليم.`,
+        say(
+          `الخزنة تحتفظ بـ${String(live)} مفتاحاً لهذا المتغيّر بالشكل الحالي. اسحبها أو ألغِها قبل تغيير نوع التسليم.`,
+          `The vault still holds ${String(live)} keys for this variant in its current shape. Withdraw or revoke them before changing the delivery kind.`,
+        ),
       );
     }
 
@@ -524,7 +595,11 @@ export class AdminService {
       where: { slug },
       select: { id: true },
     });
-    if (!product) throw new NotFoundException(`لا يوجد منتج بالمُعرّف "${slug}"`);
+    if (!product) {
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالمُعرّف "${slug}"`, `No product with the id "${slug}"`),
+      );
+    }
 
     const target = locale.toUpperCase() === 'EN' ? Locale.EN : Locale.AR;
     const translation = await this.prisma.client.productTranslation.findUnique({
@@ -532,7 +607,12 @@ export class AdminService {
       select: { id: true, activationSteps: true },
     });
     if (!translation) {
-      throw new NotFoundException(`لا توجد ترجمة ${target} لهذا المنتج بعد.`);
+      throw new NotFoundException(
+        say(
+          `لا توجد ترجمة ${target} لهذا المنتج بعد.`,
+          `This product has no ${target} translation yet.`,
+        ),
+      );
     }
 
     const payload = steps.map((text, index) => ({ step: index + 1, text }));

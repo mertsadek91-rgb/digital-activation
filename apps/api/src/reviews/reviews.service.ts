@@ -21,6 +21,7 @@ import { FulfillmentState, Locale, Prisma, ReviewStatus } from '@da/db';
 import { AuditService } from '../auth/audit.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { reviewInvite } from '../mail/templates.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -370,7 +371,9 @@ export class ReviewsService {
       where: { id: input.id },
       select: { id: true, status: true, productId: true, rating: true },
     });
-    if (!existing) throw new NotFoundException('لا يوجد تقييم بهذا المعرّف.');
+    if (!existing) {
+      throw new NotFoundException(say('لا يوجد تقييم بهذا المعرّف.', 'No review with that id.'));
+    }
 
     const next = ReviewStatus[input.status];
 
@@ -419,7 +422,9 @@ export class ReviewsService {
       where: { id: input.id },
       select: { id: true, storeReply: true },
     });
-    if (!existing) throw new NotFoundException('لا يوجد تقييم بهذا المعرّف.');
+    if (!existing) {
+      throw new NotFoundException(say('لا يوجد تقييم بهذا المعرّف.', 'No review with that id.'));
+    }
 
     const updated = await this.prisma.client.review.update({
       where: { id: existing.id },

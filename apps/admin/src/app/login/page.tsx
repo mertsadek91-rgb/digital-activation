@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 
 /**
@@ -21,6 +22,8 @@ type Stage =
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useT('login');
+  const c = useT('common');
   const [stage, setStage] = useState<Stage>({ kind: 'password' });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -55,7 +58,7 @@ export default function LoginPage() {
         });
       }
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'تعذّر الاتصال بالخدمة.');
+      setError(caught instanceof ApiError ? caught.message : c('serviceUnreachable'));
       if (stage.kind === 'code') setTotp('');
     } finally {
       setBusy(false);
@@ -70,12 +73,12 @@ export default function LoginPage() {
         }}
         className="auth-card"
       >
-        <h1>لوحة إدارة التفعيل الرقمي</h1>
+        <h1>{t('title')}</h1>
 
         {stage.kind === 'password' ? (
           <>
             <label>
-              البريد الإلكتروني
+              {t('email')}
               <input
                 type="email"
                 value={email}
@@ -86,7 +89,7 @@ export default function LoginPage() {
               />
             </label>
             <label>
-              كلمة المرور
+              {t('password')}
               <input
                 type="password"
                 value={password}
@@ -101,19 +104,12 @@ export default function LoginPage() {
 
         {stage.kind === 'enroll' ? (
           <div className="enroll">
-            <p className="enroll-lede">
-              هذا الحساب لا يملك مصادقة ثنائية بعد. امسح الرمز بتطبيق المصادقة، ثم أدخل الرمز الأول
-              لإكمال التسجيل.
-            </p>
+            <p className="enroll-lede">{t('enrollLede')}</p>
             {/* A plain img, not next/image: a data: URI has nothing to
                 optimise, and the image loader would only carry the secret
                 through another hop. */}
-            <img
-              className="enroll-qr"
-              src={stage.qrDataUrl}
-              alt="رمز QR لإعداد المصادقة الثنائية"
-            />
-            <p className="enroll-hint">أو أدخل هذا المفتاح يدوياً:</p>
+            <img className="enroll-qr" src={stage.qrDataUrl} alt={t('qrAlt')} />
+            <p className="enroll-hint">{t('enrollManual')}</p>
             <p className="enroll-secret" dir="ltr">
               {stage.secret}
             </p>
@@ -122,7 +118,7 @@ export default function LoginPage() {
 
         {stage.kind !== 'password' ? (
           <label>
-            رمز المصادقة
+            {t('totp')}
             <input
               type="text"
               inputMode="numeric"
@@ -143,12 +139,12 @@ export default function LoginPage() {
 
         <button type="submit" disabled={busy}>
           {busy
-            ? '...'
+            ? c('busy')
             : stage.kind === 'password'
-              ? 'متابعة'
+              ? t('continue')
               : stage.kind === 'enroll'
-                ? 'إكمال التسجيل'
-                : 'تسجيل الدخول'}
+                ? t('finishEnroll')
+                : t('signIn')}
         </button>
       </form>
     </main>

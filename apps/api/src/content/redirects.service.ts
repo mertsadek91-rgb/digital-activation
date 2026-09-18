@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 
 import type { RedirectsView } from '@da/contracts';
 
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -82,12 +83,19 @@ export class RedirectsService {
     const from = this.toPath(input.from);
     const to = this.toTarget(input.to);
 
-    if (!from || !to) throw new BadRequestException('المسار غير صالح.');
-    if (from === to) throw new BadRequestException('المسار يشير إلى نفسه.');
+    if (!from || !to)
+      throw new BadRequestException(say('المسار غير صالح.', 'That path is not valid.'));
+    if (from === to)
+      throw new BadRequestException(say('المسار يشير إلى نفسه.', 'That path points at itself.'));
 
     const existing = await this.prisma.client.redirect.findUnique({ where: { from } });
     if (existing) {
-      throw new BadRequestException(`هذا المسار موجّه بالفعل إلى ${existing.to}.`);
+      throw new BadRequestException(
+        say(
+          `هذا المسار موجّه بالفعل إلى ${existing.to}.`,
+          `That path already redirects to ${existing.to}.`,
+        ),
+      );
     }
 
     const row = await this.prisma.client.redirect.create({
@@ -111,11 +119,14 @@ export class RedirectsService {
     isActive?: boolean | undefined;
   }): Promise<{ id: string }> {
     const existing = await this.prisma.client.redirect.findUnique({ where: { id: input.id } });
-    if (!existing) throw new NotFoundException('لا يوجد توجيه بهذا المعرّف.');
+    if (!existing)
+      throw new NotFoundException(say('لا يوجد توجيه بهذا المعرّف.', 'No redirect with that id.'));
 
     const to = input.to ? this.toTarget(input.to) : existing.to;
-    if (!to) throw new BadRequestException('الوجهة غير صالحة.');
-    if (to === existing.from) throw new BadRequestException('المسار يشير إلى نفسه.');
+    if (!to)
+      throw new BadRequestException(say('الوجهة غير صالحة.', 'That destination is not valid.'));
+    if (to === existing.from)
+      throw new BadRequestException(say('المسار يشير إلى نفسه.', 'That path points at itself.'));
 
     await this.prisma.client.redirect.update({
       where: { id: input.id },
@@ -131,7 +142,8 @@ export class RedirectsService {
 
   async remove(id: string): Promise<{ id: string }> {
     const existing = await this.prisma.client.redirect.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('لا يوجد توجيه بهذا المعرّف.');
+    if (!existing)
+      throw new NotFoundException(say('لا يوجد توجيه بهذا المعرّف.', 'No redirect with that id.'));
     await this.prisma.client.redirect.delete({ where: { id } });
     return { id };
   }

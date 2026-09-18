@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { Locale, NotificationChannel } from '@da/db';
 
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import type { Rendered } from './templates.js';
@@ -261,34 +262,62 @@ export class MailService {
     if (this.transport === 'capture') {
       return {
         ok: false,
-        detail: 'MAIL_TRANSPORT=capture يكتب الرسالة إلى ملف ولا يرسلها.',
+        detail: say(
+          'MAIL_TRANSPORT=capture يكتب الرسالة إلى ملف ولا يرسلها.',
+          'MAIL_TRANSPORT=capture writes the message to a file and never sends it.',
+        ),
       };
     }
 
     if (this.transport === 'resend') {
       const key = process.env.RESEND_API_KEY;
-      if (!key) return { ok: false, detail: 'RESEND_API_KEY غير مضبوط.' };
+      if (!key) {
+        return {
+          ok: false,
+          detail: say('RESEND_API_KEY غير مضبوط.', 'RESEND_API_KEY is not set.'),
+        };
+      }
       try {
         const response = await fetch('https://api.resend.com/domains', {
           headers: { authorization: `Bearer ${key}` },
           signal: AbortSignal.timeout(5000),
         });
         return response.ok
-          ? { ok: true, detail: 'Resend يستجيب والمفتاح مقبول.' }
-          : { ok: false, detail: `Resend ردّ بـ ${String(response.status)}. راجِع المفتاح.` };
+          ? {
+              ok: true,
+              detail: say(
+                'Resend يستجيب والمفتاح مقبول.',
+                'Resend answers and the key is accepted.',
+              ),
+            }
+          : {
+              ok: false,
+              detail: say(
+                `Resend ردّ بـ ${String(response.status)}. راجِع المفتاح.`,
+                `Resend answered ${String(response.status)}. Check the key.`,
+              ),
+            };
       } catch (error) {
-        return { ok: false, detail: `تعذّر الوصول إلى Resend: ${reason(error)}` };
+        return {
+          ok: false,
+          detail: say(
+            `تعذّر الوصول إلى Resend: ${reason(error)}`,
+            `Could not reach Resend: ${reason(error)}`,
+          ),
+        };
       }
     }
 
     const url = process.env.SMTP_URL;
-    if (!url) return { ok: false, detail: 'SMTP_URL غير مضبوط.' };
+    if (!url) {
+      return { ok: false, detail: say('SMTP_URL غير مضبوط.', 'SMTP_URL is not set.') };
+    }
 
     try {
       const nodemailer = await import('nodemailer');
       const transporter = nodemailer.createTransport(url);
       try {
-        // Opens the connection and completes the greeting without sending
+        // Opens the connection, upgrades to TLS and signs in, without sending
         // anything — which is exactly the part that fails when the host is
         // gone, the port is wrong or the credentials have been rotated.
         //
@@ -300,23 +329,74 @@ export class MailService {
           transporter.verify(),
           new Promise((_resolve, reject) => {
             setTimeout(() => {
-              reject(new Error('لم يردّ خلال خمس ثوانٍ'));
-            }, 5000);
+              reject(
+                new Error(
+                  say(
+                    `لم يردّ خلال ${String(VERIFY_TIMEOUT_MS / 1000)} ثانية`,
+                    `No answer within ${String(VERIFY_TIMEOUT_MS / 1000)} seconds`,
+                  ),
+                ),
+              );
+            }, VERIFY_TIMEOUT_MS);
           }),
         ]);
-        return { ok: true, detail: 'خادم SMTP يستجيب.' };
+        return {
+          ok: true,
+          detail: say(
+            'خادم SMTP يستجيب والاعتماد مقبول.',
+            'The SMTP server answers and the credentials are accepted.',
+          ),
+        };
       } finally {
         transporter.close();
       }
     } catch (error) {
-      return { ok: false, detail: `خادم SMTP لا يستجيب: ${reason(error)}` };
+      return {
+        ok: false,
+        detail: say(
+          `خادم SMTP لا يقبل: ${reason(error)}`,
+          `The SMTP server refuses: ${reason(error)}`,
+        ),
+      };
     }
   }
 }
 
-/** The one line of an error worth showing on a screen. */
+/**
+ * How long to let `verify()` run before calling it dead.
+ *
+ * Five seconds was measured against mailpit on localhost, which answers in
+ * single-digit milliseconds. A real provider does not: Office 365 connects in
+ * 43ms and then spends the rest of seven and a half seconds on the TLS upgrade
+ * and the sign-in. So the check reported "لم يردّ خلال خمس ثوانٍ" for a server
+ * that was answering perfectly well and had a precise complaint to make —
+ * `535 5.7.3 Authentication unsuccessful` — and the screen printed a stopwatch
+ * instead. A timeout shorter than the thing it is timing does not measure
+ * health, it manufactures failure.
+ *
+ * Fifteen leaves room for a slow handshake and still returns a page inside the
+ * time somebody will wait for one.
+ */
+const VERIFY_TIMEOUT_MS = 15_000;
+
+/**
+ * The one line of an error worth showing on a screen.
+ *
+ * SMTP's own refusals are the useful ones and they arrive as a `response`
+ * field — `535 5.7.3 Authentication unsuccessful` — while `message` wraps that
+ * in "Invalid login:". The server's own words go first, because the numbers in
+ * them are what an administrator searches for.
+ */
 function reason(error: unknown): string {
-  return error instanceof Error ? (error.message.split('\n')[0] ?? '') : 'سبب غير معروف';
+  if (error !== null && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: unknown }).response;
+    if (typeof response === 'string' && response.trim().length > 0) {
+      return response.split('\n')[0] ?? '';
+    }
+  }
+  return error instanceof Error
+    ? (error.message.split('\n')[0] ?? '')
+    : say('سبب غير معروف', 'reason unknown');
 }
 
 /**

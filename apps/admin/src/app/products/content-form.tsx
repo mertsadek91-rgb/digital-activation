@@ -55,18 +55,26 @@ function blankBlock(type: (typeof ADDABLE)[number]): ContentBlock {
 
 export function ContentForm({
   slug,
+  /**
+   * The page's content language, not the form's own.
+   *
+   * One switch on the editor page moves the SEO copy, this description, the
+   * activation steps and the publish checks together — a menu here as well
+   * would be a second place to be reading English under Arabic blockers.
+   */
+  locale,
   canWrite,
   onSaved,
   onError,
 }: {
   slug: string;
+  locale: 'ar' | 'en';
   canWrite: boolean;
   onSaved: () => void;
   onError: (message: string) => void;
 }) {
   const t = useT('products');
   const c = useT('common');
-  const [locale, setLocale] = useState<'ar' | 'en'>('ar');
   const [server, setServer] = useState<ProductContent | null>(null);
   const [blocks, setBlocks] = useState<ContentBlock[]>([]);
   const [warnings, setWarnings] = useState<ProductWarning[]>([]);
@@ -161,17 +169,6 @@ export function ContentForm({
           <h3>{t('contentHeading')}</h3>
           <p className="lede-sm">{t('contentLede')}</p>
         </div>
-        <label className="content-locale">
-          <span>{t('readinessLocaleLabel')}</span>
-          <select
-            id={`content-locale-${slug}`}
-            value={locale}
-            onChange={(event) => setLocale(event.target.value as 'ar' | 'en')}
-          >
-            <option value="ar">{t('localeArabic')}</option>
-            <option value="en">{t('localeEnglish')}</option>
-          </select>
-        </label>
         <p className={`word-count${words < server.bodyMinWords ? ' is-short' : ''}`}>
           {t('wordCount', { count: words, min: server.bodyMinWords })}
         </p>

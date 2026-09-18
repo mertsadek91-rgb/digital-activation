@@ -4,6 +4,7 @@ import type { NotFoundRow, RedirectRow, RedirectsView, StaffMe } from '@da/contr
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -24,6 +25,8 @@ import { Nav } from '../nav';
  */
 export default function RedirectsPage() {
   const router = useRouter();
+  const t = useT('redirects');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [view, setView] = useState<RedirectsView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -39,9 +42,9 @@ export default function RedirectsPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل التوجيهات.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -62,7 +65,7 @@ export default function RedirectsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canWrite = ['OWNER', 'ADMIN', 'CATALOG'].includes(me.role);
 
@@ -74,7 +77,7 @@ export default function RedirectsPage() {
       setNote(label);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذّر تنفيذ الإجراء.');
+      setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }
 
@@ -85,46 +88,42 @@ export default function RedirectsPage() {
   const shown = showAll ? redirects : interesting;
 
   return (
-    <Nav me={me} current="redirects" >
-
+    <Nav me={me} current="redirects">
       <div className="queue-head">
-        <h1>التوجيهات</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
+          {' '}
           {view
-            ? `${String(view.counts.active)} توجيهاً فعّالاً من ${String(view.counts.redirects)}`
-            : '…'}
+            ? t('summary', { active: view.counts.active, total: view.counts.redirects })
+            : c('loading')}
           {view && view.counts.unresolved404 > 0 ? (
-            <strong className="overdue-count"> · {view.counts.unresolved404} مسار بلا جواب</strong>
+            <strong className="overdue-count">
+              {' '}
+              · {t('unresolved', { count: view.counts.unresolved404 })}
+            </strong>
           ) : null}
         </p>
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
-      {!canWrite ? (
-        <p className="notice">
-          دورك <strong>{me.role}</strong> يسمح بالقراءة دون تعديل التوجيهات.
-        </p>
-      ) : null}
+      {!canWrite ? <p className="notice"> {t('roleReadonly', { role: me.role })}</p> : null}
 
       <section className="vault-section">
-        <h2>مسارات بلا جواب</h2>
-        <p className="lede-sm">
-          روابط طُلبت ولم تُوجد. المسار الذي جاء من رابط خارجي يستحق توجيهاً؛ الذي بلا مصدر غالباً
-          زاحف يجرّب.
-        </p>
+        <h2>{t('notFoundHeading')}</h2>
+        <p className="lede-sm"> {t('notFoundLede')}</p>
 
         {view && view.notFound.length === 0 ? (
-          <p className="notice">لا شيء. كل ما طُلب وُجد أو وُجّه.</p>
+          <p className="notice">{t('notFoundEmpty')}</p>
         ) : (
           <div className="table-scroll">
             <table className="admin-table notfound-table">
               <thead>
                 <tr>
-                  <th>المسار</th>
-                  <th className="num">الزيارات</th>
-                  <th>آخر طلب</th>
-                  <th>المصدر</th>
+                  <th>{t('colPath')}</th>
+                  <th className="num">{t('colHits')}</th>
+                  <th>{t('colLastSeen')}</th>
+                  <th>{t('colReferer')}</th>
                   <th />
                 </tr>
               </thead>
@@ -135,9 +134,15 @@ export default function RedirectsPage() {
                     row={row}
                     canWrite={canWrite}
                     onCreate={(to) =>
-                      void act(`وُجّه ${row.path}`, () => api.createRedirect(row.path, to, 301))
+                      void act(t('routed', { path: row.path }), () =>
+                        api.createRedirect(row.path, to, 301),
+                      )
                     }
-                    onDismiss={() => void act(`أُهمل ${row.path}`, () => api.resolveNotFound(row.id))}
+                    onDismiss={() =>
+                      void act(t('dismissed', { path: row.path }), () =>
+                        api.resolveNotFound(row.id),
+                      )
+                    }
                   />
                 ))}
               </tbody>
@@ -147,11 +152,8 @@ export default function RedirectsPage() {
       </section>
 
       <section className="vault-section">
-        <h2>الخريطة</h2>
-        <p className="lede-sm">
-          المولَّدة من الموقع القديم تُعاد كتابتها كلّما أعدت توليد الخريطة؛ المكتوبة يدوياً لا
-          تُمَس.
-        </p>
+        <h2>{t('mapHeading')}</h2>
+        <p className="lede-sm"> {t('mapLede')}</p>
 
         <div className="store-bar">
           <label className="check">
@@ -160,9 +162,7 @@ export default function RedirectsPage() {
               checked={showAll}
               onChange={(event) => setShowAll(event.target.checked)}
             />
-            <span>
-              اعرض المولَّدة أيضاً ({String(redirects.length - interesting.length)} لم تُتبَع بعد)
-            </span>
+            <span> {t('showGenerated', { count: redirects.length - interesting.length })}</span>
           </label>
         </div>
 
@@ -170,10 +170,10 @@ export default function RedirectsPage() {
           <table className="admin-table redirects-table">
             <thead>
               <tr>
-                <th>من</th>
-                <th>إلى</th>
-                <th className="num">زيارات</th>
-                <th>المصدر</th>
+                <th>{t('colFrom')}</th>
+                <th>{t('colTo')}</th>
+                <th className="num">{t('colHitsShort')}</th>
+                <th>{t('colSource')}</th>
                 <th />
               </tr>
             </thead>
@@ -184,19 +184,25 @@ export default function RedirectsPage() {
                   row={row}
                   canWrite={canWrite}
                   onToggle={() =>
-                    void act(row.isActive ? `أُوقف ${row.from}` : `فُعّل ${row.from}`, () =>
-                      api.updateRedirect(row.id, { isActive: !row.isActive }),
+                    void act(
+                      row.isActive
+                        ? t('turnedOff', { from: row.from })
+                        : t('turnedOn', { from: row.from }),
+                      () => api.updateRedirect(row.id, { isActive: !row.isActive }),
                     )
                   }
                   onRetarget={(to) =>
-                    void act(`عُدّل ${row.from}`, () => api.updateRedirect(row.id, { to }))
+                    void act(t('retargeted', { from: row.from }), () =>
+                      api.updateRedirect(row.id, { to }),
+                    )
                   }
                 />
               ))}
               {shown.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="meta">
-                    لا توجيه مكتوب يدوياً ولا مولَّد تم اتّباعه بعد.
+                    {' '}
+                    {t('mapEmpty')}
                   </td>
                 </tr>
               ) : null}
@@ -249,6 +255,8 @@ function NotFoundRowView({
   onCreate: (to: string) => void;
   onDismiss: () => void;
 }) {
+  const t = useT('redirects');
+  const c = useT('common');
   const [open, setOpen] = useState(false);
   const [to, setTo] = useState('');
 
@@ -276,7 +284,7 @@ function NotFoundRowView({
               {readable(row.referer)}
             </span>
           ) : (
-            <span className="meta">بلا مصدر</span>
+            <span className="meta">{t('noReferer')}</span>
           )}
         </td>
 
@@ -284,10 +292,10 @@ function NotFoundRowView({
           {canWrite ? (
             <>
               <button type="button" onClick={() => setOpen(!open)}>
-                {open ? 'إلغاء' : 'وجّهه'}
+                {open ? c('cancel') : t('redirectIt')}
               </button>
               <button type="button" className="ghost" onClick={onDismiss}>
-                أهمله
+                {t('dismissIt')}
               </button>
             </>
           ) : null}
@@ -307,7 +315,7 @@ function NotFoundRowView({
               }}
             >
               <label className="grow">
-                إلى أين؟
+                {t('toWhere')}
                 <input
                   type="text"
                   value={to}
@@ -316,10 +324,10 @@ function NotFoundRowView({
                   required
                   placeholder="/store/windows-11-pro"
                 />
-                <small>مسار في هذا الموقع. الرابط الكامل يُقبل ويُختصر إلى مساره.</small>
+                <small>{t('toWhereHint')}</small>
               </label>
               <button type="submit" disabled={to.trim().length < 2}>
-                احفظ التوجيه
+                {t('saveRedirect')}
               </button>
             </form>
           </td>
@@ -340,6 +348,8 @@ function RedirectRowView({
   onToggle: () => void;
   onRetarget: (to: string) => void;
 }) {
+  const t = useT('redirects');
+  const c = useT('common');
   const [editing, setEditing] = useState(false);
   const [to, setTo] = useState(row.to);
 
@@ -360,17 +370,17 @@ function RedirectRowView({
         <td className="num">{row.hits}</td>
         <td>
           <span className={`pill ${row.source === 'manual' ? 'pill-ready' : 'pill-draft'}`}>
-            {row.source === 'manual' ? 'يدوي' : 'مولَّد'}
+            {row.source === 'manual' ? t('sourceManual') : t('sourceGenerated')}
           </span>
         </td>
         <td className="actions">
           {canWrite ? (
             <>
               <button type="button" className="ghost" onClick={() => setEditing(!editing)}>
-                {editing ? 'إلغاء' : 'عدّل'}
+                {editing ? c('cancel') : c('edit')}
               </button>
               <button type="button" className="ghost" onClick={onToggle}>
-                {row.isActive ? 'أوقف' : 'فعّل'}
+                {row.isActive ? t('turnOff') : t('turnOn')}
               </button>
             </>
           ) : null}
@@ -389,7 +399,7 @@ function RedirectRowView({
               }}
             >
               <label className="grow">
-                الوجهة الجديدة
+                {t('newTarget')}
                 <input
                   type="text"
                   value={to}
@@ -399,7 +409,7 @@ function RedirectRowView({
                 />
               </label>
               <button type="submit" disabled={to.trim().length < 2 || to.trim() === row.to}>
-                احفظ
+                {c('save')}
               </button>
             </form>
           </td>

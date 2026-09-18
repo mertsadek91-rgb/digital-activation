@@ -505,3 +505,132 @@ export const launchReadinessSchema = z.object({
   checks: z.array(launchCheckSchema),
 });
 export type LaunchReadiness = z.infer<typeof launchReadinessSchema>;
+
+// --- the dashboard ----------------------------------------------------------
+
+/**
+ * One span of trading, with the span before it for comparison.
+ *
+ * The comparison is in the shape rather than left to the panel because the two
+ * numbers have to come from the same query and the same definition of a paid
+ * order. A panel that computed "last week" itself from a series would be
+ * reading a different clock than the one that filled the series — and a
+ * dashboard whose headline disagrees with its own chart is worse than one that
+ * shows no comparison at all.
+ */
+export const dashboardWindowSchema = z.object({
+  revenueUsd: moneySchema,
+  orders: z.number().int().min(0),
+  /** The immediately preceding span of the same length. */
+  previousRevenueUsd: moneySchema,
+  previousOrders: z.number().int().min(0),
+});
+export type DashboardWindow = z.infer<typeof dashboardWindowSchema>;
+
+/**
+ * A day of trading.
+ *
+ * `date` is a calendar label — `YYYY-MM-DD` in the *store's* timezone, not the
+ * server's and not the reader's. A day is a property of the shop: an order
+ * placed at 01:00 Riyadh time belongs to that Riyadh day however the machine
+ * running this is configured, and bucketing on UTC would move roughly a fifth
+ * of this store's evenings into the following day.
+ */
+export const dashboardPointSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  revenueUsd: moneySchema,
+  orders: z.number().int().min(0),
+});
+export type DashboardPoint = z.infer<typeof dashboardPointSchema>;
+
+/**
+ * Work waiting on a person, as a count and a place to do it.
+ *
+ * Keys rather than sentences, unlike the launch checks: the set is fixed and
+ * the wording is a label with a number in it, so the panel owns both languages
+ * of it and the API owns the count. A sentence per row would put half of this
+ * screen's copy on the far side of an HTTP boundary for no gain.
+ *
+ * `severity` is not the size of the count. Three overdue lines are urgent at
+ * three; forty unanswered messages are not, because nobody has paid for them.
+ */
+export const dashboardAttentionSchema = z.object({
+  key: z.enum([
+    'queueOverdue',
+    'queueWaiting',
+    'paymentReview',
+    'awaitingPayment',
+    'messagesOverdue',
+    'messages',
+    'reviews',
+    'outOfStock',
+  ]),
+  count: z.number().int().min(0),
+  severity: z.enum(['urgent', 'due', 'idle']),
+  /** The screen that clears it. Always in this panel. */
+  fix: z.string(),
+});
+export type DashboardAttention = z.infer<typeof dashboardAttentionSchema>;
+
+export const dashboardProductSchema = z.object({
+  sku: z.string(),
+  slug: z.string(),
+  /** In the reader's language, falling back to the name snapshotted on the order. */
+  name: z.string(),
+  qty: z.number().int().min(0),
+  revenueUsd: moneySchema,
+});
+export type DashboardProduct = z.infer<typeof dashboardProductSchema>;
+
+export const dashboardOrderSchema = z.object({
+  number: z.string(),
+  status: adminOrderRowSchema.shape.status,
+  email: z.string(),
+  totalUsd: moneySchema,
+  placedAt: z.string(),
+  /** Lines still waiting on somebody, so a slow order is visible from here. */
+  waitingLines: z.number().int().min(0),
+});
+export type DashboardOrder = z.infer<typeof dashboardOrderSchema>;
+
+/**
+ * The panel's front page.
+ *
+ * Every number on it was already readable one screen at a time, which is
+ * exactly the problem: nobody opening this panel in the morning wants to visit
+ * five screens to find out whether yesterday was a good day and what is on
+ * fire. This gathers the two questions a person running a shop asks first —
+ * how much money came in, and what is waiting on me — and nothing else.
+ *
+ * ON THE REVENUE FIGURE, since a dashboard that is vague about this is a
+ * dashboard nobody can reconcile: it is **gross**, and it is the sum of
+ * `Order.totalUsd` over orders that have a `paidAt`, excluding the cancelled
+ * and the failed. Refunds are reported separately and on their own date rather
+ * than subtracted from the day the order was paid, because a refund issued in
+ * March against a January order is not a fact about January — and silently
+ * rewriting a past day is how a chart stops matching the figure somebody wrote
+ * down from it last week.
+ */
+export const adminDashboardSchema = z.object({
+  generatedAt: z.string(),
+  /** The clock every day boundary on this page was drawn against. */
+  timeZone: z.string(),
+  today: dashboardWindowSchema,
+  last7: dashboardWindowSchema,
+  last30: dashboardWindowSchema,
+  /** Null with no paid orders in the last thirty days, rather than zero. */
+  averageOrderUsd: moneySchema.nullable(),
+  /** Money returned in the last thirty days, on the date it was returned. */
+  refundedUsd: moneySchema,
+  /** Thirty days ending today, one entry per day, gaps filled with zeroes. */
+  daily: z.array(dashboardPointSchema),
+  attention: z.array(dashboardAttentionSchema),
+  topProducts: z.array(dashboardProductSchema),
+  recentOrders: z.array(dashboardOrderSchema),
+  lifetime: z.object({
+    orders: z.number().int().min(0),
+    revenueUsd: moneySchema,
+    customers: z.number().int().min(0),
+  }),
+});
+export type AdminDashboard = z.infer<typeof adminDashboardSchema>;

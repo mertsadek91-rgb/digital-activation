@@ -4,6 +4,7 @@ import type { Queue, QueueRow, SecretInput, StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -24,15 +25,26 @@ import { Nav } from '../nav';
  * fixed number, and an overdue row is loud. A queue where everything looks the
  * same is a queue where the customer who waited longest keeps waiting.
  */
+/**
+ * The four refusals, and the label each is shown under.
+ *
+ * `value` is what reaches the API and the audit row, and it stays Arabic in
+ * both languages on purpose: the reason is written into `fulfillment.failed`
+ * beside every failure already recorded, and a log that switches language
+ * depending on who happened to be signed in cannot be read down. The staff
+ * member picks from a label they understand; the record keeps one vocabulary.
+ */
 const FAIL_REASONS = [
-  'المورّد لا يملك المخزون',
-  'سعر المورّد تغيّر',
-  'بيانات التفعيل من العميل غير صحيحة',
-  'المنتج أُوقف من الشركة المنتجة',
+  { value: 'المورّد لا يملك المخزون', key: 'reasonNoStock' },
+  { value: 'سعر المورّد تغيّر', key: 'reasonPriceChanged' },
+  { value: 'بيانات التفعيل من العميل غير صحيحة', key: 'reasonBadCustomerDetails' },
+  { value: 'المنتج أُوقف من الشركة المنتجة', key: 'reasonDiscontinued' },
 ] as const;
 
 export default function QueuePage() {
   const router = useRouter();
+  const t = useT('queue');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [queue, setQueue] = useState<Queue | null>(null);
   const [includeDone, setIncludeDone] = useState(false);
@@ -48,9 +60,9 @@ export default function QueuePage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل الطابور.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [includeDone, router]);
+  }, [includeDone, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -81,7 +93,7 @@ export default function QueuePage() {
       setDone(label);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذّر تنفيذ الإجراء.');
+      setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }
 
@@ -89,15 +101,17 @@ export default function QueuePage() {
     queue?.rows.filter((row) => row.overdue && row.state !== 'DELIVERED' && row.state !== 'FAILED')
       .length ?? 0;
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   return (
     <Nav me={me} current="queue" {...(queue ? { waiting: queue.waiting, overdue } : {})}>
       <div className="queue-head">
-        <h1>طابور التسليم</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
-          {queue ? `${String(queue.waiting)} سطراً في الانتظار` : '…'}
-          {overdue > 0 ? <strong className="overdue-count"> · {overdue} متأخّر</strong> : null}
+          {queue ? t.tp('waiting', queue.waiting) : c('loading')}
+          {overdue > 0 ? (
+            <strong className="overdue-count"> · {t('overdueCount', { count: overdue })}</strong>
+          ) : null}
         </p>
         <label className="check">
           <input
@@ -105,21 +119,15 @@ export default function QueuePage() {
             checked={includeDone}
             onChange={(event) => setIncludeDone(event.target.checked)}
           />
-          <span>اعرض المُسلَّم والمتعذّر</span>
+          <span>{t('showSettled')}</span>
         </label>
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {done ? <p className="ok-note">{done}</p> : null}
-      {!canWork ? (
-        <p className="notice">
-          دورك <strong>{me.role}</strong> لا يسمح بالعمل على الطابور.
-        </p>
-      ) : null}
+      {!canWork ? <p className="notice"> {t('roleCannotWork', { role: me.role })}</p> : null}
 
-      {queue && queue.rows.length === 0 ? (
-        <p className="notice">لا شيء في الانتظار. كل الطلبات المدفوعة سُلّمت.</p>
-      ) : null}
+      {queue && queue.rows.length === 0 ? <p className="notice">{t('empty')}</p> : null}
 
       {/* A row per line waiting.
           It was a card each, ~290px tall to carry four facts, two to a row —
@@ -132,12 +140,12 @@ export default function QueuePage() {
           <table className="admin-table queue-table">
             <thead>
               <tr>
-                <th>الطلب</th>
-                <th>المنتج</th>
-                <th>الحالة</th>
-                <th>الانتظار</th>
-                <th>بريد الإيصال</th>
-                <th>بريد التفعيل</th>
+                <th>{t('colOrder')}</th>
+                <th>{t('colProduct')}</th>
+                <th>{t('colState')}</th>
+                <th>{t('colWait')}</th>
+                <th>{t('colReceiptEmail')}</th>
+                <th>{t('colActivationEmail')}</th>
                 <th />
               </tr>
             </thead>
@@ -148,11 +156,19 @@ export default function QueuePage() {
                   row={row}
                   canWork={canWork}
                   onFulfil={(secret, cost) =>
-                    void act(`سُلّم ${row.sku}`, () => api.fulfil(row.orderItemId, secret, cost))
+                    void act(t('doneFulfilled', { sku: row.sku }), () =>
+                      api.fulfil(row.orderItemId, secret, cost),
+                    )
                   }
-                  onDeliver={() => void act(`أُرسل ${row.sku}`, () => api.deliver(row.orderItemId))}
+                  onDeliver={() =>
+                    void act(t('doneDelivered', { sku: row.sku }), () =>
+                      api.deliver(row.orderItemId),
+                    )
+                  }
                   onFail={(reason) =>
-                    void act(`وُسم ${row.sku} كمتعذّر`, () => api.failLine(row.orderItemId, reason))
+                    void act(t('doneFailed', { sku: row.sku }), () =>
+                      api.failLine(row.orderItemId, reason),
+                    )
                   }
                 />
               ))}
@@ -180,6 +196,8 @@ function QueueRow({
   onDeliver: () => void;
   onFail: (reason: string) => void;
 }) {
+  const t = useT('queue');
+  const c = useT('common');
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState('');
   // Account lines. Kept beside `code` rather than reusing it: a password typed
@@ -188,7 +206,7 @@ function QueueRow({
   const [password, setPassword] = useState('');
   const [cost, setCost] = useState('');
   const [failing, setFailing] = useState(false);
-  const [reason, setReason] = useState<string>(FAIL_REASONS[0]);
+  const [reason, setReason] = useState<string>(FAIL_REASONS[0].value);
   const [copied, setCopied] = useState<string | null>(null);
 
   const settled = row.state === 'DELIVERED' || row.state === 'FAILED';
@@ -225,20 +243,22 @@ function QueueRow({
         </td>
 
         <td>
-          <span className={`pill ${statePill(row.state)}`}>{stateLabel(row.state)}</span>
-          {row.overdue ? <span className="pill pill-blocked">متأخّر</span> : null}
+          <span className={`pill ${statePill(row.state)}`}>{stateLabel(row.state, t)}</span>
+          {row.overdue ? <span className="pill pill-blocked">{t('overduePill')}</span> : null}
         </td>
 
         {/* The one number this screen exists for: waited against promised. */}
         <td className={`queue-wait${row.overdue ? ' is-late' : ''}`}>
-          <strong>{waitLabel(row.waitingSeconds)}</strong>
-          <span className="meta">وُعد بـ{waitLabel(row.deliverySlaSeconds)}</span>
+          <strong>{waitLabel(row.waitingSeconds, c)}</strong>
+          <span className="meta">
+            {t('promisedIn', { wait: waitLabel(row.deliverySlaSeconds, c) })}
+          </span>
         </td>
 
         <td className="queue-mail">
           <span dir="ltr">{row.email}</span>
-          <button type="button" className="linky" onClick={() => void copy(row.email, 'البريد')}>
-            نسخ
+          <button type="button" className="linky" onClick={() => void copy(row.email, c('email'))}>
+            {c('copy')}
           </button>
         </td>
 
@@ -248,14 +268,14 @@ function QueueRow({
         <td className="queue-mail">
           {row.requiresActivationEmail ? (
             <>
-              <span dir="ltr">{row.activationEmail ?? '— لم يُسجّل —'}</span>
+              <span dir="ltr">{row.activationEmail ?? t('noActivationEmail')}</span>
               {row.activationEmail ? (
                 <button
                   type="button"
                   className="linky"
-                  onClick={() => void copy(row.activationEmail ?? '', 'بريد التفعيل')}
+                  onClick={() => void copy(row.activationEmail ?? '', t('activationEmailLabel'))}
                 >
-                  نسخ
+                  {c('copy')}
                 </button>
               ) : null}
             </>
@@ -269,7 +289,7 @@ function QueueRow({
             <>
               {row.hasKey ? (
                 <button type="button" onClick={onDeliver}>
-                  أرسل المفتاح
+                  {t('sendKey')}
                 </button>
               ) : (
                 <button
@@ -279,7 +299,7 @@ function QueueRow({
                     setFailing(false);
                   }}
                 >
-                  {open ? 'إلغاء' : isAccount ? 'بيانات الحساب' : 'ألصق الكود'}
+                  {open ? c('cancel') : isAccount ? t('accountDetails') : t('pasteCode')}
                 </button>
               )}
               <button
@@ -290,7 +310,7 @@ function QueueRow({
                   setOpen(false);
                 }}
               >
-                تعذّر
+                {t('markFailed')}
               </button>
             </>
           ) : null}
@@ -300,7 +320,7 @@ function QueueRow({
       {copied ? (
         <tr className="queue-drawer">
           <td colSpan={COLUMNS}>
-            <p className="ok-note">نُسخ {copied}</p>
+            <p className="ok-note">{c('copied', { label: copied })}</p>
           </td>
         </tr>
       ) : null}
@@ -335,7 +355,7 @@ function QueueRow({
               {isAccount ? (
                 <>
                   <label className="grow">
-                    اسم المستخدم / البريد
+                    {t('usernameOrEmail')}
                     <input
                       type="text"
                       value={username}
@@ -349,7 +369,7 @@ function QueueRow({
                     />
                   </label>
                   <label className="grow">
-                    كلمة المرور
+                    {t('accountPassword')}
                     {/* type=text on purpose: the person pasting it has to be able
                     to check it against what the supplier sent, and a masked
                     field is where a transposed character survives to the
@@ -363,17 +383,14 @@ function QueueRow({
                       minLength={4}
                       autoComplete="off"
                       spellCheck={false}
-                      placeholder="كلمة المرور كما وردت"
+                      placeholder={t('accountPasswordPlaceholder')}
                     />
-                    <small>
-                      يُشفّران معاً في الخزنة ويُرسَلان للعميل بعنوانَين منفصلَين في البريد. لن
-                      يُكتبا في أي سجل.
-                    </small>
+                    <small>{t('accountHint')}</small>
                   </label>
                 </>
               ) : (
                 <label className="grow">
-                  كود المورّد
+                  {t('supplierCode')}
                   <textarea
                     value={code}
                     onChange={(event) => setCode(event.target.value)}
@@ -385,16 +402,13 @@ function QueueRow({
                     // licence key into the next order is a licence sold twice.
                     autoComplete="off"
                     spellCheck={false}
-                    placeholder="الصق الكود كما ورد من المورّد"
+                    placeholder={t('supplierCodePlaceholder')}
                   />
-                  <small>
-                    يُشفّر في الخزنة ويُرسَل للعميل مباشرة. لن يُكتب في أي سجل، ولن يُعلَّم السطر
-                    مُسلَّماً إلا إذا خرج البريد فعلاً.
-                  </small>
+                  <small>{t('supplierCodeHint')}</small>
                 </label>
               )}
               <label>
-                التكلفة (اختياري)
+                {t('cost')}
                 <input
                   type="text"
                   value={cost}
@@ -412,7 +426,7 @@ function QueueRow({
                     : code.trim().length < 4
                 }
               >
-                حفظ وإرسال
+                {t('saveAndSend')}
               </button>
             </form>
           </td>
@@ -431,18 +445,18 @@ function QueueRow({
               }}
             >
               <label className="grow">
-                السبب
+                {t('reasonLabel')}
                 <select value={reason} onChange={(event) => setReason(event.target.value)}>
                   {FAIL_REASONS.map((entry) => (
-                    <option key={entry} value={entry}>
-                      {entry}
+                    <option key={entry.key} value={entry.value}>
+                      {t(entry.key)}
                     </option>
                   ))}
                 </select>
-                <small>سيُبلَّغ العميل بأن هذا البند تعذّر وأننا نتابعه.</small>
+                <small>{t('failHint')}</small>
               </label>
               <button type="submit" className="ghost">
-                تأكيد التعذّر
+                {t('confirmFail')}
               </button>
             </form>
           </td>
@@ -452,16 +466,16 @@ function QueueRow({
   );
 }
 
-function stateLabel(state: QueueRow['state']): string {
+function stateLabel(state: QueueRow['state'], t: ReturnType<typeof useT<'queue'>>): string {
   switch (state) {
     case 'MANUAL_QUEUE':
-      return 'يحتاج طلباً من المورّد';
+      return t('stateManualQueue');
     case 'AUTO_ASSIGNED':
-      return 'مفتاح جاهز — يحتاج إرسالاً';
+      return t('stateAutoAssigned');
     case 'DELIVERED':
-      return 'مُسلَّم';
+      return t('stateDelivered');
     case 'FAILED':
-      return 'متعذّر';
+      return t('stateFailed');
     default:
       return state;
   }
@@ -474,13 +488,18 @@ function statePill(state: QueueRow['state']): string {
   return 'pill-draft';
 }
 
-/** A wait in the units a person reads, not seconds. */
-function waitLabel(seconds: number): string {
-  if (seconds < 60) return 'أقل من دقيقة';
+/**
+ * A wait in the units a person reads, not seconds.
+ *
+ * The plural form comes from `Intl.PluralRules` rather than a one-or-many
+ * check, which is what gives Arabic its dual back: two hours reads ساعتان
+ * rather than the 2 ساعات the old ternary produced.
+ */
+function waitLabel(seconds: number, c: ReturnType<typeof useT<'common'>>): string {
+  if (seconds < 60) return c('waitUnderMinute');
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${String(minutes)} دقيقة`;
+  if (minutes < 60) return c.tp('waitMinutes', minutes);
   const hours = Math.floor(seconds / 3600);
-  if (hours < 24) return hours === 1 ? 'ساعة' : `${String(hours)} ساعات`;
-  const days = Math.floor(hours / 24);
-  return days === 1 ? 'يوم' : `${String(days)} أيام`;
+  if (hours < 24) return c.tp('waitHours', hours);
+  return c.tp('waitDays', Math.floor(hours / 24));
 }

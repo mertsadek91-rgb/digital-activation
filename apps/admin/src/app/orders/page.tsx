@@ -4,6 +4,7 @@ import type { AdminOrderDetail, AdminOrderList, AdminOrderRow, StaffMe } from '@
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 
@@ -23,29 +24,31 @@ import { Nav } from '../nav';
  * level and every payment row against it are on the card, because the decision
  * is made from those and not from a total.
  */
-const STATUS_LABELS: Record<AdminOrderRow['status'], string> = {
-  PENDING_PAYMENT: 'بانتظار الدفع',
-  PAYMENT_REVIEW: 'قيد مراجعة الدفع',
-  PAID: 'مدفوع',
-  FULFILLING: 'قيد التجهيز',
-  FULFILLED: 'تم التجهيز',
-  COMPLETED: 'مكتمل',
-  CANCELLED: 'ملغى',
-  REFUNDED: 'مُسترَد',
-  PARTIALLY_REFUNDED: 'مُسترَد جزئياً',
-  FAILED: 'فشل',
-};
+const STATUS_KEYS = {
+  PENDING_PAYMENT: 'statusPendingPayment',
+  PAYMENT_REVIEW: 'statusPaymentReview',
+  PAID: 'statusPaid',
+  FULFILLING: 'statusFulfilling',
+  FULFILLED: 'statusFulfilled',
+  COMPLETED: 'statusCompleted',
+  CANCELLED: 'statusCancelled',
+  REFUNDED: 'statusRefunded',
+  PARTIALLY_REFUNDED: 'statusPartiallyRefunded',
+  FAILED: 'statusFailed',
+} as const satisfies Record<AdminOrderRow['status'], string>;
 
-const FILTERS: { key: string; label: string }[] = [
-  { key: 'awaiting-payment', label: 'بانتظار الدفع' },
-  { key: 'in-review', label: 'قيد المراجعة' },
-  { key: 'paid', label: 'مدفوعة' },
-  { key: 'done', label: 'منتهية' },
-  { key: 'all', label: 'الكل' },
-];
+const FILTERS = [
+  { key: 'awaiting-payment', label: 'filterAwaitingPayment' },
+  { key: 'in-review', label: 'filterInReview' },
+  { key: 'paid', label: 'filterPaid' },
+  { key: 'done', label: 'filterDone' },
+  { key: 'all', label: 'filterAll' },
+] as const;
 
 export default function OrdersPage() {
   const router = useRouter();
+  const t = useT('orders');
+  const c = useT('common');
   const [me, setMe] = useState<StaffMe | null>(null);
   const [data, setData] = useState<AdminOrderList | null>(null);
   const [filter, setFilter] = useState('awaiting-payment');
@@ -62,9 +65,9 @@ export default function OrdersPage() {
         router.push('/login');
         return;
       }
-      setError(caught instanceof Error ? caught.message : 'تعذّر تحميل الطلبات.');
+      setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [filter, query, router]);
+  }, [filter, query, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -85,7 +88,7 @@ export default function OrdersPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) return <div className="admin-layout">…</div>;
+  if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canConfirm = ['OWNER', 'ADMIN'].includes(me.role);
   // Wider than confirming on purpose: re-sending a licence is what the person
@@ -100,27 +103,27 @@ export default function OrdersPage() {
       setNote(label);
       await load();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذّر تنفيذ الإجراء.');
+      setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }
 
   return (
     <Nav me={me} current="orders">
       <div className="queue-head">
-        <h1>الطلبات</h1>
+        <h1>{t('title')}</h1>
         <p className="who">
-          {data ? `${String(data.counts.all)} طلباً · ${String(data.counts.paid)} مدفوع` : '…'}
+          {data ? t('summary', { count: data.counts.all, paid: data.counts.paid }) : c('loading')}
           {data && data.counts.awaitingPayment > 0 ? (
             <strong className="overdue-count">
               {' '}
-              · {data.counts.awaitingPayment} بانتظار الدفع
+              · {t('awaitingPayment', { count: data.counts.awaitingPayment })}
             </strong>
           ) : null}
         </p>
       </div>
 
       <div className="store-bar">
-        <nav className="sorts" aria-label="تصفية">
+        <nav className="sorts" aria-label={c('filter')}>
           {FILTERS.map((entry) => (
             <button
               key={entry.key}
@@ -128,7 +131,7 @@ export default function OrdersPage() {
               className={`tab${filter === entry.key ? ' is-active' : ''}`}
               onClick={() => setFilter(entry.key)}
             >
-              {entry.label}
+              {t(entry.label)}
             </button>
           ))}
         </nav>
@@ -144,11 +147,11 @@ export default function OrdersPage() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="رقم الطلب أو البريد"
-            aria-label="ابحث في الطلبات"
+            placeholder={t('searchPlaceholder')}
+            aria-label={t('searchLabel')}
           />
           <button type="submit" className="ghost">
-            ابحث
+            {c('search')}
           </button>
         </form>
       </div>
@@ -156,7 +159,7 @@ export default function OrdersPage() {
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
 
-      {data && data.rows.length === 0 ? <p className="notice">لا طلبات في هذا التصنيف.</p> : null}
+      {data && data.rows.length === 0 ? <p className="notice">{t('empty')}</p> : null}
 
       {/* A row per order.
           It was a card per order in a single narrow column: one order filled a
@@ -171,12 +174,12 @@ export default function OrdersPage() {
           <table className="admin-table orders-table">
             <thead>
               <tr>
-                <th>الطلب</th>
-                <th>الحالة</th>
-                <th>العميل</th>
-                <th className="num">البنود</th>
-                <th className="num">الإجمالي</th>
-                <th>التاريخ</th>
+                <th>{t('colOrder')}</th>
+                <th>{t('colStatus')}</th>
+                <th>{t('colCustomer')}</th>
+                <th className="num">{t('colItems')}</th>
+                <th className="num">{t('colTotal')}</th>
+                <th>{t('colDate')}</th>
                 <th />
               </tr>
             </thead>
@@ -188,12 +191,12 @@ export default function OrdersPage() {
                   canConfirm={canConfirm}
                   canResend={canResend}
                   onConfirm={(provider, reference) =>
-                    void act(`أُكّد دفع ${row.number}`, () =>
+                    void act(t('donePaymentConfirmed', { number: row.number }), () =>
                       api.confirmPayment(row.number, provider, reference),
                     )
                   }
                   onNote={(body) =>
-                    void act(`أُضيفت ملاحظة على ${row.number}`, () =>
+                    void act(t('doneNoteAdded', { number: row.number }), () =>
                       api.addOrderNote(row.number, body),
                     )
                   }
@@ -223,6 +226,8 @@ function OrderRow({
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
 }) {
+  const t = useT('orders');
+  const c = useT('common');
   const [confirming, setConfirming] = useState(false);
   const [noting, setNoting] = useState(false);
   /**
@@ -245,7 +250,7 @@ function OrderRow({
     try {
       setDetail(await api.order(row.number));
     } catch (caught) {
-      setDetailError(caught instanceof Error ? caught.message : 'تعذّر تحميل تفاصيل الطلب.');
+      setDetailError(caught instanceof Error ? caught.message : t('detailFailed'));
     }
   }
 
@@ -266,7 +271,7 @@ function OrderRow({
       // here for.
       await loadDetail();
     } catch (caught) {
-      setDetailError(caught instanceof Error ? caught.message : 'تعذّر إرسال الرسالة.');
+      setDetailError(caught instanceof Error ? caught.message : t('resendFailed'));
     } finally {
       setBusy(null);
     }
@@ -288,10 +293,14 @@ function OrderRow({
         </td>
 
         <td>
-          <span className={`pill ${statusPill(row.status)}`}>{STATUS_LABELS[row.status]}</span>
-          {risky ? <span className="pill pill-blocked">مخاطرة {row.riskLevel}</span> : null}
+          <span className={`pill ${statusPill(row.status)}`}>{t(STATUS_KEYS[row.status])}</span>
+          {risky ? (
+            <span className="pill pill-blocked">{t('riskPill', { level: row.riskLevel })}</span>
+          ) : null}
           {row.waitingLines > 0 && !awaiting ? (
-            <span className="pill pill-draft">{row.waitingLines} قيد التجهيز</span>
+            <span className="pill pill-draft">
+              {t('inFulfilment', { count: row.waitingLines })}
+            </span>
           ) : null}
         </td>
 
@@ -320,7 +329,7 @@ function OrderRow({
                 setNoting(false);
               }}
             >
-              {confirming ? 'إلغاء' : 'أكّد الدفع'}
+              {confirming ? c('cancel') : t('confirmPayment')}
             </button>
           ) : null}
           <button
@@ -331,7 +340,7 @@ function OrderRow({
               setConfirming(false);
             }}
           >
-            ملاحظة
+            {t('noteButton')}
           </button>
           <button
             type="button"
@@ -339,7 +348,7 @@ function OrderRow({
             aria-expanded={open}
             onClick={() => void toggle()}
           >
-            {open ? 'أخفِ' : 'التفاصيل'}
+            {open ? c('hide') : c('details')}
           </button>
         </td>
       </tr>
@@ -357,19 +366,19 @@ function OrderRow({
               }}
             >
               <label>
-                الطريقة
+                {t('methodLabel')}
                 <select
                   value={provider}
                   onChange={(event) =>
                     setProvider(event.target.value as 'BANK_TRANSFER' | 'CRYPTO')
                   }
                 >
-                  <option value="BANK_TRANSFER">تحويل بنكي</option>
-                  <option value="CRYPTO">عملة رقمية</option>
+                  <option value="BANK_TRANSFER">{t('methodBankTransfer')}</option>
+                  <option value="CRYPTO">{t('methodCrypto')}</option>
                 </select>
               </label>
               <label className="grow">
-                المرجع
+                {t('referenceLabel')}
                 <input
                   type="text"
                   value={reference}
@@ -377,15 +386,12 @@ function OrderRow({
                   dir="ltr"
                   required
                   minLength={3}
-                  placeholder="رقم العملية في كشف الحساب"
-                />
-                <small>
-                  يُفرج عن الطلب فوراً ويبدأ التجهيز — ومفتاح من المخزون يُرسَل للعميل. المرجع هو ما
-                  يربط هذا التأكيد بكشف حسابك لاحقاً، فاكتبه كما هو.
-                </small>
+                  placeholder={t('referencePlaceholder')}
+                />{' '}
+                <small>{t('referenceHint')}</small>
               </label>
               <button type="submit" disabled={reference.trim().length < 3}>
-                أكّد وأفرِج
+                {t('confirmAndRelease')}
               </button>
             </form>
           </td>
@@ -405,19 +411,19 @@ function OrderRow({
               }}
             >
               <label className="grow">
-                ملاحظة داخلية
+                {t('internalNote')}
                 <textarea
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   rows={3}
                   required
                   minLength={2}
-                  placeholder="ما اتُّفق عليه مع العميل"
+                  placeholder={t('internalNotePlaceholder')}
                 />
-                <small>لا تكتب هنا مفتاحاً أو كلمة مرور. التسليم يتم من الخزنة وحدها.</small>
+                <small>{t('internalNoteHint')}</small>
               </label>
               <button type="submit" disabled={body.trim().length < 2}>
-                أضِف
+                {t('addNote')}
               </button>
             </form>
           </td>
@@ -435,7 +441,7 @@ function OrderRow({
                 </p>
               ) : null}
               {!detail && !detailError ? (
-                <p className="meta loading-box">جاري تحميل تفاصيل الطلب…</p>
+                <p className="meta loading-box">{t('loadingDetail')}</p>
               ) : null}
 
               {detail ? (
@@ -449,7 +455,9 @@ function OrderRow({
                       more room than a cell in a list can give it. */}
                   {row.payments.length > 0 ? (
                     <div className="detail-section">
-                      <h3 className="detail-heading">💳 المدفوعات ({row.payments.length})</h3>
+                      <h3 className="detail-heading">
+                        {t('paymentsHeading', { count: row.payments.length })}
+                      </h3>
                       <ul className="order-payments-list">
                         {row.payments.map((payment, index) => (
                           <li key={index} dir="ltr">
@@ -464,7 +472,9 @@ function OrderRow({
                   ) : null}
 
                   <div className="detail-section">
-                    <h3 className="detail-heading">📦 بنود الطلب ({detail.lines.length})</h3>
+                    <h3 className="detail-heading">
+                      {t('linesHeading', { count: detail.lines.length })}
+                    </h3>
                     <ul className="order-items-list">
                       {detail.lines.map((line) => (
                         <li key={line.orderItemId} className="order-item-card">
@@ -486,7 +496,10 @@ function OrderRow({
                               </span>
                               {line.deliveredAt ? (
                                 <span className="item-deliv-date">
-                                  سُلّم: {line.deliveredAt.slice(0, 16).replace('T', ' ')}
+                                  {' '}
+                                  {t('deliveredOn', {
+                                    at: line.deliveredAt.slice(0, 16).replace('T', ' '),
+                                  })}
                                 </span>
                               ) : null}
                             </div>
@@ -498,7 +511,7 @@ function OrderRow({
                               disabled={busy !== null}
                               onClick={() => void resend(line.orderItemId)}
                             >
-                              {busy === line.orderItemId ? '…' : 'أعِد إرسال الترخيص'}
+                              {busy === line.orderItemId ? c('loading') : t('resendLicence')}
                             </button>
                           ) : null}
                         </li>
@@ -507,9 +520,11 @@ function OrderRow({
                   </div>
 
                   <div className="detail-section">
-                    <h3 className="detail-heading">✉️ سجل الرسائل ({detail.emails.length})</h3>
+                    <h3 className="detail-heading">
+                      {t('mailHeading', { count: detail.emails.length })}
+                    </h3>
                     {detail.emails.length === 0 ? (
-                      <p className="meta empty-state-text">لم تُرسَل أي رسالة على هذا الطلب بعد.</p>
+                      <p className="meta empty-state-text">{t('noMailYet')}</p>
                     ) : (
                       <ul className="order-mails-list">
                         {detail.emails.map((mail, index) => (
@@ -531,8 +546,13 @@ function OrderRow({
                             <span
                               className={`pill mail-status ${mail.error || mail.bouncedAt ? 'pill-blocked' : 'pill-published'}`}
                             >
+                              {' '}
                               {mail.error ??
-                                (mail.bouncedAt ? 'ارتدّت' : mail.deliveredAt ? 'وصلت' : 'أُرسلت')}
+                                (mail.bouncedAt
+                                  ? t('mailBounced')
+                                  : mail.deliveredAt
+                                    ? t('mailDelivered')
+                                    : t('mailSent'))}
                             </span>
                           </li>
                         ))}
@@ -542,21 +562,27 @@ function OrderRow({
 
                   {detail.notes.length > 0 ? (
                     <div className="detail-section">
-                      <h3 className="detail-heading">💬 الملاحظات ({detail.notes.length})</h3>
+                      <h3 className="detail-heading">
+                        {t('notesHeading', { count: detail.notes.length })}
+                      </h3>
                       <ul className="order-notes-list">
                         {detail.notes.map((note) => (
                           <li key={note.id} className="order-note-item">
                             <p className="note-text">{note.body}</p>
                             <div className="note-meta-row">
-                              <span className="note-author">{note.author ?? 'غير معروف'}</span>
+                              <span className="note-author">
+                                {note.author ?? t('unknownAuthor')}
+                              </span>
                               <span>·</span>
                               <span className="note-date">
                                 {note.createdAt.slice(0, 16).replace('T', ' ')}
                               </span>
                               {note.isCustomerVisible ? (
-                                <span className="pill pill-published">ظاهرة للعميل</span>
+                                <span className="pill pill-published">
+                                  {t('noteCustomerVisible')}
+                                </span>
                               ) : (
-                                <span className="pill pill-draft">داخلية</span>
+                                <span className="pill pill-draft">{t('noteInternal')}</span>
                               )}
                             </div>
                           </li>
@@ -567,7 +593,7 @@ function OrderRow({
 
                   {detail.activationEmail ? (
                     <div className="order-activation-banner">
-                      <span>بريد التفعيل:</span>
+                      <span>{t('activationEmail')}</span>
                       <strong dir="ltr">{detail.activationEmail}</strong>
                     </div>
                   ) : null}

@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import type { StaffLoginResult, StaffMe } from '@da/contracts';
 import { type StaffRole, type StaffUser } from '@da/db';
 
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { AuditService } from './audit.service.js';
@@ -394,7 +395,12 @@ export class AuthService {
     const staff = await this.prisma.client.staffUser.findUnique({ where: { id: staffId } });
     if (!staff?.isActive) throw new UnauthorizedException('This account is no longer active.');
     if (!staff.totpSecret || !staff.totpEnabledAt) {
-      throw new UnauthorizedException('لم تُسجَّل المصادقة الثنائية على هذا الحساب.');
+      throw new UnauthorizedException(
+        say(
+          'لم تُسجَّل المصادقة الثنائية على هذا الحساب.',
+          'Two-factor authentication has not been enrolled on this account.',
+        ),
+      );
     }
 
     const secret = decryptSecret(staff.totpSecret, this.kek());
@@ -407,7 +413,9 @@ export class AuthService {
         ip: context.ip,
         userAgent: context.userAgent,
       });
-      throw new UnauthorizedException('رمز المصادقة غير صحيح.');
+      throw new UnauthorizedException(
+        say('رمز المصادقة غير صحيح.', 'That authentication code is not correct.'),
+      );
     }
 
     // Stamped on the session as well as in the new token: `refresh` reads

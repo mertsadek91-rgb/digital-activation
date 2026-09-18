@@ -4,6 +4,8 @@ import type { StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { LocaleSwitcher } from '../i18n/locale-switcher';
+import { useT } from '../i18n/provider';
 import { api } from '../lib/api';
 
 /**
@@ -42,8 +44,10 @@ export function Nav({
   me: StaffMe;
   children: React.ReactNode;
   current:
+    | 'dashboard'
     | 'launch'
     | 'products'
+    | 'categories'
     | 'orders'
     | 'queue'
     | 'vault'
@@ -59,6 +63,7 @@ export function Nav({
   reviewsPending?: number;
 }) {
   const router = useRouter();
+  const t = useT('nav');
   const [fetched, setFetched] = useState<{ waiting: number; overdue: number } | null>(null);
   /**
    * Unanswered messages, always fetched here rather than passed in.
@@ -153,16 +158,20 @@ export function Nav({
   }, [drawerOpen]);
 
   const navItems = [
-    { key: 'queue', label: 'الطابور', count: waiting, overdue },
-    { key: 'orders', label: 'الطلبات' },
-    { key: 'products', label: 'المنتجات' },
-    { key: 'messages', label: 'الرسائل', count: inboxWaiting, overdue: inboxOverdue },
-    { key: 'reviews', label: 'التقييمات', count: reviewsPending },
-    { key: 'vault', label: 'الخزنة' },
-    { key: 'payments', label: 'طرق الدفع' },
-    { key: 'promotions', label: 'الأكواد' },
-    { key: 'launch', label: 'حالة المتجر' },
-    { key: 'redirects', label: 'التوجيهات' },
+    // First, and without a badge. It is the screen that explains the badges on
+    // the ones below it, so a count on it would be counting them twice.
+    { key: 'dashboard', label: t('dashboard') },
+    { key: 'queue', label: t('queue'), count: waiting, overdue },
+    { key: 'orders', label: t('orders') },
+    { key: 'products', label: t('products') },
+    { key: 'categories', label: t('categories') },
+    { key: 'messages', label: t('messages'), count: inboxWaiting, overdue: inboxOverdue },
+    { key: 'reviews', label: t('reviews'), count: reviewsPending },
+    { key: 'vault', label: t('vault') },
+    { key: 'payments', label: t('payments') },
+    { key: 'promotions', label: t('promotions') },
+    { key: 'launch', label: t('launch') },
+    { key: 'redirects', label: t('redirects') },
   ] as const;
 
   function navigate(path: string) {
@@ -173,9 +182,9 @@ export function Nav({
   return (
     <div className="admin-layout">
       {/* Desktop Sidebar */}
-      <aside className="admin-sidebar" aria-label="القائمة الجانبية">
+      <aside className="admin-sidebar" aria-label={t('sidebarLabel')}>
         <div className="admin-sidebar-header">
-          <span className="admin-title">لوحة التفعيل الرقمي</span>
+          <span className="admin-title">{t('panelTitle')}</span>
         </div>
 
         <div className="admin-sidebar-user">
@@ -192,8 +201,13 @@ export function Nav({
               onClick={() => navigate(item.key)}
             >
               <span>{item.label}</span>
-              {'count' in item && item.count !== null && item.count !== undefined && item.count > 0 ? (
-                <span className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}>
+              {'count' in item &&
+              item.count !== null &&
+              item.count !== undefined &&
+              item.count > 0 ? (
+                <span
+                  className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
+                >
                   {item.count}
                 </span>
               ) : null}
@@ -201,9 +215,11 @@ export function Nav({
           ))}
         </nav>
 
+        <LocaleSwitcher />
+
         <div className="admin-sidebar-footer">
           <button type="button" className="ghost" onClick={() => navigate('password')}>
-            تغيير كلمة المرور
+            {t('changePassword')}
           </button>
           <button
             type="button"
@@ -212,7 +228,7 @@ export function Nav({
               void api.logout().then(() => router.push('/login'));
             }}
           >
-            تسجيل الخروج
+            {t('logout')}
           </button>
         </div>
       </aside>
@@ -224,22 +240,34 @@ export function Nav({
             <button
               type="button"
               className="admin-mobile-toggle"
-              aria-label="فتح قائمة الإدارة"
+              aria-label={t('openMenu')}
               aria-expanded={drawerOpen}
               onClick={() => setDrawerOpen(true)}
             >
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <span className="admin-title" style={{ display: 'none' /* Only show on mobile if needed, desktop has sidebar title */ }}>
-              لوحة التحكم
+            <span
+              className="admin-title"
+              style={{
+                display: 'none' /* Only show on mobile if needed, desktop has sidebar title */,
+              }}
+            >
+              {t('panelTitleShort')}
             </span>
           </div>
 
           <div className="admin-header-actions">
             <button type="button" className="ghost btn-sm" onClick={() => router.push('/password')}>
-              كلمة المرور
+              {t('passwordShort')}
             </button>
             <button
               type="button"
@@ -248,17 +276,15 @@ export function Nav({
                 void api.logout().then(() => router.push('/login'));
               }}
             >
-              خروج
+              {t('logoutShort')}
             </button>
           </div>
         </header>
 
-        <main className="admin-content">
-          {children}
-        </main>
+        <main className="admin-content">{children}</main>
 
         <footer className="admin-footer">
-          <p>© {new Date().getFullYear()} التفعيل الرقمي. جميع الحقوق محفوظة.</p>
+          <p>{t('copyright', { year: new Date().getFullYear() })}</p>
         </footer>
       </div>
 
@@ -268,13 +294,16 @@ export function Nav({
         onClick={() => setDrawerOpen(false)}
         aria-hidden="true"
       />
-      <aside className={`admin-drawer-panel${drawerOpen ? ' is-open' : ''}`} aria-label="قائمة الجوال">
+      <aside
+        className={`admin-drawer-panel${drawerOpen ? ' is-open' : ''}`}
+        aria-label={t('mobileMenuLabel')}
+      >
         <div className="admin-drawer-head">
-          <span className="admin-title">لوحة إدارة المتجر</span>
+          <span className="admin-title">{t('storeAdminTitle')}</span>
           <button
             type="button"
             className="admin-drawer-close"
-            aria-label="إغلاق القائمة"
+            aria-label={t('closeMenu')}
             onClick={() => setDrawerOpen(false)}
           >
             ✕
@@ -295,8 +324,13 @@ export function Nav({
               onClick={() => navigate(item.key)}
             >
               <span>{item.label}</span>
-              {'count' in item && item.count !== null && item.count !== undefined && item.count > 0 ? (
-                <span className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}>
+              {'count' in item &&
+              item.count !== null &&
+              item.count !== undefined &&
+              item.count > 0 ? (
+                <span
+                  className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
+                >
                   {item.count}
                 </span>
               ) : null}
@@ -304,9 +338,11 @@ export function Nav({
           ))}
         </nav>
 
+        <LocaleSwitcher />
+
         <div className="admin-drawer-foot">
           <button type="button" className="ghost" onClick={() => navigate('password')}>
-            تغيير كلمة المرور
+            {t('changePassword')}
           </button>
           <button
             type="button"
@@ -315,7 +351,7 @@ export function Nav({
               void api.logout().then(() => router.push('/login'));
             }}
           >
-            تسجيل الخروج
+            {t('logout')}
           </button>
         </div>
       </aside>

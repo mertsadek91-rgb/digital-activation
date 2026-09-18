@@ -6,6 +6,8 @@ import {
 } from '@da/contracts';
 import { Locale } from '@da/db';
 
+import { panelLocale } from '../common/panel-locale.js';
+
 /**
  * The publish gate.
  *
@@ -21,9 +23,12 @@ import { Locale } from '@da/db';
  * behind a media migration that has not happened yet. A gate that blocks
  * everything gets switched off, and then it guards nothing.
  *
- * The reasons are written in the locale being assessed, because the person who
- * has to act on "no meta description" is on an Arabic-speaking team, and a
- * refusal nobody reads is a refusal nobody fixes.
+ * The reasons are written in the *reader's* language, which is not the locale
+ * being assessed. Those were the same thing while the panel was Arabic-only,
+ * and conflating them broke as soon as it was not: auditing the English copy
+ * would answer in English to an Arabic-speaking editor, and auditing the
+ * Arabic copy would answer in Arabic to an English-speaking one. A refusal
+ * nobody can read is a refusal nobody fixes, whichever way round it falls.
  */
 
 interface ProductForReadiness {
@@ -137,7 +142,9 @@ const REASONS: Record<Reason, Record<'ar' | 'en', (n?: number) => string>> = {
 };
 
 export function assessProduct(product: ProductForReadiness, locale: Locale): Readiness {
-  const lang = locale === Locale.EN ? 'en' : 'ar';
+  // `locale` says which translation is being judged; `panelLocale()` says who
+  // is reading the verdict. Only the second one picks the wording.
+  const lang = panelLocale();
   const say = (reason: Reason, n?: number): string => REASONS[reason][lang](n);
 
   const translation = product.translations.find((entry) => entry.locale === locale);
@@ -220,7 +227,11 @@ export function assessProduct(product: ProductForReadiness, locale: Locale): Rea
   });
 
   return {
-    locale: lang,
+    // The translation that was judged, not the language it was judged in.
+    // These were one value until the reasons started following the reader, and
+    // reporting `lang` here would tell the panel it had assessed the English
+    // copy because the staff member happens to read English.
+    locale: locale === Locale.EN ? 'en' : 'ar',
     publishable: checks.every((check) => check.severity !== 'blocker' || check.passed),
     checks,
   };
