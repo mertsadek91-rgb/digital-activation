@@ -1,7 +1,16 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import type { CredentialKind, SecretInput } from '@da/contracts';
-import { FulfillmentMode, FulfillmentState, Locale, OrderStatus, Prisma, RiskLevel } from '@da/db';
+import {
+  ActorType,
+  FulfillmentMode,
+  FulfillmentState,
+  Locale,
+  OrderStatus,
+  Prisma,
+  RiskLevel,
+  StockMovementReason,
+} from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
@@ -12,6 +21,7 @@ import {
   type OrderLineView,
   orderReceived,
 } from '../mail/templates.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type ParsedSecret, canonical, parse, parseBlock } from '../vault/credential.js';
 import { type Actor, VaultService } from '../vault/vault.service.js';
@@ -84,8 +94,8 @@ export class FulfillmentService {
       return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
     }
     return ar
-      ? `يُطلَب من المورّد بعد الشراء — خلال ${window}`
-      : `Ordered from the supplier after purchase — within ${window}`;
+      ? `يُجهَّز بعد الشراء — خلال ${window}`
+      : `Prepared after purchase — within ${window}`;
   }
 
   /**
@@ -285,9 +295,11 @@ export class FulfillmentService {
       where: { id: input.orderItemId },
       select: { id: true, fulfillmentState: true, order: { select: { email: true } } },
     });
-    if (!item) throw new NotFoundException('لا يوجد هذا السطر.');
+    if (!item) throw new NotFoundException(say('لا يوجد هذا السطر.', 'No such line.'));
     if (item.fulfillmentState !== FulfillmentState.DELIVERED) {
-      throw new BadRequestException('لم يُسلَّم هذا السطر بعد.');
+      throw new BadRequestException(
+        say('لم يُسلّم هذا السطر بعد.', 'This line has not been delivered yet.'),
+      );
     }
 
     const opened = await this.vault.openForDelivery({
@@ -300,7 +312,10 @@ export class FulfillmentService {
     });
     if (!sent.ok) {
       throw new BadRequestException(
-        `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). حاول بعد قليل.`,
+        say(
+          `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). حاول بعد قليل.`,
+          `The email could not be sent (${sent.error ?? 'reason unknown'}). Try again shortly.`,
+        ),
       );
     }
 
@@ -319,7 +334,7 @@ export class FulfillmentService {
       where: { id: variantId },
       select: { credentialKind: true },
     });
-    if (!variant) throw new NotFoundException('لا يوجد هذا المتغيّر.');
+    if (!variant) throw new NotFoundException(say('لا يوجد هذا المتغيّر.', 'No such variant.'));
     return variant.credentialKind;
   }
 
@@ -341,7 +356,7 @@ export class FulfillmentService {
     const kind = await this.credentialKind(input.variantId);
     const { secrets, invalid } = parseBlock(kind, input.block);
 
-    return this.vault.importKeys({
+    const result = await this.vault.importKeys({
       variantId: input.variantId,
       kind,
       secrets,
@@ -351,6 +366,69 @@ export class FulfillmentService {
       expiresAt: input.expiresAt,
       actor: input.actor,
     });
+
+    if (result.imported > 0) await this.recount(input.variantId, input.actor);
+    return result;
+  }
+
+  /**
+   * Writes the vault's true count across to the number the shop sells against.
+   *
+   * Two records of one fact, and they have to be: the storefront cannot see
+   * the vault. `da_app` is explicitly denied that schema so a future blanket
+   * GRANT cannot quietly open it, which means the cart holds stock against
+   * `InventoryLevel.onHand` in `public` while the keys sit where the
+   * application role cannot reach them. The denormalised count is the bridge.
+   *
+   * Only one side of that bridge was ever written. Paying for a key decrements
+   * `onHand`; importing keys did not increment it — so pasting ten keys into
+   * the vault left the count at zero, the buy button still refusing, and
+   * nothing on any screen saying why. The ledger could only ever go down.
+   *
+   * This lives here rather than in the vault service because of the same
+   * boundary: `da_vault` has SELECT and nothing else on `public`, so the one
+   * place that can read the vault cannot write the count, and the one place
+   * that can write it cannot read the vault. This service holds both clients,
+   * which is precisely what it is for.
+   *
+   * Set, not incremented. A count recomputed from what the vault actually
+   * holds converges on the truth after a half-finished import or a manual
+   * adjustment that drifted; adding a delta inherits every past mistake.
+   */
+  private async recount(variantId: string, actor: Actor): Promise<void> {
+    const truth = (await this.vault.availability([variantId]))[variantId] ?? 0;
+
+    const level = await this.prisma.client.inventoryLevel.findUnique({
+      where: { variantId },
+      select: { onHand: true, reserved: true },
+    });
+    const previous = level?.onHand ?? 0;
+
+    // Never below what a cart in checkout is already holding: a reservation is
+    // a promise, and a count under it makes the variant unsellable for good.
+    const next = Math.max(truth, level?.reserved ?? 0);
+    if (previous === next) return;
+
+    await this.prisma.client.inventoryLevel.upsert({
+      where: { variantId },
+      update: { onHand: next },
+      create: { variantId, onHand: next },
+    });
+
+    await this.prisma.client.stockMovement.create({
+      data: {
+        variantId,
+        delta: next - previous,
+        reason: StockMovementReason.IMPORT,
+        // Stated rather than left to the SYSTEM default: "who last changed
+        // this count" is the first question asked when a number looks wrong.
+        actorId: actor.staffId,
+        actorType: actor.kind ?? ActorType.STAFF,
+        note: 'Recounted from the vault after an import.',
+      },
+    });
+
+    this.logger.log(`Variant ${variantId}: onHand ${String(previous)} → ${String(next)}`);
   }
 
   /**
@@ -372,18 +450,28 @@ export class FulfillmentService {
       where: { id: input.orderItemId },
       include: { order: { select: { id: true, number: true, status: true, riskLevel: true } } },
     });
-    if (!item) throw new NotFoundException('لا يوجد هذا السطر.');
+    if (!item) throw new NotFoundException(say('لا يوجد هذا السطر.', 'No such line.'));
 
     if (item.order.status !== OrderStatus.PAID && item.order.status !== OrderStatus.FULFILLING) {
       throw new BadRequestException(
-        `لا يمكن التسليم وحالة الطلب ${item.order.status}. لا يُفرج عن مفتاح قبل وصول المال.`,
+        say(
+          `لا يمكن التسليم وحالة الطلب ${item.order.status}. لا يُفرج عن مفتاح قبل وصول المال.`,
+          `Cannot deliver while the order is ${item.order.status}. No key is released before the money arrives.`,
+        ),
       );
     }
     if (item.order.riskLevel === RiskLevel.HIGH || item.order.riskLevel === RiskLevel.BLOCKED) {
-      throw new BadRequestException('هذا الطلب موقوف للمراجعة. لا يُسلَّم مفتاح قبل رفع الإيقاف.');
+      throw new BadRequestException(
+        say(
+          'هذا الطلب موقوف للمراجعة. لا يُسلّم مفتاح قبل رفع الإيقاف.',
+          'This order is held for review. No key is delivered until the hold is lifted.',
+        ),
+      );
     }
     if (item.fulfillmentState === FulfillmentState.DELIVERED) {
-      throw new BadRequestException('هذا السطر مُسلَّم بالفعل.');
+      throw new BadRequestException(
+        say('هذا السطر مُسلّم بالفعل.', 'This line has already been delivered.'),
+      );
     }
 
     // What the supplier sent must be the shape this line is sold as. A key
@@ -393,8 +481,14 @@ export class FulfillmentService {
     if (input.secret.kind !== kind) {
       throw new BadRequestException(
         kind === 'ACCOUNT_CREDENTIALS'
-          ? 'هذا المنتج يُسلَّم باسم مستخدم وكلمة مرور، لا بمفتاح.'
-          : 'هذا المنتج يُسلَّم بمفتاح تفعيل، لا بحساب.',
+          ? say(
+              'هذا المنتج يُسلّم باسم مستخدم وكلمة مرور، لا بمفتاح.',
+              'This product is delivered as a username and password, not as a key.',
+            )
+          : say(
+              'هذا المنتج يُسلّم بمفتاح تفعيل، لا بحساب.',
+              'This product is delivered as an activation key, not as an account.',
+            ),
       );
     }
 
@@ -420,7 +514,10 @@ export class FulfillmentService {
       // must not be undone. The line stays in the queue so the send can be
       // retried, and the failure is on the record.
       throw new BadRequestException(
-        `المفتاح محفوظ ومربوط بالطلب، لكن إرسال البريد فشل (${sent.error ?? 'سبب غير معروف'}). أعد المحاولة من الطابور.`,
+        say(
+          `المفتاح محفوظ ومربوط بالطلب، لكن إرسال البريد فشل (${sent.error ?? 'سبب غير معروف'}). أعد المحاولة من الطابور.`,
+          `The key is stored and bound to the order, but the email failed (${sent.error ?? 'reason unknown'}). Retry from the queue.`,
+        ),
       );
     }
 
@@ -468,9 +565,11 @@ export class FulfillmentService {
       where: { id: input.orderItemId },
       include: { order: { select: { id: true, status: true, riskLevel: true } } },
     });
-    if (!item) throw new NotFoundException('لا يوجد هذا السطر.');
+    if (!item) throw new NotFoundException(say('لا يوجد هذا السطر.', 'No such line.'));
     if (item.order.riskLevel === RiskLevel.HIGH || item.order.riskLevel === RiskLevel.BLOCKED) {
-      throw new BadRequestException('هذا الطلب موقوف للمراجعة.');
+      throw new BadRequestException(
+        say('هذا الطلب موقوف للمراجعة.', 'This order is held for review.'),
+      );
     }
     // Asked of the vault, not of `assignedKeyIds`. That array is written only
     // after a successful send, so a send that failed leaves it empty while the
@@ -478,7 +577,9 @@ export class FulfillmentService {
     // path refused it for having no key, and the manual path refused it for
     // already having one.
     if (!(await this.vault.isBound(item.id))) {
-      throw new BadRequestException('لا يوجد مفتاح مخصّص لهذا السطر.');
+      throw new BadRequestException(
+        say('لا يوجد مفتاح مخصّص لهذا السطر.', 'No key is assigned to this line.'),
+      );
     }
 
     // Opened, then marked delivered. The email itself is the next module; what
@@ -495,7 +596,10 @@ export class FulfillmentService {
     });
     if (!sent.ok) {
       throw new BadRequestException(
-        `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). المفتاح ما زال مخصّصاً للطلب؛ أعد المحاولة.`,
+        say(
+          `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). المفتاح ما زال مخصّصاً للطلب؛ أعد المحاولة.`,
+          `The email could not be sent (${sent.error ?? 'reason unknown'}). The key is still assigned to the order; try again.`,
+        ),
       );
     }
 
@@ -858,7 +962,10 @@ export class FulfillmentService {
       where: { number: orderNumber },
       include: { items: true },
     });
-    if (!order) throw new NotFoundException(`لا يوجد طلب بالرقم ${orderNumber}`);
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${orderNumber}`, `No order numbered ${orderNumber}`),
+      );
 
     const out = [];
     for (const item of order.items) {
