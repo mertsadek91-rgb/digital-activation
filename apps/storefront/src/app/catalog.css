@@ -2594,8 +2594,19 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
 
 /* --- the loop between articles and products -------------------------------- */
 
+/*
+ * Full width, unlike the prose above it.
+ *
+ * This was capped at 46rem — narrower than the article's own 52rem — and it
+ * had no `margin-inline: auto`, so it sat flush against the start edge while
+ * the prose above it was centred. On a wide screen that left a third of the
+ * row empty beside three cards and read as a broken layout rather than a
+ * shelf.
+ *
+ * A reading measure is for reading. This is a row of products, and every other
+ * product row in the store spans the container, so this one does too.
+ */
 .post-products {
-  max-inline-size: 46rem;
   margin-block-start: var(--spacing-3);
   padding-block-start: var(--spacing-2);
   border-block-start: 1px solid var(--color-border);
@@ -2605,12 +2616,10 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   margin-block: 0 var(--spacing-1);
   color: var(--color-brand-ink);
 }
-/* The row scrolls like the related-products one on a product page, and shares
-   its rule: a fixed card width, so two links do not become two half-page
-   cards. */
-.post-products .related-row > * {
-  flex: 0 0 clamp(13rem, 45%, 16rem);
-}
+/* The card width override this used to carry existed to fit the 46rem box
+   above. With the row at full width the base `.related-row` rule already gives
+   the same card size, so there is nothing left to override — and one rule for
+   every product row is one place to change it. */
 
 /*
  * Articles on a product page.
