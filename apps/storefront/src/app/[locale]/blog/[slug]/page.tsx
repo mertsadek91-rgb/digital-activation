@@ -74,6 +74,20 @@ export default async function PostPage({ params }: Props) {
   const prefix = ar ? '' : `/${locale}`;
   const pageUrl = new URL(`${prefix}${ROUTES.post(slug)}`, SITE_URL).toString();
 
+  /*
+   * The FAQ blocks become FAQPage markup, the same as on a product page and an
+   * editorial page — the posts written for this blog carry one each, and until
+   * now the questions rendered for a reader and were invisible to anything
+   * reading the page as data. Merged into one entity rather than emitted per
+   * block, because `buildGraph` refuses a second FAQPage.
+   *
+   * Not for rich results: Google restricted those in August 2023 to
+   * authoritative government and health sites, so no shop gets the expandable
+   * answers under a listing. It is for the engines that read structured data to
+   * decide what to quote, which is where this content is now read.
+   */
+  const questions = post.blocks.flatMap((block) => (block.type === 'faq' ? block.items : []));
+
   const graph = buildGraph([
     jsonld.breadcrumbs([
       { name: ar ? 'الرئيسية' : 'Home', url: new URL(prefix || '/', SITE_URL).toString() },
@@ -98,6 +112,7 @@ export default async function PostPage({ params }: Props) {
       author: { type: 'Organization', name: ar ? BRAND.nameAr : BRAND.nameEn, url: SITE_URL },
       publisherName: ar ? BRAND.nameAr : BRAND.nameEn,
     }),
+    questions.length > 0 ? jsonld.faqPage(questions) : null,
   ]);
 
   return (
