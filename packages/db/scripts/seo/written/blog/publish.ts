@@ -23,6 +23,7 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '..', '..', '..', '.env')
 
 import { ArticleKind, Locale, prisma, PublishStatus } from '../../../../src/index.js';
 
+import { GULF_ENGLISH } from './gulf-english.js';
 import { NEW_POSTS_EN } from './new-posts-en.js';
 import { NEW_POSTS } from './new-posts.js';
 
@@ -37,7 +38,7 @@ import { NEW_POSTS } from './new-posts.js';
  */
 const SETS = [
   { locale: Locale.AR, posts: NEW_POSTS },
-  { locale: Locale.EN, posts: NEW_POSTS_EN },
+  { locale: Locale.EN, posts: [...NEW_POSTS_EN, ...GULF_ENGLISH] },
 ] as const;
 
 const MAX = { title: 60, description: 160 } as const;
