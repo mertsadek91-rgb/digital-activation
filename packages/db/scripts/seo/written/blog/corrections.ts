@@ -1,12 +1,12 @@
 /**
- * Removes two wrong numbers from the live Arabic articles.
+ * Removes three unsupportable claims from the live Arabic articles.
  *
  *   pnpm db:blog-fix          report only, writes nothing
  *   pnpm db:blog-fix --apply  write
  *
- * Both were opening sentences, which is the worst place for a number that does
- * not hold: it is what a reader reads first and what the meta description
- * quotes, so the summary carries it too and both have to change together.
+ * The first two were opening sentences, which is the worst place for a number
+ * that does not hold: it is what a reader reads first and what the meta
+ * description quotes, so the summary carries it too and both change together.
  *
  * **"more than 60% of devices worldwide"** — true around 2023, and wrong now:
  * Windows 11 passed Windows 10 in global desktop share during 2025. The claim
@@ -20,12 +20,13 @@
  * the actual point: people pick an antivirus from an advertisement rather than
  * from a test result.
  *
- * Not touched: "بعد آلاف الطلبات". It is a claim about the shop's own trading
- * history rather than a fact about the world, this system records 145 units
- * and four orders because the legacy order history was never imported, and the
- * owner is the only person who knows whether it is true. It appears in two
- * articles, not one — `windows-10-vs-windows-11` as well as
- * `office-365-vs-office-2021`.
+ * **"بعد آلاف الطلبات"** — after thousands of orders — in two articles, not
+ * the one I first reported. Removed on the owner's instruction rather than on
+ * my reading: it is a claim about the shop's own trading history, this system
+ * records 145 units and four orders only because the legacy order history was
+ * never imported, and he is the one who knows. The recommendation each
+ * sentence introduces is untouched, because it never rested on the volume —
+ * only the preamble did. The English versions never carried it.
  *
  * Exact-match or refuse. Every replacement names the string it expects, and a
  * string that is not found stops that edit and fails the run rather than
@@ -71,6 +72,27 @@ const CORRECTIONS: Correction[] = [
       {
         from: 'كل يوم تُسرق بيانات أكثر من 4 ملايين ملف حول العالم — ومع ذلك كثير من المستخدمين في الخليج لا يزالون يختارون برنامج الحماية بناءً على إعلان رأوه أو اسم سمعوه قديماً',
         to: 'كثير من المستخدمين في الخليج يختارون برنامج الحماية بناءً على إعلان رأوه أو اسم سمعوه قديماً — لا على نتيجة اختبار مستقلّ',
+      },
+    ],
+  },
+  {
+    slug: 'windows-10-vs-windows-11',
+    why: 'the order-volume claim is not supportable from here',
+    edits: [
+      {
+        // Keeps the shop's name in the sentence and drops only the quantity.
+        from: 'بعد آلاف الطلبات في متجر التفعيل الرقمي، هذه أكثر الحالات شيوعاً:',
+        to: 'في متجر التفعيل الرقمي، هذه أكثر الحالات شيوعاً:',
+      },
+    ],
+  },
+  {
+    slug: 'office-365-vs-office-2021',
+    why: 'the order-volume claim is not supportable from here',
+    edits: [
+      {
+        from: 'بعد آلاف الطلبات، إليك التوصية الذهبية حسب وضعك:',
+        to: 'إليك التوصية الذهبية حسب وضعك:',
       },
     ],
   },
