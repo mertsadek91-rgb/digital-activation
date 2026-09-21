@@ -258,6 +258,26 @@ export const articleSchema = articleCardSchema.extend({
   isDraft: z.boolean(),
   /** Newer posts, for the foot of the page. Never includes this one. */
   more: z.array(articleCardSchema),
+  /**
+   * Every language this post was actually written in.
+   *
+   * Carried because a post does not fall back across locales the way the rest
+   * of this site does — an English row has to exist before /en/blog/<slug> is
+   * anything but a 404 — so the page cannot work out its own hreflang set from
+   * the locale it was served. It used to declare only the locale it fetched,
+   * which was correct while every post existed in one language and wrong the
+   * moment four of them existed in two: the Arabic and English versions of one
+   * post stopped declaring each other, and `x-default` pointed at whichever
+   * one the reader happened to open.
+   *
+   * Optional, and that is deliberate rather than lazy. Making it required
+   * broke every post page the moment the contract shipped ahead of the API:
+   * the field was absent from the running server, validation failed, and
+   * `getPost` returned null — so eleven live articles answered 404 until the
+   * API was rebuilt. A field the reader can do without must not be able to
+   * take the page down, so the caller falls back to the locale it was served.
+   */
+  locales: z.array(localeSchema).min(1).optional(),
 });
 export type Article = z.infer<typeof articleSchema>;
 

@@ -23,7 +23,22 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '..', '..', '..', '.env')
 
 import { ArticleKind, Locale, prisma, PublishStatus } from '../../../../src/index.js';
 
+import { NEW_POSTS_EN } from './new-posts-en.js';
 import { NEW_POSTS } from './new-posts.js';
+
+/**
+ * Both languages, as separate rows sharing a slug.
+ *
+ * `Article` is unique on (kind, slug, locale), so the Arabic and English
+ * versions of one post are two rows rather than two fields — and the sitemap
+ * submits a post only in the languages it was actually written in, which is
+ * why an English row has to exist before /en/blog/<slug> is anything but a
+ * 404. It was, for all eleven posts, until now.
+ */
+const SETS = [
+  { locale: Locale.AR, posts: NEW_POSTS },
+  { locale: Locale.EN, posts: NEW_POSTS_EN },
+] as const;
 
 const MAX = { title: 60, description: 160 } as const;
 
@@ -46,74 +61,82 @@ function countWords(blocks: readonly unknown[]): number {
 
 async function main(): Promise<void> {
   const apply = process.argv.includes('--apply');
+  const only = process.argv.find((argument) => argument.startsWith('--locale='))?.slice(9);
   let written = 0;
 
-  for (const post of NEW_POSTS) {
-    if (post.seo.title.length > MAX.title) {
-      console.log(`REFUSED ${post.slug} — title ${String(post.seo.title.length)} chars`);
-      process.exitCode = 1;
-      continue;
-    }
-    if (post.seo.description.length > MAX.description) {
-      console.log(
-        `REFUSED ${post.slug} — description ${String(post.seo.description.length)} chars`,
-      );
-      process.exitCode = 1;
-      continue;
-    }
+  for (const { locale, posts } of SETS) {
+    if (only === 'ar' && locale !== Locale.AR) continue;
+    if (only === 'en' && locale !== Locale.EN) continue;
 
-    const products = await prisma.product.findMany({
-      where: { slug: { in: post.products }, status: PublishStatus.PUBLISHED },
-      select: { id: true, slug: true },
-    });
-    const missing = post.products.filter((slug) => !products.some((row) => row.slug === slug));
-    if (missing.length > 0) {
-      // Reported, not fatal: a post about Windows 10 support is still worth
-      // publishing if one of its four products has been archived.
-      console.log(`   note: ${post.slug} names ${missing.join(', ')} — not published, skipped`);
-    }
+    for (const post of posts) {
+      if (post.seo.title.length > MAX.title) {
+        console.log(`REFUSED ${post.slug} — title ${String(post.seo.title.length)} chars`);
+        process.exitCode = 1;
+        continue;
+      }
+      if (post.seo.description.length > MAX.description) {
+        console.log(
+          `REFUSED ${post.slug} — description ${String(post.seo.description.length)} chars`,
+        );
+        process.exitCode = 1;
+        continue;
+      }
 
-    const existing = await prisma.article.findFirst({
-      where: { kind: ArticleKind.POST, slug: post.slug, locale: Locale.AR },
-    });
-
-    const words = countWords(post.blocks);
-    const minutes = Math.max(1, Math.round(words / 200));
-
-    console.log(`${existing ? 'update' : 'create'}  ${post.slug}`);
-    console.log(`   ${post.title}`);
-    console.log(
-      `   ${String(words)} words · ${String(minutes)} min · ${String(post.blocks.length)} blocks · ${String(products.length)} products`,
-    );
-    console.log(`   title: ${post.seo.title}`);
-    written += 1;
-
-    if (!apply) continue;
-
-    const data = {
-      title: post.title,
-      summary: post.summary,
-      blocks: post.blocks as never,
-      seo: post.seo as never,
-      readingMinutes: minutes,
-      relatedProductIds: products.map((row) => row.id),
-      status: PublishStatus.PUBLISHED,
-    };
-
-    if (existing) {
-      await prisma.article.update({ where: { id: existing.id }, data });
-    } else {
-      await prisma.article.create({
-        data: {
-          ...data,
-          slug: post.slug,
-          kind: ArticleKind.POST,
-          locale: Locale.AR,
-          // Set once, on creation. Never moved by a later run.
-          publishAt: new Date(),
-          publishedAt: new Date(),
-        },
+      const products = await prisma.product.findMany({
+        where: { slug: { in: post.products }, status: PublishStatus.PUBLISHED },
+        select: { id: true, slug: true },
       });
+      const missing = post.products.filter((slug) => !products.some((row) => row.slug === slug));
+      if (missing.length > 0) {
+        // Reported, not fatal: a post about Windows 10 support is still worth
+        // publishing if one of its four products has been archived.
+        console.log(`   note: ${post.slug} names ${missing.join(', ')} — not published, skipped`);
+      }
+
+      const existing = await prisma.article.findFirst({
+        where: { kind: ArticleKind.POST, slug: post.slug, locale },
+      });
+
+      const words = countWords(post.blocks);
+      const minutes = Math.max(1, Math.round(words / 200));
+
+      console.log(
+        `${existing ? 'update' : 'create'}  ${locale === Locale.AR ? 'ar' : 'en'}  ${post.slug}`,
+      );
+      console.log(`   ${post.title}`);
+      console.log(
+        `   ${String(words)} words · ${String(minutes)} min · ${String(post.blocks.length)} blocks · ${String(products.length)} products`,
+      );
+      console.log(`   title: ${post.seo.title}`);
+      written += 1;
+
+      if (!apply) continue;
+
+      const data = {
+        title: post.title,
+        summary: post.summary,
+        blocks: post.blocks as never,
+        seo: post.seo as never,
+        readingMinutes: minutes,
+        relatedProductIds: products.map((row) => row.id),
+        status: PublishStatus.PUBLISHED,
+      };
+
+      if (existing) {
+        await prisma.article.update({ where: { id: existing.id }, data });
+      } else {
+        await prisma.article.create({
+          data: {
+            ...data,
+            slug: post.slug,
+            kind: ArticleKind.POST,
+            locale,
+            // Set once, on creation. Never moved by a later run.
+            publishAt: new Date(),
+            publishedAt: new Date(),
+          },
+        });
+      }
     }
   }
 

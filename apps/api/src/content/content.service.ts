@@ -179,6 +179,15 @@ export class ContentService {
       take: BLOG_MORE_SIZE,
     });
 
+    // Which languages this post exists in, for the page's hreflang set. Drafts
+    // are excluded even in preview: declaring an alternate that answers 404 to
+    // everyone but the editor is worse than declaring none.
+    const written = await this.prisma.client.article.findMany({
+      where: { slug, kind: ArticleKind.POST, status: PublishStatus.PUBLISHED },
+      select: { locale: true },
+    });
+    const locales = written.map((row) => (row.locale === Locale.EN ? 'en' : 'ar'));
+
     return {
       ...toArticleCard(post),
       blocks: parseBlocks(post.blocks),
@@ -186,6 +195,9 @@ export class ContentService {
       updatedAt: post.updatedAt.toISOString(),
       isDraft: post.status !== PublishStatus.PUBLISHED,
       more: more.map(toArticleCard),
+      // A draft being previewed is not published, so it is not in the list
+      // above — but the page still needs a locale to declare.
+      locales: locales.length > 0 ? locales : [wanted === Locale.EN ? 'en' : 'ar'],
     };
   }
 

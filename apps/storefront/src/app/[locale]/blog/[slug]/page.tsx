@@ -29,7 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Only the language this post exists in. A post is not translated the way a
   // product page is, and declaring an `en` alternate for an Arabic-only post
   // points Search Console at a URL that answers 404.
-  const links = alternatesIn(SITE_URL, path, [post.locale]);
+  // Every language the post was written in, falling back to the one served —
+  // an older API does not send the field, and a missing hreflang alternate is
+  // a smaller problem than a page that will not render.
+  const links = alternatesIn(SITE_URL, path, post.locales ?? [post.locale]);
 
   return {
     title: post.seo.title ?? post.title,
