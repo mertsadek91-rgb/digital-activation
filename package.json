@@ -37,6 +37,7 @@
     "db:faq": "pnpm --filter @da/db run faq",
     "db:titles": "pnpm --filter @da/db run titles",
     "db:blog": "pnpm --filter @da/db run blog",
+    "db:blog-expand": "pnpm --filter @da/db run blog-expand",
     "db:redirects": "pnpm --filter @da/db run redirects",
     "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",
