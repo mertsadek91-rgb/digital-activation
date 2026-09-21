@@ -2501,9 +2501,19 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   margin-block-start: var(--spacing-2);
 }
 
+/*
+ * Full width, to match the product row above it.
+ *
+ * Both are footers made of cards rather than prose, and both draw a rule
+ * across their top. Left at the article's 52rem measure while the product row
+ * spanned the container, this one drew a rule half the width of the one right
+ * above it — two horizontal lines of different lengths stacked, which is the
+ * shape of an accident. It also fits four article links across instead of two.
+ *
+ * The prose between them keeps its measure. That is the rhythm: read at 52rem,
+ * then browse at full width.
+ */
 .post-more {
-  max-inline-size: 52rem;
-  margin-inline: auto;
   margin-block-start: var(--spacing-4);
   padding-block-start: var(--spacing-3);
   border-block-start: 1px solid var(--color-border);
