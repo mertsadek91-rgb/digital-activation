@@ -39,6 +39,7 @@
     "db:blog": "pnpm --filter @da/db run blog",
     "db:blog-expand": "pnpm --filter @da/db run blog-expand",
     "db:blog-new": "pnpm --filter @da/db run blog-new",
+    "db:blog-fix": "pnpm --filter @da/db run blog-fix",
     "db:redirects": "pnpm --filter @da/db run redirects",
     "db:staff": "pnpm --filter @da/db run staff",
     "infra:up": "docker compose up -d",

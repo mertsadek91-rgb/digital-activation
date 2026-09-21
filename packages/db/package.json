@@ -38,6 +38,7 @@
     "blog": "tsx scripts/seo/written/articles.ts",
     "blog-expand": "tsx scripts/seo/written/blog/apply.ts",
     "blog-new": "tsx scripts/seo/written/blog/publish.ts",
+    "blog-fix": "tsx scripts/seo/written/blog/corrections.ts",
     "bodies": "tsx scripts/seo/bodies.ts",
     "demo": "tsx scripts/demo.ts",
     "redirects": "tsx scripts/legacy/redirects.ts",
