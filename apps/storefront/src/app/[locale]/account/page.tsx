@@ -2,8 +2,10 @@
 
 import { ROUTES } from '@da/contracts';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Suspense, useEffect, useState } from 'react';
 
+import { isArabic, resolveLocale } from '../../../i18n/locale';
 import { accountApi, AccountError } from '../../../lib/account-client';
 
 /**
@@ -38,8 +40,8 @@ function AccountEntry() {
   const search = useSearchParams();
   const token = search.get('token');
 
-  const ar = (params.locale ?? 'ar') === 'ar';
-  const prefix = ar ? '' : `/${params.locale ?? 'en'}`;
+  const t = useTranslations('account');
+  const prefix = isArabic(params.locale) ? '' : `/${params.locale ?? 'en'}`;
 
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
@@ -60,36 +62,24 @@ function AccountEntry() {
       } catch (caught) {
         if (cancelled) return;
         setExchanging(false);
-        setError(
-          caught instanceof AccountError
-            ? caught.message
-            : ar
-              ? 'تعذّر استخدام هذا الرابط.'
-              : 'That link could not be used.',
-        );
+        setError(caught instanceof AccountError ? caught.message : t('linkFailed'));
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [token, router, prefix, ar]);
+  }, [token, router, prefix, t]);
 
   async function submit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      await accountApi.requestLink(email.trim(), ar ? 'ar' : 'en');
+      await accountApi.requestLink(email.trim(), resolveLocale(params.locale));
       setSent(true);
     } catch (caught) {
-      setError(
-        caught instanceof AccountError
-          ? caught.message
-          : ar
-            ? 'تعذّر إرسال الرابط. حاول بعد قليل.'
-            : 'The link could not be sent. Try again shortly.',
-      );
+      setError(caught instanceof AccountError ? caught.message : t('sendFailed'));
     } finally {
       setBusy(false);
     }
@@ -98,31 +88,23 @@ function AccountEntry() {
   if (exchanging) {
     return (
       <main className="shell account-shell">
-        <p className="notice">{ar ? 'جارٍ تسجيل الدخول…' : 'Signing you in…'}</p>
+        <p className="notice">{t('signingIn')}</p>
       </main>
     );
   }
 
   return (
     <main className="shell account-shell">
-      <h1>{ar ? 'تراخيصي' : 'My licences'}</h1>
+      <h1>{t('myLicences')}</h1>
 
       {sent ? (
         <div className="account-card">
-          <p className="account-sent">
-            {ar
-              ? 'أرسلنا رابط الدخول إلى بريدك. يعمل لمرّة واحدة ولمدّة ربع ساعة.'
-              : 'We emailed you a sign-in link. It works once and for fifteen minutes.'}
-          </p>
+          <p className="account-sent">{t('sent')}</p>
           {/* Said plainly, because the alternative is a customer who waits for
               an email that was never going to arrive. */}
-          <p className="account-hint">
-            {ar
-              ? 'إن لم تصلك الرسالة، فالسبب الأغلب أن هذا البريد لم يُشتَر به من قبل. تحقّق من البريد المستخدم في الطلب، ومن مجلّد الرسائل غير المرغوبة.'
-              : 'If nothing arrives, the likeliest reason is that no order was placed with this address. Check the email you used on the order, and your spam folder.'}
-          </p>
+          <p className="account-hint">{t('sentHelp')}</p>
           <button type="button" className="btn btn-ghost" onClick={() => setSent(false)}>
-            {ar ? 'استخدم بريداً آخر' : 'Use a different address'}
+            {t('useAnother')}
           </button>
         </div>
       ) : (
@@ -132,14 +114,10 @@ function AccountEntry() {
             void submit(event);
           }}
         >
-          <p className="lede">
-            {ar
-              ? 'أدخل البريد الذي استخدمته في الطلب. سنرسل إليه رابط دخول — لا كلمة مرور.'
-              : 'Enter the email you used on your order. We will send it a sign-in link — no password.'}
-          </p>
+          <p className="lede">{t('intro')}</p>
 
           <label className="account-field">
-            {ar ? 'البريد الإلكتروني' : 'Email'}
+            {t('email')}
             <input
               type="email"
               value={email}
@@ -154,17 +132,13 @@ function AccountEntry() {
           {error ? <p className="error">{error}</p> : null}
 
           <button type="submit" className="btn btn-primary" disabled={busy || email.length < 5}>
-            {busy ? '…' : ar ? 'أرسل رابط الدخول' : 'Send the link'}
+            {busy ? '…' : t('sendLink')}
           </button>
 
           {/* Why there is no password field. Without this the page reads as
               unfinished, and a customer who expects a password assumes they
               are on the wrong site. */}
-          <p className="account-hint">
-            {ar
-              ? 'لا نستخدم كلمات مرور لهذه الصفحة: مفتاحك أُرسل إلى بريدك أصلاً، فمن يملك البريد يملك المفتاح — ولا فائدة من كلمة مرور إضافية تُسرَق.'
-              : 'This page uses no password: your key was emailed to that address in the first place, so whoever controls the mailbox already has it. A password would only be one more secret to steal.'}
-          </p>
+          <p className="account-hint">{t('noPassword')}</p>
         </form>
       )}
     </main>

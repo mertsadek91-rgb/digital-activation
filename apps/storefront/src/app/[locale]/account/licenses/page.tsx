@@ -4,9 +4,11 @@ import type { CustomerMe, CustomerSecret, LicenceList, LicenceRow } from '@da/co
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AccountNav } from '../../../../components/account-nav';
+import { isArabic } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
 /**
@@ -30,27 +32,19 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
  *     catalog is ordered from a supplier after payment, so "not here yet" is
  *     the normal state for the first few hours — and an empty page is exactly
  *     what a customer does not need after paying.
+ *
+ * A line's state reads from `licences.state`, which says "ready — sending
+ * now" where the order pages' `format.lineState` says "key assigned": on this
+ * page the next thing the customer sees is the email, so it says so.
  */
-const STATE_AR: Record<LicenceRow['state'], string> = {
-  PENDING: 'قيد التجهيز',
-  AUTO_ASSIGNED: 'جاهز — يُرسَل الآن',
-  MANUAL_QUEUE: 'قيد التجهيز',
-  DELIVERED: 'تم التسليم',
-  FAILED: 'تعذّر — فريقنا يتابعه',
-};
-
-const STATE_EN: Record<LicenceRow['state'], string> = {
-  PENDING: 'Being prepared',
-  AUTO_ASSIGNED: 'Ready — sending now',
-  MANUAL_QUEUE: 'Being prepared',
-  DELIVERED: 'Delivered',
-  FAILED: 'Failed — our team is on it',
-};
 
 export default function LicensesPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
-  const ar = (params.locale ?? 'ar') === 'ar';
+  const t = useTranslations('account');
+  const tc = useTranslations('common');
+  const tl = useTranslations('licences');
+  const ar = isArabic(params.locale);
   const prefix = ar ? '' : `/${params.locale ?? 'en'}`;
 
   const [me, setMe] = useState<CustomerMe | null>(null);
@@ -97,14 +91,14 @@ export default function LicensesPage() {
   return (
     <main className="shell account-shell">
       <div className="account-head">
-        <h1>{ar ? 'تراخيصي' : 'My licences'}</h1>
+        <h1>{t('myLicences')}</h1>
         <p className="who" dir="ltr">
           {me.email}
         </p>
         {/* The only entry point to the review page other than the invitation
             email, and a customer who has lost the email still has this. */}
         <Link className="btn btn-ghost" href={`${prefix}${ROUTES.accountReviews}`}>
-          {ar ? 'تقييماتي' : 'My reviews'}
+          {t('myReviews')}
         </Link>
         <button
           type="button"
@@ -113,28 +107,22 @@ export default function LicensesPage() {
             void accountApi.signOut().then(() => router.replace(`${prefix}${ROUTES.account}`));
           }}
         >
-          {ar ? 'خروج' : 'Sign out'}
+          {tc('signOut')}
         </button>
       </div>
 
-      <AccountNav ar={ar} prefix={prefix} />
+      <AccountNav prefix={prefix} />
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="account-sent">{note}</p> : null}
 
       {list && list.rows.length === 0 ? (
-        <p className="notice">
-          {ar
-            ? 'لا توجد تراخيص على هذا البريد بعد. إن كنت اشتريت ببريد آخر، ادخل به بدلاً من هذا.'
-            : 'No licences on this address yet. If you ordered with a different email, sign in with that one instead.'}
-        </p>
+        <p className="notice">{tl('none')}</p>
       ) : null}
 
       {list && list.waiting > 0 ? (
         <p className="notice notice-warn">
-          {ar
-            ? `${String(list.waiting)} بند قيد التجهيز. معظم منتجاتنا تُجهَّز بعد الدفع، وسيصلك البريد فور جهوزيته.`
-            : `${String(list.waiting)} item being prepared. Most of our products are prepared after payment; the email arrives as soon as it is ready.`}
+          {tl('waiting', { count: list.waiting })}
         </p>
       ) : null}
 
@@ -143,7 +131,6 @@ export default function LicensesPage() {
           <LicenceCard
             key={row.orderItemId}
             row={row}
-            ar={ar}
             prefix={prefix}
             onError={setError}
             onNote={setNote}
@@ -156,21 +143,19 @@ export default function LicensesPage() {
 
 function LicenceCard({
   row,
-  ar,
   prefix,
   onError,
   onNote,
 }: {
   row: LicenceRow;
-  ar: boolean;
   prefix: string;
   onError: (message: string | null) => void;
   onNote: (message: string | null) => void;
 }) {
   const [secrets, setSecrets] = useState<CustomerSecret[] | null>(null);
   const [busy, setBusy] = useState<'reveal' | 'resend' | null>(null);
+  const tl = useTranslations('licences');
 
-  const states = ar ? STATE_AR : STATE_EN;
   const delivered = row.state === 'DELIVERED';
 
   async function reveal(): Promise<void> {
@@ -180,13 +165,7 @@ function LicenceCard({
     try {
       setSecrets(await accountApi.reveal(row.orderItemId));
     } catch (caught) {
-      onError(
-        caught instanceof Error
-          ? caught.message
-          : ar
-            ? 'تعذّرت قراءة الترخيص.'
-            : 'The licence could not be read.',
-      );
+      onError(caught instanceof Error ? caught.message : tl('readFailed'));
     } finally {
       setBusy(null);
     }
@@ -197,15 +176,9 @@ function LicenceCard({
     onError(null);
     try {
       const result = await accountApi.resend(row.orderItemId);
-      onNote(ar ? `أُرسلت الرسالة مرّة أخرى إلى ${result.to}` : `Sent again to ${result.to}`);
+      onNote(tl('resent', { to: result.to }));
     } catch (caught) {
-      onError(
-        caught instanceof Error
-          ? caught.message
-          : ar
-            ? 'تعذّر إرسال الرسالة.'
-            : 'The email could not be sent.',
-      );
+      onError(caught instanceof Error ? caught.message : tl('resendFailed'));
     } finally {
       setBusy(null);
     }
@@ -228,23 +201,17 @@ function LicenceCard({
           </p>
         </div>
         <span className={`pill ${delivered ? 'pill-published' : 'pill-draft'}`}>
-          {states[row.state]}
+          {tl(`state.${row.state}`)}
         </span>
       </div>
 
       <p className="licence-kind">
         {row.credentialKind === 'ACCOUNT_CREDENTIALS'
-          ? ar
-            ? 'يُسلَّم كاسم مستخدم وكلمة مرور'
-            : 'Delivered as a username and password'
-          : ar
-            ? 'يُسلَّم كمفتاح تفعيل'
-            : 'Delivered as an activation key'}
+          ? tl('deliveredAsAccount')
+          : tl('deliveredAsKey')}
         {row.warrantyDays !== null ? (
           <span className="licence-warranty">
-            {ar
-              ? ` · الضمان ${String(row.warrantyDays)} يوماً من التسليم`
-              : ` · ${String(row.warrantyDays)}-day warranty from delivery`}
+            {` · ${tl('warranty', { days: row.warrantyDays })}`}
           </span>
         ) : null}
       </p>
@@ -253,9 +220,7 @@ function LicenceCard({
           fixable once it passes. */}
       {row.expiresAt ? (
         <p className="licence-deadline">
-          {ar
-            ? `يجب تفعيله قبل ${row.expiresAt.slice(0, 10)}`
-            : `Must be activated before ${row.expiresAt.slice(0, 10)}`}
+          {tl('deadline', { date: row.expiresAt.slice(0, 10) })}
         </p>
       ) : null}
 
@@ -268,11 +233,11 @@ function LicenceCard({
               disabled={busy !== null}
               onClick={() => void reveal()}
             >
-              {busy === 'reveal' ? '…' : ar ? 'اعرض الترخيص' : 'Show the licence'}
+              {busy === 'reveal' ? '…' : tl('reveal')}
             </button>
           ) : (
             <button type="button" className="btn btn-ghost" onClick={() => setSecrets(null)}>
-              {ar ? 'أخفِ' : 'Hide'}
+              {tl('hide')}
             </button>
           )}
 
@@ -282,7 +247,7 @@ function LicenceCard({
             disabled={busy !== null || !delivered}
             onClick={() => void resend()}
           >
-            {busy === 'resend' ? '…' : ar ? 'أرسل الرسالة مرّة أخرى' : 'Email it to me again'}
+            {busy === 'resend' ? '…' : tl('resend')}
           </button>
         </div>
       ) : null}
@@ -293,25 +258,21 @@ function LicenceCard({
             <div key={index} className="licence-secret-block">
               {secret.kind === 'ACCOUNT_CREDENTIALS' ? (
                 <>
-                  <Field label={ar ? 'اسم المستخدم' : 'Username'} value={secret.username} ar={ar} />
-                  <Field label={ar ? 'كلمة المرور' : 'Password'} value={secret.password} ar={ar} />
+                  <Field label={tl('username')} value={secret.username} />
+                  <Field label={tl('password')} value={secret.password} />
                 </>
               ) : (
-                <Field label={ar ? 'مفتاح التفعيل' : 'Activation key'} value={secret.key} ar={ar} />
+                <Field label={tl('key')} value={secret.key} />
               )}
             </div>
           ))}
-          <p className="licence-warn">
-            {ar
-              ? 'لا تشارك هذه البيانات مع أحد. لا يمكن استبدالها إن استُخدمت من طرف آخر.'
-              : 'Do not share this. It cannot be replaced if somebody else uses it.'}
-          </p>
+          <p className="licence-warn">{tl('doNotShare')}</p>
         </div>
       ) : null}
 
       {row.activationSteps.length > 0 ? (
         <details className="licence-how">
-          <summary>{ar ? 'طريقة التفعيل' : 'How to activate'}</summary>
+          <summary>{tl('howToActivate')}</summary>
           <ol>
             {row.activationSteps.map((step, index) => (
               <li key={index}>{step}</li>
@@ -330,7 +291,8 @@ function LicenceCard({
  * transcribing a 25-character key by hand into an activation dialog that locks
  * after a few wrong attempts.
  */
-function Field({ label, value, ar }: { label: string; value: string | null; ar: boolean }) {
+function Field({ label, value }: { label: string; value: string | null }) {
+  const tl = useTranslations('licences');
   const [copied, setCopied] = useState(false);
 
   return (
@@ -352,7 +314,7 @@ function Field({ label, value, ar }: { label: string; value: string | null; ar: 
             .catch(() => undefined);
         }}
       >
-        {copied ? (ar ? 'نُسخ' : 'Copied') : ar ? 'نسخ' : 'Copy'}
+        {copied ? tl('copied') : tl('copy')}
       </button>
     </p>
   );

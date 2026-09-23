@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AccountNav } from '../../../../components/account-nav';
+import { isArabic } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 import { formatLineState, formatOrderStatus, formatPrice } from '../../../../lib/format';
 
@@ -33,8 +34,9 @@ export default function OrdersPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
   const locale = params.locale ?? 'ar';
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
+  const t = useTranslations('account');
+  const tc = useTranslations('common');
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [list, setList] = useState<AccountOrderList | null>(null);
@@ -79,7 +81,7 @@ export default function OrdersPage() {
   return (
     <main className="shell account-shell">
       <div className="account-head">
-        <h1>{ar ? 'طلباتي' : 'My orders'}</h1>
+        <h1>{t('myOrders')}</h1>
         <p className="who" dir="ltr">
           {me.email}
         </p>
@@ -90,25 +92,23 @@ export default function OrdersPage() {
             void accountApi.signOut().then(() => router.replace(`${prefix}${ROUTES.account}`));
           }}
         >
-          {ar ? 'خروج' : 'Sign out'}
+          {tc('signOut')}
         </button>
       </div>
 
-      <AccountNav ar={ar} prefix={prefix} />
+      <AccountNav prefix={prefix} />
 
       {error ? <p className="error">{error}</p> : null}
 
       {list && list.rows.length === 0 ? (
         <p className="notice">
-          {ar
-            ? 'لا توجد طلبات على هذا البريد. إن كنت اشتريت ببريد آخر، ادخل به بدلاً من هذا.'
-            : 'No orders on this address. If you ordered with a different email, sign in with that one instead.'}
+          {t('noOrders')}
         </p>
       ) : null}
 
       <ul className="order-history">
         {(list?.rows ?? []).map((order) => (
-          <OrderCard key={order.number} order={order} ar={ar} prefix={prefix} />
+          <OrderCard key={order.number} order={order} prefix={prefix} />
         ))}
       </ul>
     </main>
@@ -117,17 +117,17 @@ export default function OrdersPage() {
 
 function OrderCard({
   order,
-  ar,
   prefix,
 }: {
   order: AccountOrder;
-  ar: boolean;
   prefix: string;
 }) {
+  const t = useTranslations('account');
+  const tc = useTranslations('common');
+  const tf = useTranslations('format');
   // Paid is the line this page draws, not fulfilled: an order that has been
   // paid for is one the store owes something on, and that is the distinction a
   // customer scanning the list is looking for.
-  const tf = useTranslations('format');
   const paid = order.paidAt !== null;
   const money = (amount: string): string => formatPrice({ amount, currency: order.currency });
 
@@ -142,8 +142,11 @@ function OrderCard({
             <span dir="ltr">{order.placedAt.slice(0, 10)}</span>
             {order.paidAt ? (
               <span>
-                {ar ? ' · دُفع في ' : ' · paid '}
-                <span dir="ltr">{order.paidAt.slice(0, 10)}</span>
+                {' · '}
+                {t.rich('paidOn', {
+                  date: order.paidAt.slice(0, 10),
+                  ltr: (chunks) => <span dir="ltr">{chunks}</span>,
+                })}
               </span>
             ) : null}
           </p>
@@ -170,23 +173,23 @@ function OrderCard({
 
       <dl className="totals">
         <div>
-          <dt>{ar ? 'المجموع' : 'Subtotal'}</dt>
+          <dt>{tc('subtotal')}</dt>
           <dd>{money(order.subtotal)}</dd>
         </div>
         {Number(order.discount) > 0 ? (
           <div className="totals-discount">
-            <dt>{ar ? 'خصم' : 'Discount'}</dt>
+            <dt>{tc('discount')}</dt>
             <dd>−{money(order.discount)}</dd>
           </div>
         ) : null}
         {Number(order.tax) > 0 ? (
           <div>
-            <dt>{ar ? 'الضريبة' : 'Tax'}</dt>
+            <dt>{tc('tax')}</dt>
             <dd>{money(order.tax)}</dd>
           </div>
         ) : null}
         <div className="totals-total">
-          <dt>{ar ? 'الإجمالي' : 'Total'}</dt>
+          <dt>{tc('total')}</dt>
           <dd>{money(order.total)}</dd>
         </div>
       </dl>
@@ -195,7 +198,7 @@ function OrderCard({
           live, and it is reachable without signing in at all. This list's job
           is to get the customer to the right one of them. */}
       <Link href={`${prefix}${ROUTES.order(order.number)}`} className="btn btn-ghost">
-        {ar ? 'تفاصيل الطلب' : 'Order details'}
+        {t('orderDetails')}
       </Link>
     </li>
   );

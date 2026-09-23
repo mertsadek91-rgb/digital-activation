@@ -3,6 +3,7 @@
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 /**
  * The two things a signed-in customer can look at.
@@ -17,7 +18,8 @@ import { usePathname } from 'next/navigation';
  * orders page, and an order never carries a key — the key comes out one line
  * at a time through the reveal that writes to the vault's access log.
  */
-export function AccountNav({ ar, prefix }: { ar: boolean; prefix: string }) {
+export function AccountNav({ prefix }: { prefix: string }) {
+  const t = useTranslations('account');
   const pathname = usePathname();
   const licences = `${prefix}${ROUTES.licenses}`;
   const orders = `${prefix}${ROUTES.accountOrders}`;
@@ -26,13 +28,13 @@ export function AccountNav({ ar, prefix }: { ar: boolean; prefix: string }) {
   return (
     <nav className="account-tabs">
       <Link href={licences} aria-current={pathname === licences ? 'page' : undefined}>
-        {ar ? 'تراخيصي' : 'My licences'}
+        {t('myLicences')}
       </Link>
       <Link href={orders} aria-current={pathname === orders ? 'page' : undefined}>
-        {ar ? 'طلباتي' : 'My orders'}
+        {t('myOrders')}
       </Link>
       <Link href={forYou} aria-current={pathname === forYou ? 'page' : undefined}>
-        {ar ? 'مختارة لك' : 'Chosen for you'}
+        {t('forYou')}
       </Link>
     </nav>
   );
