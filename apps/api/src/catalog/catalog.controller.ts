@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle } from '@nestjs/throttler';
 import {
   type CatalogCollection,
   type CatalogProductWithRelated,
@@ -49,11 +49,13 @@ export class CatalogController {
   /**
    * The search box.
    *
-   * Throttled: the query is arbitrary text and the index is held in memory, so
-   * the cost of one request is small and the cost of a thousand a second is
-   * not. Well above anything a person typing could reach.
+   * Not throttled per address, although the query is arbitrary text: the
+   * search page is rendered on the storefront's server, so every shopper's
+   * query arrives from the same IP and a limit here would be one limit for the
+   * whole shop. It needs the storefront to forward a per-visitor key before it
+   * can be limited honestly.
    */
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @SkipThrottle()
   @Get('search')
   @ApiOperation({ summary: 'Products matching a query, best first' })
   search(
@@ -86,10 +88,7 @@ export class CatalogController {
 
   @Get('brands/:slug')
   @ApiOperation({ summary: 'One brand with a page of product cards' })
-  brand(
-    @Param('slug') slug: string,
-    @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery,
-  ) {
+  brand(@Param('slug') slug: string, @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery) {
     return this.catalog.brand(slug, query);
   }
 

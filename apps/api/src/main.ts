@@ -6,12 +6,21 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 
+function trustedHops(): number {
+  const hops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+  return Number.isFinite(hops) && hops >= 0 ? hops : 1;
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({
       bodyLimit: 2 * 1024 * 1024,
-      trustProxy: true,
+      // A hop count, not `true`. `true` believes the whole X-Forwarded-For
+      // header, whose left end is whatever the client wrote — so any caller
+      // could pick the address the rate limits and the audit log see. One hop
+      // is Coolify's proxy; set TRUST_PROXY_HOPS=2 behind a CDN as well.
+      trustProxy: (_address: string, hop: number) => hop < trustedHops(),
     }),
     {
       bufferLogs: true,

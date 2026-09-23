@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -9,6 +10,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { CheckoutModule } from './checkout/checkout.module.js';
+import { ExplicitThrottlerGuard } from './common/explicit-throttler.guard.js';
 import { ContentModule } from './content/content.module.js';
 import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
 import { MailModule } from './mail/mail.module.js';
@@ -46,7 +48,10 @@ import { VaultModule } from './vault/vault.module.js';
       validate: validateEnv,
     }),
     // Protects login, coupon validation and checkout from brute force. Coupon
-    // validation matters as much as login: guessable codes are money.
+    // validation matters as much as login: guessable codes are money. The
+    // guard below enforces only the routes that carry their own `@Throttle`.
+    // The counters are per process; with more than one replica each keeps its
+    // own, so a Redis-backed store is the next step before scaling out.
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     // The one scheduled thing in this system so far: the review invitation
     // sweep. It guards itself with a Postgres advisory lock, so registering it
@@ -67,5 +72,6 @@ import { VaultModule } from './vault/vault.module.js';
     ReviewsModule,
   ],
   controllers: [HealthController],
+  providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],
 })
 export class AppModule {}

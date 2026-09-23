@@ -292,9 +292,7 @@ export const api = {
   // --- description, FAQ, warnings -------------------------------------------
 
   productContent: (slug: string, locale: 'ar' | 'en') =>
-    request<ProductContent>(
-      `/admin/products/${encodeURIComponent(slug)}/content?locale=${locale}`,
-    ),
+    request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content?locale=${locale}`),
 
   setProductContent: (slug: string, patch: SetProductContent) =>
     request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content`, {
@@ -457,6 +455,13 @@ export const api = {
       `/admin/orders/${encodeURIComponent(number)}/confirm-payment`,
       { method: 'POST', body: JSON.stringify({ provider, reference }) },
     ),
+
+  /** Lifts a review or risk hold. The reason is kept on the order. */
+  releaseHold: (number: string, reason: string) =>
+    request<{ status: string }>(`/admin/orders/${encodeURIComponent(number)}/release-hold`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
 
   addOrderNote: (number: string, body: string) =>
     request<{ id: string }>(`/admin/orders/${encodeURIComponent(number)}/notes`, {

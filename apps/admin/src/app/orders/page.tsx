@@ -200,6 +200,11 @@ export default function OrdersPage() {
                       api.addOrderNote(row.number, body),
                     )
                   }
+                  onRelease={(reason) =>
+                    void act(t('doneHoldReleased', { number: row.number }), () =>
+                      api.releaseHold(row.number, reason),
+                    )
+                  }
                 />
               ))}
             </tbody>
@@ -219,17 +224,21 @@ function OrderRow({
   canResend,
   onConfirm,
   onNote,
+  onRelease,
 }: {
   row: AdminOrderRow;
   canConfirm: boolean;
   canResend: boolean;
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
+  onRelease: (reason: string) => void;
 }) {
   const t = useT('orders');
   const c = useT('common');
   const [confirming, setConfirming] = useState(false);
   const [noting, setNoting] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseReason, setReleaseReason] = useState('');
   /**
    * The rest of the order, loaded when somebody asks for it.
    *
@@ -282,6 +291,11 @@ function OrderRow({
 
   const awaiting = row.status === 'PENDING_PAYMENT';
   const risky = row.riskLevel === 'HIGH' || row.riskLevel === 'BLOCKED';
+  // The same test the API applies: a paid order stopped by a rule, or a paid
+  // order whose risk level blocks delivery.
+  const held =
+    row.status === 'PAYMENT_REVIEW' ||
+    (risky && (row.status === 'PAID' || row.status === 'FULFILLING'));
 
   return (
     <>
@@ -330,6 +344,19 @@ function OrderRow({
               }}
             >
               {confirming ? c('cancel') : t('confirmPayment')}
+            </button>
+          ) : null}
+          {held && canConfirm ? (
+            <button
+              type="button"
+              className={releasing ? 'ghost is-active' : undefined}
+              onClick={() => {
+                setReleasing(!releasing);
+                setConfirming(false);
+                setNoting(false);
+              }}
+            >
+              {releasing ? c('cancel') : t('releaseHold')}
             </button>
           ) : null}
           <button
@@ -392,6 +419,38 @@ function OrderRow({
               </label>
               <button type="submit" disabled={reference.trim().length < 3}>
                 {t('confirmAndRelease')}
+              </button>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+
+      {releasing ? (
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onRelease(releaseReason.trim());
+                setReleaseReason('');
+                setReleasing(false);
+              }}
+            >
+              <label className="grow">
+                {t('releaseReasonLabel')}
+                <textarea
+                  value={releaseReason}
+                  onChange={(event) => setReleaseReason(event.target.value)}
+                  rows={2}
+                  required
+                  minLength={3}
+                  placeholder={t('releaseReasonPlaceholder')}
+                />
+                <small>{t('releaseReasonHint')}</small>
+              </label>
+              <button type="submit" disabled={releaseReason.trim().length < 3}>
+                {t('releaseAndDeliver')}
               </button>
             </form>
           </td>

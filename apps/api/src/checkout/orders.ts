@@ -1,4 +1,4 @@
-import { type Prisma, StockMovementReason, StockReservationState } from '@da/db';
+import { FulfillmentMode, type Prisma, StockMovementReason, StockReservationState } from '@da/db';
 
 /** A transaction handle. Everything here must run inside one. */
 type Tx = Prisma.TransactionClient;
@@ -11,11 +11,18 @@ type Tx = Prisma.TransactionClient;
  * without fail, and those two wants pull against each other under concurrency.
  *
  * The resolution: derive the next number from the highest existing one for the
- * year, and let the unique index arbitrate. A collision means someone else got
- * that number first, so the caller retries; that is cheaper and simpler than
- * holding a lock across order creation, and it cannot produce a duplicate
- * because the database refuses one.
+ * year, with the caller holding `lockOrderNumbers` for the rest of its
+ * transaction. The unique index is still there as the backstop, but it is no
+ * longer the mechanism — a unique violation aborts a Postgres transaction, so
+ * "catch it and read again" inside one could never have worked.
  */
+export async function lockOrderNumbers(tx: Tx): Promise<void> {
+  // Transaction-scoped: released at commit or rollback, so a crashed request
+  // cannot leave numbering locked. Held only for the few statements it takes
+  // to read the last number and insert the next one.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('da:order-number'))`;
+}
+
 export async function nextOrderNumber(tx: Tx, when: Date): Promise<string> {
   const year = when.getUTCFullYear();
   const prefix = `DA-${String(year)}-`;
@@ -46,16 +53,18 @@ export async function nextOrderNumber(tx: Tx, when: Date): Promise<string> {
 export async function consumeHolds(
   tx: Tx,
   input: { cartId: string | null; orderId: string },
-): Promise<{ consumed: number; variants: number }> {
-  if (!input.cartId) return { consumed: 0, variants: 0 };
+): Promise<{ consumed: number; variants: number; byVariant: Map<string, number> }> {
+  const byVariant = new Map<string, number>();
+  if (!input.cartId) return { consumed: 0, variants: 0, byVariant };
 
   const holds = await tx.stockReservation.findMany({
     where: { cartId: input.cartId, state: StockReservationState.ACTIVE },
     select: { id: true, variantId: true, qty: true },
   });
-  if (holds.length === 0) return { consumed: 0, variants: 0 };
+  if (holds.length === 0) return { consumed: 0, variants: 0, byVariant };
 
   for (const held of holds) {
+    byVariant.set(held.variantId, (byVariant.get(held.variantId) ?? 0) + held.qty);
     await tx.stockReservation.update({
       where: { id: held.id },
       data: { state: StockReservationState.CONSUMED },
@@ -86,5 +95,55 @@ export async function consumeHolds(
   return {
     consumed: holds.reduce((total, held) => total + held.qty, 0),
     variants: new Set(holds.map((held) => held.variantId)).size,
+    byVariant,
   };
+}
+
+/**
+ * Records the sale of stock that was paid for without a live hold.
+ *
+ * A hold expires after its window; a shopper who pays after that still bought
+ * the licence, and before this nothing came off `onHand` and no SALE row was
+ * written — the counter kept offering a key that had gone. Only stocked
+ * variants count here, since a made-to-order line has no shelf to take from.
+ *
+ * Guarded rather than trusted: `onHand` has a CHECK against going negative, and
+ * a violation inside the payment transaction would fail the webhook forever.
+ * Stock that is not there is left for the fulfilment side, which already sends
+ * a short line to the manual queue.
+ */
+export async function sellUnheld(
+  tx: Tx,
+  input: { orderId: string; held: Map<string, number> },
+): Promise<void> {
+  const lines = await tx.orderItem.findMany({
+    where: { orderId: input.orderId, variant: { fulfillmentMode: FulfillmentMode.FROM_STOCK } },
+    select: { variantId: true, qty: true },
+  });
+
+  const wanted = new Map<string, number>();
+  for (const line of lines) {
+    wanted.set(line.variantId, (wanted.get(line.variantId) ?? 0) + line.qty);
+  }
+
+  for (const [variantId, qty] of wanted) {
+    const remainder = qty - (input.held.get(variantId) ?? 0);
+    if (remainder <= 0) continue;
+
+    const { count } = await tx.inventoryLevel.updateMany({
+      where: { variantId, onHand: { gte: remainder } },
+      data: { onHand: { decrement: remainder } },
+    });
+    if (count === 0) continue;
+
+    await tx.stockMovement.create({
+      data: {
+        variantId,
+        delta: -remainder,
+        reason: StockMovementReason.SALE,
+        orderId: input.orderId,
+        note: 'Paid after the stock hold had expired.',
+      },
+    });
+  }
 }

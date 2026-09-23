@@ -1,6 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import {
   type ArticleWithProducts,
@@ -113,11 +113,12 @@ export class ContentController {
   /**
    * Called by the storefront when a path matched nothing at all.
    *
-   * Throttled, because it is an anonymous write: a crawler walking random
-   * paths must not be able to fill the table faster than a person can read it.
-   * The service drops the obvious probes on top of that.
+   * An anonymous write, but not throttled per address: it is sent from the
+   * storefront's server, so every visitor arrives from the same IP and a limit
+   * would count them all together. The service's probe filter is what keeps a
+   * crawler walking random paths from filling the table.
    */
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @SkipThrottle()
   @Post('not-found')
   @ApiOperation({ summary: 'Record a path that answered 404' })
   async notFound(

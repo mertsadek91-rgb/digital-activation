@@ -468,6 +468,17 @@ export const confirmPaymentSchema = z.object({
   reference: z.string().trim().min(3).max(200),
 });
 
+/**
+ * Lifting a hold: an order in PAYMENT_REVIEW, or one blocked by its risk level.
+ *
+ * The reason is required for the same cause the payment reference is: the
+ * hold was put there by a rule, and the only record of why a person overrode
+ * it is what they write here.
+ */
+export const releaseHoldSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
+});
+
 export const addOrderNoteSchema = z.object({
   body: z.string().trim().min(2).max(2000),
   /** Shown to the customer on their order page when true. */

@@ -389,6 +389,13 @@ export const ar = {
       'يُفرج عن الطلب فوراً ويبدأ التجهيز — ومفتاح من المخزون يُرسَل للعميل. المرجع هو ما يربط هذا التأكيد بكشف حسابك لاحقاً، فاكتبه كما هو.',
     confirmAndRelease: 'أكّد وأفرِج',
 
+    releaseHold: 'ارفع الإيقاف',
+    releaseReasonLabel: 'لماذا يُعدّ الإفراج آمناً',
+    releaseReasonPlaceholder: 'ما الذي تحقّقت منه',
+    releaseReasonHint:
+      'أوقفت هذا الطلبَ قاعدةٌ — تقييم احتيال، أو مبلغ لا يطابق، أو كود مستهلَك، أو نزاع مفتوح. اقرأ ملاحظاته أولاً. رفع الإيقاف يُطلق التجهيز، ومفتاح من المخزون يُرسَل للعميل.',
+    releaseAndDeliver: 'ارفع الإيقاف',
+
     internalNote: 'ملاحظة داخلية',
     internalNotePlaceholder: 'ما اتُّفق عليه مع العميل',
     internalNoteHint: 'لا تكتب هنا مفتاحاً أو كلمة مرور. التسليم يتم من الخزنة وحدها.',
@@ -412,6 +419,7 @@ export const ar = {
 
     donePaymentConfirmed: 'أُكّد دفع {number}',
     doneNoteAdded: 'أُضيفت ملاحظة على {number}',
+    doneHoldReleased: 'رُفع الإيقاف عن {number}',
   },
 
   products: {

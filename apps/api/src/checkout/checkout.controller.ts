@@ -25,7 +25,9 @@ import {
   checkoutStartSchema,
   startPaymentSchema,
 } from '@da/contracts';
+import { PaymentProvider } from '@da/db';
 import type { FastifyRequest } from 'fastify';
+import type Stripe from 'stripe';
 import { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
@@ -34,6 +36,7 @@ import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { transferInstructions } from '../mail/templates.js';
 
+import { riskFromStripe } from './charge.js';
 import { CheckoutService } from './checkout.service.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { fromMinorUnits, StripeService, toMinorUnits } from './stripe.service.js';
@@ -120,17 +123,26 @@ export class CheckoutController {
         throw new ServiceUnavailableException('الدفع بالبطاقة غير مهيّأ بعد.');
       }
 
+      // From the order row: its currency and the rate frozen onto it at
+      // checkout, never this request's `?currency=` or today's rate.
+      const charge = await this.checkout.chargeForNumber(order.number);
       const intent = await this.stripe.intentFor({
         orderNumber: order.number,
-        amountMinor: toMinorUnits(order.total.amount, order.total.currency),
-        currency: order.total.currency,
+        amountMinor: toMinorUnits(charge.amount, charge.currency),
+        currency: charge.currency,
         email: order.email,
+      });
+      await this.checkout.recordOpenIntent({
+        orderNumber: order.number,
+        intentId: intent.id,
+        amount: charge.amount,
+        currency: charge.currency,
       });
       return {
         provider: 'STRIPE',
         clientSecret: intent.clientSecret,
         publishableKey: this.stripe.publishableKey,
-        amount: order.total,
+        amount: { ...order.total, amount: charge.amount, currency: charge.currency },
       };
     }
 
@@ -188,7 +200,7 @@ export class CheckoutController {
         rendered: transferInstructions({
           locale,
           orderNumber: order.number,
-          total: `$${order.total.amount}`,
+          total: `${order.total.amount} ${order.total.currency}`,
           headline: instructions.headline,
           // Label and value only. `copyable` is a rendering hint for the page;
           // in an email every value is text somebody selects anyway.
@@ -209,7 +221,7 @@ export class CheckoutController {
             productName: line.productName,
             sku: line.sku,
             qty: line.qty,
-            lineTotal: `$${line.lineTotal.amount}`,
+            lineTotal: `${line.lineTotal.amount} ${line.lineTotal.currency}`,
             supplyNote: '',
           })),
           orderUrl: new URL(
@@ -250,30 +262,99 @@ export class CheckoutController {
 
     const event = this.stripe.constructEvent(raw, signature);
 
-    if (event.type === 'payment_intent.succeeded') {
-      // Narrowed by the event type already; the union discriminates itself.
-      const intent = event.data.object;
-      const orderNumber = intent.metadata.orderNumber;
-      if (orderNumber) {
+    const object = event.data.object as { id?: string; metadata?: Record<string, string> };
+    const logged = await this.checkout.beginWebhook({
+      provider: PaymentProvider.STRIPE,
+      eventId: event.id,
+      type: event.type,
+      payload: { objectId: object.id ?? null, orderNumber: object.metadata?.orderNumber ?? null },
+    });
+    if (logged.processed) return { received: true };
+
+    try {
+      await this.handleStripeEvent(event);
+      await this.checkout.finishWebhook(logged.id);
+    } catch (error) {
+      // Recorded, then rethrown: the non-2xx is what makes Stripe deliver the
+      // event again, and the unprocessed row is what makes the next delivery
+      // do the work instead of skipping it.
+      await this.checkout.finishWebhook(logged.id, error);
+      throw error;
+    }
+
+    // Anything else is acknowledged rather than acted on. Returning a non-2xx
+    // for an event we do not handle makes Stripe retry it forever.
+    return { received: true };
+  }
+
+  private async handleStripeEvent(event: Stripe.Event): Promise<void> {
+    switch (event.type) {
+      case 'payment_intent.succeeded': {
+        // Narrowed by the event type already; the union discriminates itself.
+        const intent = event.data.object;
+        const orderNumber = intent.metadata.orderNumber;
+        if (!orderNumber) return;
+
         const applied = await this.checkout.markPaid({
           orderNumber,
           provider: 'STRIPE',
           providerRef: intent.id,
           amountCharged: fromMinorUnits(intent.amount_received, intent.currency),
           chargedCurrency: intent.currency.toUpperCase(),
+          amountMinor: intent.amount_received,
+          riskLevel: riskFromStripe(await this.stripe.riskLevelOf(intent)),
         });
 
-        // Fulfilment runs only on the delivery that actually moved the order.
-        // It is idempotent anyway, but running it on a replay would write a
-        // second set of queue transitions for no reason.
-        if (!applied.alreadyApplied) {
+        // Run on every delivery that reaches here, not only the one that moved
+        // the order. Fulfilment is idempotent by line state and refuses
+        // anything but PAID; the old "only if not already applied" meant a
+        // failure after payment was recorded was never retried at all.
+        if (applied.status === 'PAID') {
           await this.fulfillment.onOrderPaid(orderNumber);
         }
+        return;
       }
-    }
 
-    // Anything else is acknowledged rather than acted on. Returning a non-2xx
-    // for an event we do not handle makes Stripe retry it forever.
-    return { received: true };
+      case 'payment_intent.payment_failed': {
+        const intent = event.data.object;
+        await this.checkout.markPaymentFailed({
+          providerRef: intent.id,
+          failureCode: intent.last_payment_error?.code ?? null,
+          failureMessage: intent.last_payment_error?.message ?? null,
+        });
+        return;
+      }
+
+      case 'charge.refunded': {
+        const charge = event.data.object;
+        const intentId =
+          typeof charge.payment_intent === 'string'
+            ? charge.payment_intent
+            : (charge.payment_intent?.id ?? null);
+        if (!intentId) return;
+        await this.checkout.applyRefund({
+          paymentIntentId: intentId,
+          chargeId: charge.id,
+          amountRefundedMinor: charge.amount_refunded,
+          amountMinor: charge.amount,
+          fullyRefunded: charge.refunded,
+        });
+        return;
+      }
+
+      case 'charge.dispute.created': {
+        const dispute = event.data.object;
+        const intentId =
+          typeof dispute.payment_intent === 'string'
+            ? dispute.payment_intent
+            : (dispute.payment_intent?.id ?? null);
+        if (!intentId) return;
+        await this.checkout.applyDispute({ paymentIntentId: intentId, reason: dispute.reason });
+        return;
+      }
+
+      default:
+        return;
+    }
   }
 }

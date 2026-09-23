@@ -22,6 +22,7 @@ import {
 } from '@da/db';
 
 import { convert, displayPrice, type FxTable } from '../catalog/pricing.js';
+import { couponRefusal } from '../common/coupon-eligibility.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { hold, releaseAll, renew } from './reservations.js';
@@ -268,30 +269,31 @@ export class CartService {
       return { ...rendered, couponError: reason };
     };
 
-    if (!promotion || !promotion.isActive) return refuse('هذا الكود غير صحيح.');
+    if (!promotion) return refuse('هذا الكود غير صحيح.');
 
-    const now = new Date();
-    if (promotion.startsAt && promotion.startsAt > now) return refuse('هذا الكود لم يبدأ بعد.');
-    if (promotion.endsAt && promotion.endsAt < now) return refuse('انتهت صلاحية هذا الكود.');
-    if (promotion.usageLimit !== null && promotion.usageCount >= promotion.usageLimit) {
-      return refuse('استُهلك هذا الكود بالكامل.');
-    }
-
-    const rules = this.rulesOf(promotion.rules);
     const subtotalUsd = cart.items.reduce(
       (total, item) => total.plus(item.unitPriceUsd.times(item.qty)),
       new Prisma.Decimal(0),
     );
-
-    if (rules.minTotalUsd !== undefined && subtotalUsd.lessThan(rules.minTotalUsd)) {
-      return refuse(`هذا الكود يبدأ من ${rules.minTotalUsd} دولاراً.`);
-    }
-    if (
-      rules.requiresAllVariantIds &&
-      rules.requiresAllVariantIds.length > 0 &&
-      !rules.requiresAllVariantIds.every((id) => cart.items.some((item) => item.variantId === id))
-    ) {
-      return refuse('هذا الكود يشترط وجود منتجات محدّدة في السلة.');
+    const refusal = couponRefusal(promotion, this.rulesOf(promotion.rules), {
+      subtotalUsd,
+      variantIds: cart.items.map((item) => item.variantId),
+    });
+    if (refusal) {
+      switch (refusal.reason) {
+        case 'INACTIVE':
+          return refuse('هذا الكود غير صحيح.');
+        case 'NOT_STARTED':
+          return refuse('هذا الكود لم يبدأ بعد.');
+        case 'EXPIRED':
+          return refuse('انتهت صلاحية هذا الكود.');
+        case 'EXHAUSTED':
+          return refuse('استُهلك هذا الكود بالكامل.');
+        case 'BELOW_MINIMUM':
+          return refuse(`هذا الكود يبدأ من ${String(refusal.minTotalUsd)} دولاراً.`);
+        case 'MISSING_REQUIRED':
+          return refuse('هذا الكود يشترط وجود منتجات محدّدة في السلة.');
+      }
     }
 
     await this.prisma.client.cart.update({
@@ -456,6 +458,18 @@ export class CartService {
     if (!promotion) return zero;
 
     const rules = this.rulesOf(promotion.rules);
+
+    // Asked again on every render, not only when the code was typed: a coupon
+    // that has since expired, hit its cap, or lost the items that qualified
+    // the cart is worth nothing now, whatever it was worth when applied.
+    if (
+      couponRefusal(promotion, rules, {
+        subtotalUsd,
+        variantIds: cart.items.map((item) => item.variantId),
+      })
+    ) {
+      return zero;
+    }
 
     // Which lines the coupon may touch. An empty rule set means all of them.
     const eligible = cart.items.filter((item) => {

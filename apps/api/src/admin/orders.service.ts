@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AdminOrderDetail, AdminOrderList, AdminOrderRow } from '@da/contracts';
-import { FulfillmentState, Locale, OrderStatus, type Prisma } from '@da/db';
+import { FulfillmentState, Locale, OrderStatus, type Prisma, RiskLevel } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
@@ -273,6 +273,91 @@ export class OrdersService {
     });
 
     return { status: applied.status, alreadyApplied: applied.alreadyApplied };
+  }
+
+  /**
+   * Lifts a hold and lets fulfilment run.
+   *
+   * Two kinds of hold, one action. An order in PAYMENT_REVIEW has been paid
+   * and was stopped by a rule — a risk verdict, an amount that did not match,
+   * a coupon that ran out. An order already PAID can still be blocked by its
+   * risk level, which is what an open card dispute does. Either way the money
+   * is in and the key is not out, and a person has looked and decided.
+   *
+   * The risk level comes down to MEDIUM rather than LOW, so the order still
+   * reads as one that was reviewed. The status change is conditional, so two
+   * people clicking at once release it once.
+   */
+  async releaseHold(input: {
+    number: string;
+    reason: string;
+    staffId: string;
+    context: { ip?: string | undefined; userAgent?: string | undefined };
+  }): Promise<{ status: string }> {
+    const order = await this.prisma.client.order.findUnique({
+      where: { number: input.number },
+      select: { id: true, status: true, riskLevel: true },
+    });
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${input.number}`, `No order numbered ${input.number}`),
+      );
+
+    const inReview = order.status === OrderStatus.PAYMENT_REVIEW;
+    const blocked =
+      (order.status === OrderStatus.PAID || order.status === OrderStatus.FULFILLING) &&
+      (order.riskLevel === RiskLevel.HIGH || order.riskLevel === RiskLevel.BLOCKED);
+    if (!inReview && !blocked) {
+      throw new BadRequestException(
+        say(
+          `هذا الطلب في حالة ${order.status} وليس موقوفاً، فلا يوجد ما يُرفع.`,
+          `This order is ${order.status} and not on hold, so there is nothing to release.`,
+        ),
+      );
+    }
+
+    const moved = await this.prisma.client.order.updateMany({
+      where: { id: order.id, status: order.status, riskLevel: order.riskLevel },
+      data: {
+        riskLevel: RiskLevel.MEDIUM,
+        ...(inReview ? { status: OrderStatus.PAID } : {}),
+      },
+    });
+    if (moved.count !== 1) {
+      throw new BadRequestException(
+        say('تغيّر هذا الطلب للتو. حدّث الصفحة.', 'This order just changed. Refresh the page.'),
+      );
+    }
+
+    await this.prisma.client.orderNote.create({
+      data: {
+        orderId: order.id,
+        body: `Hold released: ${input.reason}`,
+        isCustomerVisible: false,
+        authorId: input.staffId,
+      },
+    });
+    await this.audit.record({
+      actorId: input.staffId,
+      entity: 'Order',
+      entityId: input.number,
+      action: 'order.hold-released',
+      before: { status: order.status, riskLevel: order.riskLevel },
+      after: {
+        status: inReview ? OrderStatus.PAID : order.status,
+        riskLevel: RiskLevel.MEDIUM,
+      },
+      ip: input.context.ip,
+      userAgent: input.context.userAgent,
+    });
+
+    if (inReview) await this.fulfillment.onOrderPaid(input.number);
+
+    const after = await this.prisma.client.order.findUniqueOrThrow({
+      where: { id: order.id },
+      select: { status: true },
+    });
+    return { status: after.status };
   }
 
   /**

@@ -383,6 +383,13 @@ export const en: AdminMessages = {
       'The order is released immediately and fulfilment begins — a key from stock goes out to the customer. The reference is what ties this confirmation to your bank statement later, so write it exactly as it appears.',
     confirmAndRelease: 'Confirm and release',
 
+    releaseHold: 'Release hold',
+    releaseReasonLabel: 'Why it is safe to release',
+    releaseReasonPlaceholder: 'what you checked',
+    releaseReasonHint:
+      'The order was held by a rule — a fraud verdict, an amount that did not match, a spent coupon, or an open dispute. Read its notes first. Releasing it lets fulfilment run, and a key from stock goes out.',
+    releaseAndDeliver: 'Release',
+
     internalNote: 'Internal note',
     internalNotePlaceholder: 'what was agreed with the customer',
     internalNoteHint:
@@ -407,6 +414,7 @@ export const en: AdminMessages = {
 
     donePaymentConfirmed: 'Payment confirmed on {number}',
     doneNoteAdded: 'Note added to {number}',
+    doneHoldReleased: 'Hold released on {number}',
   },
 
   products: {
@@ -648,7 +656,8 @@ export const en: AdminMessages = {
     savedNote: 'Saved, and readiness re-checked.',
     publishedNote: 'Published — the product is now on sale.',
     unpublishedNote: 'Unpublished. The product is a draft again.',
-    publishBlockedHint: 'Publishing is held until the blockers in the readiness section are cleared.',
+    publishBlockedHint:
+      'Publishing is held until the blockers in the readiness section are cleared.',
     gapNoImages: 'no images',
     gapNoSteps: 'no activation steps',
 

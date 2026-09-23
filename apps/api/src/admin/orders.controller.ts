@@ -6,6 +6,7 @@ import {
   type AdminOrderList,
   addOrderNoteSchema,
   confirmPaymentSchema,
+  releaseHoldSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
@@ -20,7 +21,11 @@ import { OrdersService } from './orders.service.js';
  * Confirming a payment is OWNER and ADMIN only, and deliberately not
  * FULFILLMENT: it releases a licence key against money nobody in this system
  * can see, which is the one action here that cannot be undone by clicking
- * again.
+ * again. Releasing a hold is the same kind of act, and has the same roles.
+ *
+ * Reading is not open to every staff role either: an order carries the
+ * customer's email, address and IP, and a CATALOG or MARKETING account has no
+ * reason to page through those.
  */
 @ApiTags('admin')
 @Controller('admin/orders')
@@ -28,6 +33,7 @@ import { OrdersService } from './orders.service.js';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get()
   @ApiOperation({ summary: 'Orders, newest first' })
   list(
@@ -42,6 +48,7 @@ export class OrdersController {
     });
   }
 
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get(':number')
   @ApiOperation({ summary: 'One order with its lines, payments and notes' })
   detail(@Param('number') number: string): Promise<AdminOrderDetail> {
@@ -62,6 +69,23 @@ export class OrdersController {
       number,
       provider: body.provider,
       reference: body.reference,
+      staffId: request.staff?.sub ?? '',
+      context: { ip: request.ip, userAgent: request.headers['user-agent'] },
+    });
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN')
+  @Post(':number/release-hold')
+  @ApiOperation({ summary: 'Lift a review or risk hold, and let fulfilment run' })
+  releaseHold(
+    @Param('number') number: string,
+    @Body(new ZodPipe(releaseHoldSchema)) body: z.infer<typeof releaseHoldSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.orders.releaseHold({
+      number,
+      reason: body.reason,
       staffId: request.staff?.sub ?? '',
       context: { ip: request.ip, userAgent: request.headers['user-agent'] },
     });
