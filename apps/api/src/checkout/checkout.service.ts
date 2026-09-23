@@ -26,6 +26,7 @@ import {
 import { CartService } from '../cart/cart.service.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
 import { displayPrice, type FxTable } from '../catalog/pricing.js';
+import { SalesService, saleFor, salePriced } from '../offers/sales.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { chargeMatches, orderCharge } from './charge.js';
@@ -62,6 +63,7 @@ export class CheckoutService {
     private readonly cart: CartService,
     private readonly paymentSettings: PaymentSettingsService,
     private readonly stripe: StripeService,
+    private readonly sales: SalesService,
   ) {}
 
   private localeFor(query: CartQuery): Locale {
@@ -105,8 +107,11 @@ export class CheckoutService {
 
     // Re-render first: it re-prices the lines, re-checks the coupon and writes
     // the totals back, so the order is drafted from what the shopper is looking
-    // at rather than from whatever the row last said.
-    const rendered = await this.cart.render(cart.token, query, []);
+    // at rather than from whatever the row last said. That includes a sale that
+    // has ended since a line was added — its price comes back here — and the
+    // one cart discount (coupon, volume tier or pair), already in the totals
+    // the charge is computed from.
+    const { cart: rendered, offers } = await this.cart.renderWithOffers(cart.token, query, []);
     const fresh = await this.prisma.client.cart.findUniqueOrThrow({
       where: { id: cart.id },
       include: { items: { include: { variant: { include: { product: true } } } } },
@@ -143,12 +148,17 @@ export class CheckoutService {
       where: { cartId: cart.id, status: OrderStatus.PENDING_PAYMENT },
     });
 
-    const promotion = fresh.couponCode
-      ? await this.prisma.client.promotion.findFirst({
-          where: { code: fresh.couponCode, isActive: true },
-          select: { id: true, perCustomerLimit: true },
-        })
-      : null;
+    // A coupon that lost to an automatic offer is attached but not applied, so
+    // the order does not carry it: it must not spend a use of the code, nor be
+    // refused for a per-customer limit on a discount it is not getting.
+    const couponApplied = fresh.couponCode !== null && !rendered.couponSuperseded;
+    const promotion =
+      couponApplied && fresh.couponCode
+        ? await this.prisma.client.promotion.findFirst({
+            where: { code: fresh.couponCode, isActive: true },
+            select: { id: true, perCustomerLimit: true },
+          })
+        : null;
 
     // Refused before payment rather than discovered after it. `markPaid`
     // checks again — two tabs can race past this — but the shopper who has
@@ -190,7 +200,8 @@ export class CheckoutService {
       taxUsd: new Prisma.Decimal(0),
       totalUsd: fresh.totalUsd,
       promotionId: promotion?.id ?? null,
-      couponCode: fresh.couponCode,
+      couponCode: couponApplied ? fresh.couponCode : null,
+      offerSnapshot: offers,
       billingName: input.name ?? null,
       billingCompany: input.company ?? null,
       billingVat: input.vatNumber ?? null,
@@ -392,7 +403,7 @@ export class CheckoutService {
     if (bundles.length === 0) return [];
 
     const locale = this.localeFor(query);
-    const fx = await this.fxTable();
+    const [fx, sales] = await Promise.all([this.fxTable(), this.sales.live()]);
     const inCart = new Set(variantIds);
     const offers: CrossSell[] = [];
 
@@ -419,6 +430,7 @@ export class CheckoutService {
           product: {
             include: {
               translations: { where: { locale } },
+              categories: { select: { categoryId: true } },
               media: {
                 where: { isHero: true },
                 take: 1,
@@ -435,7 +447,17 @@ export class CheckoutService {
       if (available <= 0) continue;
 
       const hero = variant.product.media[0];
-      const bundleUsd = variant.priceUsd
+      // The price the cart will add it at, sale included — the offer must
+      // quote the number the next screen shows. The bundle takes its percent
+      // off that, as the coupon it is would.
+      const shelfUsd = salePriced(
+        variant,
+        saleFor(sales, {
+          id: variant.productId,
+          categoryIds: variant.product.categories.map((link) => link.categoryId),
+        }),
+      ).priceUsd;
+      const bundleUsd = shelfUsd
         .times(100 - savePercent)
         .dividedBy(100)
         .toDecimalPlaces(2);
@@ -453,7 +475,7 @@ export class CheckoutService {
               height: hero.asset.height,
             }
           : null,
-        price: displayPrice(variant.priceUsd, null, query.currency, fx),
+        price: displayPrice(shelfUsd, null, query.currency, fx),
         bundlePrice: displayPrice(bundleUsd, null, query.currency, fx),
         savePercent,
         promotionCode: bundle.code ?? '',

@@ -16,6 +16,7 @@ import { FulfillmentModule } from './fulfillment/fulfillment.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { MarketingModule } from './marketing/marketing.module.js';
 import { MediaModule } from './media/media.module.js';
+import { OffersModule } from './offers/offers.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
@@ -74,6 +75,7 @@ import { VaultModule } from './vault/vault.module.js';
     ReviewsModule,
     SubscriptionsModule,
     MarketingModule,
+    OffersModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],
