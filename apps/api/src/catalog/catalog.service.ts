@@ -8,6 +8,7 @@ import {
   type CatalogQuery,
   type CatalogVariant,
   type Home,
+  type OfferedCurrencies,
   type HomeRail,
   blockDocumentSchema,
   faqItemsSchema,
@@ -776,6 +777,16 @@ export class CatalogService {
         lastModified: brand.updatedAt.toISOString(),
       })),
     };
+  }
+
+  async offeredCurrencies(): Promise<OfferedCurrencies> {
+    const rows = await this.prisma.client.currency.findMany({
+      where: { isActive: true, OR: [{ code: 'USD' }, { rates: { some: {} } }] },
+      orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+      select: { code: true, symbol: true, decimals: true },
+    });
+    const usd = rows.find((row) => row.code === 'USD') ?? { code: 'USD', symbol: '$', decimals: 2 };
+    return { currencies: [usd, ...rows.filter((row) => row.code !== 'USD')] };
   }
 
   private assetUrl(key: string): string {

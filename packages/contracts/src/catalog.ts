@@ -437,3 +437,16 @@ export type SearchResults = z.infer<typeof searchResultsSchema>;
 
 /** Longer than a product name and shorter than a paste of a whole page. */
 export const searchQuerySchema = z.string().trim().max(120);
+
+/**
+ * The currencies a shopper can choose: those the store can actually convert to.
+ * A currency with no rate loaded would render in dollars under its own label,
+ * so it is not offered.
+ */
+export const offeredCurrencySchema = z.object({
+  code: z.string().length(3),
+  symbol: z.string(),
+  decimals: z.number().int().min(0).max(3),
+});
+export const offeredCurrenciesSchema = z.object({ currencies: z.array(offeredCurrencySchema) });
+export type OfferedCurrencies = z.infer<typeof offeredCurrenciesSchema>;

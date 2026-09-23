@@ -7,6 +7,7 @@ import {
   type CatalogQuery,
   type CatalogStore,
   type Home,
+  type OfferedCurrencies,
   type SearchResults,
   type SitemapFeed,
   catalogQuerySchema,
@@ -25,6 +26,17 @@ export class CatalogController {
     private readonly catalog: CatalogService,
     private readonly searchService: SearchService,
   ) {}
+
+  /**
+   * The currency picker's options. USD first, then every active currency
+   * with a rate loaded, in the store's order. Cached hard: rates change once
+   * a day.
+   */
+  @Get('currencies')
+  @ApiOperation({ summary: 'Currencies the store can show prices in' })
+  currencies(): Promise<OfferedCurrencies> {
+    return this.catalog.offeredCurrencies();
+  }
 
   @Get('home')
   @ApiOperation({ summary: 'Everything the home page renders, in one response' })
