@@ -429,7 +429,8 @@
     "allProducts": "جميع المنتجات",
     "openMenu": "فتح القائمة",
     "otherLanguage": "English",
-    "myLicences": "تراخيصي"
+    "myLicences": "تراخيصي",
+    "currencyLabel": "العملة"
   },
   "footer": {
     "switchLanguageTitle": "تبديل اللغة إلى الإنجليزية",

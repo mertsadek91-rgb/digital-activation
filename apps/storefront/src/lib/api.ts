@@ -37,6 +37,7 @@ import {
 import { z } from 'zod';
 
 import { indexingPolicy } from './seo';
+import { CURRENCY_COOKIE, DEFAULT_CURRENCY, validCurrency } from './currency';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:4000';
 
@@ -62,10 +63,27 @@ interface FetchOptions {
   q?: string;
 }
 
-function buildUrl(pathname: string, options: FetchOptions): string {
+/**
+ * The visitor's currency cookie, on the server.
+ *
+ * Reading it makes the page render per request rather than from the full-page
+ * cache; the API responses are still cached per URL (the currency is in the
+ * URL), so the cost is the render, not the round trip. Outside a request —
+ * a build, a sitemap route — there is no cookie and the answer is dollars.
+ */
+async function serverCurrency(): Promise<string> {
+  try {
+    const { cookies } = await import('next/headers');
+    return validCurrency((await cookies()).get(CURRENCY_COOKIE)?.value);
+  } catch {
+    return DEFAULT_CURRENCY;
+  }
+}
+
+function buildUrl(pathname: string, options: FetchOptions & { currency: string }): string {
   const url = new URL(`/v1${pathname}`, API_URL);
   url.searchParams.set('locale', options.locale);
-  url.searchParams.set('currency', options.currency ?? 'USD');
+  url.searchParams.set('currency', options.currency);
   if (options.page) url.searchParams.set('page', String(options.page));
   if (options.perPage) url.searchParams.set('perPage', String(options.perPage));
   if (options.sort) url.searchParams.set('sort', options.sort);
@@ -119,7 +137,8 @@ async function request<T>(
 
   let response: Response;
   try {
-    response = await fetch(buildUrl(pathname, options), {
+    const currency = options.currency ?? (await serverCurrency());
+    response = await fetch(buildUrl(pathname, { ...options, currency }), {
       next: { revalidate: options.revalidate ?? 300 },
       headers: { accept: 'application/json' },
     });

@@ -26,6 +26,8 @@ import {
 } from '@da/contracts';
 import type { z } from 'zod';
 
+import { browserCurrency } from './currency';
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export class CartError extends Error {
@@ -45,7 +47,9 @@ async function request<T>(
 ): Promise<T> {
   const url = new URL(`/v1${path}`, API);
   url.searchParams.set('locale', init?.locale ?? 'ar');
-  url.searchParams.set('currency', init?.currency ?? 'USD');
+  // The shopper's chosen currency unless a caller names one. The API labels
+  // the result with the currency it actually used.
+  url.searchParams.set('currency', init?.currency ?? browserCurrency());
 
   const response = await fetch(url, {
     ...init,

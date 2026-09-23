@@ -24,6 +24,7 @@ import {
   UserIcon,
 } from './icons';
 import { BrandLogo } from './brand-logo';
+import { CurrencySwitcher } from './currency-switcher';
 import { SearchBox } from './search-box';
 
 /**
@@ -189,6 +190,7 @@ export function SiteHeader({
             >
               {t('otherLanguage')}
             </LocaleLink>
+            <CurrencySwitcher className="utility-link currency-switcher" />
           </div>
 
           <div className="utility-group">
@@ -427,6 +429,7 @@ export function SiteHeader({
             >
               🌐 {t('switchLanguage')}
             </LocaleLink>
+            <CurrencySwitcher className="drawer-link currency-switcher" />
           </div>
         </div>
       </aside>

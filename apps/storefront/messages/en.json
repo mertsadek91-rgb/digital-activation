@@ -429,7 +429,8 @@
     "allProducts": "All products",
     "openMenu": "Open menu",
     "otherLanguage": "العربية",
-    "myLicences": "My licences"
+    "myLicences": "My licences",
+    "currencyLabel": "Currency"
   },
   "footer": {
     "switchLanguageTitle": "Switch language to Arabic",
