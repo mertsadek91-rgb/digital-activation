@@ -303,7 +303,7 @@ The whole envelope sits in the existing `StaffUser.totpSecret` column, with a
 Rows written before this release were encrypted directly under
 `KEK_LOCAL_BASE64`. They still open. Each one is re-sealed under KMS the next
 time its owner enters a correct code (sign-in, enrolment confirmation or
-step-up). A row wrapped by an older `KEK_VERSION` is re-sealed the same way.
+step-up). A row wrapped by an older `VAULT_KEY_VERSION` is re-sealed the same way.
 So:
 
 1. **Leave `KEK_LOCAL_BASE64` set on the API** after deploying this release.
