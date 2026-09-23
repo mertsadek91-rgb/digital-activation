@@ -155,7 +155,7 @@ export class AuthService {
     }
 
     const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!verifyTotp(totp, secret)) {
+    if (!(await this.acceptTotp(staff, totp, secret))) {
       await this.audit.record({
         actorId: staff.id,
         entity: 'StaffUser',
@@ -196,7 +196,7 @@ export class AuthService {
     }
 
     const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!verifyTotp(totp, secret)) {
+    if (!(await this.acceptTotp(staff, totp, secret))) {
       throw new UnauthorizedException('That code is not valid.');
     }
 
@@ -215,6 +215,30 @@ export class AuthService {
     });
 
     return this.issueSession(enrolled, context);
+  }
+
+  /**
+   * Verifies a code and spends it.
+   *
+   * The step is claimed with a conditional update, so two requests racing with
+   * the same code cannot both pass: the one whose update finds the step still
+   * unused wins, and the other is refused like any wrong code.
+   */
+  private async acceptTotp(
+    staff: { id: string; totpLastStep: number | null },
+    token: string,
+    secret: string,
+  ): Promise<boolean> {
+    const step = verifyTotp(token, secret, staff.totpLastStep);
+    if (step === null) return false;
+    const claimed = await this.prisma.client.staffUser.updateMany({
+      where: {
+        id: staff.id,
+        OR: [{ totpLastStep: null }, { totpLastStep: { lt: step } }],
+      },
+      data: { totpLastStep: step },
+    });
+    return claimed.count === 1;
   }
 
   private async issueSession(staff: StaffUser, context: RequestContext): Promise<SessionResult> {
@@ -409,7 +433,7 @@ export class AuthService {
     }
 
     const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!verifyTotp(totp, secret)) {
+    if (!(await this.acceptTotp(staff, totp, secret))) {
       await this.audit.record({
         actorId: staff.id,
         entity: 'StaffUser',

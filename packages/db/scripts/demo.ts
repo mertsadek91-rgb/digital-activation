@@ -117,6 +117,7 @@ async function drop(): Promise<void> {
   // Reviews and payments first: both point at rows that are about to go.
   await prisma.review.deleteMany({ where: { customer: { email: { startsWith: MARK } } } });
   if (ids.length > 0) {
+    await prisma.refund.deleteMany({ where: { payment: { orderId: { in: ids } } } });
     await prisma.payment.deleteMany({ where: { orderId: { in: ids } } });
     await prisma.orderItem.deleteMany({ where: { orderId: { in: ids } } });
     await prisma.order.deleteMany({ where: { id: { in: ids } } });
@@ -161,7 +162,9 @@ async function main(): Promise<void> {
   console.log(`reviews  : ${String(REVIEWS.length)}`);
   console.log(`queue    : ${String(variants.length)} paid lines awaiting supply`);
   for (const variant of variants) {
-    console.log(`   ${variant.sku.padEnd(40)} ${variant.product.translations[0]?.name?.slice(0, 40) ?? ''}`);
+    console.log(
+      `   ${variant.sku.padEnd(40)} ${variant.product.translations[0]?.name?.slice(0, 40) ?? ''}`,
+    );
   }
 
   if (!apply) {

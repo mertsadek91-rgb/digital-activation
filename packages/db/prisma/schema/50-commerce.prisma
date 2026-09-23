@@ -218,7 +218,9 @@ model OrderNote {
 
 model Payment {
   id       String          @id @default(cuid())
-  order    Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// Restrict, not Cascade: deleting an order must never take its payment
+  /// records with it. Money that moved is accounting history.
+  order    Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
   orderId  String
   provider PaymentProvider
   state    PaymentState    @default(PROCESSING)
@@ -226,7 +228,9 @@ model Payment {
   /// Provider-side identifier (Stripe PaymentIntent, PayPal capture id).
   providerRef     String?
   /// What the customer was actually charged, in the currency they were charged.
-  amountCharged   Decimal @db.Decimal(12, 2)
+  /// Three decimals: KWD, BHD, OMR and JOD count in thousandths, and a
+  /// two-decimal column dropped the last digit of every such charge.
+  amountCharged   Decimal @db.Decimal(14, 3)
   chargedCurrency String
   /// Same amount normalised to USD for reporting.
   amountUsd       Decimal @db.Decimal(12, 2)
@@ -252,7 +256,8 @@ model Payment {
 
 model Refund {
   id          String   @id @default(cuid())
-  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  /// Restrict, for the same reason as Payment's link to Order.
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   paymentId   String
   amountUsd   Decimal  @db.Decimal(12, 2)
   reason      String?

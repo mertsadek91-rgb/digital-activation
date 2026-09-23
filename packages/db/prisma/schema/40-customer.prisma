@@ -172,6 +172,10 @@ model StaffUser {
   /// totpEnabledAt is null. Secret is encrypted at the application layer.
   totpSecret    Bytes?
   totpEnabledAt DateTime?
+  /// The last TOTP time step accepted for this account. A code is valid for
+  /// its whole ~90-second window, so without this a code seen once (over a
+  /// shoulder, in a proxy log) could be replayed until it expired.
+  totpLastStep  Int?
   /// Optional CIDR allowlist for admin access.
   ipAllowlist   String[]
 
