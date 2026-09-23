@@ -1,3 +1,4 @@
+import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 
 /**
@@ -11,7 +12,15 @@ import type { ReactNode } from 'react';
  * `/xmlrpc.php`), which the locale layout rejects before it renders anything.
  *
  * This is the arrangement next-intl documents for a `[locale]` root.
+ *
+ * `connection()` is the one thing it adds: every page renders per request. The
+ * CSP in `src/proxy.ts` admits only scripts carrying that request's nonce, and
+ * Next can only stamp a nonce on a page it is rendering now — a page prerendered
+ * at build time has none, and its scripts would be refused. Most pages already
+ * rendered per request because they read the currency cookie; this makes it
+ * true of the rest (the 404s among them) rather than true by accident.
  */
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  await connection();
   return children;
 }
