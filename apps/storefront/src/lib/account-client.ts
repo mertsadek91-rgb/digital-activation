@@ -35,6 +35,8 @@ import {
 } from '@da/contracts';
 import type { z } from 'zod';
 
+import { serviceErrorMessage } from './service-errors';
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export class AccountError extends Error {
@@ -60,13 +62,13 @@ async function request<T>(path: string, schema: z.ZodType<T>, init?: RequestInit
   if (!response.ok) {
     const record = (payload ?? {}) as Record<string, unknown>;
     throw new AccountError(
-      typeof record.message === 'string' ? record.message : 'تعذّر الاتصال بالخدمة.',
+      typeof record.message === 'string' ? record.message : serviceErrorMessage('unreachable'),
       response.status,
     );
   }
 
   const parsed = schema.safeParse(payload);
-  if (!parsed.success) throw new AccountError('استجابة غير متوقّعة من الخدمة.', 500);
+  if (!parsed.success) throw new AccountError(serviceErrorMessage('unexpected'), 500);
   return parsed.data;
 }
 

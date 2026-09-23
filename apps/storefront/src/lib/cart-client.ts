@@ -34,6 +34,7 @@ import {
 import type { z } from 'zod';
 
 import { browserCurrency } from './currency';
+import { serviceErrorMessage } from './service-errors';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -52,8 +53,9 @@ async function request<T>(
   schema: z.ZodType<T>,
   init?: RequestInit & { locale: string; currency?: string },
 ): Promise<T> {
+  const locale = init?.locale ?? 'ar';
   const url = new URL(`/v1${path}`, API);
-  url.searchParams.set('locale', init?.locale ?? 'ar');
+  url.searchParams.set('locale', locale);
   // The shopper's chosen currency unless a caller names one. The API labels
   // the result with the currency it actually used.
   url.searchParams.set('currency', init?.currency ?? browserCurrency());
@@ -70,7 +72,9 @@ async function request<T>(
   if (!response.ok) {
     const record = (payload ?? {}) as Record<string, unknown>;
     throw new CartError(
-      typeof record.message === 'string' ? record.message : 'تعذّر الاتصال بالخدمة.',
+      typeof record.message === 'string'
+        ? record.message
+        : serviceErrorMessage('unreachable', locale),
       response.status,
     );
   }
@@ -80,7 +84,7 @@ async function request<T>(
   // components deep in a checkout.
   const parsed = schema.safeParse(payload);
   if (!parsed.success) {
-    throw new CartError('استجابة غير متوقّعة من الخدمة.', 500);
+    throw new CartError(serviceErrorMessage('unexpected', locale), 500);
   }
   return parsed.data;
 }
