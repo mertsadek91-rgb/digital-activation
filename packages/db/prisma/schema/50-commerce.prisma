@@ -62,6 +62,11 @@ model CartItem {
   unitPriceUsd  Decimal  @db.Decimal(12, 2)
   /// True when the line was added from a checkout cross-sell offer.
   fromCrossSell Boolean  @default(false)
+  /// The seasonal sale that priced `unitPriceUsd`, and when it ends. A sale
+  /// price is advertised with an end date, so it is the one snapshot that
+  /// lapses: after `saleEndsAt` the line goes back to the current price.
+  saleId        String?
+  saleEndsAt    DateTime?
   createdAt     DateTime @default(now())
 
   @@unique([cartId, variantId])
@@ -117,6 +122,10 @@ model Order {
   promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   promotionId String?
   couponCode  String?
+  /// Which basket offers the order used (`orderOfferSnapshotSchema`): the
+  /// single cart discount's kind, the sales that priced lines, whether a
+  /// curated pair was bought. Null on orders drafted before it was recorded.
+  offerSnapshot Json?
 
   /// Fraud screening. A digital key cannot be clawed back once sent, so a HIGH
   /// score holds the order in PAYMENT_REVIEW and blocks fulfilment until a

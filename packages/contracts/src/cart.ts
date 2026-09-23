@@ -6,6 +6,7 @@ import {
   displayPriceSchema,
   fulfillmentModeSchema,
   licensePeriodUnitSchema,
+  saleBadgeSchema,
 } from './catalog.js';
 import { localeSchema, moneySchema, slugSchema } from './primitives.js';
 
@@ -79,6 +80,17 @@ export const cartLineSchema = z.object({
   availableToAdd: z.number().int().min(0),
   /** True when the line was added from a checkout cross-sell offer. */
   fromCrossSell: z.boolean(),
+
+  /**
+   * The seasonal sale this line is priced by, when it is.
+   *
+   * A sale price is the one snapshot that does not hold: it was advertised
+   * with an end date, so when the sale ends the line goes back to the current
+   * price (`saleEnded` says so once), and a sale that starts while the line
+   * sits in the cart lowers it — nobody pays more than the price on the shelf.
+   */
+  sale: saleBadgeSchema.nullable().default(null),
+  saleEnded: z.boolean().default(false),
 });
 export type CartLine = z.infer<typeof cartLineSchema>;
 
@@ -103,6 +115,46 @@ export const cartSchema = z.object({
   coupon: cartCouponSchema.nullable(),
   /** Why a submitted code was refused. Null when there is nothing to say. */
   couponError: z.string().nullable(),
+
+  /**
+   * One discount per cart: the single largest of the coupon (typed or an
+   * earned bundle), the volume tier and the pair discount. When an automatic
+   * one wins it is described here and `discount` is its amount; a coupon that
+   * lost stays attached with `couponSuperseded` set, and comes back by itself
+   * if the cart changes so that it is the better one again.
+   */
+  automaticDiscount: z
+    .object({
+      kind: z.enum(['volume', 'pair']),
+      /** The tier's or the pair's headline percent. */
+      percent: z.number().min(0).max(90),
+      amount: displayPriceSchema,
+      /** The discount licence number, shown beside the discount. */
+      licenceNumber: z.string(),
+    })
+    .nullable()
+    .default(null),
+  couponSuperseded: z.boolean().default(false),
+
+  /**
+   * Volume tiers, for the "add one more licence to save 10%" bar. Null when
+   * the offer is off or has no tiers. `next` is null at the top tier.
+   */
+  volume: z
+    .object({
+      applied: z.object({ minItems: z.number().int(), percent: z.number() }).nullable(),
+      next: z
+        .object({
+          minItems: z.number().int(),
+          percent: z.number(),
+          itemsToGo: z.number().int().min(1),
+        })
+        .nullable(),
+      showProgressBar: z.boolean(),
+      licenceNumber: z.string(),
+    })
+    .nullable()
+    .default(null),
 
   /** When this cart's stock hold lapses. Null when it holds nothing. */
   reservationExpiresAt: z.string().nullable(),
