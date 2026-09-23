@@ -1,21 +1,21 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { StaffLoginResult, StaffMe } from '@da/contracts';
 import { type StaffRole, type StaffUser } from '@da/db';
 
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { KekService } from '../vault/kek.js';
 
 import { AuditService } from './audit.service.js';
 import {
-  decryptSecret,
-  encryptSecret,
   hashPassword,
   hashToken,
   newRefreshToken,
   verifyAgainstDecoy,
   verifyPassword,
 } from './crypto.js';
+import { openTotpSecret, sealTotpSecret } from './totp-seal.js';
 import { createEnrollment, verifyTotp } from './totp.js';
 
 export interface AccessClaims {
@@ -66,10 +66,13 @@ interface RequestContext {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
     private readonly audit: AuditService,
+    private readonly kek: KekService,
   ) {}
 
   private toMe(staff: StaffUser): StaffMe {
@@ -87,14 +90,6 @@ export class AuthService {
     const secret = process.env.JWT_ACCESS_SECRET;
     if (!secret) throw new Error('JWT_ACCESS_SECRET is not set.');
     return secret;
-  }
-
-  private kek(): string {
-    const key = process.env.KEK_LOCAL_BASE64;
-    if (!key) {
-      throw new Error('No key material available to protect TOTP secrets.');
-    }
-    return key;
   }
 
   /**
@@ -138,7 +133,10 @@ export class AuthService {
       );
       await this.prisma.client.staffUser.update({
         where: { id: staff.id },
-        data: { totpSecret: encryptSecret(enrollment.secret, this.kek()), totpEnabledAt: null },
+        data: {
+          totpSecret: await sealTotpSecret(enrollment.secret, this.kek),
+          totpEnabledAt: null,
+        },
       });
       return {
         result: {
@@ -154,8 +152,7 @@ export class AuthService {
       return { result: { outcome: 'totp_required' } };
     }
 
-    const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!(await this.acceptTotp(staff, totp, secret))) {
+    if (!(await this.acceptTotp(staff, staff.totpSecret, totp))) {
       await this.audit.record({
         actorId: staff.id,
         entity: 'StaffUser',
@@ -195,8 +192,7 @@ export class AuthService {
       throw new UnauthorizedException('Start again — no enrolment is in progress.');
     }
 
-    const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!(await this.acceptTotp(staff, totp, secret))) {
+    if (!(await this.acceptTotp(staff, staff.totpSecret, totp))) {
       throw new UnauthorizedException('That code is not valid.');
     }
 
@@ -226,9 +222,10 @@ export class AuthService {
    */
   private async acceptTotp(
     staff: { id: string; totpLastStep: number | null },
+    sealed: Uint8Array<ArrayBuffer>,
     token: string,
-    secret: string,
   ): Promise<boolean> {
+    const { secret, stale } = await openTotpSecret(sealed, this.kek);
     const step = verifyTotp(token, secret, staff.totpLastStep);
     if (step === null) return false;
     const claimed = await this.prisma.client.staffUser.updateMany({
@@ -238,7 +235,36 @@ export class AuthService {
       },
       data: { totpLastStep: step },
     });
-    return claimed.count === 1;
+    if (claimed.count !== 1) return false;
+
+    if (stale) await this.reseal(staff.id, sealed, secret);
+    return true;
+  }
+
+  /**
+   * Rewrites a legacy or old-generation row under the current KEK.
+   *
+   * Done only after a code verified, so a row is never rewritten from a secret
+   * that might be wrong. Conditional on the bytes still being the ones read: a
+   * re-enrolment that landed in between keeps its new secret. A failure here
+   * is logged and swallowed — the person has proved who they are, and KMS
+   * being slow is no reason to refuse the sign-in; the next one retries.
+   */
+  private async reseal(
+    staffId: string,
+    previous: Uint8Array<ArrayBuffer>,
+    secret: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.client.staffUser.updateMany({
+        where: { id: staffId, totpSecret: { equals: previous } },
+        data: { totpSecret: await sealTotpSecret(secret, this.kek) },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Could not re-seal the TOTP secret for staff ${staffId}: ${(error as Error).message}`,
+      );
+    }
   }
 
   private async issueSession(staff: StaffUser, context: RequestContext): Promise<SessionResult> {
@@ -432,8 +458,7 @@ export class AuthService {
       );
     }
 
-    const secret = decryptSecret(staff.totpSecret, this.kek());
-    if (!(await this.acceptTotp(staff, totp, secret))) {
+    if (!(await this.acceptTotp(staff, staff.totpSecret, totp))) {
       await this.audit.record({
         actorId: staff.id,
         entity: 'StaffUser',
