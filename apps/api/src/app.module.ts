@@ -19,6 +19,7 @@ import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
 import { VaultModule } from './vault/vault.module.js';
 
 /**
@@ -70,6 +71,7 @@ import { VaultModule } from './vault/vault.module.js';
     AdminModule,
     AccountModule,
     ReviewsModule,
+    SubscriptionsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],

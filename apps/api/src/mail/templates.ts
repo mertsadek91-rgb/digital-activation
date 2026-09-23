@@ -757,3 +757,65 @@ ${button(input.url, 'Write a review')}
     text,
   };
 }
+
+/**
+ * The newsletter's confirmation step.
+ *
+ * Double opt-in: typing an address into a footer box proves nothing about who
+ * owns it, and marketing to an address nobody confirmed is how a sender lands
+ * on blocklists — the same domain that carries every licence delivery.
+ */
+export function newsletterConfirm(input: { locale: 'ar' | 'en'; confirmUrl: string }): Rendered {
+  const ar = input.locale === 'ar';
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">أكّد اشتراكك</h1>
+<p>طلب أحدهم إضافة هذا البريد إلى نشرة العروض. إن كنت أنت، أكّد بالزر أدناه. إن لم تكن أنت، تجاهل هذه الرسالة ولن نراسلك.</p>
+${button(input.confirmUrl, 'أكّد الاشتراك')}`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">Confirm your subscription</h1>
+<p>Someone asked to add this address to our deals newsletter. If it was you, confirm below. If not, ignore this email and you will not hear from us.</p>
+${button(input.confirmUrl, 'Confirm subscription')}`;
+  return {
+    subject: ar ? 'أكّد اشتراكك في النشرة' : 'Confirm your newsletter subscription',
+    html: shell({
+      locale: input.locale,
+      title: 'Confirm subscription',
+      body,
+      footerNote: ar
+        ? 'لن تصلك أي رسالة تسويقية قبل التأكيد.'
+        : 'You will receive no marketing email until you confirm.',
+    }),
+    text: ar
+      ? `أكّد اشتراكك في النشرة:\n${input.confirmUrl}`
+      : `Confirm your newsletter subscription:\n${input.confirmUrl}`,
+  };
+}
+
+/** A product somebody asked about is available again. Sent once per request. */
+export function backInStock(input: {
+  locale: 'ar' | 'en';
+  productName: string;
+  productUrl: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">عاد ${escape(input.productName)} إلى المخزون</h1>
+<p>طلبت أن نُعلمك عند توفّره، وهو متوفّر الآن. الكمية محدودة، ولا نحجزه لأحد قبل الدفع.</p>
+${button(input.productUrl, 'اذهب إلى المنتج')}`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">${escape(input.productName)} is back in stock</h1>
+<p>You asked us to tell you when it was available, and it is. Stock is limited and nothing is held for anyone before payment.</p>
+${button(input.productUrl, 'Go to the product')}`;
+  return {
+    subject: ar ? `عاد ${input.productName} إلى المخزون` : `${input.productName} is back in stock`,
+    html: shell({
+      locale: input.locale,
+      title: 'Back in stock',
+      body,
+      footerNote: ar
+        ? 'وصلتك هذه الرسالة مرة واحدة لأنك طلبتها.'
+        : 'You are receiving this once because you asked for it.',
+    }),
+    text: ar
+      ? `عاد ${input.productName} إلى المخزون:\n${input.productUrl}`
+      : `${input.productName} is back in stock:\n${input.productUrl}`,
+  };
+}

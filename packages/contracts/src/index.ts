@@ -24,3 +24,4 @@ export * from './media.js';
 export * from './promotion.js';
 export * from './review.js';
 export * from './seo.js';
+export * from './subscriptions.js';
