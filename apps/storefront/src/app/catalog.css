@@ -2887,3 +2887,38 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   background: #a07c1a;
   color: #fff;
 }
+
+/* --- Loading placeholders (loading.tsx) ------------------------------------ */
+
+/* Surfaces that pulse gently where the content will be. Tokens only, so the
+   placeholders take the same shape and colour family as what replaces them;
+   the pulse stops under reduced motion, which the global rule already does. */
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+.skeleton {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+.skeleton-card {
+  pointer-events: none;
+}
+.skeleton-line {
+  block-size: 0.9rem;
+  margin-block: 8px;
+}
+.skeleton-short {
+  inline-size: 55%;
+}
+.skeleton-title {
+  block-size: 1.8rem;
+  inline-size: min(22rem, 70%);
+  margin-block-end: 12px;
+}
+.skeleton-block {
+  block-size: 9rem;
+  margin-block-start: 16px;
+}
