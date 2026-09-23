@@ -12,17 +12,25 @@
 import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
 
 import type {
+  AdminArticle,
+  AdminArticleList,
+  AdminBrand,
+  AdminBrandList,
   AdminCategoryList,
   AdminDashboard,
   AdminOrderDetail,
   AdminOrderList,
+  AdminPage,
+  AdminPageList,
   AdminProductList,
   AdminProductRow,
   AdminPromotion,
   AdminPromotionList,
   AdminReviewList,
   ContactList,
+  CreateArticle,
   CreateCategory,
+  CreatePage,
   CreatedProduct,
   CreateProduct,
   CreateProductLink,
@@ -45,7 +53,10 @@ import type {
   RedirectsView,
   RevealResult,
   SecretInput,
+  SetArticle,
+  SetBrand,
   SetCategory,
+  SetPage,
   SetProductContent,
   SetProductIdentity,
   SetVariantTerms,
@@ -296,6 +307,50 @@ export const api = {
 
   setProductContent: (slug: string, patch: SetProductContent) =>
     request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  // --- pages, blog posts, brand hubs ----------------------------------------
+
+  contentPages: () => request<AdminPageList>('/admin/content/pages'),
+
+  contentPage: (slug: string) =>
+    request<AdminPage>(`/admin/content/pages/${encodeURIComponent(slug)}`),
+
+  createContentPage: (body: CreatePage) =>
+    request<AdminPage>('/admin/content/pages', { method: 'POST', body: JSON.stringify(body) }),
+
+  setContentPage: (slug: string, patch: SetPage) =>
+    request<AdminPage>(`/admin/content/pages/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  contentArticles: () => request<AdminArticleList>('/admin/content/articles'),
+
+  contentArticle: (slug: string) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}`),
+
+  createContentArticle: (body: CreateArticle) =>
+    request<AdminArticle>('/admin/content/articles', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  setContentArticle: (slug: string, patch: SetArticle) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  contentBrands: () => request<AdminBrandList>('/admin/content/brands'),
+
+  contentBrand: (id: string) =>
+    request<AdminBrand>(`/admin/content/brands/${encodeURIComponent(id)}`),
+
+  setContentBrand: (id: string, patch: SetBrand) =>
+    request<AdminBrand>(`/admin/content/brands/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),

@@ -2,7 +2,7 @@
 
 import type { StaffMe } from '@da/contracts';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 
 import { LocaleSwitcher } from '../i18n/locale-switcher';
 import { useT } from '../i18n/provider';
@@ -55,7 +55,10 @@ export function Nav({
     | 'messages'
     | 'payments'
     | 'promotions'
-    | 'redirects';
+    | 'redirects'
+    | 'contentPages'
+    | 'contentBlog'
+    | 'contentBrands';
   waiting?: number;
   overdue?: number;
   messagesWaiting?: number;
@@ -172,6 +175,14 @@ export function Nav({
     { key: 'promotions', label: t('promotions') },
     { key: 'launch', label: t('launch') },
     { key: 'redirects', label: t('redirects') },
+    // The copy on public pages, grouped under one heading because to the
+    // person using them they are one job: the words and what a search result
+    // says about them. Last, so the heading reads as the start of its own
+    // section rather than a divider in the middle of the list. Paths rather
+    // than keys, since the three share a prefix.
+    { key: 'contentPages', label: t('contentPages'), path: 'content/pages', group: true },
+    { key: 'contentBlog', label: t('contentBlog'), path: 'content/blog', group: true },
+    { key: 'contentBrands', label: t('contentBrands'), path: 'content/brands', group: true },
   ] as const;
 
   function navigate(path: string) {
@@ -193,25 +204,29 @@ export function Nav({
         </div>
 
         <nav className="admin-sidebar-nav">
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`admin-sidebar-tab${current === item.key ? ' is-active' : ''}`}
-              onClick={() => navigate(item.key)}
-            >
-              <span>{item.label}</span>
-              {'count' in item &&
-              item.count !== null &&
-              item.count !== undefined &&
-              item.count > 0 ? (
-                <span
-                  className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
-                >
-                  {item.count}
-                </span>
+          {navItems.map((item, index) => (
+            <Fragment key={item.key}>
+              {'group' in item && !('group' in (navItems[index - 1] ?? {})) ? (
+                <span className="admin-nav-group">{t('contentGroup')}</span>
               ) : null}
-            </button>
+              <button
+                type="button"
+                className={`admin-sidebar-tab${current === item.key ? ' is-active' : ''}`}
+                onClick={() => navigate('path' in item ? item.path : item.key)}
+              >
+                <span>{item.label}</span>
+                {'count' in item &&
+                item.count !== null &&
+                item.count !== undefined &&
+                item.count > 0 ? (
+                  <span
+                    className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
+                  >
+                    {item.count}
+                  </span>
+                ) : null}
+              </button>
+            </Fragment>
           ))}
         </nav>
 
@@ -316,25 +331,29 @@ export function Nav({
         </div>
 
         <nav className="admin-drawer-links">
-          {navItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`admin-drawer-tab${current === item.key ? ' is-active' : ''}`}
-              onClick={() => navigate(item.key)}
-            >
-              <span>{item.label}</span>
-              {'count' in item &&
-              item.count !== null &&
-              item.count !== undefined &&
-              item.count > 0 ? (
-                <span
-                  className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
-                >
-                  {item.count}
-                </span>
+          {navItems.map((item, index) => (
+            <Fragment key={item.key}>
+              {'group' in item && !('group' in (navItems[index - 1] ?? {})) ? (
+                <span className="admin-nav-group">{t('contentGroup')}</span>
               ) : null}
-            </button>
+              <button
+                type="button"
+                className={`admin-drawer-tab${current === item.key ? ' is-active' : ''}`}
+                onClick={() => navigate('path' in item ? item.path : item.key)}
+              >
+                <span>{item.label}</span>
+                {'count' in item &&
+                item.count !== null &&
+                item.count !== undefined &&
+                item.count > 0 ? (
+                  <span
+                    className={`tab-count${'overdue' in item && item.overdue && item.overdue > 0 ? ' is-late' : ''}`}
+                  >
+                    {item.count}
+                  </span>
+                ) : null}
+              </button>
+            </Fragment>
           ))}
         </nav>
 
