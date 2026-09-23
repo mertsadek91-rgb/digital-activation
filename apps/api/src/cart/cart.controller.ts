@@ -17,9 +17,30 @@ import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CartService } from './cart.service.js';
 
-const CART_COOKIE = 'da_cart';
+export const CART_COOKIE = 'da_cart';
 /** The cart outlives the browser session; the reservation inside it does not. */
 const CART_COOKIE_MAX_AGE = 30 * 24 * 3600;
+
+/**
+ * The cart token lives in an httpOnly cookie.
+ *
+ * It is a bearer token for somebody's cart: whoever holds it can read the
+ * lines, the email once checkout captures one, and change the contents. Out
+ * of JavaScript's reach costs nothing here — no client code needs to read it
+ * — and SameSite=strict keeps another site from driving the cart.
+ *
+ * Exported for the recovery link, which re-attaches a cart to a new browser
+ * and must set the cookie exactly the way every cart route does.
+ */
+export function setCartCookie(reply: FastifyReply, token: string): void {
+  void reply.setCookie(CART_COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: CART_COOKIE_MAX_AGE,
+  });
+}
 
 /**
  * `@fastify/cookie` declares `cookies` on FastifyRequest already, so redeclaring
@@ -33,22 +54,8 @@ type CartRequest = FastifyRequest;
 export class CartController {
   constructor(private readonly cart: CartService) {}
 
-  /**
-   * The cart token lives in an httpOnly cookie.
-   *
-   * It is a bearer token for somebody's cart: whoever holds it can read the
-   * lines, the email once checkout captures one, and change the contents. Out
-   * of JavaScript's reach costs nothing here — no client code needs to read it
-   * — and SameSite=strict keeps another site from driving the cart.
-   */
   private setToken(reply: FastifyReply, token: string): void {
-    void reply.setCookie(CART_COOKIE, token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: CART_COOKIE_MAX_AGE,
-    });
+    setCartCookie(reply, token);
   }
 
   private token(request: CartRequest): string | undefined {

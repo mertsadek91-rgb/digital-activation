@@ -4,6 +4,8 @@ import type { CatalogQuery, ForYou, ForYouItem, ForYouReason, Renewal } from '@d
 import { FulfillmentState, Locale, PublishStatus } from '@da/db';
 
 import { CatalogService } from '../catalog/catalog.service.js';
+// Shared with the renewal reminder sweep, so the page and the email agree.
+import { addTerm } from '../common/licence-term.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -263,19 +265,4 @@ export class ForYouService {
       },
     });
   }
-}
-
-/**
- * The end of a licence term.
- *
- * Calendar arithmetic, not 365 days: a year from 29 February lands on 28
- * February, and `setMonth` handles that the way a person expects. A customer
- * told their licence ends on the wrong day by one is a customer who writes in.
- */
-function addTerm(from: Date, unit: 'DAY' | 'MONTH' | 'YEAR' | 'LIFETIME', value: number): Date {
-  const end = new Date(from);
-  if (unit === 'DAY') end.setDate(end.getDate() + value);
-  else if (unit === 'MONTH') end.setMonth(end.getMonth() + value);
-  else if (unit === 'YEAR') end.setFullYear(end.getFullYear() + value);
-  return end;
 }
