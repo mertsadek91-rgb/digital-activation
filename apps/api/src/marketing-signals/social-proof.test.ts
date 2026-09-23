@@ -126,7 +126,11 @@ describe('aggregateSocialProof', () => {
       SETTINGS,
       NOW,
     );
-    expect(result.recent).toEqual([{ ago: 'hours' }, { ago: 'hours' }, { country: 'AE', ago: 'day' }]);
+    expect(result.recent).toEqual([
+      { ago: 'hours' },
+      { ago: 'hours' },
+      { country: 'AE', ago: 'day' },
+    ]);
   });
 
   it('lets nothing but the count, the age and the country out', () => {
@@ -186,10 +190,10 @@ describe('previewSocialProof', () => {
   });
 
   it('still reports what would show while the feature is off', () => {
-    const preview = previewSocialProof(
-      [line('o1', 'win'), line('o2', 'win'), line('o3', 'win')],
-      { ...SETTINGS, enabled: false },
-    );
+    const preview = previewSocialProof([line('o1', 'win'), line('o2', 'win'), line('o3', 'win')], {
+      ...SETTINGS,
+      enabled: false,
+    });
     expect(preview.enabled).toBe(false);
     expect(preview.rows[0]?.shown).toBe(true);
   });
