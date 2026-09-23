@@ -1,8 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import type { AdminDashboard } from '@da/contracts';
+import { type AdminDashboard, adminDashboardSchema } from '@da/contracts';
 
+import { ZodResponse } from '../common/openapi.js';
 import { StaffGuard } from '../auth/staff.guard.js';
 
 import { DashboardService } from './dashboard.service.js';
@@ -24,6 +25,7 @@ export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}
 
   @Get()
+  @ZodResponse(adminDashboardSchema)
   @ApiOperation({ summary: 'Revenue, the work waiting, and what is selling' })
   summary(): Promise<AdminDashboard> {
     return this.dashboard.summary();

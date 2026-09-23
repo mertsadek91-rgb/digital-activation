@@ -1,7 +1,13 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { type Pagination, type ProductReviews, paginationSchema } from '@da/contracts';
+import {
+  type Pagination,
+  type ProductReviews,
+  paginationSchema,
+  productReviewsSchema,
+} from '@da/contracts';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { ReviewsService } from './reviews.service.js';
@@ -20,6 +26,7 @@ export class ReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 
   @Get('products/:slug')
+  @ZodResponse(productReviewsSchema)
   @ApiOperation({ summary: 'Approved reviews for one product, with the aggregate' })
   forProduct(
     @Param('slug') slug: string,

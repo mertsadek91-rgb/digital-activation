@@ -13,9 +13,13 @@ import {
   createVariantSchema,
   setProductIdentitySchema,
   setVariantTermsSchema,
+  createdProductSchema,
+  productTermsSchema,
+  productIdentitySchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogEditService } from './catalog-edit.service.js';
@@ -42,6 +46,7 @@ export class CatalogEditController {
    * already there, and CATALOG is the role for the second.
    */
   @Post('products')
+  @ZodResponse(createdProductSchema)
   @Roles('OWNER', 'ADMIN')
   @ApiOperation({ summary: 'Create a draft product with its first variant' })
   create(
@@ -52,6 +57,7 @@ export class CatalogEditController {
   }
 
   @Post('products/:slug/variants')
+  @ZodResponse(productTermsSchema)
   @Roles('OWNER', 'ADMIN')
   @ApiOperation({ summary: 'Add another variant to an existing product' })
   addVariant(
@@ -63,12 +69,14 @@ export class CatalogEditController {
   }
 
   @Get('products/:slug/identity')
+  @ZodResponse(productIdentitySchema)
   @ApiOperation({ summary: 'Name, slug, kind, brand and categories' })
   identity(@Param('slug') slug: string): Promise<ProductIdentity> {
     return this.edit.identity(slug);
   }
 
   @Patch('products/:slug/identity')
+  @ZodResponse(productIdentitySchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Change identity; a slug change also writes its 301' })
   setIdentity(
@@ -80,12 +88,14 @@ export class CatalogEditController {
   }
 
   @Get('products/:slug/terms')
+  @ZodResponse(productTermsSchema)
   @ApiOperation({ summary: 'Price and licence terms for every variant' })
   terms(@Param('slug') slug: string): Promise<ProductTerms> {
     return this.edit.terms(slug);
   }
 
   @Patch('variants/:sku/terms')
+  @ZodResponse(productTermsSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Change one variant’s price and licence terms' })
   setTerms(

@@ -5,10 +5,13 @@ import {
   type AdminPromotionList,
   createPromotionSchema,
   updatePromotionSchema,
+  adminPromotionListSchema,
+  adminPromotionSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { PromotionsService } from './promotions.service.js';
@@ -36,6 +39,7 @@ export class PromotionsController {
   // because it plans around it; changing one stays ADMIN.
   @Roles('ADMIN', 'MARKETING')
   @Get()
+  @ZodResponse(adminPromotionListSchema)
   @ApiOperation({ summary: 'Coupons with what each has actually done' })
   list(@Query('filter') filter?: string): Promise<AdminPromotionList> {
     return this.promotions.list(filter);
@@ -43,6 +47,7 @@ export class PromotionsController {
 
   @Roles('ADMIN')
   @Post()
+  @ZodResponse(adminPromotionSchema)
   @ApiOperation({ summary: 'Mint a coupon' })
   create(
     @Body(new ZodPipe(createPromotionSchema)) body: z.infer<typeof createPromotionSchema>,
@@ -61,6 +66,7 @@ export class PromotionsController {
    */
   @Roles('ADMIN')
   @Patch(':id')
+  @ZodResponse(adminPromotionSchema)
   @ApiOperation({ summary: 'Change a coupon’s value, window, limits or state' })
   update(
     @Param('id') id: string,

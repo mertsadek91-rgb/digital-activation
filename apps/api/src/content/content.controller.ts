@@ -11,10 +11,16 @@ import {
   type Suggestions,
   recordNotFoundSchema,
   submitContactSchema,
+  contentPageSchema,
+  blogIndexSchema,
+  articleWithProductsSchema,
+  contactResultSchema,
+  redirectTargetSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
 import { VisitorThrottle } from '../common/explicit-throttler.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogService } from '../catalog/catalog.service.js';
@@ -34,6 +40,7 @@ export class ContentController {
   ) {}
 
   @Get('pages/:slug')
+  @ZodResponse(contentPageSchema)
   @ApiOperation({ summary: 'One editorial page, in the requested locale' })
   page(
     @Param('slug') slug: string,
@@ -44,6 +51,7 @@ export class ContentController {
   }
 
   @Get('posts')
+  @ZodResponse(blogIndexSchema)
   @ApiOperation({ summary: 'Every published blog post, newest first' })
   posts(@Query('locale') locale = 'ar', @Query('preview') preview?: string): Promise<BlogIndex> {
     return this.content.articles(locale, preview);
@@ -58,6 +66,7 @@ export class ContentController {
    * price to be formatted differently from the grid one click away.
    */
   @Get('posts/:slug')
+  @ZodResponse(articleWithProductsSchema)
   @ApiOperation({ summary: 'One blog post, with its products and the newest others' })
   async post(
     @Param('slug') slug: string,
@@ -85,6 +94,7 @@ export class ContentController {
    */
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('contact')
+  @ZodResponse(contactResultSchema)
   @ApiOperation({ summary: 'A message from the contact form' })
   async contactUs(
     @Body(new ZodPipe(submitContactSchema)) body: z.infer<typeof submitContactSchema>,
@@ -104,6 +114,7 @@ export class ContentController {
    * either a redirect or the 404 the caller was about to render anyway.
    */
   @Get('redirects')
+  @ZodResponse(redirectTargetSchema)
   @ApiOperation({ summary: 'Where a legacy URL goes now' })
   async redirect(@Query('path') pathname = ''): Promise<{ to: string; code: number }> {
     const target = await this.content.redirectFor(pathname);

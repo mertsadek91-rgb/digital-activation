@@ -21,12 +21,17 @@ import {
   type WelcomeStats,
   businessQuoteSchema,
   referralVisitSchema,
+  myReferralSchema,
+  businessQuoteListSchema,
+  welcomeStatsSchema,
+  adminReferralListSchema,
 } from '@da/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 
 import { AccountService } from '../account/account.service.js';
 import { AuditService } from '../auth/audit.service.js';
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { BusinessQuoteService } from './business.service.js';
@@ -108,6 +113,7 @@ export class GrowthController {
 
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Get('referrals/me')
+  @ZodResponse(myReferralSchema)
   @ApiOperation({ summary: 'The signed-in customer’s referral code and counts' })
   async mine(@Req() request: FastifyRequest): Promise<MyReferral> {
     const session = await this.account.sessionFor(request.cookies?.[SESSION_COOKIE]);
@@ -132,18 +138,21 @@ export class GrowthAdminController {
   // Leads, so SUPPORT (who answers them in the inbox) sees them too.
   @Roles('ADMIN', 'MARKETING', 'SUPPORT')
   @Get('business/quotes')
+  @ZodResponse(businessQuoteListSchema)
   @ApiOperation({ summary: 'Recent business quote requests' })
   quotes(): Promise<BusinessQuoteList> {
     return this.business.recent();
   }
 
   @Get('welcome/stats')
+  @ZodResponse(welcomeStatsSchema)
   @ApiOperation({ summary: 'Welcome window captures, confirmations and codes' })
   welcomeStats(): Promise<WelcomeStats> {
     return this.welcome.stats();
   }
 
   @Get('referrals')
+  @ZodResponse(adminReferralListSchema)
   @ApiOperation({ summary: 'Referral redemptions and totals' })
   referralList(): Promise<AdminReferralList> {
     return this.referrals.adminList();

@@ -10,10 +10,14 @@ import {
   markFailedSchema,
   QUEUE_OVERDUE_GRACE_SECONDS,
   revealSchema,
+  queueSchema,
+  importResultSchema,
+  revealResultSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { type Actor, VaultService } from '../vault/vault.service.js';
 
@@ -55,6 +59,7 @@ export class FulfillmentController {
   // Customer emails and activation addresses on every row.
   @Roles('ADMIN', 'FULFILLMENT', 'SUPPORT')
   @Get('queue')
+  @ZodResponse(queueSchema)
   @ApiOperation({ summary: 'Paid lines waiting for a supplier order' })
   async queue(
     @Query('includeDone') includeDone?: string,
@@ -149,6 +154,7 @@ export class FulfillmentController {
 
   @Roles('ADMIN', 'FULFILLMENT')
   @Post('vault/import')
+  @ZodResponse(importResultSchema)
   @ApiOperation({ summary: 'Take in a batch of licences for one variant' })
   async importKeys(
     @Body(new ZodPipe(importKeysSchema)) body: z.infer<typeof importKeysSchema>,
@@ -206,6 +212,7 @@ export class FulfillmentController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Roles('ADMIN')
   @Post('vault/keys/:licenseKeyId/reveal')
+  @ZodResponse(revealResultSchema)
   @ApiOperation({ summary: 'Show one licence to a named member of staff' })
   async reveal(
     @Param('licenseKeyId') licenseKeyId: string,

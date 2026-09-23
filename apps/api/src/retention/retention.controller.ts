@@ -9,6 +9,9 @@ import {
   type RenewalStats,
   cartQuerySchema,
   cartRestoreSchema,
+  renewalStatsSchema,
+  cartRecoveryStatsSchema,
+  cartRestoreResultSchema,
 } from '@da/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
@@ -16,6 +19,7 @@ import { z } from 'zod';
 import { Roles, StaffGuard } from '../auth/staff.guard.js';
 import { CART_COOKIE, setCartCookie } from '../cart/cart.controller.js';
 import { CartService } from '../cart/cart.service.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { readNewsletterToken } from '../subscriptions/subscriptions.service.js';
@@ -32,12 +36,14 @@ export class RetentionStatsController {
   constructor(private readonly stats: RetentionStatsService) {}
 
   @Get('renewals')
+  @ZodResponse(renewalStatsSchema)
   @ApiOperation({ summary: 'Renewal reminders sent, renewals, and holdout comparison (30 days)' })
   renewals(): Promise<RenewalStats> {
     return this.stats.renewals();
   }
 
   @Get('cartRecovery')
+  @ZodResponse(cartRecoveryStatsSchema)
   @ApiOperation({
     summary: 'Recovery emails per step, recovered orders, holdout comparison (30 days)',
   })
@@ -68,6 +74,7 @@ export class RetentionPublicController {
    */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('cart/restore')
+  @ZodResponse(cartRestoreResultSchema)
   @HttpCode(200)
   @ApiOperation({ summary: 'Open an abandoned cart from its recovery email' })
   async restore(

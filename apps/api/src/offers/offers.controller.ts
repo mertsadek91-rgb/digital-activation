@@ -12,12 +12,18 @@ import {
   cartQuerySchema,
   offerSuggestionsQuerySchema,
   salePreviewInputSchema,
+  offerSuggestionsSchema,
+  orderSuggestionsSchema,
+  offerCatalogOptionsSchema,
+  offerStatsSchema,
+  salePreviewSchema,
 } from '@da/contracts';
 import type { FastifyRequest } from 'fastify';
 
 import { AccountService } from '../account/account.service.js';
 import { Roles, StaffGuard } from '../auth/staff.guard.js';
 import { verifyOrderAccessKey } from '../common/order-link.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { OffersService } from './offers.service.js';
@@ -32,6 +38,7 @@ export class OffersPublicController {
   ) {}
 
   @Get('suggestions')
+  @ZodResponse(offerSuggestionsSchema)
   @ApiOperation({ summary: '"Goes well with" cards for products just added or in the cart' })
   suggestions(
     @Query(new ZodPipe(offerSuggestionsQuerySchema)) query: OfferSuggestionsQuery,
@@ -49,6 +56,7 @@ export class OffersPublicController {
    * the same three proofs as the order page itself.
    */
   @Get('orders/:number')
+  @ZodResponse(orderSuggestionsSchema)
   @ApiOperation({ summary: 'Suggestions for a paid order, with its link key' })
   async forOrder(
     @Param('number') number: string,
@@ -79,18 +87,21 @@ export class OffersAdminController {
   constructor(private readonly offers: OffersService) {}
 
   @Get('offers/options')
+  @ZodResponse(offerCatalogOptionsSchema)
   @ApiOperation({ summary: 'Products and categories for the offer and sale pickers' })
   options(): Promise<OfferCatalogOptions> {
     return this.offers.catalogOptions();
   }
 
   @Get('offers/stats')
+  @ZodResponse(offerStatsSchema)
   @ApiOperation({ summary: 'Paid orders in the last 30 days by volume tier, pair and sale' })
   stats(): Promise<OfferStats> {
     return this.offers.stats();
   }
 
   @Post('seasonal/preview')
+  @ZodResponse(salePreviewSchema)
   @ApiOperation({ summary: 'How many published products a sale scope would price' })
   preview(@Body(new ZodPipe(salePreviewInputSchema)) body: SalePreviewInput): Promise<SalePreview> {
     return this.offers.salePreview(body);
