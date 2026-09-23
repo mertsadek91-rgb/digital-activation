@@ -26,3 +26,4 @@ export * from './promotion.js';
 export * from './review.js';
 export * from './seo.js';
 export * from './subscriptions.js';
+export * from './marketing.js';

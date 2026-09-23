@@ -55,6 +55,7 @@ export function Nav({
     | 'messages'
     | 'payments'
     | 'promotions'
+    | 'marketing'
     | 'redirects'
     | 'contentPages'
     | 'contentBlog'
@@ -173,6 +174,7 @@ export function Nav({
     { key: 'vault', label: t('vault') },
     { key: 'payments', label: t('payments') },
     { key: 'promotions', label: t('promotions') },
+    { key: 'marketing', label: t('marketing') },
     { key: 'launch', label: t('launch') },
     { key: 'redirects', label: t('redirects') },
     // The copy on public pages, grouped under one heading because to the

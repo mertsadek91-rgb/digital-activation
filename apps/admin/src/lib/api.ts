@@ -12,6 +12,8 @@
 import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
 
 import type {
+  MarketingFeature,
+  MarketingSettings,
   AdminArticle,
   AdminArticleList,
   AdminBrand,
@@ -511,6 +513,17 @@ export const api = {
       `/admin/orders/${encodeURIComponent(number)}/confirm-payment`,
       { method: 'POST', body: JSON.stringify({ provider, reference }) },
     ),
+
+  // --- marketing ---------------------------------------------------------------
+
+  marketingSettings: () => request<MarketingSettings>('/admin/marketing/settings'),
+
+  /** Replaces one feature's settings; the API validates them against its schema. */
+  setMarketingSettings: <F extends MarketingFeature>(feature: F, value: MarketingSettings[F]) =>
+    request<MarketingSettings[F]>(`/admin/marketing/settings/${feature}`, {
+      method: 'PUT',
+      body: JSON.stringify(value),
+    }),
 
   /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
   refundOrder: (number: string, reason: string) =>

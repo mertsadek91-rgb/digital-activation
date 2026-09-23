@@ -5482,3 +5482,39 @@ a.as-button.ghost:hover {
   gap: 12px;
   margin-block: 16px;
 }
+
+/* The marketing overview: one card per feature. */
+.marketing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.marketing-card {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.marketing-card.is-on {
+  border-color: var(--color-brand, #148576);
+}
+.marketing-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.marketing-card h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.marketing-card p {
+  margin: 0;
+  flex: 1;
+}
+.marketing-card .actions {
+  display: flex;
+  gap: 8px;
+}

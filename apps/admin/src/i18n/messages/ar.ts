@@ -86,6 +86,7 @@ export const ar = {
     vault: 'الخزنة',
     payments: 'طرق الدفع',
     promotions: 'الأكواد',
+    marketing: 'التسويق',
     launch: 'حالة المتجر',
     redirects: 'التوجيهات',
     contentGroup: 'المحتوى',
@@ -1178,6 +1179,41 @@ export const ar = {
     modeCode: 'كود',
     modePreview: 'معاينة',
     emptyPreview: 'لا يوجد محتوى',
+  },
+
+  /**
+   * The marketing screens. Every feature says what it does and what it will
+   * not do — nothing on this panel invents a sale, a deadline or a buyer.
+   */
+  marketing: {
+    title: 'التسويق',
+    lede: 'كل أداة تبدأ متوقّفة. شغّلها بعد ضبط إعداداتها، وكل تغيير يُسجَّل باسم من أجراه.',
+    noAccess: 'هذه الشاشة للمدير وفريق التسويق.',
+    on: 'تعمل',
+    off: 'متوقّفة',
+    turnOn: 'شغّل',
+    turnOff: 'أوقف',
+    configure: 'الإعدادات',
+    trustTitle: 'الثقة والضمان',
+    trustBody: 'نص الضمان، ووعد التسليم الفوري، وأرقام السجل التجاري والضريبي، على صفحة المنتج والدفع.',
+    renewalsTitle: 'تذكير التجديد',
+    renewalsBody: 'رسائل قبل انتهاء التراخيص المحدودة المدة، برابط تجديد بنقرة، وخصم لمن وافق على التسويق فقط.',
+    cartRecoveryTitle: 'السلات المتروكة',
+    cartRecoveryBody: 'حتى ثلاث رسائل لمن أدخل بريده ولم يدفع، والخصم في الأخيرة فقط.',
+    offersTitle: 'العروض والمقترحات',
+    offersBody: 'خصم حسب عدد التراخيص، ومنتجات «تناسب معه» بعد الإضافة للسلة وفي تأكيد الطلب.',
+    reviewRequestsTitle: 'طلب التقييم',
+    reviewRequestsBody: 'متى يُطلب التقييم بعد التسليم. التراخيص تُقيَّم بعد تفعيلها.',
+    businessTitle: 'عروض الشركات',
+    businessBody: 'نموذج عرض سعر لمن يطلب عدداً كبيراً من التراخيص، يصل إلى صندوق الرسائل.',
+    welcomeTitle: 'نافذة الاشتراك',
+    welcomeBody: 'حقل بريد واحد عند الخروج أو بعد مدة، مع كود ترحيبي اختياري لاستخدام واحد.',
+    seasonalTitle: 'عروض المواسم',
+    seasonalBody: 'رمضان والجمعة البيضاء واليوم الوطني: خصم مجدول يعود بعده السعر، مع رقم ترخيص التخفيض.',
+    referralTitle: 'برنامج الإحالة',
+    referralBody: 'خصم للصديق على أول طلب، ورصيد للمُحيل بعد مرور مدة الاسترداد.',
+    socialProofTitle: 'إشعارات الشراء',
+    socialProofBody: 'من طلبات مدفوعة حقيقية فقط، بلا أسماء، ولا يظهر شيء قبل الحدّ الأدنى من الطلبات.',
   },
 };
 
