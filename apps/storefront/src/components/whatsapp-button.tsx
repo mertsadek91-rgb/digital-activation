@@ -1,3 +1,5 @@
+import { whatsappLink } from '../lib/contact';
+
 import { WhatsAppIcon } from './icons';
 
 /**
@@ -17,9 +19,11 @@ import { WhatsAppIcon } from './icons';
  * end. A floating action button is furniture, not text: it sits where the
  * thumb is, and on the old site — which is what a returning customer
  * remembers — that is the bottom right.
+ *
+ * Not prefilled, unlike the product page's own WhatsApp buttons: it sits in
+ * the layout, which does not know the page, and learning it would make this a
+ * client component on every page for one line of text.
  */
-const WHATSAPP_DIAL = '966534255367';
-
 export function WhatsAppButton({ locale }: { locale: string }) {
   const ar = locale !== 'en';
   const label = ar ? 'تواصل معنا على واتساب' : 'Message us on WhatsApp';
@@ -27,7 +31,7 @@ export function WhatsAppButton({ locale }: { locale: string }) {
   return (
     <a
       className="whatsapp-fab"
-      href={`https://wa.me/${WHATSAPP_DIAL}`}
+      href={whatsappLink()}
       rel="noopener noreferrer"
       aria-label={label}
       title={label}
