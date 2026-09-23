@@ -52,8 +52,15 @@ export class WelcomeService {
     });
   }
 
-  /** Called once the welcome confirmation link has been followed. */
-  async onConfirmed(email: string, locale: 'ar' | 'en'): Promise<{ minted: boolean }> {
+  /**
+   * Called once the welcome confirmation link has been followed. The caller
+   * signs the unsubscribe link, since the newsletter owns its tokens.
+   */
+  async onConfirmed(
+    email: string,
+    locale: 'ar' | 'en',
+    unsubscribeUrl: string,
+  ): Promise<{ minted: boolean }> {
     const settings = await this.settings.get('welcome');
     const customer = await this.prisma.client.customer.findUnique({
       where: { email },
@@ -120,6 +127,7 @@ export class WelcomeService {
         expiresAt: minted.expiresAt,
         licenceNumber: settings.discountLicenceNumber,
         storeUrl: `${this.storefront}${prefix}/store`,
+        unsubscribeUrl,
       }),
       // The code is a discount, not a secret, but it is still not repeated
       // into a log row that many people read.

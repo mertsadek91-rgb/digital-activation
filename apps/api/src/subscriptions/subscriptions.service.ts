@@ -260,7 +260,14 @@ export class SubscriptionsService {
       data: { marketingOptInAt: now },
     });
     // Only now, with consent recorded, may a welcome code be minted and sent.
-    if (welcomeEmail) await this.welcome.onConfirmed(email, locale);
+    if (welcomeEmail) {
+      const unsubscribe = new URL(
+        `${locale === 'en' ? '/en' : ''}/newsletter/unsubscribe`,
+        this.storefront,
+      );
+      unsubscribe.searchParams.set('token', newsletterToken(email, 'newsletter-unsubscribe'));
+      await this.welcome.onConfirmed(email, locale, unsubscribe.toString());
+    }
     return { ok: true };
   }
 

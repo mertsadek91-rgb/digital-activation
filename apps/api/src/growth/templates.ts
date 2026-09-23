@@ -67,6 +67,8 @@ export function codeEmail(input: {
   expiresAt: Date;
   licenceNumber: string;
   storeUrl: string;
+  /** Marketing sends carry a one-click way out; the reward email is transactional. */
+  unsubscribeUrl?: string;
 }): Rendered {
   const ar = input.locale === 'ar';
   const date = input.expiresAt.toISOString().slice(0, 10);
@@ -91,7 +93,8 @@ export function codeEmail(input: {
 <p>${escape(lede)}</p>
 <p style="margin:16px 0;font:700 22px/1.2 monospace;letter-spacing:2px;" dir="ltr">${escape(input.code)}</p>
 ${button(input.storeUrl, ar ? 'تسوّق الآن' : 'Shop now')}
-${licenceLine(ar, input.licenceNumber)}`;
+${licenceLine(ar, input.licenceNumber)}
+${unsubscribeLine(ar, input.unsubscribeUrl)}`;
 
   return {
     subject: heading,
@@ -113,8 +116,18 @@ ${licenceLine(ar, input.licenceNumber)}`;
       ...(input.licenceNumber
         ? [`${ar ? 'رقم ترخيص التخفيض' : 'Discount licence no.'} ${input.licenceNumber}`]
         : []),
+      ...(input.unsubscribeUrl
+        ? ['', `${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${input.unsubscribeUrl}`]
+        : []),
     ].join('\n'),
   };
+}
+
+function unsubscribeLine(ar: boolean, url: string | undefined): string {
+  if (!url) return '';
+  return `<p style="color:${MUTED};font-size:12px;"><a href="${escape(url)}" style="color:${MUTED};">${
+    ar ? 'إلغاء الاشتراك في رسائل العروض' : 'Unsubscribe from deal emails'
+  }</a></p>`;
 }
 
 /**
