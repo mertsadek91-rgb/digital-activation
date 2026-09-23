@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { LoggerModule } from 'nestjs-pino';
 
 import { AccountModule } from './account/account.module.js';
 import { AdminModule } from './admin/admin.module.js';
@@ -21,6 +22,7 @@ import { OffersModule } from './offers/offers.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { InfraModule } from './infra/infra.module.js';
+import { loggerParams } from './infra/logging.js';
 import { RedisThrottlerStorage } from './infra/redis-throttler.storage.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RetentionModule } from './retention/retention.module.js';
@@ -54,6 +56,9 @@ import { VaultModule } from './vault/vault.module.js';
       envFilePath: ['../../.env'],
       validate: validateEnv,
     }),
+    // JSON request logs with a request id, secrets redacted. A factory so it
+    // reads the environment after ConfigModule has loaded the .env file.
+    LoggerModule.forRootAsync({ useFactory: loggerParams }),
     InfraModule,
     // Protects login, coupon validation and checkout from brute force. Coupon
     // validation matters as much as login: guessable codes are money. The
