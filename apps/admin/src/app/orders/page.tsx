@@ -1,6 +1,12 @@
 'use client';
 
-import type { AdminOrderDetail, AdminOrderList, AdminOrderRow, StaffMe } from '@da/contracts';
+import type {
+  AdminOrderDetail,
+  AdminOrderEvent,
+  AdminOrderList,
+  AdminOrderRow,
+  StaffMe,
+} from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -36,6 +42,12 @@ const STATUS_KEYS = {
   PARTIALLY_REFUNDED: 'statusPartiallyRefunded',
   FAILED: 'statusFailed',
 } as const satisfies Record<AdminOrderRow['status'], string>;
+
+const ACTOR_KEYS = {
+  SYSTEM: 'actorSystem',
+  STAFF: 'actorStaff',
+  PROVIDER: 'actorProvider',
+} as const satisfies Record<AdminOrderEvent['actorType'], string>;
 
 const FILTERS = [
   { key: 'awaiting-payment', label: 'filterAwaitingPayment' },
@@ -709,6 +721,51 @@ function OrderRow({
                         ))}
                       </ul>
                     )}
+                  </div>
+
+                  {/* How the order got to where it is, and who moved it.
+                      Placed first as its own entry, from the order row, so an
+                      order from before history was recorded still has a start;
+                      the status events follow oldest first, as a story reads. */}
+                  <div className="detail-section">
+                    <h3 className="detail-heading">{t('historyHeading')}</h3>
+                    <ol className="order-notes-list order-history">
+                      <li className="order-note-item">
+                        <p className="note-text">{t('historyPlaced')}</p>
+                        <div className="note-meta-row">
+                          <span className="note-date" dir="ltr">
+                            {row.placedAt.slice(0, 16).replace('T', ' ')}
+                          </span>
+                        </div>
+                      </li>
+                      {detail.history.map((event) => (
+                        <li key={event.id} className="order-note-item">
+                          <p className="note-text">
+                            {event.from ? `${t(STATUS_KEYS[event.from])} → ` : ''}
+                            <strong>{t(STATUS_KEYS[event.to])}</strong>
+                          </p>
+                          {event.reason ? <p className="meta">{event.reason}</p> : null}
+                          <div className="note-meta-row">
+                            <span className="note-author">
+                              {t(ACTOR_KEYS[event.actorType])}
+                              {event.actor ? (
+                                <>
+                                  {' · '}
+                                  <span dir="ltr">{event.actor}</span>
+                                </>
+                              ) : null}
+                            </span>
+                            <span>·</span>
+                            <span className="note-date" dir="ltr">
+                              {event.createdAt.slice(0, 16).replace('T', ' ')}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                    {detail.history.length === 0 && row.status !== 'PENDING_PAYMENT' ? (
+                      <p className="meta empty-state-text">{t('historyNotRecorded')}</p>
+                    ) : null}
                   </div>
 
                   {detail.notes.length > 0 ? (

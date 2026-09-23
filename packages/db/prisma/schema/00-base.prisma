@@ -267,6 +267,17 @@ enum OrderStatus {
   @@schema("public")
 }
 
+/// Who moved an order from one status to the next. PROVIDER is a payment
+/// provider's webhook (Stripe, PayPal); SYSTEM is a sweep or the delivery
+/// pipeline; STAFF is somebody in the panel, named by `actorId`.
+enum OrderEventActor {
+  SYSTEM
+  STAFF
+  PROVIDER
+
+  @@schema("public")
+}
+
 enum ReferralRedemptionStatus {
   ISSUED /// code minted for the friend's cart, not yet paid
   PENDING /// friend's order paid; waiting out the refund window

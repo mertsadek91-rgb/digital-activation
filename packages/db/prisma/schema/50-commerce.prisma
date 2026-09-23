@@ -166,6 +166,7 @@ model Order {
   items              OrderItem[]
   payments           Payment[]
   notes              OrderNote[]
+  statusEvents       OrderStatusEvent[]
   invoice            Invoice?
   reviewInvites      ReviewInvite[]
   promotionUses      PromotionUsage[]
@@ -227,6 +228,29 @@ model OrderNote {
   body              String
   isCustomerVisible Boolean    @default(false)
   createdAt         DateTime   @default(now())
+
+  @@index([orderId, createdAt])
+  @@schema("public")
+}
+
+/// One row per status change, written by `transitionOrder` in the same
+/// transaction as the change itself. The order row only knows where it is;
+/// this is how it got there, and who moved it — the question a dispute, a
+/// refund argument or a "why was my key held" email is always about.
+model OrderStatusEvent {
+  id        String           @id @default(cuid())
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  /// Null only for the order's creation, which has no "before".
+  from      OrderStatus?
+  to        OrderStatus
+  actorType OrderEventActor
+  /// A staff id for STAFF, the provider's reference for PROVIDER. No foreign
+  /// key: the two kinds share the column, and removing a staff account must
+  /// not rewrite an order's history.
+  actorId   String?
+  reason    String?
+  createdAt DateTime         @default(now())
 
   @@index([orderId, createdAt])
   @@schema("public")

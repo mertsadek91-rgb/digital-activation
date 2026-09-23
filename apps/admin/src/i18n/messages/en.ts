@@ -432,6 +432,18 @@ export const en: AdminMessages = {
     pagePrev: '← Newer',
     pageNext: 'Older →',
     pageNumber: 'Page {page}',
+
+    historyHeading: '🕓 Status history',
+    historyPlaced: 'Order placed',
+    historyNotRecorded:
+      'This order predates status tracking; only its current status is known.',
+    actorSystem: 'System',
+    actorProvider: 'Payment provider',
+    actorStaff: 'Staff',
+    exportCsv: 'Export CSV',
+    exportFrom: 'From',
+    exportTo: 'To',
+    exportHint: 'Uses the status filter above. Never contains a licence key.',
   },
 
   products: {

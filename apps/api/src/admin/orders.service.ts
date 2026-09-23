@@ -1,10 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AdminOrderDetail, AdminOrderList, AdminOrderRow } from '@da/contracts';
-import { FulfillmentState, Locale, OrderStatus, type Prisma, RiskLevel } from '@da/db';
+import {
+  FulfillmentState,
+  Locale,
+  OrderEventActor,
+  OrderStatus,
+  type Prisma,
+  RiskLevel,
+} from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
+import { recordOrderTransition } from '../checkout/order-status.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -98,6 +106,7 @@ export class OrdersService {
         ...this.include,
         items: true,
         notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
+        statusEvents: { orderBy: { createdAt: 'asc' } },
       },
     });
     if (!order)
@@ -105,8 +114,38 @@ export class OrdersService {
         say(`لا يوجد طلب بالرقم ${number}`, `No order numbered ${number}`),
       );
 
+    // Staff are named rather than shown as ids. The event carries no foreign
+    // key (so deleting an account does not rewrite history), hence the lookup.
+    const staffIds = [
+      ...new Set(
+        order.statusEvents
+          .filter((event) => event.actorType === OrderEventActor.STAFF && event.actorId)
+          .map((event) => event.actorId as string),
+      ),
+    ];
+    const staff =
+      staffIds.length > 0
+        ? await this.prisma.client.staffUser.findMany({
+            where: { id: { in: staffIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const staffName = new Map(staff.map((member) => [member.id, member.name]));
+
     return {
       ...this.toRow(order),
+      history: order.statusEvents.map((event) => ({
+        id: event.id,
+        from: event.from,
+        to: event.to,
+        actorType: event.actorType,
+        actor:
+          event.actorType === OrderEventActor.STAFF
+            ? (staffName.get(event.actorId ?? '') ?? event.actorId)
+            : event.actorId,
+        reason: event.reason,
+        createdAt: event.createdAt.toISOString(),
+      })),
       activationEmail: order.activationEmail,
       couponCode: order.couponCode,
       locale: order.locale === Locale.EN ? 'en' : 'ar',
@@ -266,6 +305,7 @@ export class OrdersService {
       // is a discrepancy nobody finds until the books are closed.
       amountCharged: order.totalUsd.toFixed(2),
       chargedCurrency: 'USD',
+      actor: { type: OrderEventActor.STAFF, id: input.staffId },
     });
 
     if (!applied.alreadyApplied) {
@@ -326,12 +366,27 @@ export class OrdersService {
       );
     }
 
-    const moved = await this.prisma.client.order.updateMany({
-      where: { id: order.id, status: order.status, riskLevel: order.riskLevel },
-      data: {
-        riskLevel: RiskLevel.MEDIUM,
-        ...(inReview ? { status: OrderStatus.PAID } : {}),
-      },
+    // The compare-and-set covers the risk level as well as the status, which
+    // `transitionOrder`'s does not, so it stays here and the history row is
+    // written beside it in the same transaction.
+    const moved = await this.prisma.client.$transaction(async (tx) => {
+      const result = await tx.order.updateMany({
+        where: { id: order.id, status: order.status, riskLevel: order.riskLevel },
+        data: {
+          riskLevel: RiskLevel.MEDIUM,
+          ...(inReview ? { status: OrderStatus.PAID } : {}),
+        },
+      });
+      if (result.count === 1 && inReview) {
+        await recordOrderTransition(tx, {
+          orderId: order.id,
+          from: order.status,
+          to: OrderStatus.PAID,
+          actor: { type: OrderEventActor.STAFF, id: input.staffId },
+          reason: `Hold released: ${input.reason}`,
+        });
+      }
+      return result;
     });
     if (moved.count !== 1) {
       throw new BadRequestException(

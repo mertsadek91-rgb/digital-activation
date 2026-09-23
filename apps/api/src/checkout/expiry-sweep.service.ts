@@ -6,6 +6,7 @@ import { OrderStatus, PaymentState } from '@da/db';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { CheckoutService } from './checkout.service.js';
+import { transitionOrder } from './order-status.js';
 
 /**
  * Closes order drafts nobody is going to pay.
@@ -65,11 +66,17 @@ export class ExpirySweepService {
     for (const draft of drafts) {
       await this.checkout.cancelOpenIntents(draft.id);
       // Conditional: a payment that lands during the pass wins.
-      const { count } = await this.prisma.client.order.updateMany({
-        where: { id: draft.id, status: OrderStatus.PENDING_PAYMENT },
-        data: { status: OrderStatus.CANCELLED },
-      });
-      cancelled += count;
+      const moved = await this.prisma.client.$transaction((tx) =>
+        transitionOrder(tx, {
+          orderId: draft.id,
+          from: OrderStatus.PENDING_PAYMENT,
+          to: OrderStatus.CANCELLED,
+          actor: { type: 'SYSTEM' },
+          reason: `Unpaid after ${String(EXPIRE_AFTER_DAYS)} days`,
+          data: { cancelledAt: new Date() },
+        }),
+      );
+      if (moved) cancelled += 1;
     }
     if (cancelled > 0) this.logger.log(`Cancelled ${String(cancelled)} expired order draft(s).`);
     return { cancelled };

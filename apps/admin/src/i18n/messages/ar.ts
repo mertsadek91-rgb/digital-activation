@@ -437,6 +437,17 @@ export const ar = {
     pagePrev: 'الأحدث →',
     pageNext: '← الأقدم',
     pageNumber: 'صفحة {page}',
+
+    historyHeading: '🕓 سجلّ الحالة',
+    historyPlaced: 'أُنشئ الطلب',
+    historyNotRecorded: 'سُجّل هذا الطلب قبل تتبّع تغييرات الحالة؛ الحالة الحالية وحدها معروفة.',
+    actorSystem: 'النظام',
+    actorProvider: 'مزوّد الدفع',
+    actorStaff: 'موظّف',
+    exportCsv: 'صدّر CSV',
+    exportFrom: 'من',
+    exportTo: 'إلى',
+    exportHint: 'يشمل الحالة المحدّدة أعلاه. لا يتضمّن أي مفتاح ترخيص.',
   },
 
   products: {
