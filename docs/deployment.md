@@ -161,6 +161,11 @@ probe round-trips the database and answers **503** when it cannot, so a
 database outage takes the replica out of rotation rather than producing a
 stream of 500s. Point the proxy's health check at `/health/ready`.
 
+It also pings Redis and reports it, but Redis being down is **not** a 503: the
+replica keeps serving with per-process rate limits, and the body says
+`{"status":"degraded","database":"up","redis":"down"}`. Alert on that body if
+you want to hear about it; do not make the proxy act on it.
+
 ### Behind the proxy
 
 `TRUST_PROXY_HOPS` (default `1`) is how many proxies sit in front of the API.
@@ -171,9 +176,77 @@ Cloudflare) is in front as well. Getting it wrong in the low direction makes
 every request look like the proxy's address; in the high direction it lets a
 client spoof its IP.
 
-Rate limits are held in each process's memory. With more than one API replica
-each keeps its own counters, so the effective limit is multiplied by the
-replica count — a Redis-backed throttler store is the step before scaling out.
+### Rate limits and Redis
+
+Rate-limit counters live in Redis (`REDIS_URL`, the same instance BullMQ uses),
+so every API replica counts against the same limit. **Redis is required before
+running more than one API replica**: without it each replica counts on its own
+and the effective limit is multiplied by the replica count.
+
+Redis is not required to boot or serve. If it is unreachable at startup, or a
+command fails or takes over 500 ms, that request is counted in the process's
+own memory instead — failing open, because refusing every login and checkout
+while the counter is down would be worse than a temporarily looser limit. A
+warning is logged at most once a minute while this lasts, and the shared
+counters resume by themselves when Redis comes back.
+
+### `INTERNAL_API_KEY` — per-visitor limits on server-rendered calls
+
+The storefront renders pages on its own server, so two API routes it calls for
+every visitor — `GET /v1/catalog/search` and `POST /v1/content/not-found` —
+arrive from the storefront's address, and a per-IP limit would count the whole
+shop as one person.
+
+Set `INTERNAL_API_KEY` to the **same value on the API and the storefront**
+resources (32+ characters, `openssl rand -base64 32`). The storefront then sends
+it as `x-da-internal` together with the visitor's address in `x-da-client-ip`
+(taken from `X-Forwarded-For` using the same `TRUST_PROXY_HOPS`), and the API
+counts that address — search at 60 a minute, 404 reports at 30. The forwarded
+address is believed only when the key matches (compared in constant time), so
+nobody else can choose the address they are counted as.
+
+Without the key those two routes are **not rate-limited at all** — the previous
+behaviour. With the key on the API but missing from the storefront, every
+shopper shares one limit and search starts failing under load: set both, or
+neither. The key is a secret: API and storefront resources only, never a
+`NEXT_PUBLIC_` variable.
+
+### Logs
+
+The API writes one JSON object per line to stdout (pino): a line per request
+(`req`, `res`, `responseTime`) plus whatever the code logs, each carrying the
+request's id. `LOG_LEVEL` sets the threshold. Pretty-printed output is for
+`NODE_ENV=development` only, and only when `pino-pretty` (a devDependency) is
+installed.
+
+- **Request id**: a well-formed incoming `X-Request-Id` is kept, otherwise a
+  UUID is generated; either way it is returned as `X-Request-Id` on the
+  response and appears as `req.id` on every line of that request.
+- **Redacted**: `authorization`, `cookie`, `x-da-internal` and `set-cookie`
+  headers; any `password`, `token`, `secret` or `key` field up to three levels
+  deep; `code` in request data (not `err.code`, which is a diagnostic);
+  credential query parameters (`token`, `code`, `key`, `preview`, `email`, …)
+  in the logged URL. Email addresses in messages are masked to `s***@domain`.
+- Health probes are not logged.
+
+### Error reporting
+
+Every 5xx — an unexpected exception, a 5xx `HttpException`, or a Prisma error
+the API does not map to a 4xx — is passed to an `ErrorReporter`
+(`apps/api/src/infra/error-reporter.ts`). The default reports nowhere; the
+error is still logged. `SENTRY_DSN` is the switch for Sentry, but
+`@sentry/node` is **not installed yet**, so setting it alone only logs a warning
+at boot. To turn it on:
+
+```bash
+pnpm --filter @da/api add @sentry/node
+```
+
+then set `SENTRY_DSN` on the API resource and redeploy. The adapter loads the
+package by name at runtime, so no code change is needed. Events carry the
+status, method, route pattern and request id — no URL, body or user data,
+since an order URL or a reveal response carries a licence key. Pending events
+are flushed on shutdown.
 
 ### Scheduled jobs in the API
 
