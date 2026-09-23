@@ -175,6 +175,37 @@ Rate limits are held in each process's memory. With more than one API replica
 each keeps its own counters, so the effective limit is multiplied by the
 replica count — a Redis-backed throttler store is the step before scaling out.
 
+### Content Security Policy
+
+The storefront and the admin each set their CSP in `src/proxy.ts` (Next 16's
+name for middleware), not in `next.config.ts`, because it carries a fresh
+nonce per response. Next reads the nonce back out of the request header and
+stamps it on its own scripts; nothing in the pages handles it.
+
+- `script-src 'self' 'nonce-…' 'strict-dynamic'` — no `'unsafe-inline'`. An
+  injected `<script>` or `onerror=` attribute does not run. `'strict-dynamic'`
+  lets a trusted script load others, which is how Stripe.js arrives (the
+  storefront also lists `js.stripe.com` for browsers without CSP3).
+- `style-src 'unsafe-inline'` stays: React writes `style` attributes and
+  Stripe Elements injects styles, and a nonce cannot cover an attribute.
+- `connect-src` is `'self'`, the API origin (`NEXT_PUBLIC_API_URL`) and, on
+  the storefront, `api.stripe.com`. `frame-ancestors 'none'`,
+  `object-src 'none'`, `base-uri` (`'self'` storefront, `'none'` admin).
+- JSON-LD (`application/ld+json`) needs no nonce. It is a data block, so the
+  browser never runs it and CSP never checks it.
+
+**Every page renders per request.** A prerendered page has no nonce, so its
+scripts would be refused. The storefront's root layout awaits `connection()`.
+In practice that changes only the root 404. The home page and the rest of
+`[locale]` already rendered per request because they read the currency
+cookie. `revalidate` on the home page still caches the API responses behind
+it, but not the full page. Do not put a CDN full-page cache in front of either
+app: a cached page's nonce no longer matches the header sent with it.
+
+When adding a third party, add its origins in `proxy.ts`. A `<Script>` it
+needs must take `nonce={(await headers()).get('x-nonce')}`. Check the browser
+console for `Content Security Policy` errors before shipping.
+
 ### Scheduled jobs in the API
 
 These run inside the API process and each takes a Postgres advisory lock, so
@@ -261,6 +292,28 @@ imported licence and unwrapped once per delivery, not once per page view.
 
 `kekVersion` on every row records which generation wrapped it, so a rotation
 re-wraps incrementally instead of forcing a re-encrypt of the whole vault.
+
+### Staff TOTP secrets use the same KEK
+
+Staff TOTP secrets are sealed the same way as a licence. Each one gets its own
+data key, and the configured KEK provider (KMS in production) wraps that key.
+The whole envelope sits in the existing `StaffUser.totpSecret` column, with a
+`TOTP` + format-version header. There is no schema change.
+
+Rows written before this release were encrypted directly under
+`KEK_LOCAL_BASE64`. They still open. Each one is re-sealed under KMS the next
+time its owner enters a correct code (sign-in, enrolment confirmation or
+step-up). A row wrapped by an older `KEK_VERSION` is re-sealed the same way.
+So:
+
+1. **Leave `KEK_LOCAL_BASE64` set on the API** after deploying this release.
+   Without it, any staff member who has not signed in since cannot be
+   verified.
+2. Once every enrolled staff member has signed in once, remove it. To check,
+   every non-null `totpSecret` should start with the bytes `TOTP`:
+   `SELECT email FROM "StaffUser" WHERE "totpSecret" IS NOT NULL AND substring("totpSecret" from 1 for 4) <> 'TOTP'::bytea;`
+   should return no rows. Anyone still listed can instead be re-run through
+   the create-staff script, which issues a new password and re-enrols TOTP.
 
 ## 6. Cloudflare R2 — media
 
