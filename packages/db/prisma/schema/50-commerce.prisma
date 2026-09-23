@@ -149,13 +149,15 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items         OrderItem[]
-  payments      Payment[]
-  notes         OrderNote[]
-  invoice       Invoice?
-  reviewInvites ReviewInvite[]
-  promotionUses PromotionUsage[]
-  loyaltyTxns   LoyaltyTransaction[]
+  items              OrderItem[]
+  payments           Payment[]
+  notes              OrderNote[]
+  invoice            Invoice?
+  reviewInvites      ReviewInvite[]
+  promotionUses      PromotionUsage[]
+  loyaltyTxns        LoyaltyTransaction[]
+  /// Set when this order was a referred friend's first order.
+  referralRedemption ReferralRedemption?
 
   @@index([status, placedAt])
   @@index([customerId, placedAt])
