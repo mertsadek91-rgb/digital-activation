@@ -157,8 +157,38 @@ start command:
 not committed.
 
 Health checks: `GET /health` and `GET /health/ready` on the API. The readiness
-probe round-trips the database, so a database outage shows as _not ready_
-rather than as a stream of 500s.
+probe round-trips the database and answers **503** when it cannot, so a
+database outage takes the replica out of rotation rather than producing a
+stream of 500s. Point the proxy's health check at `/health/ready`.
+
+### Behind the proxy
+
+`TRUST_PROXY_HOPS` (default `1`) is how many proxies sit in front of the API.
+The API believes that many entries from the right of `X-Forwarded-For` and no
+more, which is what keeps a client from choosing the address the rate limits
+and the audit log see. One hop is Coolify's proxy; set `2` if a CDN (e.g.
+Cloudflare) is in front as well. Getting it wrong in the low direction makes
+every request look like the proxy's address; in the high direction it lets a
+client spoof its IP.
+
+Rate limits are held in each process's memory. With more than one API replica
+each keeps its own counters, so the effective limit is multiplied by the
+replica count — a Redis-backed throttler store is the step before scaling out.
+
+### Scheduled jobs in the API
+
+These run inside the API process and each takes a Postgres advisory lock, so
+more than one replica is safe:
+
+| Job               | Every      | What it does                                                                |
+| ----------------- | ---------- | --------------------------------------------------------------------------- |
+| `stranded-orders` | 5 minutes  | fulfils PAID orders still holding PENDING lines 5+ minutes after payment    |
+| `back-in-stock`   | 10 minutes | emails people waiting on a stocked variant once keys are available          |
+| `expire-drafts`   | hour       | cancels PENDING_PAYMENT drafts older than 14 days with no succeeded payment |
+| `review-invites`  | hour       | day-3 and day-10 review requests, 09:00–20:00 store time                    |
+
+Because of these, **never point a development API at the production
+database**: the sweeps would fulfil real orders and email real customers.
 
 Migrations run as a **release command, not on container start** — three
 replicas booting at once must not race each other:
@@ -284,6 +314,45 @@ collecting the same picture twice.
 
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_SECRET` — API
 resource only, for the same reason as the KMS credentials.
+
+`JWT_ACCESS_SECRET` must be generated (`pnpm secrets:generate`); production
+refuses to start with a value that looks like the `.env.example` placeholder.
+It also signs the order links in emails and the newsletter confirmation
+links, so rotating it retires those links (customers can still sign in).
+
+### The Stripe webhook
+
+Endpoint: `https://<api-host>/v1/webhooks/stripe`. Subscribe to exactly these
+events — the handler acts on them and acknowledges anything else:
+
+| Event                           | Effect                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------- |
+| `payment_intent.succeeded`      | order paid (amount and currency checked against the order), then fulfilled      |
+| `payment_intent.payment_failed` | the attempt is recorded as FAILED with Stripe's reason                          |
+| `charge.refunded`               | order REFUNDED / PARTIALLY_REFUNDED, a Refund row, a note naming delivered keys |
+| `charge.dispute.created`        | order risk set to BLOCKED; no further key is delivered                          |
+
+Every event is logged in `WebhookEvent` before it is acted on. A delivery that
+fails is answered non-2xx and processed again on Stripe's retry; one already
+processed is acknowledged without repeating the work.
+
+Radar's verdict is read on each succeeded payment: `elevated` holds the order
+in PAYMENT_REVIEW, `highest` blocks it. Held orders are released from the
+orders screen (OWNER/ADMIN, with a reason). PayPal is not implemented; the
+checkout does not offer it.
+
+## 7a. Applying this release to an existing database
+
+Two things to run once, as the owner role, in this order:
+
+1. `pnpm --filter @da/db migrate:deploy` — applies
+   `20260923130000_payment_integrity_totp_replay` (TOTP replay column,
+   three-decimal `Payment.amountCharged`, RESTRICT instead of CASCADE from
+   Order to Payment and Payment to Refund).
+2. Re-run `packages/db/prisma/init/roles.prod.sql` — it now revokes UPDATE and
+   DELETE on `AuditLog`, `StockMovement` and `KeyImportBatch` from `da_app`, and
+   UPDATE on `vault.KeyAccessLog` from `da_vault`. Re-run it after any future
+   migration that recreates one of those tables.
 
 ## 8. DNS
 
