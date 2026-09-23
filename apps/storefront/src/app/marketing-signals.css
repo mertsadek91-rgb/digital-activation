@@ -1,0 +1,135 @@
+/* --- trust block: the store's configured guarantee, delivery, registration --- */
+
+.trust-block {
+  display: grid;
+  gap: 10px;
+  margin-block-start: 12px;
+  padding: 14px 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+.trust-block.is-compact {
+  margin-block: 12px 0;
+  padding: 10px 12px;
+  box-shadow: none;
+  background: var(--color-surface);
+}
+.trust-block-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.trust-block-row strong {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+.trust-block-row p {
+  margin: 2px 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-body);
+  line-height: var(--leading-normal);
+}
+.trust-block-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: 50%;
+  background: var(--color-brand-soft);
+  color: var(--color-brand);
+}
+.trust-block-registration,
+.footer-registration {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.trust-block-registration a,
+.footer-registration a {
+  color: var(--color-brand);
+}
+.footer-registration {
+  justify-content: center;
+}
+
+/* --- purchase notices ------------------------------------------------------ */
+
+.social-proof {
+  display: grid;
+  gap: 8px;
+  margin-block-start: 10px;
+}
+
+/*
+ * On a phone the notice is part of the page, below the buy box, so it can
+ * never sit on top of the buy button or the sticky buy bar. Only on a wide
+ * screen does it float, in the corner opposite the WhatsApp button.
+ */
+.social-proof-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-inline-size: 22rem;
+  padding: 10px 12px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-sm);
+}
+.social-proof-dismiss {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+.social-proof-dismiss:hover,
+.social-proof-dismiss:focus-visible {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+@media (min-width: 900px) {
+  .social-proof-live {
+    position: fixed;
+    inset-block-end: calc(18px + env(safe-area-inset-bottom, 0px));
+    left: 18px;
+    z-index: 39;
+  }
+  /* Above the following buy bar whenever it is up, as the WhatsApp button is. */
+  body:has(.buy-bar.is-shown) .social-proof-live {
+    inset-block-end: calc(var(--sticky-buy-height, 64px) + 20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .social-proof-notice {
+    animation: social-proof-in 220ms var(--ease-out, ease-out);
+  }
+}
+@keyframes social-proof-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

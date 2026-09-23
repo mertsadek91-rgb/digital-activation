@@ -636,5 +636,26 @@
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The link you opened no longer points to a page in this store.",
     "page": "Page {page}"
+  },
+  "trustSignals": {
+    "label": "Store guarantees",
+    "guarantee": "Guarantee",
+    "delivery": "Delivery",
+    "registration": "Registration details",
+    "commercialRegistration": "Commercial registration",
+    "vatNumber": "VAT number",
+    "maroof": "Our page on Maroof"
+  },
+  "socialProof": {
+    "summary": "Bought {count, plural, one {once} two {twice} other {# times}} in the last {window}",
+    "windowHours": "{count, plural, one {hour} other {# hours}}",
+    "windowDays": "{count, plural, one {day} other {# days}}",
+    "noticeCountry": "Someone from {country} bought this {ago}",
+    "notice": "Someone bought this {ago}",
+    "agoHours": "a few hours ago",
+    "agoDay": "about a day ago",
+    "agoDays": "a few days ago",
+    "region": "Recent purchases",
+    "dismiss": "Hide purchase notices"
   }
 }

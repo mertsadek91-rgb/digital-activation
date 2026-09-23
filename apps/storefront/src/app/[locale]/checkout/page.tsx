@@ -10,8 +10,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { CardPayment } from '../../../components/card-payment';
 import { CountrySelect } from '../../../components/country-select';
+import { useMarketing } from '../../../components/marketing-context';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
 import { ProductTrust } from '../../../components/product-trust';
+import { TrustBlock } from '../../../components/trust-block';
 import { isArabic } from '../../../i18n/locale';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatPrice } from '../../../lib/format';
@@ -58,6 +60,7 @@ export default function CheckoutPage() {
   const locale = params.locale ?? 'ar';
   const prefix = isArabic(locale) ? '' : `/${locale}`;
   const t = useTranslations('checkout');
+  const trust = useMarketing()?.trust ?? null;
   const tCart = useTranslations('cart');
   const tc = useTranslations('common');
 
@@ -380,6 +383,10 @@ export default function CheckoutPage() {
                   ))}
                 </div>
               )}
+
+              {/* The store's guarantee and registration, beside the buttons
+                  that ask for the money — the one place a buyer weighs them. */}
+              {trust?.showOnCheckout ? <TrustBlock trust={trust} locale={locale} compact /> : null}
 
               {/* The policies, where the decision is made. The refund policy was
                   published and linked from almost nowhere; the moment before

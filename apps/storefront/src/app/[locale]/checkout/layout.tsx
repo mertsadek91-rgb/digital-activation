@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+import { MarketingProvider } from '../../../components/marketing-context';
+import { getMarketingPublic } from '../../../lib/api';
+
 /**
  * Never indexed, and not because it is secret.
  *
@@ -25,6 +28,18 @@ export async function generateMetadata({
   };
 }
 
-export default function Layout({ children }: { children: ReactNode }) {
-  return children;
+/**
+ * The page is a client component, so the trust settings it shows beside the
+ * pay buttons are read here, on the server, and handed down.
+ */
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const marketing = await getMarketingPublic({ locale });
+  return <MarketingProvider value={marketing}>{children}</MarketingProvider>;
 }

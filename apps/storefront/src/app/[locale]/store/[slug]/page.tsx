@@ -13,13 +13,16 @@ import { ProductCard } from '../../../../components/product-card';
 import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
+import { SocialProofNotices } from '../../../../components/social-proof';
 import { StockAlert } from '../../../../components/stock-alert';
+import { TrustBlock } from '../../../../components/trust-block';
 import { isArabic } from '../../../../i18n/locale';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
-import { getProduct, getProductReviews } from '../../../../lib/api';
+import { getMarketingPublic, getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
+import { deliveryPromise, localText } from '../../../../lib/trust';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -90,9 +93,10 @@ export default async function ProductPage({ params }: Props) {
   const tf = await getTranslations('format');
   const ar = isArabic(locale);
 
-  const [product, reviews] = await Promise.all([
+  const [product, reviews, marketing] = await Promise.all([
     getProduct(slug, { locale }),
     getProductReviews(slug, { locale }),
+    getMarketingPublic({ locale }),
   ]);
   // A slug that no longer exists may have been renamed rather than removed —
   // the redirect map is consulted before the 404, and the miss is recorded.
@@ -204,6 +208,20 @@ export default async function ProductPage({ params }: Props) {
           />
 
           <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
+
+          {/* The store's own guarantee and registration, from the marketing
+              panel; absent while that feature is off or says nothing. */}
+          {marketing?.trust?.showOnProduct ? (
+            <TrustBlock
+              trust={marketing.trust}
+              locale={locale}
+              delivery={deliveryPromise(
+                product.variants,
+                localText(marketing.trust.instantDeliveryText, locale),
+                tf,
+              )}
+            />
+          ) : null}
         </div>
 
         <div className="buybox">
@@ -259,6 +277,19 @@ export default async function ProductPage({ params }: Props) {
                 {t('askWhenBack')}
               </a>
             </div>
+          ) : null}
+
+          {/* Below the buy box, not above it: on a phone the notices sit in the
+              page here, and anything inserted above the button would push it
+              down under a thumb that was already on its way. Keyed by slug so
+              a new product starts a new, separately budgeted page. */}
+          {marketing?.socialProof ? (
+            <SocialProofNotices
+              key={product.slug}
+              slug={product.slug}
+              locale={locale}
+              settings={marketing.socialProof}
+            />
           ) : null}
 
           {product.isDraft ? (
