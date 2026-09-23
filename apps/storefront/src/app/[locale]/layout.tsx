@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Tajawal } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -17,6 +18,21 @@ import { getCollections } from '../../lib/api';
 import { routing } from '../../i18n/routing';
 
 import '../globals.css';
+
+/**
+ * The store's typeface, self-hosted by next/font at build time.
+ *
+ * Arabic and Latin subsets, and only the weights the stylesheets use: 400 for
+ * body, 500 and 700 for labels and headings, 800 for the heaviest display text.
+ * The CSS also asks for 600 and 900 in a few places; Tajawal has no 600, and
+ * the browser picks the nearest face for both rather than faking a weight.
+ */
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '700', '800'],
+  display: 'swap',
+  variable: '--font-tajawal',
+});
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -91,7 +107,7 @@ export default async function LocaleLayout({
   ]);
 
   return (
-    <html lang={locale} dir={DIRECTION[locale]}>
+    <html lang={locale} dir={DIRECTION[locale]} className={tajawal.variable}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: siteGraph }} />
         <NextIntlClientProvider>

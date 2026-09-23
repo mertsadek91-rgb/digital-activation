@@ -133,7 +133,7 @@ export default async function GoldenWarrantyPage({ params }: Props) {
           covers, the questions and the closing call. All of it rows the owner
           edits in the panel. */}
       <section className="warranty-section">
-        <MotionFadeIn delay={0.05}>
+        <MotionFadeIn>
           <div className="shell prose warranty-body">
             <Blocks blocks={page.blocks.filter((block) => block.type !== 'answerFirst')} />
           </div>

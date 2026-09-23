@@ -159,14 +159,14 @@ export default async function ContactPage({ params }: Props) {
       <div className="contact-grid-layout">
         {/* Column 1: Contact Form */}
         <div className="contact-form-container">
-          <MotionFadeIn delay={0.05}>
+          <MotionFadeIn>
             <ContactForm locale={locale} />
           </MotionFadeIn>
         </div>
 
         {/* Column 2: Direct Support Channels & Shortcuts */}
         <aside className="contact-sidebar">
-          <MotionFadeIn delay={0.1}>
+          <MotionFadeIn>
             {/* Direct Channels Box */}
             <div className="contact-channels-box">
               <span className="channels-box-title">

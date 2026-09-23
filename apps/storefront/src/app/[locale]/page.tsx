@@ -49,7 +49,9 @@ export async function generateMetadata({
   return {
     // Absolute: this one already ends in the brand, and the layout's template
     // would add it a second time.
-    title: { absolute: `${t('heroHeadline')} | ${locale === 'ar' ? BRAND.nameAr : BRAND.nameEn}` },
+    title: {
+      absolute: `${t('heroHeadline')} | ${locale === 'ar' ? BRAND.nameAr : BRAND.nameEn}`,
+    },
     description: t('heroBody'),
     // The home page's own canonical and hreflang, which used to be declared by
     // the layout and so, wrongly, by every other page too.
@@ -85,7 +87,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // that row has something in it: an ItemList of zero items is a claim about
   // nothing.
   const rail = home && home.bestSellers.length > 0 ? home.bestSellers : null;
-  //
   // The Organization and WebSite nodes are emitted by the layout, on every
   // page, so they are not repeated here.
   const graph = buildGraph([
@@ -155,7 +156,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-      <MotionFadeIn delay={0.05}>
+      <MotionFadeIn>
         <section className="trust" aria-labelledby="trust-title">
           <h2 id="trust-title" className="visually-hidden">
             {t('trustTitle')}
