@@ -46,6 +46,10 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  // `/wp-login.php` arrives here as the "locale" `wp-login.php`. It is about
+  // to be a 404 from the root not-found, which carries its own head; claiming
+  // an English share card for it first would be wrong.
+  if (!hasLocale(routing.locales, locale)) return {};
   const ar = locale === 'ar';
   const brand = ar ? BRAND.nameAr : BRAND.nameEn;
 
