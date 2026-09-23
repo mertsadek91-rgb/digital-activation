@@ -360,6 +360,25 @@ export class OrdersService {
     return { status: after.status };
   }
 
+  async refund(input: {
+    number: string;
+    reason: string;
+    staffId: string;
+    context: { ip?: string | undefined; userAgent?: string | undefined };
+  }): Promise<{ status: string; via: 'stripe' | 'recorded' }> {
+    const result = await this.checkout.refundOrder(input);
+    await this.audit.record({
+      actorId: input.staffId,
+      entity: 'Order',
+      entityId: input.number,
+      action: 'order.refunded',
+      after: { via: result.via, status: result.status },
+      ip: input.context.ip,
+      userAgent: input.context.userAgent,
+    });
+    return result;
+  }
+
   /**
    * Adds a note to an order.
    *
@@ -434,7 +453,10 @@ export class OrdersService {
         provider: payment.provider,
         state: payment.state,
         reference: payment.providerRef,
-        amount: payment.amountCharged.toFixed(2),
+        // Three places for the currencies counted in thousandths.
+        amount: payment.amountCharged.toFixed(
+          ['BHD', 'JOD', 'KWD', 'OMR', 'TND'].includes(payment.chargedCurrency) ? 3 : 2,
+        ),
         currency: payment.chargedCurrency,
         createdAt: payment.createdAt.toISOString(),
       })),

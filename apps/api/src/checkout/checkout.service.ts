@@ -864,6 +864,87 @@ export class CheckoutService {
   }
 
   /**
+   * Refunds an order from the panel.
+   *
+   * A card payment is refunded through Stripe, and the order moves when
+   * Stripe's `charge.refunded` webhook arrives — the same path a refund made
+   * in Stripe's own dashboard takes, so the two cannot drift. A bank transfer
+   * or crypto payment is returned outside this system; here it is recorded,
+   * which is all this system can truthfully do.
+   *
+   * Either way the order stops being deliverable: PAID and FULFILLING are the
+   * only states the delivery paths accept, and a refunded order is neither.
+   */
+  async refundOrder(input: {
+    number: string;
+    reason: string;
+    staffId: string;
+  }): Promise<{ status: OrderStatus; via: 'stripe' | 'recorded' }> {
+    const order = await this.prisma.client.order.findUnique({
+      where: { number: input.number },
+      select: {
+        id: true,
+        status: true,
+        payments: {
+          where: { state: PaymentState.SUCCEEDED },
+          select: { id: true, provider: true, providerRef: true, amountUsd: true },
+        },
+      },
+    });
+    if (!order) throw new NotFoundException(`No order ${input.number}`);
+
+    const refundable: OrderStatus[] = [
+      OrderStatus.PAID,
+      OrderStatus.PAYMENT_REVIEW,
+      OrderStatus.FULFILLING,
+      OrderStatus.FULFILLED,
+      OrderStatus.COMPLETED,
+      OrderStatus.PARTIALLY_REFUNDED,
+    ];
+    if (!refundable.includes(order.status)) {
+      throw new BadRequestException(
+        `Order ${input.number} is ${order.status}; there is nothing to refund.`,
+      );
+    }
+    const payment = order.payments[0];
+    if (!payment) throw new BadRequestException(`Order ${input.number} has no succeeded payment.`);
+
+    await this.prisma.client.orderNote.create({
+      data: {
+        orderId: order.id,
+        authorId: input.staffId || null,
+        body: `Refund requested: ${input.reason}`,
+        isCustomerVisible: false,
+      },
+    });
+
+    if (payment.provider === PaymentProvider.STRIPE && payment.providerRef) {
+      await this.stripe.refundIntent(payment.providerRef, input.number);
+      return { status: order.status, via: 'stripe' };
+    }
+
+    await this.prisma.client.$transaction([
+      this.prisma.client.refund.create({
+        data: {
+          paymentId: payment.id,
+          amountUsd: payment.amountUsd,
+          reason: input.reason,
+          createdById: input.staffId || null,
+        },
+      }),
+      this.prisma.client.payment.update({
+        where: { id: payment.id },
+        data: { state: PaymentState.REFUNDED },
+      }),
+      this.prisma.client.order.update({
+        where: { id: order.id },
+        data: { status: OrderStatus.REFUNDED },
+      }),
+    ]);
+    return { status: OrderStatus.REFUNDED, via: 'recorded' };
+  }
+
+  /**
    * Applies a dispute Stripe reports.
    *
    * The order is blocked rather than refunded — a dispute can still be won —

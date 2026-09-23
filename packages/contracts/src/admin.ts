@@ -479,6 +479,14 @@ export const releaseHoldSchema = z.object({
   reason: z.string().trim().min(3).max(500),
 });
 
+/**
+ * Refunding a whole order. The reason is kept on the order, like a hold
+ * release's, because it is the only record of why the money went back.
+ */
+export const refundOrderSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
+});
+
 export const addOrderNoteSchema = z.object({
   body: z.string().trim().min(2).max(2000),
   /** Shown to the customer on their order page when true. */

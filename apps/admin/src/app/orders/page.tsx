@@ -205,6 +205,11 @@ export default function OrdersPage() {
                       api.releaseHold(row.number, reason),
                     )
                   }
+                  onRefund={(reason) =>
+                    void act(t('doneRefunded', { number: row.number }), () =>
+                      api.refundOrder(row.number, reason),
+                    )
+                  }
                 />
               ))}
             </tbody>
@@ -225,6 +230,7 @@ function OrderRow({
   onConfirm,
   onNote,
   onRelease,
+  onRefund,
 }: {
   row: AdminOrderRow;
   canConfirm: boolean;
@@ -232,6 +238,7 @@ function OrderRow({
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
   onRelease: (reason: string) => void;
+  onRefund: (reason: string) => void;
 }) {
   const t = useT('orders');
   const c = useT('common');
@@ -239,6 +246,8 @@ function OrderRow({
   const [noting, setNoting] = useState(false);
   const [releasing, setReleasing] = useState(false);
   const [releaseReason, setReleaseReason] = useState('');
+  const [refunding, setRefunding] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
   /**
    * The rest of the order, loaded when somebody asks for it.
    *
@@ -296,6 +305,15 @@ function OrderRow({
   const held =
     row.status === 'PAYMENT_REVIEW' ||
     (risky && (row.status === 'PAID' || row.status === 'FULFILLING'));
+  // Anything the money has arrived for and not already gone back from.
+  const refundable = [
+    'PAID',
+    'PAYMENT_REVIEW',
+    'FULFILLING',
+    'FULFILLED',
+    'COMPLETED',
+    'PARTIALLY_REFUNDED',
+  ].includes(row.status);
 
   return (
     <>
@@ -359,6 +377,20 @@ function OrderRow({
               {releasing ? c('cancel') : t('releaseHold')}
             </button>
           ) : null}
+          {refundable && canConfirm ? (
+            <button
+              type="button"
+              className={`ghost${refunding ? ' is-active' : ''}`}
+              onClick={() => {
+                setRefunding(!refunding);
+                setReleasing(false);
+                setConfirming(false);
+                setNoting(false);
+              }}
+            >
+              {refunding ? c('cancel') : t('refund')}
+            </button>
+          ) : null}
           <button
             type="button"
             className={`ghost${noting ? ' is-active' : ''}`}
@@ -419,6 +451,38 @@ function OrderRow({
               </label>
               <button type="submit" disabled={reference.trim().length < 3}>
                 {t('confirmAndRelease')}
+              </button>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+
+      {refunding ? (
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onRefund(refundReason.trim());
+                setRefundReason('');
+                setRefunding(false);
+              }}
+            >
+              <label className="grow">
+                {t('refundReasonLabel')}
+                <textarea
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  rows={2}
+                  required
+                  minLength={3}
+                  placeholder={t('refundReasonPlaceholder')}
+                />
+                <small>{t('refundReasonHint')}</small>
+              </label>
+              <button type="submit" disabled={refundReason.trim().length < 3}>
+                {t('refundConfirm')}
               </button>
             </form>
           </td>

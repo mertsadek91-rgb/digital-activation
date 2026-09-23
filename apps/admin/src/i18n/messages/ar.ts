@@ -396,6 +396,13 @@ export const ar = {
       'أوقفت هذا الطلبَ قاعدةٌ — تقييم احتيال، أو مبلغ لا يطابق، أو كود مستهلَك، أو نزاع مفتوح. اقرأ ملاحظاته أولاً. رفع الإيقاف يُطلق التجهيز، ومفتاح من المخزون يُرسَل للعميل.',
     releaseAndDeliver: 'ارفع الإيقاف',
 
+    refund: 'استرداد',
+    refundReasonLabel: 'سبب الاسترداد',
+    refundReasonPlaceholder: 'ما طلبه العميل، أو ما الذي حدث',
+    refundReasonHint:
+      'يُسترد الطلب كاملاً. دفعة البطاقة تعود عبر Stripe ويتحدّث الطلب عند تأكيده؛ أمّا التحويل البنكي أو العملة الرقمية فتعيده أنت، ويُسجَّل هنا. المفاتيح المسلَّمة لا تُسترجع — عطّلها لدى المورّد.',
+    refundConfirm: 'استرِدّ الطلب',
+
     internalNote: 'ملاحظة داخلية',
     internalNotePlaceholder: 'ما اتُّفق عليه مع العميل',
     internalNoteHint: 'لا تكتب هنا مفتاحاً أو كلمة مرور. التسليم يتم من الخزنة وحدها.',
@@ -420,6 +427,7 @@ export const ar = {
     donePaymentConfirmed: 'أُكّد دفع {number}',
     doneNoteAdded: 'أُضيفت ملاحظة على {number}',
     doneHoldReleased: 'رُفع الإيقاف عن {number}',
+    doneRefunded: 'بدأ استرداد {number}',
   },
 
   products: {

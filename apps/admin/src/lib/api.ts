@@ -456,6 +456,13 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ provider, reference }) },
     ),
 
+  /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
+  refundOrder: (number: string, reason: string) =>
+    request<{ status: string; via: 'stripe' | 'recorded' }>(
+      `/admin/orders/${encodeURIComponent(number)}/refund`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    ),
+
   /** Lifts a review or risk hold. The reason is kept on the order. */
   releaseHold: (number: string, reason: string) =>
     request<{ status: string }>(`/admin/orders/${encodeURIComponent(number)}/release-hold`, {

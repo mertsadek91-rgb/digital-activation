@@ -390,6 +390,13 @@ export const en: AdminMessages = {
       'The order was held by a rule — a fraud verdict, an amount that did not match, a spent coupon, or an open dispute. Read its notes first. Releasing it lets fulfilment run, and a key from stock goes out.',
     releaseAndDeliver: 'Release',
 
+    refund: 'Refund',
+    refundReasonLabel: 'Reason for the refund',
+    refundReasonPlaceholder: 'what the customer asked, or what went wrong',
+    refundReasonHint:
+      'Refunds the whole order. A card payment goes back through Stripe and the order updates when Stripe confirms; a bank or crypto payment must be returned by you, and is recorded here. Keys already delivered cannot be recalled — deactivate them with the supplier.',
+    refundConfirm: 'Refund the order',
+
     internalNote: 'Internal note',
     internalNotePlaceholder: 'what was agreed with the customer',
     internalNoteHint:
@@ -415,6 +422,7 @@ export const en: AdminMessages = {
     donePaymentConfirmed: 'Payment confirmed on {number}',
     doneNoteAdded: 'Note added to {number}',
     doneHoldReleased: 'Hold released on {number}',
+    doneRefunded: 'Refund started on {number}',
   },
 
   products: {

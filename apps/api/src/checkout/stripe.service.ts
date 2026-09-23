@@ -124,6 +124,25 @@ export class StripeService {
   }
 
   /**
+   * Refunds a succeeded intent in full.
+   *
+   * Keyed on the intent, so a double click refunds once. The order itself is
+   * moved by the `charge.refunded` webhook this triggers — one path for a
+   * refund made here and one made in Stripe's dashboard.
+   */
+  async refundIntent(intentId: string, orderNumber: string): Promise<string> {
+    const refund = await this.stripe().refunds.create(
+      {
+        payment_intent: intentId,
+        reason: 'requested_by_customer',
+        metadata: { orderNumber },
+      },
+      { idempotencyKey: `refund:${intentId}` },
+    );
+    return refund.id;
+  }
+
+  /**
    * Radar's risk level for the charge behind an intent.
    *
    * The webhook's intent carries only the charge id, so the charge is fetched.
