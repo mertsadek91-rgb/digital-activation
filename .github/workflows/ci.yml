@@ -9,9 +9,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only. gitleaks lists the pull request's commits, which needs
+# pull-requests: read; nothing here writes to the repository.
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   TURBO_TELEMETRY_DISABLED: 1
   NEXT_TELEMETRY_DISABLED: 1
+  # prisma.config.ts resolves the migrate URL even for `prisma generate`,
+  # which never connects. A placeholder lets the jobs without a database
+  # generate the client; the schema job overrides it with its real Postgres.
+  DATABASE_URL_MIGRATE: postgresql://ci:ci@localhost:5432/ci
 
 jobs:
   verify:
@@ -62,6 +72,9 @@ jobs:
       DATABASE_URL_MIGRATE: postgresql://da:ci@localhost:5432/da_main?schema=public
       DATABASE_URL: postgresql://da:ci@localhost:5432/da_main?schema=public
       DATABASE_URL_VAULT: postgresql://da:ci@localhost:5432/da_main?schema=vault
+      # An empty database Prisma replays the migrations into for the drift
+      # check. Prisma 7 reads it from prisma.config.ts, not a CLI flag.
+      SHADOW_DATABASE_URL: postgresql://da:ci@localhost:5432/da_shadow?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -78,10 +91,10 @@ jobs:
       # migration: the committed migrations must reproduce the schema exactly.
       - name: Fail on schema drift
         run: |
+          PGPASSWORD=ci psql -h localhost -U da -d da_main -c 'CREATE DATABASE da_shadow'
           pnpm --filter @da/db exec prisma migrate diff \
             --from-migrations prisma/migrations \
             --to-schema prisma/schema \
-            --shadow-database-url "$DATABASE_URL_MIGRATE" \
             --exit-code
         continue-on-error: false
 

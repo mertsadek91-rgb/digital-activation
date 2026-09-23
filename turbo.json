@@ -6,7 +6,8 @@
   "tasks": {
     "generate": {
       "cache": false,
-      "outputs": ["generated/**"]
+      "outputs": ["generated/**"],
+      "passThroughEnv": ["DATABASE_URL_MIGRATE", "SHADOW_DATABASE_URL"]
     },
     "build": {
       "dependsOn": ["^build", "generate"],
