@@ -29,7 +29,7 @@ function bodyWords(html: string): number {
  * on. The ceiling is mentioned only once it is passed, and as advice — the
  * gate has no maximum, the SERP does.
  */
-function Gauge({
+export function Gauge({
   value,
   min,
   max,
