@@ -8,6 +8,9 @@ import { NOINDEX_PREFIXES } from '@da/contracts';
 import { indexingPolicy, robotsMeta } from '@da/seo';
 import { BRAND } from '@da/ui';
 
+import { isArabic } from '../i18n/locale';
+import { translatorFor } from '../i18n/translator';
+
 export { indexingPolicy, robotsMeta };
 
 export const NOINDEX_PREFIXES_ROBOTS = NOINDEX_PREFIXES;
@@ -62,12 +65,10 @@ export function robotsTxtRules() {
  * without the status must not file it either.
  */
 export function notFoundMetadata(locale: string): Metadata {
-  const ar = locale !== 'en';
+  const t = translatorFor(locale, 'seo');
   return {
-    title: ar ? 'الصفحة غير موجودة' : 'Page not found',
-    description: ar
-      ? 'الرابط الذي فتحته لم يعد يشير إلى صفحة في المتجر.'
-      : 'The link you opened no longer points to a page in this store.',
+    title: t('notFoundTitle'),
+    description: t('notFoundDescription'),
     robots: { index: false, follow: false },
   };
 }
@@ -106,7 +107,7 @@ export function paginatedUrl(url: string, page: number): string {
  * image lost the site name and locale with it. Pages spread this first.
  */
 export function openGraphDefaults(locale: string) {
-  const ar = locale === 'ar';
+  const ar = isArabic(locale);
   const brand = ar ? BRAND.nameAr : BRAND.nameEn;
   return {
     siteName: brand,
@@ -120,5 +121,5 @@ export function openGraphDefaults(locale: string) {
 /** "– صفحة 2" / "– Page 2", or nothing on page 1. */
 export function pageSuffix(page: number, locale: string): string {
   if (page <= 1) return '';
-  return locale === 'ar' ? ` – صفحة ${String(page)}` : ` – Page ${String(page)}`;
+  return ` – ${translatorFor(locale, 'seo')('page', { page: String(page) })}`;
 }

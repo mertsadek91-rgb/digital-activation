@@ -1,3 +1,5 @@
+import { useTranslations } from 'next-intl';
+
 import { whatsappLink } from '../lib/contact';
 
 import { WhatsAppIcon } from './icons';
@@ -24,9 +26,9 @@ import { WhatsAppIcon } from './icons';
  * the layout, which does not know the page, and learning it would make this a
  * client component on every page for one line of text.
  */
-export function WhatsAppButton({ locale }: { locale: string }) {
-  const ar = locale !== 'en';
-  const label = ar ? 'تواصل معنا على واتساب' : 'Message us on WhatsApp';
+export function WhatsAppButton() {
+  const t = useTranslations('whatsapp');
+  const label = t('label');
 
   return (
     <a

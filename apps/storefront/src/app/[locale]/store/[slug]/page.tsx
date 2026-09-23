@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
@@ -14,6 +14,7 @@ import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
 import { StockAlert } from '../../../../components/stock-alert';
+import { isArabic } from '../../../../i18n/locale';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
@@ -66,7 +67,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: product.seo.description ?? product.shortDesc,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
@@ -84,7 +85,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const ar = locale === 'ar';
+  const t = await getTranslations('product');
+  const tc = await getTranslations('common');
+  const tf = await getTranslations('format');
+  const ar = isArabic(locale);
 
   const [product, reviews] = await Promise.all([
     getProduct(slug, { locale }),
@@ -178,7 +182,7 @@ export default async function ProductPage({ params }: Props) {
     <main className="shell product">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
         {product.breadcrumbs.map((crumb, index) => (
           <span key={`${crumb.href}-${String(index)}`}>
             {index > 0 ? <span aria-hidden="true"> › </span> : null}
@@ -197,10 +201,9 @@ export default async function ProductPage({ params }: Props) {
             images={product.images.map((image) => ({ url: image.url, alt: image.alt }))}
             slug={product.slug}
             name={product.name}
-            locale={locale}
           />
 
-          <ProductTrust locale={locale} hasGoldenWarranty={product.hasGoldenWarranty} />
+          <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
         </div>
 
         <div className="buybox">
@@ -219,9 +222,10 @@ export default async function ProductPage({ params }: Props) {
           {reviews && reviews.aggregate.count > 0 ? (
             <p className="proof">
               <a href="#reviews">
-                {ar
-                  ? `${reviews.aggregate.average} من 5 — ${String(reviews.aggregate.count)} تقييماً من مشترين`
-                  : `${reviews.aggregate.average} out of 5 — ${String(reviews.aggregate.count)} verified reviews`}
+                {t('ratingProof', {
+                  average: reviews.aggregate.average,
+                  count: reviews.aggregate.count,
+                })}
               </a>
             </p>
           ) : null}
@@ -230,9 +234,7 @@ export default async function ProductPage({ params }: Props) {
               rather than noise. */}
           {product.salesCount > 0 ? (
             <p className="proof">
-              {ar
-                ? `تم بيعه ${String(product.salesCount)} مرة`
-                : `Sold ${String(product.salesCount)} times`}
+              {t('salesProof', { count: product.salesCount })}
             </p>
           ) : null}
 
@@ -251,29 +253,23 @@ export default async function ProductPage({ params }: Props) {
               <StockAlert variantId={selected.id} locale={locale} />
               <a
                 className="notify"
-                href={whatsappLink(
-                  ar
-                    ? `مرحباً، متى يتوفّر «${product.name}»؟ ${pageUrl}`
-                    : `Hi, when will "${product.name}" be back in stock? ${pageUrl}`,
-                )}
+                href={whatsappLink(t('whatsappWhenBack', { name: product.name, url: pageUrl }))}
                 rel="noopener noreferrer"
               >
-                {ar ? 'اسألنا عن موعد التوفّر' : 'Ask us when it is back'}
+                {t('askWhenBack')}
               </a>
             </div>
           ) : null}
 
           {product.isDraft ? (
-            <p className="draft-flag">
-              {ar ? 'مسودّة — مرئية في المعاينة فقط' : 'Draft — visible in preview only'}
-            </p>
+            <p className="draft-flag">{tc('draftPreview')}</p>
           ) : null}
         </div>
       </div>
 
       {product.activationSteps ? (
         <section className="prose steps">
-          <h2>{ar ? 'خطوات التفعيل' : 'How to activate'}</h2>
+          <h2>{t('howToActivate')}</h2>
           <ol>
             {product.activationSteps.map((step) => (
               <li key={step.step}>{step.text}</li>
@@ -282,7 +278,7 @@ export default async function ProductPage({ params }: Props) {
           {product.downloadUrl ? (
             <p>
               <a href={product.downloadUrl} rel="nofollow noopener" target="_blank">
-                {ar ? 'رابط التحميل الرسمي' : 'Official download link'}
+                {t('officialDownload')}
               </a>
             </p>
           ) : null}
@@ -298,7 +294,7 @@ export default async function ProductPage({ params }: Props) {
         costs more than a sale not made.
       */}
       {product.warnings.length > 0 ? (
-        <section className="product-warnings" aria-label={ar ? 'قبل الشراء' : 'Before you buy'}>
+        <section className="product-warnings" aria-label={t('beforeYouBuy')}>
           <ul>
             {product.warnings.map((warning) => (
               <li key={warning.text} className={`warning-${warning.severity}`}>
@@ -319,14 +315,14 @@ export default async function ProductPage({ params }: Props) {
         <div className="detail-main">
           {product.body.length > 0 ? (
             <section className="prose panel">
-              <h2>{ar ? 'وصف المنتج' : 'About this product'}</h2>
+              <h2>{t('about')}</h2>
               <Blocks blocks={product.body} />
             </section>
           ) : null}
 
           {product.faq ? (
             <section className="prose panel faq">
-              <h2>{ar ? 'أسئلة متكرّرة' : 'Frequently asked'}</h2>
+              <h2>{t('faq')}</h2>
               <dl>
                 {product.faq.map((item, index) => (
                   <div key={index}>
@@ -346,25 +342,17 @@ export default async function ProductPage({ params }: Props) {
               <SupportIcon />
             </span>
             <div>
-              <strong>{ar ? 'لا تتردّد في طلب الدعم' : 'Ask us before you buy'}</strong>
-              <p>
-                {ar
-                  ? 'عندك سؤال عن التفعيل أو عن النسخة المناسبة لك؟ راسلنا وسنردّ عليك.'
-                  : 'Not sure which licence you need, or how it activates? Message us and a person will answer.'}
-              </p>
+              <strong>{t('helpTitle')}</strong>
+              <p>{t('helpBody')}</p>
             </div>
             {/* Prefilled with the product and its link, so the first reply is
                 an answer rather than "which product?". */}
             <a
               className="btn btn-ghost"
-              href={whatsappLink(
-                ar
-                  ? `مرحباً، عندي سؤال عن «${product.name}»: ${pageUrl}`
-                  : `Hi, I have a question about "${product.name}": ${pageUrl}`,
-              )}
+              href={whatsappLink(t('whatsappQuestion', { name: product.name, url: pageUrl }))}
               rel="noopener noreferrer"
             >
-              {ar ? 'اطلب الدعم' : 'Get help'}
+              {t('getHelp')}
             </a>
           </aside>
         </div>
@@ -375,7 +363,7 @@ export default async function ProductPage({ params }: Props) {
             API could not be reached, where an empty section would be a lie. */}
         {reviews ? (
           <div className="detail-side">
-            <Reviews reviews={reviews} locale={locale} />
+            <Reviews reviews={reviews} />
           </div>
         ) : null}
       </div>
@@ -387,7 +375,7 @@ export default async function ProductPage({ params }: Props) {
           sixty-eight — and absent rather than padded when it is. */}
       {product.articles.length > 0 ? (
         <section className="product-articles">
-          <h2>{ar ? 'اقرأ قبل أن تشتري' : 'Read before you buy'}</h2>
+          <h2>{t('readBeforeBuy')}</h2>
           <ul>
             {product.articles.map((article) => (
               <li key={article.slug}>
@@ -396,7 +384,7 @@ export default async function ProductPage({ params }: Props) {
                   {article.summary ? <span>{article.summary}</span> : null}
                 </Link>
                 {article.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(article.readingMinutes, locale)}</span>
+                  <span className="post-meta">{readingLabel(article.readingMinutes, tf)}</span>
                 ) : null}
               </li>
             ))}
@@ -408,7 +396,7 @@ export default async function ProductPage({ params }: Props) {
           nothing else, rather than padded out with whatever the catalog has. */}
       {product.related.length > 0 ? (
         <section className="related">
-          <h2>{ar ? 'منتجات قد تعجبك' : 'You might also like'}</h2>
+          <h2>{t('related')}</h2>
           <div className="related-row">
             {product.related.map((card) => (
               <ProductCard key={card.slug} card={card} locale={locale} />

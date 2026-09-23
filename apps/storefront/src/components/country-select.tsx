@@ -1,6 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+
+import { resolveLocale } from '../i18n/locale';
 
 /**
  * Where most buyers are, first; then the rest of the list.
@@ -77,28 +80,29 @@ export function CountrySelect({
   value: string;
   onChange: (code: string) => void;
 }) {
-  const ar = locale !== 'en';
-  const names = useMemo(() => new Intl.DisplayNames([ar ? 'ar' : 'en'], { type: 'region' }), [ar]);
+  const t = useTranslations('countrySelect');
+  const lang = resolveLocale(locale);
+  const names = useMemo(() => new Intl.DisplayNames([lang], { type: 'region' }), [lang]);
   const label = (code: string) => names.of(code) ?? code;
   const rest = useMemo(
     () =>
       [...REST].sort((a, b) =>
-        (names.of(a) ?? a).localeCompare(names.of(b) ?? b, ar ? 'ar' : 'en'),
+        (names.of(a) ?? a).localeCompare(names.of(b) ?? b, lang),
       ),
-    [names, ar],
+    [names, lang],
   );
 
   return (
     <select value={value} onChange={(event) => onChange(event.target.value)} autoComplete="country">
-      <option value="">{ar ? '— اختر —' : '— Choose —'}</option>
-      <optgroup label={ar ? 'الأكثر طلباً' : 'Most common'}>
+      <option value="">{t('choose')}</option>
+      <optgroup label={t('common')}>
         {FIRST.map((code) => (
           <option key={code} value={code}>
             {label(code)}
           </option>
         ))}
       </optgroup>
-      <optgroup label={ar ? 'دول أخرى' : 'Other countries'}>
+      <optgroup label={t('other')}>
         {rest.map((code) => (
           <option key={code} value={code}>
             {label(code)}

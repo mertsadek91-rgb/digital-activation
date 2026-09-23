@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
 /**
@@ -11,8 +12,9 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'newsletter' });
   return {
-    title: locale === 'ar' ? 'النشرة البريدية' : 'Newsletter',
+    title: t('metaTitle'),
     robots: { index: false, follow: false },
   };
 }

@@ -11,6 +11,7 @@ import { HeroSlider } from '../../components/hero-slider';
 import { MotionFadeIn } from '../../components/motion-wrapper';
 import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
+import { isArabic } from '../../i18n/locale';
 import { getHome } from '../../lib/api';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -50,13 +51,13 @@ export async function generateMetadata({
     // Absolute: this one already ends in the brand, and the layout's template
     // would add it a second time.
     title: {
-      absolute: `${t('heroHeadline')} | ${locale === 'ar' ? BRAND.nameAr : BRAND.nameEn}`,
+      absolute: `${t('heroHeadline')} | ${isArabic(locale) ? BRAND.nameAr : BRAND.nameEn}`,
     },
     description: t('heroBody'),
     // The home page's own canonical and hreflang, which used to be declared by
     // the layout and so, wrongly, by every other page too.
     alternates: {
-      canonical: canonical(SITE_URL, ROUTES.home, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, ROUTES.home, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(
         alternates(SITE_URL, ROUTES.home).map((link) => [link.hrefLang, link.href]),
       ),
@@ -68,15 +69,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
+  const tf = await getTranslations('format');
+  const tk = await getTranslations('catalog');
 
   const home = await getHome({ locale, revalidate: 300 });
 
-  const faq = [1, 2, 3, 4, 5].map((n) => ({
-    q: t(`faq${String(n)}Q`),
-    a: t(`faq${String(n)}A`),
+  const faq = ([1, 2, 3, 4, 5] as const).map((n) => ({
+    q: t(`faq${n}Q`),
+    a: t(`faq${n}A`),
   }));
 
-  const href = (path: string): string => (locale === 'ar' ? path : `/${locale}${path}`);
+  const href = (path: string): string => (isArabic(locale) ? path : `/${locale}${path}`);
 
   // One graph, one script tag. Assembled through buildGraph so a second
   // Product/ItemList/Article entity on the same page throws in development —
@@ -205,10 +208,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                         </div>
                         <div className="cat-card-footer">
                           <span className="cat-count-badge">
-                            {t('productCount', { count: category.productCount })}
+                            {tk('productCount', { count: category.productCount })}
                           </span>
                           <span className="cat-arrow" aria-hidden="true">
-                            {locale === 'ar' ? '←' : '→'}
+                            {isArabic(locale) ? '←' : '→'}
                           </span>
                         </div>
                       </Link>
@@ -268,7 +271,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
                     </Link>
                     {post.readingMinutes > 0 ? (
-                      <span className="post-meta">{readingLabel(post.readingMinutes, locale)}</span>
+                      <span className="post-meta">{readingLabel(post.readingMinutes, tf)}</span>
                     ) : null}
                   </li>
                 ))}
@@ -286,7 +289,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   <li key={brand.slug}>
                     <Link href={href(brand.href)}>
                       {brand.name}
-                      <span>{t('productCount', { count: brand.productCount })}</span>
+                      <span>{tk('productCount', { count: brand.productCount })}</span>
                     </Link>
                   </li>
                 ))}
@@ -302,14 +305,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <h2 id="steps-title">{t('stepsTitle')}</h2>
           </header>
           <ol className="steps-grid">
-            {[1, 2, 3].map((n) => (
+            {([1, 2, 3] as const).map((n) => (
               <li key={n}>
                 <span className="step-art" aria-hidden="true">
                   <StepMark step={n} />
                   <span className="step-number">{n}</span>
                 </span>
-                <h3>{t(`step${String(n)}Title`)}</h3>
-                <p>{t(`step${String(n)}Body`)}</p>
+                <h3>{t(`step${n}Title`)}</h3>
+                <p>{t(`step${n}Body`)}</p>
               </li>
             ))}
           </ol>

@@ -2,7 +2,9 @@ import type { CatalogCard } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
+import { isArabic } from '../i18n/locale';
 import { formatPrice } from '../lib/format';
 
 import { AddToCart } from './add-to-cart';
@@ -20,8 +22,9 @@ import { BoltIcon, ProductGlyph, ShieldCheckIcon } from './icons';
  * it, in CSS.
  */
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
-  const ar = locale === 'ar';
-  const href = locale === 'ar' ? `/store/${card.slug}` : `/${locale}/store/${card.slug}`;
+  const t = useTranslations('productCard');
+  const tc = useTranslations('common');
+  const href = isArabic(locale) ? `/store/${card.slug}` : `/${locale}/store/${card.slug}`;
   const lowStock =
     card.inStock &&
     card.available !== null &&
@@ -48,16 +51,16 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
           {discount ? (
             <span
               className="card-discount-tag"
-              aria-label={ar ? `خصم ${discount}%` : `${discount}% discount`}
+              aria-label={t('discountLabel', { percent: String(discount) })}
             >
-              {ar ? `-${discount}%` : `-${discount}%`}
+              {`-${String(discount)}%`}
             </span>
           ) : null}
 
           {card.fulfillmentMode === 'FROM_STOCK' && card.inStock ? (
             <span className="card-instant-tag">
               <BoltIcon size={12} />
-              <span>{ar ? 'فوري' : 'Instant'}</span>
+              <span>{t('instant')}</span>
             </span>
           ) : null}
         </div>
@@ -71,19 +74,17 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             {card.hasGoldenWarranty ? (
               <span className="badge badge-warranty">
                 <ShieldCheckIcon size={13} />
-                <span>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</span>
+                <span>{tc('goldenWarranty')}</span>
               </span>
             ) : null}
             {card.variantCount > 1 ? (
               <span className="badge badge-options">
-                {ar
-                  ? `${String(card.variantCount)} خيارات`
-                  : `${String(card.variantCount)} options`}
+                {t('options', { count: card.variantCount })}
               </span>
             ) : null}
             {card.salesCount > 0 ? (
               <span className="badge badge-sales">
-                {ar ? `تم بيع ${String(card.salesCount)}` : `Sold ${String(card.salesCount)}`}
+                {t('sold', { count: String(card.salesCount) })}
               </span>
             ) : null}
           </div>
@@ -91,7 +92,7 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
           <div className="card-footer">
             <p className="card-price">
               {card.variantCount > 1 ? (
-                <span className="card-from">{ar ? 'يبدأ من' : 'from'}</span>
+                <span className="card-from">{t('from')}</span>
               ) : null}
               <strong>{formatPrice(card.price)}</strong>
               {card.price.compareAt ? (
@@ -104,23 +105,15 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             {card.inStock ? (
               lowStock ? (
                 <span className="stock stock-low">
-                  {ar
-                    ? `بقي ${String(card.available ?? 0)}`
-                    : `Only ${String(card.available ?? 0)} left`}
+                  {t('onlyLeft', { count: String(card.available ?? 0) })}
                 </span>
               ) : (
                 <span className="stock stock-in">
-                  {card.fulfillmentMode === 'FROM_STOCK'
-                    ? ar
-                      ? 'متوفر فوراً'
-                      : 'In stock'
-                    : ar
-                      ? 'متاح للطلب'
-                      : 'Available to order'}
+                  {card.fulfillmentMode === 'FROM_STOCK' ? t('inStock') : t('availableToOrder')}
                 </span>
               )
             ) : (
-              <span className="stock stock-out">{ar ? 'غير متوفر' : 'Out of stock'}</span>
+              <span className="stock stock-out">{t('outOfStock')}</span>
             )}
           </div>
         </div>
@@ -139,13 +132,13 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             /* More than one thing to buy here, so the honest control is the
                one that goes and asks which. */
             <Link href={href} className="card-buy card-buy-choose">
-              {ar ? 'اختر الخيار المناسب' : 'Choose an option'}
+              {t('chooseOption')}
             </Link>
           )}
         </div>
       ) : null}
 
-      {card.isDraft ? <p className="draft-flag">{ar ? 'مسودّة' : 'Draft'}</p> : null}
+      {card.isDraft ? <p className="draft-flag">{tc('draft')}</p> : null}
     </article>
   );
 }

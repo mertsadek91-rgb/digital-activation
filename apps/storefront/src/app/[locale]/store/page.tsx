@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
-import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { MotionFadeIn } from '../../../components/motion-wrapper';
 import { CategoryRail } from '../../../components/category-rail';
 import { ProductCard } from '../../../components/product-card';
+import { isArabic } from '../../../i18n/locale';
 import { getStore } from '../../../lib/api';
 import { pageSuffix, paginatedUrl, robotsMeta } from '../../../lib/seo';
 
@@ -34,13 +34,13 @@ const PER_PAGE = 24;
 const SORTS = ['position', 'newest', 'best-selling'] as const;
 type Sort = (typeof SORTS)[number];
 
-const SORT_LABELS: Record<Sort, { ar: string; en: string }> = {
+const SORT_LABELS = {
   // The default order is sales-first, so it is labelled for what it is rather
   // than as "default" — a sort called "default" tells a shopper nothing.
-  position: { ar: 'الأكثر شيوعاً', en: 'Most popular' },
-  newest: { ar: 'الأحدث', en: 'Newest' },
-  'best-selling': { ar: 'الأكثر مبيعاً', en: 'Best selling' },
-};
+  position: 'sortPosition',
+  newest: 'sortNewest',
+  'best-selling': 'sortBestSelling',
+} as const satisfies Record<Sort, string>;
 
 interface Props {
   params: Promise<{ locale: string }>;
@@ -64,19 +64,17 @@ function sortFor(value: string | string[] | undefined): Sort {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params;
   const page = pageNumber((await searchParams).page);
-  const ar = locale === 'ar';
+  const t = await getTranslations({ locale, namespace: 'store' });
   const links = alternates(SITE_URL, ROUTES.store);
 
   // Page N canonicalises to itself; the sort does not survive into the
   // canonical, because a re-ordering of the same products is not a new page.
   return {
-    title: `${ar ? 'المتجر — كل المنتجات' : 'Store — all products'}${pageSuffix(page, locale)}`,
-    description: ar
-      ? 'مفاتيح تفعيل وتراخيص أصلية: ويندوز، أوفيس، أدوبي، برامج الحماية والتصميم — تسليم على بريدك.'
-      : 'Genuine activation keys and licences: Windows, Office, Adobe, security and design software — delivered to your email.',
+    title: `${t('metaTitle')}${pageSuffix(page, locale)}`,
+    description: t('metaDescription'),
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: paginatedUrl(canonical(SITE_URL, ROUTES.store, ar ? 'ar' : 'en'), page),
+      canonical: paginatedUrl(canonical(SITE_URL, ROUTES.store, isArabic(locale) ? 'ar' : 'en'), page),
       languages: Object.fromEntries(
         links.map((link) => [link.hrefLang, paginatedUrl(link.href, page)]),
       ),
@@ -87,11 +85,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function StorePage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations('store');
+  const tc = await getTranslations('common');
+  const tk = await getTranslations('catalog');
 
   const search = await searchParams;
   const page = pageNumber(search.page);
   const sort = sortFor(search.sort);
-  const ar = locale === 'ar';
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
 
   // Null only when the API refused the request itself (a page number past the
@@ -108,15 +109,15 @@ export default async function StorePage({ params, searchParams }: Props) {
   // product pages out of rich results entirely.
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(`${prefix}/`, SITE_URL).toString() },
+      { name: tc('home'), url: new URL(`${prefix}/`, SITE_URL).toString() },
       {
-        name: ar ? 'المتجر' : 'Store',
+        name: t('title'),
         url: new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(),
       },
     ]),
     jsonld.itemList({
       url: paginatedUrl(new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(), page),
-      name: ar ? 'المتجر' : 'Store',
+      name: t('title'),
       items: store.products.map((card, index) => ({
         url: new URL(`${prefix}${ROUTES.product(card.slug)}`, SITE_URL).toString(),
         name: card.name,
@@ -141,30 +142,22 @@ export default async function StorePage({ params, searchParams }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
       <header className="page-head">
-        <h1>{ar ? 'المتجر' : 'Store'}</h1>
-        <p className="lede">
-          {ar
-            ? 'تراخيص ومفاتيح تفعيل أصلية، تصل على بريدك. أغلبها يُجهَّز بعد الدفع حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
-            : 'Genuine licences and activation keys, delivered to your email. Most are prepared after payment, so your licence term does not start before you use it.'}
-        </p>
+        <h1>{t('title')}</h1>
+        <p className="lede">{t('lede')}</p>
       </header>
 
       {/* The rail replaces the horizontal strip that was here. Same links, same
           counts; a column at desktop width and the strip again below it. */}
       <div className="catalog-layout">
-        <CategoryRail
-          categories={store.collections}
-          locale={locale}
-          title={ar ? 'التصنيفات' : 'Categories'}
-        />
+        <CategoryRail categories={store.collections} locale={locale} title={tk('categories')} />
 
         <div className="catalog-main">
           <div className="store-bar">
-            <p className="result-count">{productCount(store.total, locale)}</p>
+            <p className="result-count">{tk('productCount', { count: store.total })}</p>
 
             {/* Links, not a <select>: the page is server-rendered, each sort is a
             real URL a crawler can follow, and nothing here needs JavaScript. */}
-            <nav className="sorts" aria-label={ar ? 'الترتيب' : 'Sort'}>
+            <nav className="sorts" aria-label={tk('sort')}>
               {(['position', 'newest'] as const).map((option) => (
                 <Link
                   key={option}
@@ -172,14 +165,14 @@ export default async function StorePage({ params, searchParams }: Props) {
                   className={option === sort ? 'is-active' : undefined}
                   aria-current={option === sort ? 'true' : undefined}
                 >
-                  {ar ? SORT_LABELS[option].ar : SORT_LABELS[option].en}
+                  {t(SORT_LABELS[option])}
                 </Link>
               ))}
             </nav>
           </div>
 
           {store.products.length === 0 ? (
-            <p className="empty">{ar ? 'لا منتجات منشورة بعد.' : 'Nothing published yet.'}</p>
+            <p className="empty">{t('empty')}</p>
           ) : (
             <MotionFadeIn>
               <div className="grid">
@@ -191,20 +184,18 @@ export default async function StorePage({ params, searchParams }: Props) {
           )}
 
           {lastPage > 1 ? (
-            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+            <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
                 <Link href={href({ page: page - 1 })} rel="prev">
-                  {ar ? 'السابق' : 'Previous'}
+                  {tk('previous')}
                 </Link>
               ) : null}
               <span>
-                {ar
-                  ? `صفحة ${String(page)} من ${String(lastPage)}`
-                  : `Page ${String(page)} of ${String(lastPage)}`}
+                {tk('pageOf', { page: String(page), last: String(lastPage) })}
               </span>
               {page < lastPage ? (
                 <Link href={href({ page: page + 1 })} rel="next">
-                  {ar ? 'التالي' : 'Next'}
+                  {tk('next')}
                 </Link>
               ) : null}
             </nav>

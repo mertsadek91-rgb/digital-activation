@@ -3,10 +3,12 @@
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { BRAND } from '@da/ui';
 
+import { isArabic } from '../i18n/locale';
 import { Link as LocaleLink, usePathname as useLocalePathname } from '../i18n/navigation';
 import { CART_EVENT, type CartEventDetail, cartApi } from '../lib/cart-client';
 import { SUPPORT_EMAIL, WHATSAPP_SHOWN, whatsappLink } from '../lib/contact';
@@ -49,7 +51,10 @@ export function SiteHeader({
   locale: string;
   collections?: HeaderCollection[];
 }) {
-  const ar = locale === 'ar';
+  const t = useTranslations('header');
+  const tc = useTranslations('common');
+  const tk = useTranslations('catalog');
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
   const pathname = usePathname();
   // The same page without its locale prefix, for the language switch.
@@ -157,6 +162,10 @@ export function SiteHeader({
    * product in Arabic who switched to English had to find the product again.
    * Every route here exists in both languages under the same path, so the
    * path is kept and only the prefix changes.
+   *
+   * Its label (`header.otherLanguage`, `header.switchLanguage`) is written in
+   * the language it switches to, because that is the language of the reader
+   * looking for it.
    */
   const otherLocale = ar ? 'en' : 'ar';
 
@@ -169,7 +178,7 @@ export function SiteHeader({
           <div className="utility-group">
             <Link href={`${prefix}${ROUTES.licenses}`} className="utility-link">
               <UserIcon />
-              <span>{ar ? 'تراخيصي' : 'My licences'}</span>
+              <span>{t('myLicences')}</span>
             </Link>
             <LocaleLink
               href={localePath}
@@ -178,7 +187,7 @@ export function SiteHeader({
               hrefLang={otherLocale}
               lang={otherLocale}
             >
-              {ar ? 'English' : 'العربية'}
+              {t('otherLanguage')}
             </LocaleLink>
           </div>
 
@@ -201,7 +210,7 @@ export function SiteHeader({
           ref={drawerButtonRef}
           type="button"
           className="mobile-menu-btn"
-          aria-label={ar ? 'فتح القائمة' : 'Open menu'}
+          aria-label={t('openMenu')}
           aria-expanded={drawerOpen}
           aria-controls={DRAWER_ID}
           onClick={() => setDrawerOpen(true)}
@@ -227,7 +236,7 @@ export function SiteHeader({
               onClick={() => setMenuOpen(!menuOpen)}
             >
               <MenuIcon />
-              <span>{ar ? 'جميع المنتجات' : 'All products'}</span>
+              <span>{t('allProducts')}</span>
               <ChevronIcon />
             </button>
 
@@ -247,7 +256,7 @@ export function SiteHeader({
                   ))}
                 </ul>
                 <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
-                  {ar ? 'تصفّح المتجر كاملاً' : 'Browse the whole store'}
+                  {t('browseAll')}
                 </Link>
               </div>
             ) : null}
@@ -255,11 +264,11 @@ export function SiteHeader({
         ) : null}
 
         <nav className="site-nav">
-          <Link href={`${prefix}${ROUTES.store}`}>{ar ? 'المتجر' : 'Store'}</Link>
+          <Link href={`${prefix}${ROUTES.store}`}>{t('store')}</Link>
           <Link href={`${prefix}${ROUTES.goldenWarranty}`}>
-            {ar ? 'الضمان الذهبي' : 'Golden Warranty'}
+            {tc('goldenWarranty')}
           </Link>
-          <Link href={`${prefix}${ROUTES.contact}`}>{ar ? 'تواصل معنا' : 'Contact'}</Link>
+          <Link href={`${prefix}${ROUTES.contact}`}>{t('contact')}</Link>
         </nav>
 
         <div className="header-search-wrap">
@@ -269,10 +278,10 @@ export function SiteHeader({
         <Link
           href={`${prefix}${ROUTES.cart}`}
           className="cart-link"
-          aria-label={ar ? 'السلة' : 'Cart'}
+          aria-label={t('cart')}
         >
           <CartIcon />
-          <span className="cart-label">{ar ? 'السلة' : 'Cart'}</span>
+          <span className="cart-label">{t('cart')}</span>
           {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
         </Link>
       </div>
@@ -295,7 +304,7 @@ export function SiteHeader({
         className={`drawer-panel${drawerOpen ? ' is-open' : ''}`}
         role="dialog"
         aria-modal="true"
-        aria-label={ar ? 'قائمة التنقل' : 'Navigation Menu'}
+        aria-label={t('drawer')}
         inert={!drawerOpen}
       >
         <div className="drawer-head">
@@ -310,7 +319,7 @@ export function SiteHeader({
           <button
             type="button"
             className="drawer-close"
-            aria-label={ar ? 'إغلاق القائمة' : 'Close menu'}
+            aria-label={t('closeMenu')}
             onClick={() => setDrawerOpen(false)}
           >
             <CloseIcon />
@@ -323,27 +332,27 @@ export function SiteHeader({
 
         <div className="drawer-body">
           <nav className="drawer-section">
-            <span className="drawer-section-title">{ar ? 'التنقل السريع' : 'Navigation'}</span>
+            <span className="drawer-section-title">{t('quickNav')}</span>
             <Link
               href={`${prefix}${ROUTES.home}`}
               className="drawer-link"
               onClick={() => setDrawerOpen(false)}
             >
-              {ar ? 'الرئيسية' : 'Home'}
+              {tc('home')}
             </Link>
             <Link
               href={`${prefix}${ROUTES.store}`}
               className="drawer-link"
               onClick={() => setDrawerOpen(false)}
             >
-              {ar ? 'المتجر الإلكتروني' : 'Store Catalog'}
+              {t('storeCatalog')}
             </Link>
             <Link
               href={`${prefix}${ROUTES.goldenWarranty}`}
               className="drawer-link drawer-link-gold"
               onClick={() => setDrawerOpen(false)}
             >
-              <span>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</span>
+              <span>{tc('goldenWarranty')}</span>
               <span className="gold-pill">100%</span>
             </Link>
             <Link
@@ -351,20 +360,20 @@ export function SiteHeader({
               className="drawer-link"
               onClick={() => setDrawerOpen(false)}
             >
-              {ar ? 'المدونة والشروحات' : 'Blog'}
+              {t('blog')}
             </Link>
             <Link
               href={`${prefix}${ROUTES.contact}`}
               className="drawer-link"
               onClick={() => setDrawerOpen(false)}
             >
-              {ar ? 'تواصل معنا' : 'Contact Us'}
+              {t('contactUs')}
             </Link>
           </nav>
 
           {collections.length > 0 ? (
             <div className="drawer-section">
-              <span className="drawer-section-title">{ar ? 'التصنيفات' : 'Categories'}</span>
+              <span className="drawer-section-title">{tk('categories')}</span>
               <ul className="drawer-cat-list">
                 {collections.map((collection) => (
                   <li key={collection.slug}>
@@ -386,14 +395,14 @@ export function SiteHeader({
           ) : null}
 
           <div className="drawer-section drawer-account">
-            <span className="drawer-section-title">{ar ? 'حسابك وتواصلك' : 'Account & Help'}</span>
+            <span className="drawer-section-title">{t('accountHelp')}</span>
             <Link
               href={`${prefix}${ROUTES.licenses}`}
               className="drawer-link"
               onClick={() => setDrawerOpen(false)}
             >
               <UserIcon />
-              <span>{ar ? 'تراخيصي ومشترياتي' : 'My Licences & Orders'}</span>
+              <span>{t('licencesOrders')}</span>
             </Link>
             <a
               href={whatsappLink()}
@@ -416,7 +425,7 @@ export function SiteHeader({
               lang={otherLocale}
               onClick={() => setDrawerOpen(false)}
             >
-              🌐 {ar ? 'Switch to English' : 'التحويل إلى العربية'}
+              🌐 {t('switchLanguage')}
             </LocaleLink>
           </div>
         </div>

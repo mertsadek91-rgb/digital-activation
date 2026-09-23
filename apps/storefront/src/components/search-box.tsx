@@ -2,7 +2,10 @@
 
 import { ROUTES } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+
+import { isArabic } from '../i18n/locale';
 
 /**
  * The search box, in the header.
@@ -34,8 +37,8 @@ import { useEffect, useState } from 'react';
  * seed a value nobody reads before hydration.
  */
 export function SearchBox({ locale }: { locale: string }) {
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const t = useTranslations('search');
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
   const router = useRouter();
   const [q, setQ] = useState('');
 
@@ -65,11 +68,11 @@ export function SearchBox({ locale }: { locale: string }) {
         name="q"
         value={q}
         onChange={(event) => setQ(event.target.value)}
-        placeholder={ar ? 'ابحث عن منتج' : 'Search products'}
-        aria-label={ar ? 'ابحث في المتجر' : 'Search the store'}
+        placeholder={t('boxPlaceholder')}
+        aria-label={t('searchStore')}
         maxLength={120}
       />
-      <button type="submit" aria-label={ar ? 'ابحث' : 'Search'}>
+      <button type="submit" aria-label={t('boxSubmit')}>
         {/* Drawn rather than a glyph from the font: the store's typeface is
             Tajawal, which has no icon set, and an emoji magnifier renders as a
             different picture on every platform. */}

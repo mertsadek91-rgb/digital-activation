@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { CartError, cartApi } from '../lib/cart-client';
@@ -33,7 +34,8 @@ export function AddToCart({
   locale: string;
   currency: string;
 }) {
-  const ar = locale !== 'en';
+  const t = useTranslations('productCard');
+  const tc = useTranslations('common');
   const [state, setState] = useState<'idle' | 'busy' | 'added'>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -50,13 +52,7 @@ export function AddToCart({
       }, 2200);
     } catch (caught) {
       setState('idle');
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّرت الإضافة. حاوِل مرّة أخرى.'
-            : 'Could not add it. Try again.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('addFailed'));
     }
   }
 
@@ -70,17 +66,7 @@ export function AddToCart({
       >
         {state === 'added' ? null : <CartIcon />}
         <span>
-          {state === 'added'
-            ? ar
-              ? 'أُضيف إلى السلة'
-              : 'Added to cart'
-            : state === 'busy'
-              ? ar
-                ? 'جارٍ الإضافة…'
-                : 'Adding…'
-              : ar
-                ? 'إضافة إلى السلة'
-                : 'Add to cart'}
+          {state === 'added' ? t('added') : state === 'busy' ? t('adding') : tc('addToCart')}
         </span>
       </button>
       {error ? <p className="card-buy-error">{error}</p> : null}

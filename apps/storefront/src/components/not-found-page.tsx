@@ -4,7 +4,12 @@ import type { Suggestion } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createTranslator } from 'next-intl';
 import { useEffect, useState } from 'react';
+
+import arMessages from '../../messages/ar.json';
+import enMessages from '../../messages/en.json';
+import { isArabic } from '../i18n/locale';
 
 /**
  * The whole 404, in the browser, and not by preference.
@@ -33,26 +38,25 @@ import { useEffect, useState } from 'react';
  * because `<html>` here is Next's and carries neither. Without them an Arabic
  * 404 renders left-to-right with its punctuation in the wrong place — which is
  * the single most visible thing on the page.
+ *
+ * For the same reason the copy does not come from `useTranslations`: there is
+ * no intl provider above this page to ask. It builds its own translator over
+ * the `notFound` namespace alone — read by property, so the bundler can leave
+ * the rest of both message files out of this chunk.
  */
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-
-const KIND_AR: Record<Suggestion['kind'], string> = {
-  product: 'منتج',
-  collection: 'قسم',
-  page: 'صفحة',
-};
-
-const KIND_EN: Record<Suggestion['kind'], string> = {
-  product: 'Product',
-  collection: 'Category',
-  page: 'Page',
-};
 
 export function NotFoundPage() {
   const pathname = usePathname();
   const en = pathname === '/en' || pathname.startsWith('/en/');
-  const ar = !en;
+  const locale = en ? 'en' : 'ar';
+  const ar = isArabic(locale);
   const prefix = en ? '/en' : '';
+  const t = createTranslator({
+    locale,
+    messages: { notFound: en ? enMessages.notFound : arMessages.notFound },
+    namespace: 'notFound',
+  });
 
   const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null);
 
@@ -63,7 +67,7 @@ export function NotFoundPage() {
       try {
         const response = await fetch(
           new URL(
-            `/v1/content/suggest?path=${encodeURIComponent(pathname)}&locale=${en ? 'en' : 'ar'}`,
+            `/v1/content/suggest?path=${encodeURIComponent(pathname)}&locale=${locale}`,
             API,
           ),
           { cache: 'no-store' },
@@ -81,7 +85,7 @@ export function NotFoundPage() {
     return () => {
       cancelled = true;
     };
-  }, [pathname, en]);
+  }, [pathname, locale]);
 
   // The miss is not reported from here. `goneOrRedirect` already did it on the
   // server with the real referrer header — the field that tells somebody's
@@ -91,20 +95,16 @@ export function NotFoundPage() {
   return (
     <main className="shell missing" dir={ar ? 'rtl' : 'ltr'} lang={ar ? 'ar' : 'en'}>
       <header className="page-head">
-        <h1>{ar ? 'هذه الصفحة لم تعد هنا' : 'This page is not here any more'}</h1>
-        <p className="lede">
-          {ar
-            ? 'ربما تغيّر رابطها مع تحديث المتجر، أو نُسخ الرابط ناقصاً. المنتج نفسه غالباً ما زال موجوداً.'
-            : 'Its address may have changed when the store was rebuilt, or the link may have been copied short. The product itself is most likely still here.'}
-        </p>
+        <h1>{t('title')}</h1>
+        <p className="lede">{t('body')}</p>
       </header>
 
       <p className="missing-actions">
         <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-          {ar ? 'تصفّح المتجر' : 'Browse the store'}
+          {t('browseStore')}
         </Link>
         <Link className="btn btn-ghost" href={`${prefix}${ROUTES.home}`}>
-          {ar ? 'الصفحة الرئيسية' : 'Home'}
+          {t('home')}
         </Link>
       </p>
 
@@ -113,18 +113,19 @@ export function NotFoundPage() {
           news on a page that has already delivered one. */}
       {suggestions !== null && suggestions.length > 0 ? (
         <section className="missing-guess">
-          <h2>{ar ? 'هل تقصد؟' : 'Did you mean?'}</h2>
+          <h2>{t('didYouMean')}</h2>
           <ul>
             {suggestions.map((entry) => (
               <li key={entry.href}>
                 <Link href={entry.href}>{entry.title}</Link>
-                <span className="missing-kind">{(ar ? KIND_AR : KIND_EN)[entry.kind]}</span>
+                <span className="missing-kind">{t(`kind.${entry.kind}`)}</span>
               </li>
             ))}
           </ul>
           <p className="missing-hint">
-            {ar ? 'لم يكن أيٌّ منها؟ ' : 'None of these? '}
-            <Link href={`${prefix}${ROUTES.contact}`}>{ar ? 'راسِلنا' : 'write to us'}</Link>.
+            {t.rich('noneOfThese', {
+              contact: (chunks) => <Link href={`${prefix}${ROUTES.contact}`}>{chunks}</Link>,
+            })}
           </p>
         </section>
       ) : null}

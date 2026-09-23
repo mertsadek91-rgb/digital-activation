@@ -5,9 +5,11 @@ import { MAX_LINE_QTY, ROUTES } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ProductTrust } from '../../../components/product-trust';
+import { isArabic } from '../../../i18n/locale';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatDelivery, formatFulfillment, formatPrice, variantLabel } from '../../../lib/format';
 
@@ -28,8 +30,9 @@ export default function CartPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
   const locale = params.locale ?? 'ar';
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
+  const t = useTranslations('cart');
+  const tc = useTranslations('common');
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,15 +43,9 @@ export default function CartPage() {
     try {
       setCart(await cartApi.get({ locale }));
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر تحميل السلة.'
-            : 'Could not load your cart.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('loadFailed'));
     }
-  }, [locale, ar]);
+  }, [locale, t]);
 
   useEffect(() => {
     void load();
@@ -61,13 +58,7 @@ export default function CartPage() {
       setCart(await run());
       router.refresh();
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر تحديث السلة.'
-            : 'Could not update your cart.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('updateFailed'));
     } finally {
       setBusy(null);
     }
@@ -76,7 +67,7 @@ export default function CartPage() {
   if (!cart) {
     return (
       <main className="shell">
-        <h1>{ar ? 'سلة الشراء' : 'Your cart'}</h1>
+        <h1>{t('title')}</h1>
         <p className="notice" role={error ? 'alert' : undefined}>
           {error ?? '…'}
         </p>
@@ -87,10 +78,10 @@ export default function CartPage() {
   if (cart.lines.length === 0) {
     return (
       <main className="shell">
-        <h1>{ar ? 'سلة الشراء' : 'Your cart'}</h1>
-        <p className="notice">{ar ? 'سلتك فارغة.' : 'Your cart is empty.'}</p>
+        <h1>{t('title')}</h1>
+        <p className="notice">{t('empty')}</p>
         <Link href={`${prefix}${ROUTES.store}`} className="btn btn-primary">
-          {ar ? 'تصفّح المتجر' : 'Browse the store'}
+          {t('browseStore')}
         </Link>
       </main>
     );
@@ -98,15 +89,17 @@ export default function CartPage() {
 
   return (
     <main className="shell cart-page">
-      <h1>{ar ? 'سلة الشراء' : 'Your cart'}</h1>
+      <h1>{t('title')}</h1>
 
       {/* Stated, not silently applied. A cart that trims a line without saying
           so sends the shopper to checkout expecting something else. */}
       {cart.adjustments.map((entry) => (
         <p key={entry.sku} className="notice notice-warn">
-          {ar
-            ? `${entry.sku}: طلبت ${String(entry.requestedQty)} والمتاح ${String(entry.grantedQty)}.`
-            : `${entry.sku}: you asked for ${String(entry.requestedQty)}, ${String(entry.grantedQty)} available.`}
+          {t('adjusted', {
+            sku: entry.sku,
+            requested: String(entry.requestedQty),
+            granted: String(entry.grantedQty),
+          })}
         </p>
       ))}
 
@@ -132,11 +125,11 @@ export default function CartPage() {
         </ul>
 
         <aside className="cart-summary">
-          <h2>{ar ? 'الملخّص' : 'Summary'}</h2>
+          <h2>{t('summary')}</h2>
 
           <dl className="totals">
             <div>
-              <dt>{ar ? 'المجموع' : 'Subtotal'}</dt>
+              <dt>{tc('subtotal')}</dt>
               <dd>{formatPrice(cart.subtotal)}</dd>
             </div>
             {cart.coupon ? (
@@ -148,14 +141,14 @@ export default function CartPage() {
                     className="linky"
                     onClick={() => void act('coupon', () => cartApi.removeCoupon({ locale }))}
                   >
-                    {ar ? 'إزالة' : 'remove'}
+                    {t('removeCoupon')}
                   </button>
                 </dt>
                 <dd>−{formatPrice(cart.discount)}</dd>
               </div>
             ) : null}
             <div className="totals-total">
-              <dt>{ar ? 'الإجمالي' : 'Total'}</dt>
+              <dt>{tc('total')}</dt>
               <dd>{formatPrice(cart.total)}</dd>
             </div>
           </dl>
@@ -169,7 +162,7 @@ export default function CartPage() {
               }}
             >
               <label>
-                {ar ? 'كود خصم' : 'Discount code'}
+                {t('couponLabel')}
                 <input
                   type="text"
                   value={code}
@@ -179,7 +172,7 @@ export default function CartPage() {
                 />
               </label>
               <button type="submit" className="btn btn-ghost" disabled={busy === 'coupon' || !code}>
-                {ar ? 'تطبيق' : 'Apply'}
+                {t('applyCoupon')}
               </button>
             </form>
           ) : null}
@@ -194,19 +187,15 @@ export default function CartPage() {
               catalog is made to order and holds nothing, so a countdown there
               would be invented urgency. */}
           {cart.reservationExpiresAt ? (
-            <p className="hold-note">
-              {ar
-                ? 'المنتجات المتوفّرة في المخزون محجوزة لك مؤقتاً.'
-                : 'The in-stock items are held for you for a short while.'}
-            </p>
+            <p className="hold-note">{t('holdNote')}</p>
           ) : null}
 
           <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary btn-wide">
-            {ar ? 'إتمام الشراء' : 'Checkout'}
+            {t('checkout')}
           </Link>
 
           <div style={{ marginBlockStart: '16px' }}>
-            <ProductTrust locale={locale} showPerks={false} />
+            <ProductTrust showPerks={false} />
           </div>
         </aside>
       </div>
@@ -225,8 +214,10 @@ function Line({
   busy: boolean;
   onQty: (qty: number) => void;
 }) {
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const t = useTranslations('cart');
+  const tc = useTranslations('common');
+  const tf = useTranslations('format');
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
   // The room left above what this line already has, plus what it has.
   const maxQty = Math.min(MAX_LINE_QTY, line.qty + line.availableToAdd);
 
@@ -236,7 +227,7 @@ function Line({
         {line.image ? (
           <Image src={line.image.url} alt={line.image.alt} fill sizes="96px" />
         ) : (
-          <span className="card-media-empty">{ar ? 'لا صورة' : 'No image'}</span>
+          <span className="card-media-empty">{tc('noImage')}</span>
         )}
       </div>
 
@@ -244,17 +235,13 @@ function Line({
         <Link href={`${prefix}${ROUTES.product(line.productSlug)}`} className="cart-line-name">
           {line.productName}
         </Link>
-        <p className="cart-line-spec">{variantLabel(line, locale)}</p>
+        <p className="cart-line-spec">{variantLabel(line, tf)}</p>
         <p className="cart-line-spec">
-          {formatDelivery(line.deliverySlaSeconds, locale, line.fulfillmentMode)} ·{' '}
-          {formatFulfillment(line.fulfillmentMode, locale)}
+          {formatDelivery(line.deliverySlaSeconds, tf, line.fulfillmentMode)} ·{' '}
+          {formatFulfillment(line.fulfillmentMode, tf)}
         </p>
         {line.requiresActivationEmail ? (
-          <p className="cart-line-note">
-            {ar
-              ? 'سنطلب بريد التفعيل عند الدفع'
-              : 'We will ask for the activation email at checkout'}
-          </p>
+          <p className="cart-line-note">{t('activationEmailNote')}</p>
         ) : null}
 
         {/* The snapshot is what gets charged; the change is disclosed.
@@ -264,18 +251,17 @@ function Line({
             with the line's display currency it was never converted to. */}
         {line.priceChanged ? (
           <p className="cart-line-note">
-            {ar ? 'السعر الحالي ' : 'The current price is '}
-            <bdi dir="ltr">
-              {formatPrice({ amount: line.priceChanged.nowUsd, currency: 'USD' })}
-            </bdi>
-            {ar ? ' — سعرك محفوظ كما أضفته.' : ' — you keep the price you added at.'}
+            {t.rich('priceChanged', {
+              price: formatPrice({ amount: line.priceChanged.nowUsd, currency: 'USD' }),
+              bdi: (chunks) => <bdi dir="ltr">{chunks}</bdi>,
+            })}
           </p>
         ) : null}
       </div>
 
       <div className="cart-line-qty">
         <label>
-          <span className="visually-hidden">{ar ? 'الكمية' : 'Quantity'}</span>
+          <span className="visually-hidden">{t('quantity')}</span>
           <select
             value={line.qty}
             disabled={busy}
@@ -289,7 +275,7 @@ function Line({
           </select>
         </label>
         <button type="button" className="linky" disabled={busy} onClick={() => onQty(0)}>
-          {ar ? 'إزالة' : 'Remove'}
+          {t('removeLine')}
         </button>
       </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { ProductGlyph } from './icons';
@@ -20,14 +21,12 @@ export function ProductGallery({
   images,
   slug,
   name,
-  locale,
 }: {
   images: { url: string; alt: string }[];
   slug: string;
   name: string;
-  locale: string;
 }) {
-  const ar = locale === 'ar';
+  const t = useTranslations('product');
   const [index, setIndex] = useState(0);
   const main = images[index] ?? images[0];
 
@@ -54,7 +53,7 @@ export function ProductGallery({
         <div
           className="gallery-thumbs"
           role="group"
-          aria-label={ar ? 'صور إضافية' : 'Additional images'}
+          aria-label={t('moreImages')}
         >
           {images.map((img, idx) => (
             <button
@@ -62,11 +61,10 @@ export function ProductGallery({
               type="button"
               className="thumb-item"
               aria-pressed={idx === index}
-              aria-label={
-                ar
-                  ? `عرض الصورة ${String(idx + 1)} من ${String(images.length)}`
-                  : `Show image ${String(idx + 1)} of ${String(images.length)}`
-              }
+              aria-label={t('showImage', {
+                index: String(idx + 1),
+                total: String(images.length),
+              })}
               onClick={() => setIndex(idx)}
             >
               <Image src={img.url} alt="" width={68} height={68} />

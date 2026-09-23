@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
-import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
@@ -54,7 +54,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     description: collection.seo.description ?? collection.headline,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: paginatedUrl(canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'), page),
+      canonical: paginatedUrl(canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'), page),
       languages: Object.fromEntries(
         links.map((link) => [link.hrefLang, paginatedUrl(link.href, page)]),
       ),
@@ -66,7 +66,10 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const page = pageNumber((await searchParams).page);
-  const ar = locale === 'ar';
+  const t = await getTranslations('collection');
+  const tc = await getTranslations('common');
+  const tk = await getTranslations('catalog');
+  const ar = isArabic(locale);
 
   const collection = await getCollection(slug, { locale, page, perPage: PER_PAGE });
   // Same as a product: a renamed collection is a redirect, not a dead end.
@@ -113,7 +116,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     <main className="shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
         {collection.breadcrumbs.map((crumb, index) => (
           <span key={crumb.href}>
             {index > 0 ? <span aria-hidden="true"> › </span> : null}
@@ -136,12 +139,12 @@ export default async function CollectionPage({ params, searchParams }: Props) {
           categories={collection.siblings}
           current={collection.slug}
           locale={locale}
-          title={ar ? 'التصنيفات' : 'Categories'}
+          title={tk('categories')}
         />
 
         <div className="catalog-main">
           {collection.children.length > 0 ? (
-            <nav className="subnav" aria-label={ar ? 'التصنيفات الفرعية' : 'Subcategories'}>
+            <nav className="subnav" aria-label={tk('subcategories')}>
               {collection.children.map((child) => (
                 <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
                   {child.name}
@@ -157,12 +160,10 @@ export default async function CollectionPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">{productCount(collection.total, locale)}</p>
+          <p className="result-count">{tk('productCount', { count: collection.total })}</p>
 
           {collection.products.length === 0 ? (
-            <p className="empty">
-              {ar ? 'لا منتجات في هذا التصنيف بعد.' : 'No products here yet.'}
-            </p>
+            <p className="empty">{t('empty')}</p>
           ) : (
             <div className="grid">
               {collection.products.map((card) => (
@@ -172,26 +173,24 @@ export default async function CollectionPage({ params, searchParams }: Props) {
           )}
 
           {lastPage > 1 ? (
-            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+            <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
                 <Link
                   href={`${prefix}${ROUTES.collection(slug)}?page=${String(page - 1)}`}
                   rel="prev"
                 >
-                  {ar ? 'السابق' : 'Previous'}
+                  {tk('previous')}
                 </Link>
               ) : null}
               <span>
-                {ar
-                  ? `صفحة ${String(page)} من ${String(lastPage)}`
-                  : `Page ${String(page)} of ${String(lastPage)}`}
+                {tk('pageOf', { page: String(page), last: String(lastPage) })}
               </span>
               {page < lastPage ? (
                 <Link
                   href={`${prefix}${ROUTES.collection(slug)}?page=${String(page + 1)}`}
                   rel="next"
                 >
-                  {ar ? 'التالي' : 'Next'}
+                  {tk('next')}
                 </Link>
               ) : null}
             </nav>
