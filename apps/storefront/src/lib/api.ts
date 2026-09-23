@@ -79,11 +79,44 @@ function buildUrl(pathname: string, options: FetchOptions): string {
   return url.toString();
 }
 
+/**
+ * The API could not answer — unreachable, a 5xx, or a body that does not
+ * match its contract. Distinct from "there is no such thing", which is `null`.
+ */
+export class ApiUnavailableError extends Error {
+  constructor(pathname: string, reason: string) {
+    super(`API unavailable for ${pathname}: ${reason}`);
+    this.name = 'ApiUnavailableError';
+  }
+}
+
+/**
+ * How a failure is reported.
+ *
+ * `quiet` returns null for everything, which is right for the parts of a page
+ * that can do without their data — the header's menu, a reviews section.
+ *
+ * `strict` is for the pages whose whole content is the response: a product, a
+ * collection, the store. For those, null means "not found" and they answer
+ * 404, so folding an outage into null told Google that every product had been
+ * deleted for as long as the API was down, and sent the visitor to a page
+ * saying the link was wrong. Strict throws instead, and the throw lands on
+ * `error.tsx`, which says the store failed and offers to try again. Any 4xx
+ * is still "not found": it is the API refusing this request, not failing.
+ */
+type Failure = 'quiet' | 'strict';
+
 async function request<T>(
   pathname: string,
   options: FetchOptions,
   schema: z.ZodType<T>,
+  failure: Failure = 'quiet',
 ): Promise<T | null> {
+  const fail = (reason: string): null => {
+    if (failure === 'strict') throw new ApiUnavailableError(pathname, reason);
+    return null;
+  };
+
   let response: Response;
   try {
     response = await fetch(buildUrl(pathname, options), {
@@ -93,10 +126,11 @@ async function request<T>(
   } catch {
     // A page that cannot reach the API should render its own error, not a
     // stack trace, so the caller decides.
-    return null;
+    return fail('unreachable');
   }
 
   if (response.status === 404) return null;
+  if (response.status >= 500) return fail(`status ${String(response.status)}`);
   if (!response.ok) return null;
 
   const parsed = schema.safeParse(await response.json());
@@ -107,7 +141,7 @@ async function request<T>(
         parsed.error.issues.slice(0, 5),
       );
     }
-    return null;
+    return fail('response did not match its contract');
   }
   return parsed.data;
 }
@@ -116,8 +150,9 @@ export function getHome(options: FetchOptions): Promise<Home | null> {
   return request('/catalog/home', options, homeSchema);
 }
 
+/** Throws `ApiUnavailableError` when the API fails; see `Failure`. */
 export function getStore(options: FetchOptions): Promise<CatalogStore | null> {
-  return request('/catalog/store', options, catalogStoreSchema);
+  return request('/catalog/store', options, catalogStoreSchema, 'strict');
 }
 
 /**
@@ -137,6 +172,7 @@ export function getCollections(options: FetchOptions): Promise<CollectionSummary
   return request('/catalog/collections', options, z.array(collectionSummarySchema));
 }
 
+/** Null only when there is no such collection; throws when the API fails. */
 export function getCollection(
   slug: string,
   options: FetchOptions,
@@ -145,6 +181,7 @@ export function getCollection(
     `/catalog/collections/${encodeURIComponent(slug)}`,
     options,
     catalogCollectionSchema,
+    'strict',
   );
 }
 
@@ -198,6 +235,7 @@ export function getPost(slug: string, options: FetchOptions): Promise<ArticleWit
   return request(`/content/posts/${encodeURIComponent(slug)}`, options, articleWithProductsSchema);
 }
 
+/** Null only when there is no such product; throws when the API fails. */
 export function getProduct(
   slug: string,
   options: FetchOptions,
@@ -206,6 +244,7 @@ export function getProduct(
     `/catalog/products/${encodeURIComponent(slug)}`,
     options,
     catalogProductWithRelatedSchema,
+    'strict',
   );
 }
 

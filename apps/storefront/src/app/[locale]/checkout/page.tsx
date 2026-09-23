@@ -71,9 +71,15 @@ export default function CheckoutPage() {
     try {
       setCart(await cartApi.get({ locale }));
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر تحميل السلة.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر تحميل السلة.'
+            : 'Could not load your cart.',
+      );
     }
-  }, [locale]);
+  }, [locale, ar]);
 
   useEffect(() => {
     void load();
@@ -100,7 +106,13 @@ export default function CheckoutPage() {
       );
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر بدء عملية الدفع.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر بدء عملية الدفع.'
+            : 'Could not start the payment.',
+      );
     } finally {
       setBusy(false);
     }
@@ -126,7 +138,13 @@ export default function CheckoutPage() {
       }
       setStage({ kind: 'manual', session, orderNumber });
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر بدء عملية الدفع.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر بدء عملية الدفع.'
+            : 'Could not start the payment.',
+      );
     } finally {
       setBusy(false);
     }
@@ -150,7 +168,13 @@ export default function CheckoutPage() {
       setCart(checkout.cart);
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر إضافة العرض.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر إضافة العرض.'
+            : 'Could not add the offer.',
+      );
     } finally {
       setBusy(false);
     }
@@ -272,7 +296,11 @@ export default function CheckoutPage() {
                 </span>
               </label>
 
-              {error ? <p className="error">{error}</p> : null}
+              {error ? (
+                <p className="error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
               <button type="submit" className="btn btn-primary btn-wide" disabled={busy}>
                 {busy ? '...' : ar ? 'متابعة إلى الدفع' : 'Continue to payment'}
@@ -291,8 +319,12 @@ export default function CheckoutPage() {
               <CardPayment
                 session={stage.session}
                 locale={locale}
-                returnPath={`${prefix}/orders/${stage.checkout.order.number}`}
-                onPaid={() => router.push(`${prefix}/orders/${stage.checkout.order.number}`)}
+                // `?paid=card` tells the order page to wait for the webhook
+                // rather than announce that no payment has arrived.
+                returnPath={`${prefix}/orders/${stage.checkout.order.number}?paid=card`}
+                onPaid={() =>
+                  router.push(`${prefix}/orders/${stage.checkout.order.number}?paid=card`)
+                }
                 onBack={() => setStage({ kind: 'pay', checkout: stage.checkout })}
               />
             </div>
@@ -339,7 +371,11 @@ export default function CheckoutPage() {
                 </section>
               ) : null}
 
-              {error ? <p className="error">{error}</p> : null}
+              {error ? (
+                <p className="error" role="alert">
+                  {error}
+                </p>
+              ) : null}
 
               {stage.checkout.paymentMethods.length === 0 ? (
                 // Nothing configured, so nothing is offered. A row of buttons

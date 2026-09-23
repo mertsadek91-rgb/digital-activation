@@ -40,9 +40,15 @@ export default function CartPage() {
     try {
       setCart(await cartApi.get({ locale }));
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر تحميل السلة.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر تحميل السلة.'
+            : 'Could not load your cart.',
+      );
     }
-  }, [locale]);
+  }, [locale, ar]);
 
   useEffect(() => {
     void load();
@@ -55,7 +61,13 @@ export default function CartPage() {
       setCart(await run());
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر تحديث السلة.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر تحديث السلة.'
+            : 'Could not update your cart.',
+      );
     } finally {
       setBusy(null);
     }
@@ -65,7 +77,9 @@ export default function CartPage() {
     return (
       <main className="shell">
         <h1>{ar ? 'سلة الشراء' : 'Your cart'}</h1>
-        <p className="notice">{error ?? '…'}</p>
+        <p className="notice" role={error ? 'alert' : undefined}>
+          {error ?? '…'}
+        </p>
       </main>
     );
   }
@@ -96,7 +110,11 @@ export default function CartPage() {
         </p>
       ))}
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="cart-layout">
         <ul className="cart-lines">
@@ -166,7 +184,11 @@ export default function CartPage() {
             </form>
           ) : null}
 
-          {cart.couponError ? <p className="error">{cart.couponError}</p> : null}
+          {cart.couponError ? (
+            <p className="error" role="alert">
+              {cart.couponError}
+            </p>
+          ) : null}
 
           {/* Shown only when something is actually being held. Most of this
               catalog is made to order and holds nothing, so a countdown there
@@ -235,12 +257,18 @@ function Line({
           </p>
         ) : null}
 
-        {/* The snapshot is what gets charged; the change is disclosed. */}
+        {/* The snapshot is what gets charged; the change is disclosed.
+            Through the formatter rather than a "$" typed around the number,
+            which read "12.00$" in Arabic. The API reports the new price in
+            USD only (`nowUsd`), so it is shown in dollars rather than labelled
+            with the line's display currency it was never converted to. */}
         {line.priceChanged ? (
           <p className="cart-line-note">
-            {ar
-              ? `السعر الحالي ${line.priceChanged.nowUsd}$ — سعرك محفوظ كما أضفته.`
-              : `The current price is $${line.priceChanged.nowUsd} — you keep the price you added at.`}
+            {ar ? 'السعر الحالي ' : 'The current price is '}
+            <bdi dir="ltr">
+              {formatPrice({ amount: line.priceChanged.nowUsd, currency: 'USD' })}
+            </bdi>
+            {ar ? ' — سعرك محفوظ كما أضفته.' : ' — you keep the price you added at.'}
           </p>
         ) : null}
       </div>

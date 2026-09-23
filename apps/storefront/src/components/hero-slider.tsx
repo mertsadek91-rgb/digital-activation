@@ -14,9 +14,6 @@ export interface SlideItem {
   titleEn: string;
   descAr: string;
   descEn: string;
-  price: string;
-  oldPrice: string;
-  savePercent: string;
   href: string;
   featuresAr: string[];
   featuresEn: string[];
@@ -39,9 +36,6 @@ const SLIDES: SlideItem[] = [
     titleEn: 'Microsoft Office 2024 Pro Plus',
     descAr: 'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
     descEn: 'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
-    price: '$19.99',
-    oldPrice: '$49.99',
-    savePercent: '60%',
     href: '/store',
     featuresAr: ['تفعيل رسمي عبر موقع مايكروسوفت', 'ترخيص أصلي دائم مدى الحياة', 'تسليم فوري بعد الدفع مباشرة'],
     featuresEn: ['Official setup via Microsoft', 'Permanent lifetime license', 'Instant delivery after payment'],
@@ -62,9 +56,6 @@ const SLIDES: SlideItem[] = [
     titleEn: 'Windows 11 Professional',
     descAr: 'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
     descEn: 'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
-    price: '$14.99',
-    oldPrice: '$39.99',
-    savePercent: '62%',
     href: '/store',
     featuresAr: ['يدعم الترقية من هوم إلى برو', 'تشفير كامل للقرص مع BitLocker', 'مربوط بلوحة الأم مدى الحياة'],
     featuresEn: ['Upgrade from Home to Pro directly', 'Full disk encryption with BitLocker', 'Binds to motherboard for lifetime'],
@@ -85,9 +76,6 @@ const SLIDES: SlideItem[] = [
     titleEn: 'Adobe Creative Cloud All Apps',
     descAr: 'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
     descEn: '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
-    price: '$89.99',
-    oldPrice: '$199.99',
-    savePercent: '55%',
     href: '/store',
     featuresAr: ['تفعيل على حسابك الشخصي في أدوبي', 'سعة تخزين سحابية 100 جيجابايت', 'يدعم الذكاء الاصطناعي Generative Fill'],
     featuresEn: ['Activates on your personal Adobe ID', '100GB Cloud Storage included', 'Includes Firefly Generative AI'],
@@ -108,9 +96,6 @@ const SLIDES: SlideItem[] = [
     titleEn: 'Kaspersky Total Security',
     descAr: 'حماية فائقة وشاملة ضد الفيروسات، برامج الفدية، والتصيد المصرفي لراحة بال كاملة.',
     descEn: 'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
-    price: '$12.99',
-    oldPrice: '$29.99',
-    savePercent: '56%',
     href: '/store',
     featuresAr: ['حماية متقدمة للدفع والمعاملات البنكية', 'جدار حماية ذكي ضد برامج التجسس', 'ضمان ذهبي لاستبدال المفتاح'],
     featuresEn: ['Safe Money banking protection', 'Smart firewall & ransomware shield', 'Golden warranty replacement'],
@@ -123,10 +108,31 @@ const SLIDES: SlideItem[] = [
   },
 ];
 
+/**
+ * The featured-product rotator.
+ *
+ * It carried a price, a struck-through "was" price and a "save 60%" badge on
+ * every slide, typed into this file — figures no catalog row stood behind and
+ * which the product page they linked to did not show. The headlines and the
+ * links stay; the numbers are the product pages' to state.
+ *
+ * Rotation stops while the pointer is over it, while anything inside it has
+ * keyboard focus, and whenever the visitor presses pause — moving content
+ * that cannot be stopped fails WCAG 2.2.2, and a slide that changes under a
+ * focused link moves the link. It starts paused for anybody who has asked the
+ * system for reduced motion.
+ */
 export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isPaused, setIsPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const isPaused = hovered || focused || stopped;
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setStopped(true);
+  }, []);
 
   const isAr = locale === 'ar';
   const slide = SLIDES[current] ?? SLIDES[0]!;
@@ -177,8 +183,14 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
   return (
     <div
       className="hero-slider-wrap"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      // React's focus events bubble, so these are focus-within: they fire for
+      // any control inside. Leaving to another control inside is not leaving.
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      }}
       aria-label={isAr ? 'عروض المنتجات المميزة' : 'Featured Product Offers'}
       role="region"
     >
@@ -230,16 +242,6 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
 
             {/* Price & Action Row */}
             <div className="hero-slide-footer">
-              <div className="hero-slide-price-box">
-                <div className="hero-slide-prices">
-                  <span className="hero-slide-price">{slide.price}</span>
-                  <span className="hero-slide-old-price">{slide.oldPrice}</span>
-                </div>
-                <span className="hero-slide-save">
-                  {isAr ? `وفر ${slide.savePercent}` : `Save ${slide.savePercent}`}
-                </span>
-              </div>
-
               <Link
                 href={isAr ? slide.href : `/${locale}${slide.href}`}
                 className="hero-slide-cta"
@@ -254,38 +256,60 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Arrows */}
+        {/* Navigation. The first button is "previous" in both languages and
+            the row flips with the page, so in Arabic it sits on the right with
+            a right-pointing arrow — backwards, in a right-to-left reading. It
+            used to call "next" in Arabic while announcing "previous". */}
         <div className="hero-slider-nav">
           <button
             type="button"
             className="hero-slider-arrow"
-            onClick={isAr ? nextSlide : prevSlide}
+            onClick={prevSlide}
             aria-label={isAr ? 'العرض السابق' : 'Previous slide'}
           >
             {isAr ? '→' : '←'}
           </button>
-          
-          {/* Pagination Indicators */}
-          <div className="hero-slider-dots">
-            {SLIDES.map((s, idx) => (
-              <button
-                key={s.id}
-                type="button"
-                className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
-                onClick={() => {
-                  setDirection(idx > current ? 1 : -1);
-                  setCurrent(idx);
-                }}
-                aria-label={isAr ? `الانتقال للعرض ${idx + 1}` : `Go to slide ${idx + 1}`}
-                style={idx === current ? { background: slide.theme.accent } : undefined}
-              />
-            ))}
+
+          <div className="hero-slider-center">
+            <button
+              type="button"
+              className="hero-slider-arrow hero-slider-pause"
+              onClick={() => setStopped(!stopped)}
+              aria-label={
+                stopped
+                  ? isAr
+                    ? 'تشغيل العرض التلقائي'
+                    : 'Play slideshow'
+                  : isAr
+                    ? 'إيقاف العرض التلقائي'
+                    : 'Pause slideshow'
+              }
+            >
+              <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
+            </button>
+
+            {/* Pagination Indicators */}
+            <div className="hero-slider-dots">
+              {SLIDES.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setDirection(idx > current ? 1 : -1);
+                    setCurrent(idx);
+                  }}
+                  aria-label={isAr ? `الانتقال للعرض ${idx + 1}` : `Go to slide ${idx + 1}`}
+                  style={idx === current ? { background: slide.theme.accent } : undefined}
+                />
+              ))}
+            </div>
           </div>
 
           <button
             type="button"
             className="hero-slider-arrow"
-            onClick={isAr ? prevSlide : nextSlide}
+            onClick={nextSlide}
             aria-label={isAr ? 'العرض التالي' : 'Next slide'}
           >
             {isAr ? '←' : '→'}

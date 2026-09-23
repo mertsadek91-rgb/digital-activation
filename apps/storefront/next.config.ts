@@ -33,6 +33,43 @@ const config: NextConfig = {
   experimental: {
     optimizePackageImports: ['@da/ui', '@da/seo', '@da/i18n'],
   },
+  /**
+   * WordPress's machine-readable URLs, which no content row stands behind.
+   *
+   * Yoast's sitemap files are still what Search Console was given, and every
+   * feed reader subscribed to the old blog polls `/feed` — so they are asked
+   * for constantly and deserve a real answer rather than a 404 each time.
+   * They are fixed shapes, not content, which is why they live here and not
+   * in the database map the catch-all consults (`lib/gone.ts`): that map is
+   * generated from the WordPress export's posts and pages, and none of these
+   * were ever a post or a page. Config redirects also run before the
+   * middleware, and the `.xml` ones never reach it anyway — its matcher skips
+   * any path with a file extension.
+   *
+   * A literal 301 rather than `permanent: true` (308): some feed readers and
+   * older crawlers only follow the codes they were written against.
+   */
+  async redirects() {
+    const sitemaps = [
+      '/sitemap_index.xml',
+      '/product-sitemap.xml',
+      '/page-sitemap.xml',
+      '/post-sitemap.xml',
+      '/product_cat-sitemap.xml',
+    ];
+    return [
+      ...sitemaps.map((source) => ({
+        source,
+        destination: '/sitemap.xml',
+        statusCode: 301 as const,
+      })),
+      // `/feed` itself and every per-post, per-category and comments feed
+      // (`/<anything>/feed`). The blog is the closest thing to what a feed
+      // reader wanted.
+      { source: '/feed', destination: '/blog', statusCode: 301 as const },
+      { source: '/:path*/feed', destination: '/blog', statusCode: 301 as const },
+    ];
+  },
   async headers() {
     return [
       {

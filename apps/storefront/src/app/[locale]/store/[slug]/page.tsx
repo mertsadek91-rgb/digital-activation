@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
@@ -9,18 +8,45 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { BuyBox } from '../../../../components/buy-box';
-import { ProductGlyph, SupportIcon } from '../../../../components/icons';
+import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
+import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
+import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
-/** Digits only: `wa.me` takes no groups. The same number the footer prints. */
-const WHATSAPP_DIAL = '966534255367';
+
+/**
+ * Where the warranty's replacement promise applies: the Gulf market the store
+ * sells to. Google asks for the countries explicitly on a return policy.
+ */
+const GCC_COUNTRIES = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+
+/**
+ * The end of next year. Google warns on an offer with no `priceValidUntil`,
+ * and a date that far out makes no promise the page cannot keep — prices here
+ * are rewritten by the catalog, not by a campaign with an end date.
+ */
+const PRICE_VALID_UNTIL = `${String(new Date().getFullYear() + 1)}-12-31`;
+
+/** Lowest and highest variant price, as the decimal strings the API sends. */
+function priceRangeOf(variants: { price: { amount: string } }[]): {
+  lowPrice: string;
+  highPrice: string;
+  offerCount: number;
+} {
+  const sorted = [...variants].sort((a, b) => Number(a.price.amount) - Number(b.price.amount));
+  return {
+    lowPrice: sorted[0]?.price.amount ?? '0',
+    highPrice: sorted[sorted.length - 1]?.price.amount ?? '0',
+    offerCount: variants.length,
+  };
+}
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -35,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const links = alternates(SITE_URL, path);
 
   return {
-    title: product.seo.title ?? product.name,
+    title: pageTitle(product.seo.title ?? product.name),
     description: product.seo.description ?? product.shortDesc,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
@@ -43,10 +69,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
+      ...openGraphDefaults(locale),
       title: product.seo.title ?? product.name,
       description: product.seo.description ?? product.shortDesc ?? undefined,
-      images: product.images.slice(0, 1).map((image) => ({ url: image.url, alt: image.alt })),
-      type: 'website',
+      // The product's own picture when it has one; the brand mark otherwise.
+      ...(product.images[0]
+        ? { images: [{ url: product.images[0].url, alt: product.images[0].alt }] }
+        : {}),
     },
   };
 }
@@ -120,6 +149,23 @@ export default async function ProductPage({ params }: Props) {
       imageUrls: product.images.map((image) => image.url),
       price: { amount: selected.price.amount, currency: selected.price.currency },
       inStock: selected.inStock,
+      // The range the licence picker shows, from the same variant prices.
+      ...(product.variants.length > 1 ? { priceRange: priceRangeOf(product.variants) } : {}),
+      priceValidUntil: PRICE_VALID_UNTIL,
+      // The Golden Warranty is a replacement promise, not a refund: a key that
+      // does not work within seven days is replaced free. Declared only on the
+      // products that carry it — it has exclusions, and a product outside it
+      // makes no such promise.
+      ...(product.hasGoldenWarranty
+        ? {
+            returnPolicy: {
+              countries: GCC_COUNTRIES,
+              days: 7,
+              url: new URL(`${prefix}${ROUTES.goldenWarranty}`, SITE_URL).toString(),
+              refund: 'exchange' as const,
+            },
+          }
+        : {}),
       // Emitted only from approved, verified-purchase reviews. Inventing one
       // is what produced 565 synthetic reviews on the store this replaces.
       ...(rating ? { rating } : {}),
@@ -146,31 +192,12 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="product-top">
         <div className="product-media-col">
-          <div className="gallery">
-            {product.images[0] ? (
-              <Image
-                src={product.images[0].url}
-                alt={product.images[0].alt}
-                fill
-                priority
-                sizes="(max-width: 900px) 100vw, 480px"
-              />
-            ) : (
-              /* A drawing rather than the words "no image yet", which on a live
-               shop reads as broken rather than as absent. */
-              <ProductGlyph slug={product.slug} label={product.name} />
-            )}
-          </div>
-
-          {product.images.length > 1 ? (
-            <div className="gallery-thumbs" aria-label={ar ? 'صور إضافية' : 'Additional images'}>
-              {product.images.map((img, idx) => (
-                <div key={idx} className="thumb-item">
-                  <Image src={img.url} alt={img.alt} width={68} height={68} />
-                </div>
-              ))}
-            </div>
-          ) : null}
+          <ProductGallery
+            images={product.images.map((image) => ({ url: image.url, alt: image.alt }))}
+            slug={product.slug}
+            name={product.name}
+            locale={locale}
+          />
 
           <ProductTrust locale={locale} hasGoldenWarranty={product.hasGoldenWarranty} />
         </div>
@@ -217,11 +244,22 @@ export default async function ProductPage({ params }: Props) {
           {!selected.inStock ? (
             <div className="oos">
               {/* The legacy store greeted its highest-traffic product page with
-                  "غير متوفر" and offered nothing else. A waiting list turns
-                  that visit into a queued buyer. */}
-              <button type="button" className="notify">
-                {ar ? 'نبّهني عند التوفّر' : 'Notify me when available'}
-              </button>
+                  "غير متوفر" and offered nothing else. A waiting list would turn
+                  that visit into a queued buyer, but there is no endpoint to
+                  hold one yet — the "Notify me" button that stood here took the
+                  click and did nothing. Until there is, the honest version is a
+                  person: a WhatsApp message that already says which product. */}
+              <a
+                className="notify"
+                href={whatsappLink(
+                  ar
+                    ? `مرحباً، متى يتوفّر «${product.name}»؟ ${pageUrl}`
+                    : `Hi, when will "${product.name}" be back in stock? ${pageUrl}`,
+                )}
+                rel="noopener noreferrer"
+              >
+                {ar ? 'اسألنا عن موعد التوفّر' : 'Ask us when it is back'}
+              </a>
             </div>
           ) : null}
 
@@ -315,9 +353,15 @@ export default async function ProductPage({ params }: Props) {
                   : 'Not sure which licence you need, or how it activates? Message us and a person will answer.'}
               </p>
             </div>
+            {/* Prefilled with the product and its link, so the first reply is
+                an answer rather than "which product?". */}
             <a
               className="btn btn-ghost"
-              href={`https://wa.me/${WHATSAPP_DIAL}`}
+              href={whatsappLink(
+                ar
+                  ? `مرحباً، عندي سؤال عن «${product.name}»: ${pageUrl}`
+                  : `Hi, I have a question about "${product.name}": ${pageUrl}`,
+              )}
               rel="noopener noreferrer"
             >
               {ar ? 'اطلب الدعم' : 'Get help'}

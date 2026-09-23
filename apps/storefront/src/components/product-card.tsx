@@ -7,13 +7,17 @@ import { formatPrice } from '../lib/format';
 
 import { AddToCart } from './add-to-cart';
 import { BoltIcon, ProductGlyph, ShieldCheckIcon } from './icons';
-import { MotionCard } from './motion-wrapper';
 
 /**
  * Grid card.
  *
  * Every claim on it is read from real data.
  * The buy button sits outside the link rather than inside it.
+ *
+ * A plain server-rendered `<article>`. It was a framer-motion element for a
+ * 4px hover lift, which made every card on every listing a client component
+ * shipping an animation runtime; `.card:hover` in catalog.css already lifts
+ * it, in CSS.
  */
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
   const ar = locale === 'ar';
@@ -27,7 +31,7 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
   const discount = card.price.discountPercent;
 
   return (
-    <MotionCard className="card">
+    <article className="card">
       <Link href={href} className="card-link">
         <div className="card-media">
           {card.image ? (
@@ -142,6 +146,6 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
       ) : null}
 
       {card.isDraft ? <p className="draft-flag">{ar ? 'مسودّة' : 'Draft'}</p> : null}
-    </MotionCard>
+    </article>
   );
 }

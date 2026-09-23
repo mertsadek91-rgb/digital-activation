@@ -67,11 +67,36 @@ export interface ProductInput {
   inStock: boolean;
   priceValidUntil?: string;
   /**
+   * Set when the page offers more than one variant. The markup then states the
+   * range the picker shows rather than one variant's price as if it were the
+   * only one — in the same currency as `price`, which is the selected one.
+   */
+  priceRange?: { lowPrice: string; highPrice: string; offerCount: number };
+  /** Omitted when the product carries no return or replacement promise. */
+  returnPolicy?: ReturnPolicyInput;
+  /**
    * Present only when there are approved, verified-purchase reviews. Absent
    * otherwise — an absent rating costs a star display; an invented one costs
    * the whole rich result and invites a manual action.
    */
   rating?: { value: string; count: number };
+}
+
+/**
+ * What the shop does when a purchase goes wrong, as a MerchantReturnPolicy.
+ *
+ * Shaped for a digital key rather than a parcel: nothing is posted back, so
+ * there is no return method or shipping fee to declare. What exists is a
+ * window within which a key that does not work is replaced free of charge —
+ * which schema.org calls an exchange, not a refund.
+ */
+export interface ReturnPolicyInput {
+  /** ISO 3166-1 alpha-2 codes of the countries the policy applies in. */
+  countries: string[];
+  days: number;
+  /** The page that states the policy in full. */
+  url: string;
+  refund: 'exchange' | 'full';
 }
 
 export interface ItemListInput {
@@ -159,7 +184,33 @@ export function faqPage(items: FaqInput[]): JsonLdNode | null {
   };
 }
 
+function returnPolicy(input: ReturnPolicyInput): JsonLdNode {
+  return {
+    '@type': 'MerchantReturnPolicy',
+    applicableCountry: input.countries,
+    returnPolicyCategory: `${SCHEMA}/MerchantReturnFiniteReturnWindow`,
+    merchantReturnDays: input.days,
+    returnFees: `${SCHEMA}/FreeReturn`,
+    refundType: input.refund === 'exchange' ? `${SCHEMA}/ExchangeRefund` : `${SCHEMA}/FullRefund`,
+    merchantReturnLink: input.url,
+  };
+}
+
 export function product(input: ProductInput): JsonLdNode {
+  const shared = {
+    url: input.url,
+    priceCurrency: input.price.currency,
+    availability: input.inStock ? `${SCHEMA}/InStock` : `${SCHEMA}/OutOfStock`,
+    itemCondition: `${SCHEMA}/NewCondition`,
+    ...(input.priceValidUntil ? { priceValidUntil: input.priceValidUntil } : {}),
+    ...(input.returnPolicy ? { hasMerchantReturnPolicy: returnPolicy(input.returnPolicy) } : {}),
+    seller: { '@id': `${new URL(input.url).origin}#organization` },
+  };
+
+  // An AggregateOffer only when there really is a range. A single variant is
+  // one Offer with one price, the same one the page prints.
+  const range = input.priceRange && input.priceRange.offerCount > 1 ? input.priceRange : null;
+
   return {
     '@type': 'Product',
     '@id': `${input.url}#product`,
@@ -168,17 +219,20 @@ export function product(input: ProductInput): JsonLdNode {
     sku: input.sku,
     ...(input.brandName ? { brand: { '@type': 'Brand', name: input.brandName } } : {}),
     image: input.imageUrls,
-    offers: {
-      '@type': 'Offer',
-      url: input.url,
-      // Same object the page rendered. This is the invariant.
-      price: input.price.amount,
-      priceCurrency: input.price.currency,
-      availability: input.inStock ? `${SCHEMA}/InStock` : `${SCHEMA}/OutOfStock`,
-      itemCondition: `${SCHEMA}/NewCondition`,
-      ...(input.priceValidUntil ? { priceValidUntil: input.priceValidUntil } : {}),
-      seller: { '@id': `${new URL(input.url).origin}#organization` },
-    },
+    offers: range
+      ? {
+          '@type': 'AggregateOffer',
+          lowPrice: range.lowPrice,
+          highPrice: range.highPrice,
+          offerCount: range.offerCount,
+          ...shared,
+        }
+      : {
+          '@type': 'Offer',
+          // Same object the page rendered. This is the invariant.
+          price: input.price.amount,
+          ...shared,
+        },
     ...(input.rating && input.rating.count > 0
       ? {
           aggregateRating: {
@@ -252,5 +306,24 @@ export function buildGraph(nodes: (JsonLdNode | null | undefined)[]): string {
     }
   }
 
-  return JSON.stringify({ '@context': SCHEMA, '@graph': graph });
+  return escapeForScript(JSON.stringify({ '@context': SCHEMA, '@graph': graph }));
+}
+
+/**
+ * Makes serialised JSON safe to place inside a <script> element.
+ *
+ * `JSON.stringify` does not escape `<`, so a product name or FAQ answer
+ * containing `</script>` — typed by an editor, or imported from WordPress —
+ * would close the element early and the rest would be parsed as HTML. The
+ * unicode escapes are still the same JSON: every parser reads `<` as
+ * `<`. U+2028 and U+2029 are escaped too, because older JavaScript engines
+ * treat them as line terminators inside a string literal.
+ */
+export function escapeForScript(json: string): string {
+  return json
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
 }

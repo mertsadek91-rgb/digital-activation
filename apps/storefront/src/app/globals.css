@@ -9,27 +9,21 @@
 @import './footer.css';
 
 /*
- * Tajawal, self-hosted and subset to Arabic + Latin. The legacy site made
- * three requests to fonts.googleapis.com before it could paint any text.
- * Drop the .woff2 files into public/fonts/ during Release 1.
+ * Tajawal, through next/font (see `[locale]/layout.tsx`).
+ *
+ * The three @font-face rules that were here pointed at /fonts/*.woff2 files
+ * that were never added, so every page load asked for them, got three 404s
+ * and rendered in the system stack. next/font downloads the Arabic + Latin
+ * subsets at build time and serves them from this origin — still no request
+ * to fonts.googleapis.com, which is what the legacy site paid for before it
+ * could paint any text — and exposes the family as `--font-tajawal`.
+ *
+ * The token from @da/ui names 'Tajawal' literally; next/font registers the
+ * face under a generated name, so the storefront points the token at the
+ * variable instead. Unlayered, so it wins over the token's theme layer.
  */
-@font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/tajawal-400.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/tajawal-500.woff2') format('woff2');
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/tajawal-700.woff2') format('woff2');
-  font-weight: 700;
-  font-display: swap;
+:root {
+  --font-sans: var(--font-tajawal), system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 html {
@@ -114,4 +108,58 @@ summary {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) var(--color-surface);
+}
+
+/*
+ * Prices read left to right in both languages.
+ *
+ * `formatPrice` writes "$19.99" and "AED 36.36" with Latin digits, which is
+ * how Gulf commerce writes them — but dropped into a right-to-left line the
+ * bidi algorithm moved the symbol to the far side, so the Arabic pages showed
+ * "19.99$", and a discount's minus sign ended up after the number. Isolating
+ * each price as its own left-to-right run keeps it as written without
+ * disturbing the line around it. Every selector here is an inline run or a
+ * shrink-to-fit flex item, so the direction does not move its alignment.
+ */
+.price strong,
+.price s,
+.card-price strong,
+.card-price s,
+.variant-price,
+.buy-total strong,
+.buy-bar-price,
+.cart-line-total,
+.order-line-total,
+.totals dd {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+/*
+ * Sections that ease in as they scroll into view (`MotionFadeIn`).
+ *
+ * Scroll-driven rather than script-driven, and applied only where supported
+ * and wanted: anywhere else — an older browser, reduced motion, no JavaScript,
+ * a crawler — `.reveal` does nothing and the content is simply there. The
+ * framer-motion version it replaces rendered `opacity: 0` on the server and
+ * waited for hydration to undo it.
+ */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 18px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
 }

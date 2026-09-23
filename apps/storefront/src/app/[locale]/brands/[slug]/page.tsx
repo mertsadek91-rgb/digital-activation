@@ -13,7 +13,7 @@ import { CategoryRail } from '../../../../components/category-rail';
 import { ProductCard } from '../../../../components/product-card';
 import { getBrand } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import { notFoundMetadata, pageTitle, robotsMeta } from '../../../../lib/seo';
 
 /**
  * One maker's shelf — the page 71 of 72 products have been linking to.
@@ -51,7 +51,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const links = alternates(SITE_URL, path);
 
   return {
-    title: brand.seo.title ?? brand.name,
+    title: pageTitle(brand.seo.title ?? brand.name),
     // A brand has no headline field, so the description falls back to a true
     // sentence rather than to nothing at all. No count in it: Arabic agreement
     // changes at three and again at eleven, and a description that reads

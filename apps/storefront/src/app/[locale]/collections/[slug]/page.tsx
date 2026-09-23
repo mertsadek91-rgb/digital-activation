@@ -12,7 +12,13 @@ import { CategoryRail } from '../../../../components/category-rail';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import {
+  notFoundMetadata,
+  pageSuffix,
+  pageTitle,
+  paginatedUrl,
+  robotsMeta,
+} from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
@@ -37,16 +43,21 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
   const path = ROUTES.collection(slug);
   const links = alternates(SITE_URL, path);
+  const title = `${collection.seo.title ?? collection.name}${pageSuffix(page, locale)}`;
 
   return {
     // The legacy store had no meta description on a single category page, and
     // not one of its sixteen categories ever earned a search impression.
-    title: collection.seo.title ?? collection.name,
+    // Page N says so in its title, or every page of a category shows the same
+    // title in a result and in Search Console's duplicate-title report.
+    title: pageTitle(title),
     description: collection.seo.description ?? collection.headline,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
+      canonical: paginatedUrl(canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'), page),
+      languages: Object.fromEntries(
+        links.map((link) => [link.hrefLang, paginatedUrl(link.href, page)]),
+      ),
     },
   };
 }
@@ -66,8 +77,13 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const pageUrl = new URL(ROUTES.collection(slug), SITE_URL).toString();
   const prefix = ar ? '' : `/${locale}`;
+  // With the locale prefix: the English list used to identify itself by the
+  // Arabic URL, so its `@id` collided with the Arabic page's.
+  const pageUrl = paginatedUrl(
+    new URL(`${prefix}${ROUTES.collection(slug)}`, SITE_URL).toString(),
+    page,
+  );
 
   // One graph, one script tag. `buildGraph` throws in development if a second
   // ItemList or Product entity reaches it — the legacy product pages emitted two

@@ -10,7 +10,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../components/blocks';
 import { MotionFadeIn } from '../../../components/motion-wrapper';
 import { getPage } from '../../../lib/api';
-import { notFoundMetadata, robotsMeta } from '../../../lib/seo';
+import { notFoundMetadata, pageTitle, robotsMeta } from '../../../lib/seo';
 
 /**
  * /golden-warranty — the warranty the shop actually offers.
@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const links = alternates(SITE_URL, ROUTES.goldenWarranty);
 
   return {
-    title: page.seo.title ?? page.title,
+    title: pageTitle(page.seo.title ?? page.title),
     description: page.seo.description ?? summaryOf(page.blocks),
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
@@ -133,7 +133,7 @@ export default async function GoldenWarrantyPage({ params }: Props) {
           covers, the questions and the closing call. All of it rows the owner
           edits in the panel. */}
       <section className="warranty-section">
-        <MotionFadeIn delay={0.05}>
+        <MotionFadeIn>
           <div className="shell prose warranty-body">
             <Blocks blocks={page.blocks.filter((block) => block.type !== 'answerFirst')} />
           </div>
