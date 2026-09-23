@@ -58,3 +58,7 @@ test-results/
 .DS_Store
 Thumbs.db
 *.log
+
+# Compiler output emitted beside the source by a stray `tsc` without -p.
+# Builds go to dist/; a map in src/ is always an accident.
+packages/*/src/**/*.map

@@ -36,7 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        # The same major as docker-compose and Coolify: a migration that only
+        # works on one of them should fail here, not in production.
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: da
           POSTGRES_PASSWORD: ci

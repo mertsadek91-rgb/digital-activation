@@ -10,6 +10,7 @@
     },
     "build": {
       "dependsOn": ["^build", "generate"],
+      "env": ["NEXT_PUBLIC_*", "S3_PUBLIC_BASE_URL"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
