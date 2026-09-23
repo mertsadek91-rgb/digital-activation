@@ -19,6 +19,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client.js';
 
 export * from '../generated/prisma/client.js';
+export { minPublishedPrice, refreshProductPrice, type ProductPriceWriter } from './product-price.js';
 
 declare global {
   // Reused across dev hot reloads so we do not exhaust the connection pool.

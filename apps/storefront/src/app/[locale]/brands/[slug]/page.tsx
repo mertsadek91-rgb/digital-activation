@@ -10,10 +10,23 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../../components/blocks';
 import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
+import {
+  ListingChips,
+  ListingFilterPanel,
+  ListingNoResults,
+  ListingSorts,
+} from '../../../../components/listing-filters';
 import { ProductCard } from '../../../../components/product-card';
 import { getBrand } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, pageTitle, robotsMeta } from '../../../../lib/seo';
+import {
+  apiFilters,
+  isFiltered,
+  listingHref,
+  listingSeo,
+  parseListing,
+} from '../../../../lib/listing';
+import { notFoundMetadata, pageTitle } from '../../../../lib/seo';
 
 /**
  * One maker's shelf — the page 71 of 72 products have been linking to.
@@ -34,21 +47,21 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function pageNumber(value: string | string[] | undefined): number {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const parsed = Number.parseInt(raw ?? '1', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
-
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const page = pageNumber((await searchParams).page);
+  const state = parseListing(await searchParams);
 
-  const brand = await getBrand(slug, { locale, page, perPage: PER_PAGE });
+  // The same request the page makes, so the two share one cached response.
+  const brand = await getBrand(slug, {
+    locale,
+    page: state.page,
+    perPage: PER_PAGE,
+    sort: state.sort,
+    filters: apiFilters(state.filters),
+  });
   if (!brand) return notFoundMetadata(locale);
 
   const path = ROUTES.brand(slug);
-  const links = alternates(SITE_URL, path);
 
   return {
     title: pageTitle(brand.seo.title ?? brand.name),
@@ -60,24 +73,34 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     description:
       brand.seo.description ??
       (await getTranslations({ locale, namespace: 'brand' }))('description', { name: brand.name }),
-    robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
-    alternates: {
+    // Page N now canonicalises to itself like the store and collection pages
+    // do (it pointed at page 1, telling a crawler the rest were duplicates),
+    // and a filtered page is noindex, canonical to the bare brand page.
+    ...listingSeo(state, {
       canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
-    },
+      languages: alternates(SITE_URL, path),
+    }),
   };
 }
 
 export default async function BrandPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const page = pageNumber((await searchParams).page);
+  const state = parseListing(await searchParams);
+  const { page } = state;
   const t = await getTranslations('brand');
   const tc = await getTranslations('common');
   const tk = await getTranslations('catalog');
+  const ts = await getTranslations('store');
   const ar = isArabic(locale);
 
-  const brand = await getBrand(slug, { locale, page, perPage: PER_PAGE });
+  const brand = await getBrand(slug, {
+    locale,
+    page,
+    perPage: PER_PAGE,
+    sort: state.sort,
+    filters: apiFilters(state.filters),
+  });
   // A renamed brand is a redirect, not a dead end — the same rule products and
   // collections follow. `goneOrRedirect` never returns, but TypeScript cannot
   // see that through an awaited `Promise<never>`.
@@ -88,6 +111,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
 
   const pageUrl = new URL(ROUTES.brand(slug), SITE_URL).toString();
   const prefix = ar ? '' : `/${locale}`;
+  const listPath = `${prefix}${ROUTES.brand(slug)}`;
 
   const graph = buildGraph([
     jsonld.breadcrumbs(
@@ -166,13 +190,23 @@ export default async function BrandPage({ params, searchParams }: Props) {
       </header>
 
       <div className="catalog-layout">
-        <CategoryRail
-          categories={brand.siblings}
-          current={brand.slug}
-          locale={locale}
-          title={tk('brands')}
-          hrefFor={ROUTES.brand}
-        />
+        <aside className="catalog-side">
+          <CategoryRail
+            categories={brand.siblings}
+            current={brand.slug}
+            locale={locale}
+            title={tk('brands')}
+            hrefFor={ROUTES.brand}
+          />
+          {brand.facets ? (
+            <ListingFilterPanel
+              facets={brand.facets}
+              state={state}
+              path={listPath}
+              total={brand.total}
+            />
+          ) : null}
+        </aside>
 
         <div className="catalog-main">
           {brand.intro.length > 0 ? (
@@ -181,10 +215,22 @@ export default async function BrandPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">{tk('productCount', { count: brand.total })}</p>
+          <div className="store-bar">
+            <p className="result-count" role="status">
+              {tk('productCount', { count: brand.total })}
+            </p>
+            {/* A brand's default order is the store's: sales first. */}
+            <ListingSorts state={state} path={listPath} positionLabel={ts('sortPosition')} />
+          </div>
+
+          <ListingChips facets={brand.facets} state={state} path={listPath} />
 
           {brand.products.length === 0 ? (
-            <p className="empty">{t('empty')}</p>
+            isFiltered(state.filters) ? (
+              <ListingNoResults state={state} path={listPath} />
+            ) : (
+              <p className="empty">{t('empty')}</p>
+            )
           ) : (
             <div className="grid">
               {brand.products.map((card) => (
@@ -196,15 +242,13 @@ export default async function BrandPage({ params, searchParams }: Props) {
           {lastPage > 1 ? (
             <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
-                <Link href={`${prefix}${ROUTES.brand(slug)}?page=${String(page - 1)}`} rel="prev">
+                <Link href={listingHref(listPath, state, { page: page - 1 })} rel="prev">
                   {tk('previous')}
                 </Link>
               ) : null}
-              <span>
-                {tk('pageOf', { page: String(page), last: String(lastPage) })}
-              </span>
+              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
               {page < lastPage ? (
-                <Link href={`${prefix}${ROUTES.brand(slug)}?page=${String(page + 1)}`} rel="next">
+                <Link href={listingHref(listPath, state, { page: page + 1 })} rel="next">
                   {tk('next')}
                 </Link>
               ) : null}

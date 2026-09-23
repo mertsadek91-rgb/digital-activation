@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
-import type { CatalogCard, CatalogQuery, SearchResults } from '@da/contracts';
+import {
+  type CatalogCard,
+  type CatalogQuery,
+  type SearchResults,
+  catalogFiltersFrom,
+  hasCatalogFilters,
+} from '@da/contracts';
 import { Locale, PublishStatus } from '@da/db';
 
 import { words } from '../common/arabic.js';
@@ -133,12 +139,23 @@ export class SearchService {
     }
 
     const phrase = [...words(q)].join(' ');
-    const ranked = (await this.index(locale))
+    let ranked = (await this.index(locale))
       .map((row) => ({ row, score: scoreRow(row, asked, phrase) }))
       .filter((entry) => entry.score > 0)
       // Ties broken by the shorter name: between a product and the bundle that
       // contains it, the plainer one is what was asked for.
       .sort((a, b) => b.score - a.score || a.row.name.length - b.row.name.length);
+
+    // The listing filters, when any are set, narrow the ranked list without
+    // reordering it. Relevance stays the order: a price sort on search
+    // results would put the cheapest loose match above the exact product.
+    if (hasCatalogFilters(catalogFiltersFrom(input.query))) {
+      const keep = await this.catalog.matchingIds(
+        ranked.map((entry) => entry.row.id),
+        input.query,
+      );
+      ranked = ranked.filter((entry) => keep.has(entry.row.id));
+    }
 
     const page = ranked.slice(
       (input.query.page - 1) * input.query.perPage,

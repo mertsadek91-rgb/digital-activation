@@ -42,6 +42,7 @@ import {
   type Platform,
   PublishStatus,
   prisma,
+  refreshProductPrice,
 } from '../../src/index.js';
 import {
   ACTIVATION_METHOD,
@@ -623,6 +624,10 @@ async function main(): Promise<void> {
         },
       });
     }
+
+    // A re-import rewrites prices on variants that may already be published,
+    // so the price-sort column is recomputed from what is now in the table.
+    await refreshProductPrice(prisma, product.id);
   }
 
   // --- report ---------------------------------------------------------------

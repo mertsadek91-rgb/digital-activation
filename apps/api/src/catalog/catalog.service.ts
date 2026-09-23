@@ -3,6 +3,9 @@ import {
   type CatalogBrand,
   type CatalogCard,
   type CatalogCollection,
+  type CatalogFacets,
+  catalogFiltersFrom,
+  hasCatalogFilters,
   type CatalogProduct,
   type CatalogProductWithRelated,
   type CatalogQuery,
@@ -29,6 +32,8 @@ import { SalesService, saleBadge, saleFor, salePriced } from '../offers/sales.se
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+import { facetCounts, matchProducts, toFacetProduct } from './facets.js';
+import { cardOrder, productOrder } from './ordering.js';
 import { displayPrice, type FxTable } from './pricing.js';
 
 /**
@@ -182,18 +187,23 @@ export class CatalogService {
    * Sorted by the same `cardOrder` the collection pages use, so "newest" means
    * the same thing everywhere — a store whose sorts disagree with its category
    * sorts is a store where a product appears to move when it has not.
+   *
+   * Filters and facets are shared with the collection and brand pages through
+   * `listing`; the category rail's counts below stay unfiltered, because the
+   * rail is navigation to other pages, not a facet of this one.
    */
   async store(query: CatalogQuery): Promise<CatalogStore> {
     const locale = this.localeFor(query);
     const status = this.statusFilter(query);
+    const pricing = await this.pricing(query);
 
-    const total = await this.prisma.client.product.count({ where: status });
+    const found = await this.listing(status, query, pricing, { brands: true });
     const products = await this.prisma.client.product.findMany({
-      where: status,
-      orderBy: this.productOrder(query),
+      where: found.filtered ? { ...status, id: { in: found.ids } } : status,
+      orderBy: productOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
 
     // Only the categories that actually hold something published: an empty
@@ -207,13 +217,12 @@ export class CatalogService {
       },
     });
 
-    const pricing = await this.pricing(query);
-
     return {
       products: products.map((product) => this.toCard(product, query.currency, pricing)),
-      total,
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
       collections: categories.map((category) => ({
         slug: category.slug,
         name: category.translations[0]?.name ?? category.slug,
@@ -244,19 +253,25 @@ export class CatalogService {
     if (!category) throw new NotFoundException(`No collection with slug "${slug}"`);
 
     const translation = category.translations[0];
-    const total = await this.prisma.client.productCategory.count({
-      where: { categoryId: category.id, product: status },
-    });
+    const pricing = await this.pricing(query);
 
+    const found = await this.listing(
+      { ...status, categories: { some: { categoryId: category.id } } },
+      query,
+      pricing,
+      { brands: true },
+    );
     const links = await this.prisma.client.productCategory.findMany({
-      where: { categoryId: category.id, product: status },
-      orderBy: this.cardOrder(query),
+      where: {
+        categoryId: category.id,
+        product: status,
+        ...(found.filtered ? { productId: { in: found.ids } } : {}),
+      },
+      orderBy: cardOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale),
+      include: this.cardInclude(locale, this.drafts(query)),
     });
-
-    const pricing = await this.pricing(query);
 
     const breadcrumbs: CatalogCollection['breadcrumbs'] = [
       { name: locale === Locale.AR ? 'الرئيسية' : 'Home', href: ROUTES.home },
@@ -320,9 +335,10 @@ export class CatalogService {
         description: translation?.seoDescription ?? null,
       },
       products: links.map((link) => this.toCard(link.product, query.currency, pricing)),
-      total,
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
     };
   }
 
@@ -358,17 +374,17 @@ export class CatalogService {
 
     const translation = brand.translations[0];
     const where = { brandId: brand.id, ...status };
+    const pricing = await this.pricing(query);
 
-    const total = await this.prisma.client.product.count({ where });
+    // No brand facet on a brand's own page: it would be one box, ticked.
+    const found = await this.listing(where, query, pricing, { brands: false });
     const products = await this.prisma.client.product.findMany({
-      where,
-      orderBy: this.productOrder(query),
+      where: found.filtered ? { ...where, id: { in: found.ids } } : where,
+      orderBy: productOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
-
-    const pricing = await this.pricing(query);
 
     // Only brands that have something published. An inactive maker still in
     // the table (this catalog has two with zero products) is a link to an
@@ -411,9 +427,10 @@ export class CatalogService {
         description: translation?.seoDescription ?? null,
       },
       products: products.map((product) => this.toCard(product, query.currency, pricing)),
-      total,
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
     };
   }
 
@@ -443,7 +460,7 @@ export class CatalogService {
           products: {
             where: { product: status },
             orderBy: [{ position: 'asc' }],
-            include: this.cardInclude(locale),
+            include: this.cardInclude(locale, this.drafts(query)),
           },
         },
       }),
@@ -459,14 +476,14 @@ export class CatalogService {
         where: { ...status, salesCount: { gte: SALES_PROOF_THRESHOLD } },
         orderBy: { salesCount: 'desc' },
         take: RAIL_SIZE * 2,
-        include: this.cardInclude(locale).product.include,
+        include: this.cardInclude(locale, this.drafts(query)).product.include,
       }),
       this.prisma.client.product.findMany({
         where: status,
         // A draft has no publishedAt, so preview falls back to creation order.
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         take: RAIL_SIZE * 2,
-        include: this.cardInclude(locale).product.include,
+        include: this.cardInclude(locale, this.drafts(query)).product.include,
       }),
       /**
        * The newest posts, published only.
@@ -645,7 +662,7 @@ export class CatalogService {
         },
         orderBy: { position: 'asc' },
         take: RELATED_SIZE,
-        include: this.cardInclude(locale),
+        include: this.cardInclude(locale, this.drafts(query)),
       });
       for (const link of siblings) related.push(this.toCard(link.product, query.currency, pricing));
     }
@@ -825,35 +842,95 @@ export class CatalogService {
     return base ? new URL(key, base).toString() : `/media/${key}`;
   }
 
-  /**
-   * The same sorts as `cardOrder`, expressed over Product rows.
-   *
-   * Price is missing from both on purpose: a product's price is the cheapest of
-   * its variants, which Postgres cannot order by without a join and an
-   * aggregate. Sorting a page of 24 in memory would order that page and not the
-   * catalog, which is worse than not offering it — so the storefront offers the
-   * three sorts that are real.
-   */
-  private productOrder(query: CatalogQuery): Prisma.ProductOrderByWithRelationInput[] {
-    switch (query.sort) {
-      case 'newest':
-        return [{ publishedAt: 'desc' }, { slug: 'asc' }];
-      case 'best-selling':
-        return [{ salesCount: 'desc' }, { slug: 'asc' }];
-      default:
-        return [{ salesCount: 'desc' }, { slug: 'asc' }];
-    }
+  /** True on a preview host, where drafts — and draft variants — are shown. */
+  private drafts(query: CatalogQuery): boolean {
+    return this.statusFilter(query).status === undefined;
   }
 
-  private cardOrder(query: CatalogQuery): Prisma.ProductCategoryOrderByWithRelationInput[] {
-    switch (query.sort) {
-      case 'newest':
-        return [{ product: { publishedAt: 'desc' } }, { position: 'asc' }];
-      case 'best-selling':
-        return [{ product: { salesCount: 'desc' } }, { position: 'asc' }];
-      default:
-        return [{ position: 'asc' }];
-    }
+  /**
+   * One listing's filtered ids, filtered total and facet counts.
+   *
+   * Loads every product in `scope` with the variant columns a filter reads and
+   * does the rest in memory — see `facets.ts` for why that is the right trade
+   * at this catalogue's size and where it stops being one. The page itself is
+   * then fetched and ordered in SQL, restricted to these ids, so pagination and
+   * price sorting run over the whole filtered set rather than over one page.
+   *
+   * Variants are the published ones (all of them on a preview host), the same
+   * set the product page offers: a filter that matched a product through a
+   * draft variant would send the shopper to a page without the thing they
+   * filtered for.
+   */
+  private async listing(
+    scope: Prisma.ProductWhereInput,
+    query: CatalogQuery,
+    pricing: Pricing,
+    options: { brands: boolean },
+  ): Promise<{ filtered: boolean; ids: string[]; total: number; facets: CatalogFacets }> {
+    const filters = catalogFiltersFrom(query);
+    const locale = this.localeFor(query);
+    const rows = await this.prisma.client.product.findMany({
+      where: scope,
+      select: {
+        id: true,
+        categories: { select: { categoryId: true } },
+        brand: {
+          select: {
+            slug: true,
+            name: true,
+            translations: { where: { locale }, select: { name: true } },
+          },
+        },
+        variants: {
+          where: { status: this.drafts(query) ? undefined : PublishStatus.PUBLISHED },
+          select: {
+            platform: true,
+            licensePeriodUnit: true,
+            deviceCount: true,
+            priceUsd: true,
+            compareAtUsd: true,
+            fulfillmentMode: true,
+            inventory: { select: { onHand: true, reserved: true } },
+          },
+        },
+      },
+    });
+
+    const products = rows.map((row) =>
+      toFacetProduct(
+        row,
+        saleFor(pricing.sales, {
+          id: row.id,
+          categoryIds: row.categories.map((link) => link.categoryId),
+        }),
+      ),
+    );
+    const matched = matchProducts(products, filters);
+
+    return {
+      filtered: hasCatalogFilters(filters),
+      ids: matched.map((product) => product.id),
+      total: matched.length,
+      facets: facetCounts(products, filters, { currency: query.currency, fx: pricing.fx }, options),
+    };
+  }
+
+  /**
+   * Which of these products pass the query's filters.
+   *
+   * For search, which ranks its own ids and then only needs them narrowed.
+   * Same rules as a listing, so a filter means the same thing in the search
+   * box as it does on the store page.
+   */
+  async matchingIds(ids: string[], query: CatalogQuery): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const found = await this.listing(
+      { id: { in: ids }, ...this.statusFilter(query) },
+      query,
+      await this.pricing(query),
+      { brands: false },
+    );
+    return new Set(found.ids);
   }
 
   /**
@@ -871,7 +948,7 @@ export class CatalogService {
     const locale = this.localeFor(query);
     const products = await this.prisma.client.product.findMany({
       where: { id: { in: ids }, ...this.statusFilter(query) },
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
 
     const pricing = await this.pricing(query);
@@ -915,13 +992,27 @@ export class CatalogService {
     );
   }
 
-  private cardInclude(locale: Locale) {
+  /**
+   * What a card is drawn from.
+   *
+   * Published variants only, unless this is a preview host. The card used to
+   * read every variant, so a draft variant priced lower than the rest set the
+   * card's "from" price — a price the product page, which has always filtered
+   * to published, would not sell — and now that listings sort by the cheapest
+   * *published* variant, reading drafts here would draw a price-sorted grid
+   * out of order.
+   */
+  private cardInclude(locale: Locale, drafts = false) {
     return {
       product: {
         include: {
           translations: { where: { locale } },
           brand: { include: { translations: { where: { locale } } } },
-          variants: { orderBy: { position: 'asc' as const }, include: { inventory: true } },
+          variants: {
+            where: { status: drafts ? undefined : PublishStatus.PUBLISHED },
+            orderBy: { position: 'asc' as const },
+            include: { inventory: true },
+          },
           // For matching seasonal sales scoped by category.
           categories: { select: { categoryId: true } },
           media: {
