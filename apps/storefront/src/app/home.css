@@ -863,6 +863,60 @@
   flex-wrap: wrap;
 }
 
+.hero-slide-price-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hero-slide-prices {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hero-slide-price {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.hero-slide-old-price {
+  font-size: 0.95rem;
+  text-decoration: line-through;
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* "from", when the product has several variants and the figure is the lowest. */
+.hero-slide-from {
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+}
+
+/* The title is the product's own name from the catalog, and a link to it. */
+.hero-slide-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.hero-slide-title a:hover {
+  text-decoration: underline;
+}
+
+.hero-slide-save {
+  font-size: 0.72rem;
+  font-weight: 800;
+  /* The success tokens, which clear 4.5:1 together at this size. */
+  color: var(--color-success);
+  background: var(--color-success-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
 .hero-slide-cta {
   display: inline-flex;
   align-items: center;

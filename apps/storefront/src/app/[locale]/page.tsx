@@ -13,6 +13,7 @@ import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
 import { isArabic } from '../../i18n/locale';
 import { getHome } from '../../lib/api';
+import { loadHeroSlides } from '../../lib/hero-slides';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -72,7 +73,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const tf = await getTranslations('format');
   const tk = await getTranslations('catalog');
 
-  const home = await getHome({ locale, revalidate: 300 });
+  // The hero's featured products are read with the same cache window as the
+  // rest of the page, so the price on the first screen is the price at
+  // checkout — see `hero-slides.ts` for why that was not always true.
+  const [home, slides] = await Promise.all([
+    getHome({ locale, revalidate: 300 }),
+    loadHeroSlides(locale),
+  ]);
 
   const faq = ([1, 2, 3, 4, 5] as const).map((n) => ({
     q: t(`faq${n}Q`),
@@ -153,9 +160,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             ) : null}
           </div>
 
-          <div className="hero-slider-container">
-            <HeroSlider locale={locale} />
-          </div>
+          {/* Nothing here when the catalog has none of the featured products:
+              an empty card beside the headline would be a frame around a
+              missing picture. */}
+          {slides.length > 0 ? (
+            <div className="hero-slider-container">
+              <HeroSlider slides={slides} locale={locale} />
+            </div>
+          ) : null}
         </div>
       </section>
 
