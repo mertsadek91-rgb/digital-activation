@@ -137,11 +137,19 @@ function toSlide(
  * page: four extra requests at build time, none at request time.
  */
 export async function loadHeroSlides(locale: string): Promise<HeroSlide[]> {
-  const [products, tf, th] = await Promise.all([
-    Promise.all(FEATURED.map((entry) => getProduct(entry.slug, { locale, revalidate: 300 }))),
+  const [results, tf, th] = await Promise.all([
+    // Settled, not all-or-nothing. `getProduct` throws when the API cannot
+    // answer, which is right for a product page — an outage must not read as
+    // "deleted" — but the hero is one panel of the home page, and one failed
+    // fetch here answered the whole home page with a 500. A product that
+    // cannot be read is simply not a slide.
+    Promise.allSettled(
+      FEATURED.map((entry) => getProduct(entry.slug, { locale, revalidate: 300 })),
+    ),
     getTranslations({ locale, namespace: 'format' }),
     getTranslations({ locale, namespace: 'hero' }),
   ]);
+  const products = results.map((result) => (result.status === 'fulfilled' ? result.value : null));
 
   const slides: HeroSlide[] = [];
   for (const [index, product] of products.entries()) {
