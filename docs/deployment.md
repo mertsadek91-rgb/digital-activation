@@ -180,13 +180,16 @@ replica count — a Redis-backed throttler store is the step before scaling out.
 These run inside the API process and each takes a Postgres advisory lock, so
 more than one replica is safe:
 
-| Job               | Every      | What it does                                                                       |
-| ----------------- | ---------- | ---------------------------------------------------------------------------------- |
-| `stranded-orders` | 5 minutes  | fulfils PAID orders still holding PENDING lines 5+ minutes after payment           |
-| `back-in-stock`   | 10 minutes | emails people waiting on a stocked variant once keys are available                 |
-| `expire-drafts`   | hour       | cancels PENDING_PAYMENT drafts older than 14 days with no succeeded payment        |
-| `review-invites`  | hour       | day-3 and day-10 review requests, 09:00–20:00 store time                           |
-| `fx-refresh`      | day, 03:00 | writes exchange rates from `FX_RATES_URL`; a move over 20% is held back and logged |
+| Job                 | Every      | What it does                                                                          |
+| ------------------- | ---------- | ------------------------------------------------------------------------------------- |
+| `stranded-orders`   | 5 minutes  | fulfils PAID orders still holding PENDING lines 5+ minutes after payment              |
+| `back-in-stock`     | 10 minutes | emails people waiting on a stocked variant once keys are available                    |
+| `expire-drafts`     | hour       | cancels PENDING_PAYMENT drafts older than 14 days with no succeeded payment           |
+| `review-invites`    | hour       | day-3 and day-10 review requests, 09:00–20:00 store time                              |
+| `fx-refresh`        | day, 03:00 | writes exchange rates from `FX_RATES_URL`; a move over 20% is held back and logged    |
+| `renewal-reminders` | day, 10:00 | renewal emails before a time-limited licence expires (settings: Marketing → Renewals) |
+| `cart-recovery`     | 10 minutes | the abandoned-cart ladder, outside quiet hours (Marketing → Abandoned carts)          |
+| `referral-sweep`    | day, 04:00 | records referred orders and pays referrers once the refund window has passed          |
 
 Because of these, **never point a development API at the production
 database**: the sweeps would fulfil real orders and email real customers.
@@ -346,10 +349,17 @@ checkout does not offer it.
 
 Two things to run once, as the owner role, in this order:
 
-1. `pnpm --filter @da/db migrate:deploy` — applies
-   `20260923130000_payment_integrity_totp_replay` (TOTP replay column,
-   three-decimal `Payment.amountCharged`, RESTRICT instead of CASCADE from
-   Order to Payment and Payment to Refund).
+1. `pnpm --filter @da/db migrate:deploy` — applies, in order:
+   - `20260923130000_payment_integrity_totp_replay` (TOTP replay column,
+     three-decimal `Payment.amountCharged`, RESTRICT instead of CASCADE from
+     Order to Payment and Payment to Refund);
+   - `20260923150000_basket_offers` (sale columns on `CartItem`,
+     `Order.offerSnapshot`) — **the cart and checkout write these, so deploy
+     the migration before the code**;
+   - `20260923180000_retention_reminders` (`RenewalReminder`,
+     `CartRecoveryEvent.heldOut`);
+   - `20260923190000_referral_redemption` (`ReferralRedemption`).
+     All are additive.
 2. Re-run `packages/db/prisma/init/roles.prod.sql` — it now revokes UPDATE and
    DELETE on `AuditLog`, `StockMovement` and `KeyImportBatch` from `da_app`, and
    UPDATE on `vault.KeyAccessLog` from `da_vault`. Re-run it after any future
@@ -364,3 +374,13 @@ Two things to run once, as the owner role, in this order:
 | the same three, on `mail.`             | marketing sends on a separate subdomain, so a campaign cannot damage the deliverability of a licence-key email |
 
 Set DMARC to `p=none` first and read the reports for a week before tightening.
+
+## 9. Marketing features
+
+Every marketing feature (Admin → Marketing) ships **off**. Before switching on
+one that shows a discount to shoppers in Saudi Arabia, obtain the Ministry of
+Commerce discount licence and enter its number on that feature's screen; the
+seasonal-sale and offer screens refuse to enable a discount without it.
+Promotional emails go only to customers with recorded marketing consent and
+carry a one-click unsubscribe. Set `API_PUBLIC_URL` (or `NEXT_PUBLIC_API_URL`)
+so the `List-Unsubscribe` header can point at the API.
