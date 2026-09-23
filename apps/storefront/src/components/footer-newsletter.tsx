@@ -1,6 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+import { resolveLocale } from '../i18n/locale';
 
 import { subscriptionsApi } from '../lib/subscriptions-client';
 
@@ -13,7 +16,8 @@ import { subscriptionsApi } from '../lib/subscriptions-client';
  * No coupon is promised, because none is issued.
  */
 export function FooterNewsletter({ locale }: { locale: string }) {
-  const ar = locale !== 'en';
+  const t = useTranslations('newsletter');
+  const ts = useTranslations('stockAlert');
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
 
@@ -24,7 +28,7 @@ export function FooterNewsletter({ locale }: { locale: string }) {
       return;
     }
     setStatus('loading');
-    const ok = await subscriptionsApi.subscribe({ email, locale: ar ? 'ar' : 'en' });
+    const ok = await subscriptionsApi.subscribe({ email, locale: resolveLocale(locale) });
     setStatus(ok ? 'sent' : 'error');
     if (ok) setEmail('');
   }
@@ -33,12 +37,10 @@ export function FooterNewsletter({ locale }: { locale: string }) {
     <div className="footer-newsletter-card">
       <div className="newsletter-text">
         <div className="newsletter-headline">
-          <h3>{ar ? 'عروض التراخيص في بريدك' : 'Licence deals in your inbox'}</h3>
+          <h3>{t('title')}</h3>
         </div>
         <p>
-          {ar
-            ? 'نرسل العروض والإصدارات الجديدة فقط، ويمكنك إلغاء الاشتراك في أي وقت.'
-            : 'Deals and new releases only, and you can unsubscribe at any time.'}
+          {t('body')}
         </p>
       </div>
 
@@ -47,9 +49,7 @@ export function FooterNewsletter({ locale }: { locale: string }) {
           <div className="newsletter-success" role="status">
             <span className="success-icon">✓</span>
             <span>
-              {ar
-                ? 'أرسلنا رسالة تأكيد إلى بريدك. اضغط الرابط فيها لإتمام الاشتراك.'
-                : 'We sent a confirmation email. Follow its link to finish subscribing.'}
+              {t('sent')}
             </span>
           </div>
         ) : (
@@ -62,22 +62,20 @@ export function FooterNewsletter({ locale }: { locale: string }) {
                   setEmail(event.target.value);
                   if (status === 'error') setStatus('idle');
                 }}
-                placeholder={ar ? 'بريدك الإلكتروني' : 'Your email address'}
-                aria-label={ar ? 'البريد الإلكتروني للاشتراك' : 'Email for the newsletter'}
+                placeholder={ts('placeholder')}
+                aria-label={t('inputLabel')}
                 className={`newsletter-input${status === 'error' ? ' is-error' : ''}`}
                 disabled={status === 'loading'}
                 dir="ltr"
                 required
               />
               <button type="submit" disabled={status === 'loading'} className="newsletter-submit">
-                {status === 'loading' ? '…' : ar ? 'اشترك' : 'Subscribe'}
+                {status === 'loading' ? '…' : t('subscribe')}
               </button>
             </div>
             {status === 'error' ? (
               <p className="newsletter-error-msg" role="alert">
-                {ar
-                  ? 'تعذّر الاشتراك. تأكّد من البريد وأعد المحاولة.'
-                  : 'Could not subscribe. Check the address and try again.'}
+                {t('error')}
               </p>
             ) : null}
           </form>

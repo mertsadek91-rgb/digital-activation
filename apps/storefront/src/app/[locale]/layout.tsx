@@ -15,6 +15,7 @@ import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { WhatsAppButton } from '../../components/whatsapp-button';
 import { getCollections } from '../../lib/api';
+import { isArabic } from '../../i18n/locale';
 import { routing } from '../../i18n/routing';
 
 import '../globals.css';
@@ -50,8 +51,7 @@ export async function generateMetadata({
   // to be a 404 from the root not-found, which carries its own head; claiming
   // an English share card for it first would be wrong.
   if (!hasLocale(routing.locales, locale)) return {};
-  const ar = locale === 'ar';
-  const brand = ar ? BRAND.nameAr : BRAND.nameEn;
+  const brand = isArabic(locale) ? BRAND.nameAr : BRAND.nameEn;
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -97,7 +97,7 @@ export default async function LocaleLayout({
   // nothing on the 68 product pages that are where it matters. A separate
   // script from the page's own graph: it holds no Product, ItemList or
   // Article, so the one-per-page rule `buildGraph` enforces is untouched.
-  const brand = locale === 'ar' ? BRAND.nameAr : BRAND.nameEn;
+  const brand = isArabic(locale) ? BRAND.nameAr : BRAND.nameEn;
   const siteGraph = buildGraph([
     jsonld.organization({
       name: brand,
@@ -118,7 +118,7 @@ export default async function LocaleLayout({
           <SiteHeader locale={locale} collections={collections} />
           {children}
           <SiteFooter locale={locale} collections={collections} />
-          <WhatsAppButton locale={locale} />
+          <WhatsAppButton />
         </NextIntlClientProvider>
       </body>
     </html>

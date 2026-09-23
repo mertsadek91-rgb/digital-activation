@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+
+import { isArabic, resolveLocale } from '../i18n/locale';
 
 import { subscriptionsApi } from '../lib/subscriptions-client';
 
@@ -16,42 +19,37 @@ import { subscriptionsApi } from '../lib/subscriptions-client';
  */
 export function NewsletterTokenPage({ mode }: { mode: 'confirm' | 'unsubscribe' }) {
   const params = useParams<{ locale: string }>();
-  const ar = (params.locale ?? 'ar') !== 'en';
-  const prefix = ar ? '' : '/en';
+  const t = useTranslations('newsletter');
+  const locale = resolveLocale(params.locale);
+  const prefix = isArabic(locale) ? '' : '/en';
   const [state, setState] = useState<'working' | 'done' | 'failed'>('working');
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('token') ?? '';
     const run =
       mode === 'confirm'
-        ? subscriptionsApi.confirm({ token, locale: ar ? 'ar' : 'en' })
+        ? subscriptionsApi.confirm({ token, locale })
         : subscriptionsApi.unsubscribe({ token });
     void run.then((ok) => setState(ok ? 'done' : 'failed'));
-  }, [mode, ar]);
+  }, [mode, locale]);
 
   const text = {
-    working: ar ? 'لحظة…' : 'One moment…',
+    working: t('working'),
     done:
       mode === 'confirm'
-        ? ar
-          ? 'تمّ تأكيد اشتراكك. ستصلك العروض الجديدة على بريدك.'
-          : 'Your subscription is confirmed. New deals will reach your inbox.'
-        : ar
-          ? 'ألغينا اشتراكك. لن تصلك رسائل تسويقية بعد الآن.'
-          : 'You are unsubscribed. You will receive no more marketing email.',
-    failed: ar
-      ? 'هذا الرابط غير صالح أو منتهٍ. اطلب رابطاً جديداً من أسفل أي صفحة.'
-      : 'This link is not valid. Ask for a new one from the bottom of any page.',
+        ? t('confirmed')
+        : t('unsubscribed'),
+    failed: t('invalidLink'),
   }[state];
 
   return (
     <main className="shell">
-      <h1>{ar ? 'النشرة البريدية' : 'Newsletter'}</h1>
+      <h1>{t('metaTitle')}</h1>
       <p className="notice" role={state === 'failed' ? 'alert' : 'status'}>
         {text}
       </p>
       <Link href={`${prefix}/store`} className="btn btn-ghost">
-        {ar ? 'المتجر' : 'The store'}
+        {t('theStore')}
       </Link>
     </main>
   );

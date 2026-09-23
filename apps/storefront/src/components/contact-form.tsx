@@ -1,7 +1,10 @@
 'use client';
 
 import { type ContactTopic, CONTACT_REPLY_HOURS } from '@da/contracts';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+
+import { resolveLocale } from '../i18n/locale';
 
 /**
  * The contact form.
@@ -16,18 +19,12 @@ import { useState } from 'react';
  * that no human ever fills. A submission carrying it is accepted and dropped
  * by the API; refusing it would teach a bot what to change.
  */
-const TOPICS: { value: ContactTopic; ar: string; en: string }[] = [
-  { value: 'ORDER', ar: 'استفسار عن طلب', en: 'About an order' },
-  { value: 'ACTIVATION', ar: 'مشكلة تفعيل', en: 'Activation problem' },
-  { value: 'PRESALE', ar: 'سؤال قبل الشراء', en: 'Question before buying' },
-  { value: 'BUSINESS', ar: 'مبيعات الشركات', en: 'Business sales' },
-  { value: 'OTHER', ar: 'أخرى', en: 'Something else' },
-];
+const TOPICS: ContactTopic[] = ['ORDER', 'ACTIVATION', 'PRESALE', 'BUSINESS', 'OTHER'];
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export function ContactForm({ locale }: { locale: string }) {
-  const ar = locale === 'ar';
+  const t = useTranslations('contactForm');
 
   const [topic, setTopic] = useState<ContactTopic>('ORDER');
   const [name, setName] = useState('');
@@ -54,7 +51,7 @@ export function ContactForm({ locale }: { locale: string }) {
           name: name.trim(),
           email: email.trim(),
           message: message.trim(),
-          locale: ar ? 'ar' : 'en',
+          locale: resolveLocale(locale),
           ...(phone.trim() ? { phone: phone.trim() } : {}),
           ...(orderNumber.trim() ? { orderNumber: orderNumber.trim() } : {}),
           ...(website ? { website } : {}),
@@ -67,9 +64,7 @@ export function ContactForm({ locale }: { locale: string }) {
         throw new Error(
           typeof record.message === 'string'
             ? record.message
-            : ar
-              ? 'تعذّر إرسال الرسالة. حاول بعد قليل.'
-              : 'The message could not be sent. Try again shortly.',
+            : t('sendFailedRetry'),
         );
       }
 
@@ -78,9 +73,7 @@ export function ContactForm({ locale }: { locale: string }) {
       setError(
         caught instanceof Error
           ? caught.message
-          : ar
-            ? 'تعذّر إرسال الرسالة.'
-            : 'The message could not be sent.',
+          : t('sendFailed'),
       );
     } finally {
       setBusy(false);
@@ -91,12 +84,10 @@ export function ContactForm({ locale }: { locale: string }) {
     return (
       <div className="contact-card contact-form-card">
         <p className="account-sent">
-          {ar
-            ? `وصلتنا رسالتك، وأرسلنا إليك تأكيداً على بريدك. نردّ خلال ${String(CONTACT_REPLY_HOURS)} ساعة كحدّ أقصى.`
-            : `We have your message and sent a confirmation to your email. We reply within ${String(CONTACT_REPLY_HOURS)} hours at the latest.`}
+          {t('sent', { hours: String(CONTACT_REPLY_HOURS) })}
         </p>
         <button type="button" className="btn btn-ghost" onClick={() => setSent(false)}>
-          {ar ? 'أرسل رسالة أخرى' : 'Send another message'}
+          {t('sendAnother')}
         </button>
       </div>
     );
@@ -110,20 +101,18 @@ export function ContactForm({ locale }: { locale: string }) {
       }}
     >
       <div className="contact-card-header">
-        <h2>{ar ? 'أرسل استفسارك للدعم الفني' : 'Send a Message to Support'}</h2>
+        <h2>{t('title')}</h2>
         <p>
-          {ar
-            ? 'املأ البيانات أدناه وسيتولى فريق الدعم الرد عليك في أقرب وقت.'
-            : 'Fill in the details below and our support team will respond promptly.'}
+          {t('intro')}
         </p>
       </div>
 
       <label className="account-field">
-        {ar ? 'القسم' : 'Topic'}
+        {t('topic')}
         <select value={topic} onChange={(event) => setTopic(event.target.value as ContactTopic)}>
           {TOPICS.map((entry) => (
-            <option key={entry.value} value={entry.value}>
-              {ar ? entry.ar : entry.en}
+            <option key={entry} value={entry}>
+              {t(`topic${entry}`)}
             </option>
           ))}
         </select>
@@ -131,7 +120,7 @@ export function ContactForm({ locale }: { locale: string }) {
 
       <div className="contact-row">
         <label className="account-field">
-          {ar ? 'الاسم' : 'Name'}
+          {t('name')}
           <input
             type="text"
             value={name}
@@ -143,7 +132,7 @@ export function ContactForm({ locale }: { locale: string }) {
         </label>
 
         <label className="account-field">
-          {ar ? 'البريد الإلكتروني' : 'Email'}
+          {t('email')}
           <input
             type="email"
             value={email}
@@ -158,7 +147,7 @@ export function ContactForm({ locale }: { locale: string }) {
 
       <div className="contact-row">
         <label className="account-field">
-          {ar ? 'رقم الطلب (إن وُجد)' : 'Order number (if any)'}
+          {t('orderNumber')}
           <input
             type="text"
             value={orderNumber}
@@ -169,7 +158,7 @@ export function ContactForm({ locale }: { locale: string }) {
         </label>
 
         <label className="account-field">
-          {ar ? 'الهاتف (اختياري)' : 'Phone (optional)'}
+          {t('phone')}
           <input
             type="tel"
             value={phone}
@@ -181,7 +170,7 @@ export function ContactForm({ locale }: { locale: string }) {
       </div>
 
       <label className="account-field">
-        {ar ? 'رسالتك' : 'Your message'}
+        {t('message')}
         <textarea
           value={message}
           onChange={(event) => setMessage(event.target.value)}
@@ -189,9 +178,7 @@ export function ContactForm({ locale }: { locale: string }) {
           required
           minLength={10}
           placeholder={
-            ar
-              ? 'صف المشكلة أو السؤال. إن كانت عن مفتاح، اذكر ما يظهر لك من رسالة خطأ.'
-              : 'Describe the problem or the question. If it is about a key, quote the error you see.'
+            t('messagePlaceholder')
           }
         />
       </label>
@@ -220,13 +207,11 @@ export function ContactForm({ locale }: { locale: string }) {
         style={{ minBlockSize: '48px', fontSize: 'var(--text-base)' }}
         disabled={busy || name.trim().length < 2 || message.trim().length < 10}
       >
-        {busy ? (ar ? 'جارٍ الإرسال...' : 'Sending...') : ar ? 'إرسال الرسالة الآن ←' : 'Send Message Now →'}
+        {busy ? (t('sending')) : t('submit')}
       </button>
 
       <p className="account-hint">
-        {ar
-          ? `نردّ خلال ${String(CONTACT_REPLY_HOURS)} ساعة كحدّ أقصى. لا نستخدم بريدك إلا للرد على رسالتك.`
-          : `We reply within ${String(CONTACT_REPLY_HOURS)} hours at the latest, and use your address for nothing but that reply.`}
+        {t('hint', { hours: String(CONTACT_REPLY_HOURS) })}
       </p>
     </form>
   );

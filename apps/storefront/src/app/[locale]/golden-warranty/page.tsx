@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import type { Block } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
@@ -9,6 +9,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
 import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { isArabic } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { notFoundMetadata, pageTitle, robotsMeta } from '../../../lib/seo';
 
@@ -52,7 +53,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: page.seo.description ?? summaryOf(page.blocks),
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, ROUTES.goldenWarranty, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, ROUTES.goldenWarranty, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
   };
@@ -84,8 +85,9 @@ function faqOf(blocks: Block[]): { q: string; a: string }[] | null {
 export default async function GoldenWarrantyPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const t = await getTranslations('warranty');
+  const tc = await getTranslations('common');
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   const page = await getPage('golden-warranty', { locale });
   // No invented fallback. If the policy has not been written, this page has
@@ -98,7 +100,7 @@ export default async function GoldenWarrantyPage({ params }: Props) {
 
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(`${prefix}/`, SITE_URL).toString() },
+      { name: tc('home'), url: new URL(`${prefix}/`, SITE_URL).toString() },
       { name: page.title, url: pageUrl },
     ]),
     // Only the questions the page actually renders, and only when it has any.
@@ -142,11 +144,9 @@ export default async function GoldenWarrantyPage({ params }: Props) {
 
       <section className="warranty-section warranty-contact">
         <div className="shell">
-          <h2>{ar ? 'ما زال لديك سؤال؟' : 'Still have a question?'}</h2>
+          <h2>{t('questionTitle')}</h2>
           <p>
-            {ar
-              ? 'راسلنا برقم طلبك وسنردّ عليك.'
-              : 'Message us with your order number and we will answer.'}
+            {t('questionBody')}
           </p>
           <div className="warranty-contact-actions">
             <a
@@ -154,10 +154,10 @@ export default async function GoldenWarrantyPage({ params }: Props) {
               href={`https://wa.me/${WHATSAPP_DIAL}`}
               rel="noopener noreferrer"
             >
-              {ar ? 'واتساب' : 'WhatsApp'}
+              {t('whatsapp')}
             </a>
             <Link className="btn btn-ghost" href={`${prefix}${ROUTES.contact}`}>
-              {ar ? 'نموذج التواصل' : 'Contact form'}
+              {t('contactForm')}
             </Link>
           </div>
         </div>
