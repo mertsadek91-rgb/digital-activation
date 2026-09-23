@@ -1208,32 +1208,45 @@ export const en: AdminMessages = {
     turnOff: 'Turn off',
     configure: 'Settings',
     trustTitle: 'Trust and guarantee',
-    trustBody: 'Guarantee text, the instant-delivery promise, and registration and VAT numbers, on the product and checkout pages.',
+    trustBody:
+      'Guarantee text, the instant-delivery promise, and registration and VAT numbers, on the product and checkout pages.',
     renewalsTitle: 'Renewal reminders',
-    renewalsBody: 'Messages before a time-limited licence runs out, with a one-click renewal link — and a discount only for customers who agreed to marketing.',
+    renewalsBody:
+      'Messages before a time-limited licence runs out, with a one-click renewal link — and a discount only for customers who agreed to marketing.',
     cartRecoveryTitle: 'Abandoned carts',
-    cartRecoveryBody: 'Up to three messages to customers who agreed to marketing, entered an email and did not pay, with a discount only in the last.',
+    cartRecoveryBody:
+      'Up to three messages to customers who agreed to marketing, entered an email and did not pay, with a discount only in the last.',
+    whatsappTitle: 'WhatsApp',
+    whatsappBody:
+      'Abandoned carts and renewal reminders on WhatsApp instead of email, only for customers who agreed to WhatsApp, with templates Meta has approved.',
     offersTitle: 'Offers and suggestions',
-    offersBody: 'Volume discounts by number of licences, and "goes well with" products after add-to-cart and on the order confirmation.',
+    offersBody:
+      'Volume discounts by number of licences, and "goes well with" products after add-to-cart and on the order confirmation.',
     reviewRequestsTitle: 'Review requests',
-    reviewRequestsBody: 'When a review is asked for after delivery. Licences are judged once they are activated.',
+    reviewRequestsBody:
+      'When a review is asked for after delivery. Licences are judged once they are activated.',
     businessTitle: 'Business quotes',
     businessBody: 'A quote form for buyers who need many licences, landing in the messages inbox.',
     welcomeTitle: 'Sign-up window',
-    welcomeBody: 'One email field on exit or after a delay, with an optional single-use welcome code.',
+    welcomeBody:
+      'One email field on exit or after a delay, with an optional single-use welcome code.',
     seasonalTitle: 'Seasonal sales',
-    seasonalBody: 'Ramadan, White Friday, National Day: a scheduled discount the price returns from, with its discount licence number.',
+    seasonalBody:
+      'Ramadan, White Friday, National Day: a scheduled discount the price returns from, with its discount licence number.',
     referralTitle: 'Referrals',
-    referralBody: 'A discount for the friend’s first order, and credit for the referrer once the refund window has passed.',
+    referralBody:
+      'A discount for the friend’s first order, and credit for the referrer once the refund window has passed.',
     socialProofTitle: 'Purchase notices',
-    socialProofBody: 'From real paid orders only, no names, and nothing shown before the minimum number of orders.',
+    socialProofBody:
+      'From real paid orders only, no names, and nothing shown before the minimum number of orders.',
   },
   marketingRetention: {
     back: '← Marketing',
     noAccess: 'This screen is for admins and the marketing team.',
     loadFailed: 'The settings could not be loaded.',
     enabled: 'On',
-    enabledHint: 'Nothing is sent until this is on. Turning it off stops the next pass; what was already sent stays sent.',
+    enabledHint:
+      'Nothing is sent until this is on. Turning it off stops the next pass; what was already sent stays sent.',
     save: 'Save settings',
     saving: 'Saving…',
     saved: 'Saved, and the change is logged under your name.',
@@ -1245,10 +1258,13 @@ export const en: AdminMessages = {
     errNumber: 'Enter a number.',
     discountLabel: 'Discount %',
     licenceLabel: 'Discount licence number',
-    licenceHint: 'Saudi Arabia’s Ministry of Commerce requires a licence for any advertised discount. The number is shown beside the discount in every message that carries one.',
-    licenceMissing: 'A discount is set with no licence number. Check the Ministry of Commerce requirement before switching this on.',
+    licenceHint:
+      'Saudi Arabia’s Ministry of Commerce requires a licence for any advertised discount. The number is shown beside the discount in every message that carries one.',
+    licenceMissing:
+      'A discount is set with no licence number. Check the Ministry of Commerce requirement before switching this on.',
     holdoutLabel: 'Holdout %',
-    holdoutHint: 'A share of eligible customers deliberately not sent the message, so its real effect can be measured. Assignment is fixed per customer or cart. 0 to 50.',
+    holdoutHint:
+      'A share of eligible customers deliberately not sent the message, so its real effect can be measured. Assignment is fixed per customer or cart. 0 to 50.',
     statsTitle: 'Results',
     statsWindow: 'The last {days} days.',
     statsFailed: 'The results could not be loaded.',
@@ -1261,12 +1277,15 @@ export const en: AdminMessages = {
     liftNoHoldout: 'No holdout. Set it above zero to learn what the messages actually add.',
 
     renewalsTitle: 'Renewal reminders',
-    renewalsLede: 'A message before a time-limited licence ends and one after, with a link that puts the same product in the cart. The reminder is a service message and goes to every buyer; a discount is added only for customers who agreed to marketing, as a single-use code in their name.',
+    renewalsLede:
+      'A message before a time-limited licence ends and one after, with a link that puts the same product in the cart. The reminder is a service message and goes to every buyer; a discount is added only for customers who agreed to marketing, as a single-use code in their name.',
     daysBeforeLabel: 'Days before it ends',
-    daysBeforeHint: 'Up to five numbers separated by commas, each 1 to 120. For example: 30, 14, 3.',
+    daysBeforeHint:
+      'Up to five numbers separated by commas, each 1 to 120. For example: 30, 14, 3.',
     daysAfterLabel: 'Days after it ends',
     daysAfterHint: 'One last message after the licence has ended. 0 for none. Up to 60.',
-    renewalDiscountHint: 'Optional, up to 90. 0 for no discount. The code works on the same product only and ends two weeks after the licence does.',
+    renewalDiscountHint:
+      'Optional, up to 90. 0 for no discount. The code works on the same product only and ends two weeks after the licence does.',
     errDaysBefore: 'Up to five numbers, each 1 to 120.',
     offsetBefore: '{days} days before',
     offsetAfter: '{days} days after',
@@ -1278,9 +1297,11 @@ export const en: AdminMessages = {
     renewedRevenue: 'Renewal value',
 
     cartTitle: 'Abandoned carts',
-    cartLede: 'Messages to customers who agreed to marketing, entered an email at checkout and did not pay, with a link that opens the same cart on any device. Never to anyone without marketing consent, anyone who unsubscribed, or anyone who has since bought.',
+    cartLede:
+      'Messages to customers who agreed to marketing, entered an email at checkout and did not pay, with a link that opens the same cart on any device. Never to anyone without marketing consent, anyone who unsubscribed, or anyone who has since bought.',
     stepsTitle: 'Steps',
-    stepsHint: 'Up to four, each after the one before. Hours are counted from the cart’s last activity.',
+    stepsHint:
+      'Up to four, each after the one before. Hours are counted from the cart’s last activity.',
     stepLabel: 'Step {n}',
     afterHoursLabel: 'After (hours)',
     stepDiscountLabel: 'Discount %',
@@ -1316,8 +1337,7 @@ export const en: AdminMessages = {
 
   marketingTrust: {
     title: 'Trust and guarantee',
-    lede:
-      'The guarantee, the delivery promise and the registration numbers, in your words. The store shows only what is written here; there is no default wording.',
+    lede: 'The guarantee, the delivery promise and the registration numbers, in your words. The store shows only what is written here; there is no default wording.',
     enabledHint: 'While off, nothing from this screen appears on the store.',
     showOnProduct: 'Show on the product page',
     showOnCheckout: 'Show the guarantee and registration beside the pay buttons',
@@ -1362,8 +1382,7 @@ export const en: AdminMessages = {
 
   marketingReviewRequests: {
     title: 'Review requests',
-    lede:
-      'When a buyer is asked to review what they bought, after delivery. One request and at most one reminder; no order is asked twice at the same stage.',
+    lede: 'When a buyer is asked to review what they bought, after delivery. One request and at most one reminder; no order is asked twice at the same stage.',
     firstAfterDays: 'First request after (days from delivery)',
     firstHint: '1 to 30. Default 3: long enough to activate the licence and use it.',
     secondAfterDays: 'Reminder after (days from delivery)',
@@ -1383,8 +1402,7 @@ export const en: AdminMessages = {
 
   marketingSocialProof: {
     title: 'Purchase notices',
-    lede:
-      '"Bought 7 times in the last 3 days" and a small notice now and then — from real paid orders only, with no names, emails, cities or order numbers.',
+    lede: '"Bought 7 times in the last 3 days" and a small notice now and then — from real paid orders only, with no names, emails, cities or order numbers.',
     enabledHint: 'While off, no notice and no summary line appear.',
     windowHours: 'Window (hours)',
     windowHint: '1 to 720. Only paid orders inside it count.',
@@ -1420,9 +1438,11 @@ export const en: AdminMessages = {
     lede: 'A “Need many licences?” link on the product page, and a form that lands in the messages inbox under Business sales.',
     enabled: 'Show the quote link on product pages',
     minSeats: 'Minimum licences',
-    minSeatsHint: 'Shown in the link: “Need this many licences or more?”. It never stops anyone buying any quantity directly.',
+    minSeatsHint:
+      'Shown in the link: “Need this many licences or more?”. It never stops anyone buying any quantity directly.',
     notifyEmail: 'Sales team email',
-    notifyEmailHint: 'Gets every request as well as the support inbox. Leave empty for support only.',
+    notifyEmailHint:
+      'Gets every request as well as the support inbox. Leave empty for support only.',
     saved: 'Settings saved.',
     recentTitle: 'Latest requests',
     recentSummary: '{waiting} waiting for a reply · {month} in the last 30 days.',
@@ -1450,10 +1470,12 @@ export const en: AdminMessages = {
     headlineEn: 'Headline in English',
     headlineHint: 'Leave empty for a default. Promise nothing the code does not deliver.',
     discountPercent: 'Welcome discount (%)',
-    discountPercentHint: '0 for sign-up only. The code works once, on a first order, for that address only.',
+    discountPercentHint:
+      '0 for sign-up only. The code works once, on a first order, for that address only.',
     discountValidDays: 'Code valid for (days)',
     licenceNumber: 'Discount licence number',
-    licenceNumberHint: 'Shown beside the discount in the window and the code email, as the Ministry of Commerce requires.',
+    licenceNumberHint:
+      'Shown beside the discount in the window and the code email, as the Ministry of Commerce requires.',
     saved: 'Settings saved.',
     previewTitle: 'Preview',
     previewDefaultAr: 'عروض التراخيص في بريدك',
@@ -1462,14 +1484,17 @@ export const en: AdminMessages = {
     previewCodeEn: 'Confirm your email for {percent}% off your first order.',
     previewLicenceAr: 'ترخيص التخفيض',
     previewLicenceEn: 'discount licence',
-    previewConsentAr: 'أوافق على تلقّي رسائل العروض. نرسل رسالة تأكيد أولاً، ويمكن الإلغاء في أي وقت.',
-    previewConsentEn: 'I agree to receive deal emails. We send a confirmation first, and you can unsubscribe at any time.',
+    previewConsentAr:
+      'أوافق على تلقّي رسائل العروض. نرسل رسالة تأكيد أولاً، ويمكن الإلغاء في أي وقت.',
+    previewConsentEn:
+      'I agree to receive deal emails. We send a confirmation first, and you can unsubscribe at any time.',
     statsTitle: 'Last {days} days',
     captures: 'Addresses entered',
     confirmations: 'Confirmed',
     codesIssued: 'Codes issued',
     codesRedeemed: 'Codes used',
-    statsHint: 'Confirmed means the customer record carries marketing consent. No code is issued to anyone who has bought before.',
+    statsHint:
+      'Confirmed means the customer record carries marketing consent. No code is issued to anyone who has bought before.',
   },
 
   marketingReferral: {
@@ -1480,7 +1505,8 @@ export const en: AdminMessages = {
     referrerRewardUsd: 'Referrer reward (USD)',
     referrerRewardHint: 'Sent as a single-use code issued to the referrer, valid 90 days.',
     clearAfterDays: 'Wait before rewarding (days)',
-    clearAfterDaysHint: 'After payment. A refunded, cancelled or disputed order voids the referral.',
+    clearAfterDaysHint:
+      'After payment. A refunded, cancelled or disputed order voids the referral.',
     licenceNumber: 'Discount licence number',
     licenceNumberHint: 'Shown beside the friend discount and in the reward email.',
     saved: 'Settings saved.',
@@ -1507,7 +1533,8 @@ export const en: AdminMessages = {
     statusVOID: 'Voided',
     approve: 'Approve',
     reject: 'Void',
-    rejectConfirm: 'Voiding this referral is final and the referrer will not be rewarded for it. Continue?',
+    rejectConfirm:
+      'Voiding this referral is final and the referrer will not be rewarded for it. Continue?',
   },
   marketingOffers: {
     noAccess: 'This screen is for admins and the marketing team.',
@@ -1515,11 +1542,15 @@ export const en: AdminMessages = {
     title: 'Offers and suggestions',
     lede: 'A volume discount by number of licences in the cart, and "goes well with" products after add-to-cart, in the cart and on the order page.',
     enabled: 'Offers on',
-    stackingRule: 'One discount per cart: a cart gets only the largest of the code, the volume discount and the pair discount — never two. A seasonal sale is a price, not a discount, so it applies first, and a code still applies on top of it unless the code is set to exclude discounted products.',
-    licenceRequired: 'No discount licence number. Any discount shown in Saudi Arabia needs its Ministry of Commerce licence number beside it — add it before switching on.',
-    licenceRequiredOn: 'Offers are on with a discount and no licence number. This will not save: add the number or switch offers off.',
+    stackingRule:
+      'One discount per cart: a cart gets only the largest of the code, the volume discount and the pair discount — never two. A seasonal sale is a price, not a discount, so it applies first, and a code still applies on top of it unless the code is set to exclude discounted products.',
+    licenceRequired:
+      'No discount licence number. Any discount shown in Saudi Arabia needs its Ministry of Commerce licence number beside it — add it before switching on.',
+    licenceRequiredOn:
+      'Offers are on with a discount and no licence number. This will not save: add the number or switch offers off.',
     tiersTitle: 'Volume discount',
-    tiersLede: 'By the total licences in the cart. The cart gets the highest tier it has reached, and the "add one more to save" bar shows the way to the next.',
+    tiersLede:
+      'By the total licences in the cart. The cart gets the highest tier it has reached, and the "add one more to save" bar shows the way to the next.',
     noTiers: 'No tiers.',
     minItems: 'From licences',
     percent: 'Discount %',
@@ -1527,7 +1558,8 @@ export const en: AdminMessages = {
     licenceNumber: 'Discount licence number (Ministry of Commerce)',
     licenceHint: 'Shown beside the volume and the pair discount.',
     pairsTitle: 'Goes well with',
-    pairsLede: 'For each product, up to four that go with it. Without pairs set here no suggestions show — the store does not offer substitutes from the same shelf.',
+    pairsLede:
+      'For each product, up to four that go with it. Without pairs set here no suggestions show — the store does not offer substitutes from the same shelf.',
     filterProducts: 'Filter products',
     noPairs: 'No pairs.',
     pairProduct: 'When adding',
@@ -1535,7 +1567,8 @@ export const en: AdminMessages = {
     pairSuggests: 'Suggest',
     addSuggestion: 'Add a suggestion',
     pairPercent: 'Off the suggestion %',
-    pairPercentHint: '0 for none. Taken off the suggested product, as many times as the first product is in the cart, and part of the one-discount-per-cart rule.',
+    pairPercentHint:
+      '0 for none. Taken off the suggested product, as many times as the first product is in the cart, and part of the one-discount-per-cart rule.',
     removePair: 'Remove pair',
     addPair: 'Add a pair',
     whereTitle: 'Where they show',
@@ -1553,7 +1586,8 @@ export const en: AdminMessages = {
     statsPair: 'With a curated pair',
     statsSale: 'With a seasonal sale',
     statsOthers: 'With none of them',
-    statsNote: 'A comparison, not proof: somebody buying five licences was going to spend more anyway. An order can be in more than one row.',
+    statsNote:
+      'A comparison, not proof: somebody buying five licences was going to spend more anyway. An order can be in more than one row.',
     statsUntracked: 'Orders from before offers were recorded, not counted: {count}',
   },
 
@@ -1561,11 +1595,14 @@ export const en: AdminMessages = {
     noAccess: 'This screen is for admins and the marketing team.',
     back: '← Marketing',
     title: 'Seasonal sales',
-    lede: 'A scheduled sale lowers the price itself, everywhere it shows, between its start and end in the store\'s time zone. The real current price is the struck-through one, and it comes back when the sale ends — on items added to a cart during it too.',
-    licenceBlocksEnable: 'Cannot switch on: a running or upcoming sale has no discount licence number.',
-    licenceMissingList: 'No Ministry of Commerce discount licence number: {names}. Sales cannot be switched on until it is added.',
+    lede: "A scheduled sale lowers the price itself, everywhere it shows, between its start and end in the store's time zone. The real current price is the struck-through one, and it comes back when the sale ends — on items added to a cart during it too.",
+    licenceBlocksEnable:
+      'Cannot switch on: a running or upcoming sale has no discount licence number.',
+    licenceMissingList:
+      'No Ministry of Commerce discount licence number: {names}. Sales cannot be switched on until it is added.',
     enabled: 'Sales on',
-    enabledHint: 'Times are in {zone}. A sale starts and ends within half a minute of its time; cached product pages catch up within five minutes, the cart and checkout at once.',
+    enabledHint:
+      'Times are in {zone}. A sale starts and ends within half a minute of its time; cached product pages catch up within five minutes, the cart and checkout at once.',
     saved: 'Saved.',
     listTitle: 'Sales',
     none: 'No sales.',
@@ -1575,7 +1612,8 @@ export const en: AdminMessages = {
     summary: '{percent}% — {scope}',
     scopeAll: 'The whole store',
     scopeCount: '{products} products, {categories} categories',
-    licenceMissing: 'No discount licence number — needed before any discount shows in Saudi Arabia.',
+    licenceMissing:
+      'No discount licence number — needed before any discount shows in Saudi Arabia.',
     confirmDelete: 'Delete "{name}"?',
     add: 'New sale',
     editorTitle: 'Sale',
@@ -1594,5 +1632,61 @@ export const en: AdminMessages = {
     filter: 'Filter',
     previewCount: 'Covers {products} of {of} published products.',
     previewEmpty: 'This sale covers no published product.',
+  },
+  marketingWhatsapp: {
+    noAccess: 'This screen is for admins and the marketing team.',
+    title: 'WhatsApp',
+    lede: 'A second channel for abandoned carts and renewal reminders, straight through Meta’s API. It replaces the email for that step rather than adding to it, and only reaches customers who agreed to WhatsApp at checkout.',
+    connectionTitle: 'Connection',
+    connected: 'Connected: the token and phone number id are set.',
+    notConnected:
+      'Not connected. Without WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID everything stays on email.',
+    envAccessToken: 'WHATSAPP_ACCESS_TOKEN',
+    envPhoneNumberId: 'WHATSAPP_PHONE_NUMBER_ID',
+    envAppSecret: 'WHATSAPP_APP_SECRET',
+    envVerifyToken: 'WHATSAPP_VERIFY_TOKEN',
+    envSet: 'Set',
+    envMissing: 'Not set',
+    secretsNote: 'Set in the server environment, and never shown here.',
+    webhookTitle: 'Webhook URL',
+    webhookHint:
+      'Register it in the Meta app dashboard → WhatsApp → Configuration, put the same value as WHATSAPP_VERIFY_TOKEN in “Verify token”, then subscribe to the messages field.',
+    webhookUnknown:
+      'Set API_PUBLIC_URL for the URL to show here. It is <API_PUBLIC_URL>/v1/webhooks/whatsapp.',
+    settingsTitle: 'Settings',
+    enabled: 'WhatsApp channel on',
+    preferWhatsapp: 'Send on WhatsApp instead of email to customers who agreed to WhatsApp',
+    preferHint:
+      'Otherwise email as before. Timing, holdout and quiet hours come from the cart and renewal settings.',
+    cartTemplateTitle: 'Abandoned-cart template (Marketing category)',
+    renewalTemplateTitle: 'Renewal reminder template (Utility category)',
+    templateName: 'Template name in WhatsApp Manager',
+    templateHint: 'Lowercase letters, digits and _ only. Empty keeps this purpose on email.',
+    languageAr: 'Arabic language code',
+    languageEn: 'English language code',
+    errTemplateName: 'Lowercase letters, digits and _ only.',
+    errLanguage: 'A language code such as ar, en or en_US.',
+    testTitle: 'Test send',
+    testHint:
+      'Sends the saved template with sample values to one number. Admins only, and audited.',
+    testTo: 'Number in international form',
+    testPurpose: 'Purpose',
+    purposeCartRecovery: 'Abandoned carts',
+    purposeRenewal: 'Renewal reminder',
+    testLocale: 'Language',
+    localeAr: 'Arabic',
+    localeEn: 'English',
+    testSend: 'Send',
+    testSent: 'Accepted by Meta. Id: {id}',
+    testFailed: 'Refused by Meta: {error}',
+    testAdminOnly: 'Test sends are for admins only.',
+    testNeedsSave: 'Save the template name first.',
+    statsTitle: 'Last {days} days',
+    statsSent: 'Sent',
+    statsDelivered: 'Delivered',
+    statsRead: 'Read',
+    statsFailed: 'Failed',
+    statsOptOuts: 'Stopped WhatsApp',
+    statsFailedLoad: 'Could not load the status.',
   },
 };

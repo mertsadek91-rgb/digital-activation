@@ -237,6 +237,8 @@ export const cartApi = {
       country?: string;
       activationEmail?: string;
       marketingOptIn: boolean;
+      whatsappPhone?: string;
+      whatsappOptIn: boolean;
     },
     options: Options,
   ): Promise<Checkout> =>

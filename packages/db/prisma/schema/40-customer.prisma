@@ -39,6 +39,16 @@ model Customer {
   marketingOptInAt  DateTime?
   marketingOptOutAt DateTime?
 
+  /// The number WhatsApp messages go to, in E.164 (+9665XXXXXXXX). Separate
+  /// from `phone` because consent attaches to a number: a customer can give a
+  /// work phone for invoices and a personal one for WhatsApp.
+  whatsappPhone    String?
+  /// WhatsApp consent is its own channel under the PDPL and under Meta's
+  /// policy — email consent does not carry over. Replying STOP clears the
+  /// opt-in and stamps the opt-out, the same pair as email.
+  whatsappOptInAt  DateTime?
+  whatsappOptOutAt DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -61,6 +71,8 @@ model Customer {
 
   @@index([groupId])
   @@index([lastOrderAt])
+  /// STOP arrives as a phone number, not a customer id.
+  @@index([whatsappPhone])
   @@schema("public")
 }
 

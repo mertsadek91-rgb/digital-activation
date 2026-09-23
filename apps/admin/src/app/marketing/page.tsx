@@ -21,6 +21,7 @@ const ORDER: MarketingFeature[] = [
   'trust',
   'renewals',
   'cartRecovery',
+  'whatsapp',
   'offers',
   'reviewRequests',
   'business',

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { cartSchema } from './cart.js';
 import { catalogImageSchema, credentialKindSchema, displayPriceSchema } from './catalog.js';
 import { i18nStringSchema, localeSchema, slugSchema } from './primitives.js';
+import { normalizeWhatsappPhone } from './whatsapp.js';
 
 /**
  * Checkout contracts.
@@ -17,27 +18,62 @@ import { i18nStringSchema, localeSchema, slugSchema } from './primitives.js';
  * the fraud check, because a digital key cannot be clawed back once sent.
  */
 
-export const checkoutStartSchema = z.object({
-  email: z.string().trim().toLowerCase().email().max(200),
-  /** Optional at this step. A guest can buy without naming themselves. */
-  name: z.string().trim().max(120).optional(),
-  company: z.string().trim().max(160).optional(),
-  vatNumber: z.string().trim().max(40).optional(),
-  /** ISO-3166 alpha-2. Drives VAT treatment on GCC and EU sales. */
-  country: z.string().trim().length(2).toUpperCase().optional(),
-  /**
-   * The address a licence should be activated against.
-   *
-   * Required when any line in the cart binds to one, and asked for separately
-   * from the order email because they are often different: people order from a
-   * work address and want the licence on a personal Microsoft account. The
-   * server refuses the checkout rather than guessing, because guessing produces
-   * a key nobody can use and a supplier order that cannot be reversed.
-   */
-  activationEmail: z.string().trim().toLowerCase().email().max(200).optional(),
-  /** Marketing consent is asked for separately and defaults to no. */
-  marketingOptIn: z.boolean().default(false),
-});
+export const checkoutStartSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email().max(200),
+    /** Optional at this step. A guest can buy without naming themselves. */
+    name: z.string().trim().max(120).optional(),
+    company: z.string().trim().max(160).optional(),
+    vatNumber: z.string().trim().max(40).optional(),
+    /** ISO-3166 alpha-2. Drives VAT treatment on GCC and EU sales. */
+    country: z.string().trim().length(2).toUpperCase().optional(),
+    /**
+     * The address a licence should be activated against.
+     *
+     * Required when any line in the cart binds to one, and asked for separately
+     * from the order email because they are often different: people order from a
+     * work address and want the licence on a personal Microsoft account. The
+     * server refuses the checkout rather than guessing, because guessing produces
+     * a key nobody can use and a supplier order that cannot be reversed.
+     */
+    activationEmail: z.string().trim().toLowerCase().email().max(200).optional(),
+    /** Marketing consent is asked for separately and defaults to no. */
+    marketingOptIn: z.boolean().default(false),
+    /**
+     * A number for WhatsApp, as typed. Read against `country` when it is in a
+     * local format and normalised to E.164 below; anything that is not a mobile
+     * number is refused rather than stored, because a wrong number here is a
+     * stranger receiving somebody's cart.
+     */
+    whatsappPhone: z.string().trim().max(32).optional(),
+    /** WhatsApp consent: a channel of its own, asked for separately, default no. */
+    whatsappOptIn: z.boolean().default(false),
+  })
+  .transform((value, ctx) => {
+    const typed = value.whatsappPhone ?? '';
+    if (typed === '') {
+      if (value.whatsappOptIn) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['whatsappPhone'],
+          message:
+            'اكتب رقم واتساب لتصلك الرسائل عليه — Enter a WhatsApp number to get messages there.',
+        });
+        return z.NEVER;
+      }
+      return { ...value, whatsappPhone: undefined };
+    }
+    const whatsappPhone = normalizeWhatsappPhone(typed, value.country);
+    if (!whatsappPhone) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['whatsappPhone'],
+        message: 'رقم واتساب غير صالح — Enter a valid WhatsApp mobile number.',
+      });
+      return z.NEVER;
+    }
+    return { ...value, whatsappPhone };
+  });
 export type CheckoutStart = z.infer<typeof checkoutStartSchema>;
 
 /**

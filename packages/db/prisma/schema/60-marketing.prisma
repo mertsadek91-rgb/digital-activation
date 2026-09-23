@@ -300,8 +300,32 @@ model NotificationLog {
   bouncedAt   DateTime?
   error       String?
 
+  /// The provider's own id for the message (a WhatsApp `wamid`), so a status
+  /// callback can find the row it is about. Unique: Meta delivers the same
+  /// callback more than once, and the lookup must land on one row.
+  providerMessageId String? @unique
+  /// The furthest delivery state reported: sent, delivered, read or failed.
+  /// For WhatsApp `openedAt` is "read" and `bouncedAt` is "failed".
+  deliveryStatus    String?
+
   @@index([customerId, sentAt])
   @@index([channel, template, sentAt])
+  @@schema("public")
+}
+
+/// Inbound WhatsApp messages the webhook has handled, by Meta's message id.
+///
+/// Only the id, the sender and what it was taken to mean — never the text.
+/// Exists so a redelivered webhook (Meta retries anything not answered 200
+/// quickly) cannot opt somebody out twice or send a second confirmation.
+model WhatsappInbound {
+  id         String   @id
+  fromPhone  String
+  /// "stop" for an opt-out keyword, "other" for anything else.
+  kind       String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
   @@schema("public")
 }
 
@@ -344,7 +368,7 @@ model StockAlert {
 /// order, customer and promotion models that other work is also changing.
 /// The rows are a log; nothing needs to cascade through them.
 model RenewalReminder {
-  id          String    @id @default(cuid())
+  id          String              @id @default(cuid())
   orderItemId String
   orderId     String
   variantId   String
@@ -355,12 +379,15 @@ model RenewalReminder {
   offsetDays  Int
   expiresAt   DateTime
   /// In the measured holdout: due, and deliberately not sent.
-  heldOut     Boolean   @default(false)
+  heldOut     Boolean             @default(false)
   /// Null when held out, or when the send failed.
   sentAt      DateTime?
   /// The single-use renewal code, when the customer had marketing consent.
   promotionId String?
-  createdAt   DateTime  @default(now())
+  /// Where the reminder went. WhatsApp replaces the email for that offset,
+  /// never adds to it, so one row per offset still holds.
+  channel     NotificationChannel @default(EMAIL)
+  createdAt   DateTime            @default(now())
 
   @@unique([orderItemId, offsetDays])
   @@index([createdAt])

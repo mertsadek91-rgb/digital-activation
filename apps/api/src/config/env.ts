@@ -98,6 +98,19 @@ const envSchema = z.object({
       }
     }, 'is not an IANA timezone name'),
 
+  /**
+   * WhatsApp Cloud API, directly with Meta. All optional: without the token
+   * and number id the retention sweeps keep to email, and without the app
+   * secret the webhook refuses every delivery rather than trusting one.
+   */
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z
+    .string()
+    .regex(/^\d+$/, 'is the numeric id, not the phone number')
+    .optional(),
+  WHATSAPP_APP_SECRET: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+
   BASE_CURRENCY: z.string().length(3).default('USD'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SENTRY_DSN: z.string().optional(),
