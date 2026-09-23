@@ -438,7 +438,7 @@ export function SiteFooter({
           payment method configured at all — six marks, none of which it could
           take. `PaymentMarks` draws only what is configured and renders nothing
           when nothing is, which is why the whole bar hangs off it. */}
-      <PaymentsBar locale={locale} />
+      <PaymentsBar />
 
       {/* 5. Bottom Copyright & Locale Switcher Bar */}
       <div className="footer-bottom-bar">

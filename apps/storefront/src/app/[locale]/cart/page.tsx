@@ -207,7 +207,7 @@ export default function CartPage() {
           </Link>
 
           <div style={{ marginBlockStart: '16px' }}>
-            <ProductTrust locale={locale} showPerks={false} />
+            <ProductTrust showPerks={false} />
           </div>
         </aside>
       </div>
