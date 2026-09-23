@@ -163,7 +163,17 @@ export class MailService {
     if (!url) throw new ServiceUnavailableException('SMTP_URL is not set.');
 
     const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransport(url);
+    // The object form, because it is the one that takes connection settings
+    // beside the URL. Without timeouts a mail host that accepts the socket and
+    // never answers holds the request open indefinitely — and one of the
+    // requests that sends mail is the Stripe webhook, which Stripe abandons
+    // and retries after its own timeout.
+    const transporter = nodemailer.createTransport({
+      url,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+    });
     const info = await transporter.sendMail({
       from: this.from(kind),
       to,

@@ -282,6 +282,8 @@ export class AccountService {
    */
   async licences(customerId: string): Promise<LicenceList> {
     const items = await this.prisma.client.orderItem.findMany({
+      // A ceiling for the same reason as the order history below.
+      take: 500,
       where: {
         order: {
           customerId,
@@ -453,6 +455,10 @@ export class AccountService {
     const orders = await this.prisma.client.order.findMany({
       where: { customerId },
       orderBy: { placedAt: 'desc' },
+      // A ceiling, not a page. No real customer has this many, but checkout
+      // attaches orders by an unverified email, so the number of rows behind
+      // one account is not something the account holder controls.
+      take: 200,
       include: {
         items: {
           select: {

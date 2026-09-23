@@ -32,7 +32,10 @@ export class StripeService {
     if (!key) {
       throw new ServiceUnavailableException('الدفع بالبطاقة غير مهيّأ بعد. أضف STRIPE_SECRET_KEY.');
     }
-    this.client = new Stripe(key);
+    // Bounded, and retried by the SDK itself on network errors with the same
+    // idempotency key — so a blip costs a retry, not a stuck checkout or a
+    // webhook that outlives Stripe's patience.
+    this.client = new Stripe(key, { timeout: 15_000, maxNetworkRetries: 2 });
     return this.client;
   }
 

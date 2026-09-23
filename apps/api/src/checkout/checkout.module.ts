@@ -8,6 +8,7 @@ import { MailModule } from '../mail/mail.module.js';
 
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
+import { ExpirySweepService } from './expiry-sweep.service.js';
 import { PaymentSettingsController } from './payment-settings.controller.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { StripeService } from './stripe.service.js';
@@ -28,7 +29,7 @@ import { StripeService } from './stripe.service.js';
   // AccountModule so the order page can accept a signed-in customer.
   imports: [AccountModule, AuthModule, CartModule, FulfillmentModule, MailModule],
   controllers: [CheckoutController, PaymentSettingsController],
-  providers: [CheckoutService, PaymentSettingsService, StripeService],
+  providers: [CheckoutService, ExpirySweepService, PaymentSettingsService, StripeService],
   // PaymentSettingsService too, because the launch checklist asks it the one
   // question that decides whether this store can take money at all — and the
   // methods already know their own reasons for being off.
