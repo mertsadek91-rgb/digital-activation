@@ -264,6 +264,193 @@ export const articleWithProductsSchema = articleSchema.extend({
 });
 export type ArticleWithProducts = z.infer<typeof articleWithProductsSchema>;
 
+// --- filters and facets -----------------------------------------------------
+
+/**
+ * Licence-term buckets, from `licensePeriodUnit`.
+ *
+ * Three rather than four: DAY exists for trials and short passes, and a
+ * shopper choosing between "for good", "a year at a time" and "shorter than
+ * that" does not need a fourth box for the handful of day-counted lines, so DAY
+ * folds into `month`.
+ */
+export const TERM_BUCKETS = ['lifetime', 'year', 'month'] as const;
+export const termBucketSchema = z.enum(TERM_BUCKETS);
+export type TermBucket = z.infer<typeof termBucketSchema>;
+
+export function termBucket(unit: z.infer<typeof licensePeriodUnitSchema>): TermBucket {
+  if (unit === 'LIFETIME') return 'lifetime';
+  if (unit === 'YEAR') return 'year';
+  return 'month';
+}
+
+/**
+ * Device-count buckets. `5+` means more than five, and includes unlimited
+ * (stored as 0) — the shopper looking for "a lot of devices" wants both, and
+ * an "unlimited" box of its own would hold two products.
+ */
+export const DEVICE_BUCKETS = ['1', '2-5', '5+'] as const;
+export const deviceBucketSchema = z.enum(DEVICE_BUCKETS);
+export type DeviceBucket = z.infer<typeof deviceBucketSchema>;
+
+export function deviceBucket(count: number): DeviceBucket {
+  if (count === 1) return '1';
+  if (count >= 2 && count <= 5) return '2-5';
+  return '5+';
+}
+
+/**
+ * Price bands, fixed in USD.
+ *
+ * In dollars rather than in the shopper's currency so a filtered URL means the
+ * same thing whoever opens it: a link shared from a riyal page to a dirham one
+ * still selects the same products. The labels are converted per request with
+ * the same rate the prices use, and rounded to whole units — a band edge of
+ * "93.75" is arithmetic, not a price. Half-open, `min <= price < max`, so a
+ * $25 licence sits in exactly one band.
+ */
+export const PRICE_BUCKETS_USD = [
+  { min: 0, max: 25 },
+  { min: 25, max: 50 },
+  { min: 50, max: 100 },
+  { min: 100, max: 250 },
+  { min: 250, max: null },
+] as const satisfies readonly { min: number; max: number | null }[];
+
+/** The URL form of a band: `25-50`, or `250+` for the open one. */
+export function priceBucketKey(bucket: { min: number; max: number | null }): string {
+  return bucket.max === null
+    ? `${String(bucket.min)}+`
+    : `${String(bucket.min)}-${String(bucket.max)}`;
+}
+
+/**
+ * A query-string list: `?brand=a,b`, `?brand=a&brand=b`, or both.
+ *
+ * Unknown values are dropped rather than refused. These URLs are edited by
+ * hand and linked from outside, and a 400 for `?platform=ios` is a broken page
+ * where an unfiltered one is the useful answer.
+ */
+function listParam<V extends string = string>(allowed?: readonly V[]) {
+  return z
+    .preprocess(
+      (value) =>
+        (Array.isArray(value) ? value : value === undefined ? [] : [value])
+          .flatMap((entry) => String(entry).split(','))
+          .map((entry) => entry.trim())
+          .filter((entry) => entry.length > 0),
+      z.array(z.string().max(80)).max(40),
+    )
+    .transform((list) => {
+      const unique = [...new Set(list)];
+      return (
+        allowed ? unique.filter((entry) => (allowed as readonly string[]).includes(entry)) : unique
+      ) as V[];
+    })
+    .optional();
+}
+
+/** `true`/`1` switch a flag on; anything else, or nothing, leaves it off. */
+const flagParam = z
+  .preprocess((value) => value === true || value === 'true' || value === '1', z.boolean())
+  .optional();
+
+/** Validated per band edge; a nonsense number is ignored, not a 400. */
+const usdParam = z
+  .preprocess((value) => {
+    if (value === undefined || value === '') return undefined;
+    const parsed = Number(Array.isArray(value) ? value[0] : value);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+  }, z.number().min(0).optional())
+  .optional();
+
+/**
+ * The filters a listing takes, after normalisation.
+ *
+ * Every variant-level filter has any-variant semantics: a product matches when
+ * one of its published variants satisfies all of them at once. Brand is the
+ * only product-level one. Values within a group are OR, groups are AND.
+ */
+export interface CatalogFilters {
+  brand: string[];
+  platform: z.infer<typeof platformSchema>[];
+  term: TermBucket[];
+  devices: DeviceBucket[];
+  minUsd: number | null;
+  maxUsd: number | null;
+  inStock: boolean;
+  onSale: boolean;
+}
+
+export function catalogFiltersFrom(query: {
+  brand?: string[] | undefined;
+  platform?: z.infer<typeof platformSchema>[] | undefined;
+  term?: TermBucket[] | undefined;
+  devices?: DeviceBucket[] | undefined;
+  minUsd?: number | undefined;
+  maxUsd?: number | undefined;
+  inStock?: boolean | undefined;
+  onSale?: boolean | undefined;
+}): CatalogFilters {
+  return {
+    brand: query.brand ?? [],
+    platform: query.platform ?? [],
+    term: query.term ?? [],
+    devices: query.devices ?? [],
+    minUsd: query.minUsd ?? null,
+    maxUsd: query.maxUsd ?? null,
+    inStock: query.inStock ?? false,
+    onSale: query.onSale ?? false,
+  };
+}
+
+export function hasCatalogFilters(filters: CatalogFilters): boolean {
+  return (
+    filters.brand.length > 0 ||
+    filters.platform.length > 0 ||
+    filters.term.length > 0 ||
+    filters.devices.length > 0 ||
+    filters.minUsd !== null ||
+    filters.maxUsd !== null ||
+    filters.inStock ||
+    filters.onSale
+  );
+}
+
+const facetCount = z.number().int().min(0);
+
+/**
+ * How many products each filter option would leave, given the others.
+ *
+ * Standard faceting: an option's count is computed with every *other* group's
+ * selection applied and its own group's ignored, so ticking a second brand
+ * shows how many that adds rather than zero. Every option is listed, counted
+ * zero where nothing matches, so the page decides what to hide — a selected
+ * option at zero still has to be there to be unticked.
+ */
+export const catalogFacetsSchema = z.object({
+  brand: z.array(z.object({ value: z.string(), label: z.string(), count: facetCount })),
+  platform: z.array(z.object({ value: platformSchema, count: facetCount })),
+  term: z.array(z.object({ value: termBucketSchema, count: facetCount })),
+  devices: z.array(z.object({ value: deviceBucketSchema, count: facetCount })),
+  price: z.array(
+    z.object({
+      /** `priceBucketKey` of the band, which is also its URL value. */
+      key: z.string(),
+      minUsd: z.number().min(0),
+      maxUsd: z.number().min(0).nullable(),
+      /** The edges in the page's currency, whole units, for the label only. */
+      min: z.string(),
+      max: z.string().nullable(),
+      currency: z.string().length(3),
+      count: facetCount,
+    }),
+  ),
+  inStock: facetCount,
+  onSale: facetCount,
+});
+export type CatalogFacets = z.infer<typeof catalogFacetsSchema>;
+
 /**
  * The store index: every published product, paginated.
  *
@@ -277,6 +464,12 @@ export const catalogStoreSchema = z.object({
   total: z.number().int().min(0),
   page: z.number().int().min(1),
   perPage: z.number().int().min(1),
+  /**
+   * Filter options with counts for this listing, or null from an API that
+   * predates filtering (the default keeps a newer storefront parsing an older
+   * API during a deploy). `total` is already the filtered total.
+   */
+  facets: catalogFacetsSchema.nullable().default(null),
   collections: z.array(
     z.object({
       slug: slugSchema,
@@ -315,6 +508,12 @@ export const catalogCollectionSchema = z.object({
   total: z.number().int().min(0),
   page: z.number().int().min(1),
   perPage: z.number().int().min(1),
+  /**
+   * Filter options with counts for this listing, or null from an API that
+   * predates filtering (the default keeps a newer storefront parsing an older
+   * API during a deploy). `total` is already the filtered total.
+   */
+  facets: catalogFacetsSchema.nullable().default(null),
 });
 export type CatalogCollection = z.infer<typeof catalogCollectionSchema>;
 
@@ -350,6 +549,12 @@ export const catalogBrandSchema = z.object({
   total: z.number().int().min(0),
   page: z.number().int().min(1),
   perPage: z.number().int().min(1),
+  /**
+   * Filter options with counts for this listing, or null from an API that
+   * predates filtering (the default keeps a newer storefront parsing an older
+   * API during a deploy). `total` is already the filtered total.
+   */
+  facets: catalogFacetsSchema.nullable().default(null),
 });
 export type CatalogBrand = z.infer<typeof catalogBrandSchema>;
 
@@ -434,6 +639,27 @@ export const catalogQuerySchema = paginationSchema.extend({
   sort: z
     .enum(['position', 'price-asc', 'price-desc', 'newest', 'best-selling'])
     .default('position'),
+
+  /*
+   * Listing filters, read by the store, collection, brand and search
+   * endpoints and ignored by the rest. Optional with no defaults on purpose:
+   * code all over the API builds a `CatalogQuery` by hand to draw cards, and
+   * none of it should have to spell out eight empty filters. Normalise with
+   * `catalogFiltersFrom` before use.
+   */
+  /** Brand slugs. Product-level: the product's brand is one of these. */
+  brand: listParam(),
+  platform: listParam(platformSchema.options),
+  term: listParam(TERM_BUCKETS),
+  devices: listParam(DEVICE_BUCKETS),
+  /** Inclusive lower edge, in USD, on the variant's price after any live sale. */
+  minUsd: usdParam,
+  /** Exclusive upper edge, in USD, same price. */
+  maxUsd: usdParam,
+  /** Buyable now: a stocked variant with stock left, or any made-to-order one. */
+  inStock: flagParam,
+  /** A live seasonal sale on the product, or a genuine compare-at on the variant. */
+  onSale: flagParam,
 });
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 
