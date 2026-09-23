@@ -38,7 +38,9 @@ export class RetentionStatsController {
   }
 
   @Get('cartRecovery')
-  @ApiOperation({ summary: 'Recovery emails per step, recovered orders, holdout comparison (30 days)' })
+  @ApiOperation({
+    summary: 'Recovery emails per step, recovered orders, holdout comparison (30 days)',
+  })
   cartRecovery(): Promise<CartRecoveryStats> {
     return this.stats.cartRecovery();
   }

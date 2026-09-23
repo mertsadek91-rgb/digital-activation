@@ -79,9 +79,7 @@ describe('renewal step selection', () => {
   it('sends the after-expiry message only inside its grace window', () => {
     expect(dueRenewalOffset({ ...base, now: new Date(expiresAt.getTime() + 2 * DAY) })).toBeNull();
     expect(dueRenewalOffset({ ...base, now: new Date(expiresAt.getTime() + 8 * DAY) })).toBe(-7);
-    expect(
-      dueRenewalOffset({ ...base, now: new Date(expiresAt.getTime() + 30 * DAY) }),
-    ).toBeNull();
+    expect(dueRenewalOffset({ ...base, now: new Date(expiresAt.getTime() + 30 * DAY) })).toBeNull();
     expect(
       dueRenewalOffset({ ...base, daysAfter: 0, now: new Date(expiresAt.getTime() + 8 * DAY) }),
     ).toBeNull();

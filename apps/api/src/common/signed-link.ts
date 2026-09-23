@@ -20,7 +20,10 @@ function secret(): string {
 }
 
 function mac(purpose: LinkPurpose, payload: string): string {
-  return crypto.createHmac('sha256', secret()).update(`${purpose}:v1:${payload}`).digest('base64url');
+  return crypto
+    .createHmac('sha256', secret())
+    .update(`${purpose}:v1:${payload}`)
+    .digest('base64url');
 }
 
 export function signLink(purpose: LinkPurpose, value: string, expiresAt: Date): string {
@@ -30,7 +33,11 @@ export function signLink(purpose: LinkPurpose, value: string, expiresAt: Date): 
 }
 
 /** The value the link was issued for, or null if it is forged, reused elsewhere or expired. */
-export function readLink(purpose: LinkPurpose, token: string, now: Date = new Date()): string | null {
+export function readLink(
+  purpose: LinkPurpose,
+  token: string,
+  now: Date = new Date(),
+): string | null {
   const [payload, given] = token.split('.');
   if (!payload || !given) return null;
   const expected = Buffer.from(mac(purpose, payload));

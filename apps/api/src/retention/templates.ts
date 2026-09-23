@@ -1,4 +1,13 @@
-import { BORDER, INK, MUTED, TEAL, button, escape, shell, type Rendered } from '../mail/templates.js';
+import {
+  BORDER,
+  INK,
+  MUTED,
+  TEAL,
+  button,
+  escape,
+  shell,
+  type Rendered,
+} from '../mail/templates.js';
 
 /**
  * The two retention emails.
@@ -191,7 +200,8 @@ ${unsubscribeHtml(ar, input.unsubscribeUrl)}`;
     headline,
     '',
     ...input.lines.map(
-      (line) => `- ${line.productName}${line.qty > 1 ? ` x ${String(line.qty)}` : ''} — ${line.lineTotal}`,
+      (line) =>
+        `- ${line.productName}${line.qty > 1 ? ` x ${String(line.qty)}` : ''} — ${line.lineTotal}`,
     ),
     `${ar ? 'الإجمالي' : 'Total'}: ${input.total}`,
     offer ? `\n${offer.text}` : '',

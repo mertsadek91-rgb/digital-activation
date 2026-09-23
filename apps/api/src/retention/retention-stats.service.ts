@@ -5,7 +5,7 @@ import { OrderStatus, Prisma } from '@da/db';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 
-import { LADDER_STAGES } from './rules.js';
+import { LADDER_STAGES, storeTimeZone } from './rules.js';
 
 /**
  * What the two retention automations did, for the marketing screens.
@@ -217,6 +217,7 @@ export class RetentionStatsService {
 
     return {
       windowDays: WINDOW_DAYS,
+      timeZone: storeTimeZone(),
       sentByStage,
       recoveredOrders: recovered.length,
       recoveredRevenueUsd: recovered

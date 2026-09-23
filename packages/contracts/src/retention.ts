@@ -55,6 +55,8 @@ export type RenewalStats = z.infer<typeof renewalStatsSchema>;
 
 export const cartRecoveryStatsSchema = z.object({
   windowDays: z.number().int(),
+  /** The zone quiet hours are read in, so the settings screen can say which. */
+  timeZone: z.string(),
   /** Per ladder stage, in ladder order. */
   sentByStage: z.array(
     z.object({

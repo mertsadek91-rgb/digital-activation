@@ -12,7 +12,7 @@ import {
   PublishStatus,
 } from '@da/db';
 
-import { licenceExpiry, termOf, type LicencePeriodUnit } from '../common/licence-term.js';
+import { licenceExpiry, termOf } from '../common/licence-term.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -256,7 +256,7 @@ export class RenewalSweepService {
         }
 
         const term = termOf(row.variantSpecSnapshot, {
-          unit: row.variant.licensePeriodUnit as LicencePeriodUnit,
+          unit: row.variant.licensePeriodUnit,
           value: row.variant.licensePeriodValue,
         });
         const expiresAt = licenceExpiry(row.deliveredAt, term);

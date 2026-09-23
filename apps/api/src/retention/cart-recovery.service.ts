@@ -290,7 +290,11 @@ export class CartRecoveryService {
 
   /** A single-use code for this cart's customer and this cart's products. */
   private async mint(
-    cart: { id: string; customer: { id: string } | null; items: { variant: { productId: string } }[] },
+    cart: {
+      id: string;
+      customer: { id: string } | null;
+      items: { variant: { productId: string } }[];
+    },
     percent: number,
     settings: CartRecoverySettings,
     now: Date,
