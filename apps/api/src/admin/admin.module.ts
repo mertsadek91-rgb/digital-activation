@@ -11,6 +11,10 @@ import { AdminController } from './admin.controller.js';
 import { AdminService } from './admin.service.js';
 import { CatalogEditController } from './catalog-edit.controller.js';
 import { CatalogEditService } from './catalog-edit.service.js';
+import { ContentAdminController } from './content-admin.controller.js';
+import { ContentArticlesService } from './content-articles.service.js';
+import { ContentBrandsService } from './content-brands.service.js';
+import { ContentPagesService } from './content-pages.service.js';
 import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import { LaunchController } from './launch.controller.js';
@@ -32,12 +36,25 @@ import { TaxonomyService } from './taxonomy.service.js';
     CatalogEditController,
     ProductContentController,
     TaxonomyController,
+    ContentAdminController,
     OrdersController,
     ReviewsAdminController,
     PromotionsController,
     LaunchController,
     DashboardController,
   ],
-  providers: [AdminService, CatalogEditService, ProductContentService, TaxonomyService, OrdersService, PromotionsService, LaunchService, DashboardService],
+  providers: [
+    AdminService,
+    CatalogEditService,
+    ProductContentService,
+    TaxonomyService,
+    ContentPagesService,
+    ContentArticlesService,
+    ContentBrandsService,
+    OrdersService,
+    PromotionsService,
+    LaunchService,
+    DashboardService,
+  ],
 })
 export class AdminModule {}
