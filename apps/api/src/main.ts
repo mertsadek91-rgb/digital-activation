@@ -1,5 +1,5 @@
 import fastifyCookie from '@fastify/cookie';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
@@ -7,6 +7,8 @@ import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 import { PrismaErrorFilter } from './common/prisma-error.filter.js';
+import { ServerErrorFilter } from './common/server-error.filter.js';
+import { ERROR_REPORTER, type ErrorReporter } from './infra/error-reporter.js';
 import { requestIdFor } from './infra/logging.js';
 
 function trustedHops(): number {
@@ -101,9 +103,16 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
 
-  // Prisma errors that are the caller's problem, answered as such rather than
-  // as a 500 — see the filter for which ones.
-  app.useGlobalFilters(new PrismaErrorFilter());
+  // Nest consults global filters last-registered first, so the Prisma filter
+  // sees Prisma errors before the catch-all does. Prisma errors that are the
+  // caller's problem are answered as such rather than as a 500 — see the
+  // filter for which ones. Every other 5xx goes to the error reporter, which
+  // is a no-op unless SENTRY_DSN is set.
+  const reporter = app.get<ErrorReporter>(ERROR_REPORTER);
+  app.useGlobalFilters(
+    new ServerErrorFilter(app.get(HttpAdapterHost), reporter),
+    new PrismaErrorFilter(reporter),
+  );
 
   // So a deploy's SIGTERM runs onModuleDestroy — the Prisma pools close and an
   // in-flight request finishes — instead of the process being cut mid-write.
