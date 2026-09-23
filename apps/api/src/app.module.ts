@@ -20,6 +20,8 @@ import { MediaModule } from './media/media.module.js';
 import { OffersModule } from './offers/offers.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
+import { InfraModule } from './infra/infra.module.js';
+import { RedisThrottlerStorage } from './infra/redis-throttler.storage.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RetentionModule } from './retention/retention.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
@@ -52,12 +54,20 @@ import { VaultModule } from './vault/vault.module.js';
       envFilePath: ['../../.env'],
       validate: validateEnv,
     }),
+    InfraModule,
     // Protects login, coupon validation and checkout from brute force. Coupon
     // validation matters as much as login: guessable codes are money. The
     // guard below enforces only the routes that carry their own `@Throttle`.
-    // The counters are per process; with more than one replica each keeps its
-    // own, so a Redis-backed store is the next step before scaling out.
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    // Counters live in Redis so every replica shares them, and fall back to
+    // this process's memory while Redis is unreachable — see the storage.
+    ThrottlerModule.forRootAsync({
+      imports: [InfraModule],
+      inject: [RedisThrottlerStorage],
+      useFactory: (storage: RedisThrottlerStorage) => ({
+        throttlers: [{ ttl: 60_000, limit: 120 }],
+        storage,
+      }),
+    }),
     // The one scheduled thing in this system so far: the review invitation
     // sweep. It guards itself with a Postgres advisory lock, so registering it
     // here is safe on more than one replica.
