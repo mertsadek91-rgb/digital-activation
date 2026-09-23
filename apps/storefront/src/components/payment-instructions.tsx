@@ -1,6 +1,7 @@
 'use client';
 
 import type { PaymentDetail, PaymentInstructions } from '@da/contracts';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 /**
@@ -16,12 +17,9 @@ import { useState } from 'react';
  */
 export function PaymentInstructionsPanel({
   instructions,
-  locale,
 }: {
   instructions: PaymentInstructions;
-  locale: string;
 }) {
-  const ar = locale === 'ar';
 
   return (
     <div className="pay-instructions">
@@ -29,7 +27,7 @@ export function PaymentInstructionsPanel({
 
       <dl className="pay-details">
         {instructions.fields.map((field) => (
-          <DetailRow key={`${field.label}:${field.value}`} field={field} ar={ar} />
+          <DetailRow key={`${field.label}:${field.value}`} field={field} />
         ))}
       </dl>
 
@@ -38,7 +36,8 @@ export function PaymentInstructionsPanel({
   );
 }
 
-function DetailRow({ field, ar }: { field: PaymentDetail; ar: boolean }) {
+function DetailRow({ field }: { field: PaymentDetail }) {
+  const t = useTranslations('paymentInstructions');
   const [copied, setCopied] = useState(false);
 
   async function copy(): Promise<void> {
@@ -63,7 +62,7 @@ function DetailRow({ field, ar }: { field: PaymentDetail; ar: boolean }) {
         </span>
         {field.copyable ? (
           <button type="button" className="btn btn-ghost btn-copy" onClick={() => void copy()}>
-            {copied ? (ar ? 'تم النسخ' : 'Copied') : ar ? 'انسخ' : 'Copy'}
+            {copied ? t('copied') : t('copy')}
           </button>
         ) : null}
       </dd>

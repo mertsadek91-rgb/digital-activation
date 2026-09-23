@@ -5,12 +5,14 @@ import { ROUTES } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { CardPayment } from '../../../components/card-payment';
 import { CountrySelect } from '../../../components/country-select';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
 import { ProductTrust } from '../../../components/product-trust';
+import { isArabic } from '../../../i18n/locale';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatPrice } from '../../../lib/format';
 
@@ -41,21 +43,23 @@ type ManualSession = Extract<PaymentSession, { provider: 'BANK_TRANSFER' | 'CRYP
  * What each method is called, on the button.
  *
  * The server decides which of these a shopper may start; the wording stays
- * here, beside the rest of the page's Arabic and English.
+ * with the rest of the page's Arabic and English, in the `checkout` messages.
  */
-const METHOD_LABELS: Record<PaymentProvider, { ar: string; en: string }> = {
-  STRIPE: { ar: 'بطاقة بنكية', en: 'Card' },
-  PAYPAL: { ar: 'PayPal', en: 'PayPal' },
-  BANK_TRANSFER: { ar: 'تحويل بنكي', en: 'Bank transfer' },
-  CRYPTO: { ar: 'عملات رقمية', en: 'Cryptocurrency' },
-};
+const METHOD_LABELS = {
+  STRIPE: 'methodSTRIPE',
+  PAYPAL: 'methodPAYPAL',
+  BANK_TRANSFER: 'methodBANK_TRANSFER',
+  CRYPTO: 'methodCRYPTO',
+} as const satisfies Record<PaymentProvider, string>;
 
 export default function CheckoutPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
   const locale = params.locale ?? 'ar';
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
+  const t = useTranslations('checkout');
+  const tCart = useTranslations('cart');
+  const tc = useTranslations('common');
 
   const [cart, setCart] = useState<Cart | null>(null);
   const [stage, setStage] = useState<Stage>({ kind: 'details' });
@@ -72,15 +76,9 @@ export default function CheckoutPage() {
     try {
       setCart(await cartApi.get({ locale }));
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر تحميل السلة.'
-            : 'Could not load your cart.',
-      );
+      setError(caught instanceof CartError ? caught.message : tCart('loadFailed'));
     }
-  }, [locale, ar]);
+  }, [locale, tCart]);
 
   useEffect(() => {
     void load();
@@ -107,13 +105,7 @@ export default function CheckoutPage() {
       );
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر بدء عملية الدفع.'
-            : 'Could not start the payment.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('startFailed'));
     } finally {
       setBusy(false);
     }
@@ -134,18 +126,12 @@ export default function CheckoutPage() {
         // before this line is reached. Handled anyway so the union stays
         // exhaustive and a future provider cannot fall through to the manual
         // branch and render a set of bank details it does not have.
-        setError(ar ? 'PayPal غير متاح بعد.' : 'PayPal is not available yet.');
+        setError(t('paypalUnavailable'));
         return;
       }
       setStage({ kind: 'manual', session, orderNumber });
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر بدء عملية الدفع.'
-            : 'Could not start the payment.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('startFailed'));
     } finally {
       setBusy(false);
     }
@@ -169,13 +155,7 @@ export default function CheckoutPage() {
       setCart(checkout.cart);
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
-      setError(
-        caught instanceof CartError
-          ? caught.message
-          : ar
-            ? 'تعذّر إضافة العرض.'
-            : 'Could not add the offer.',
-      );
+      setError(caught instanceof CartError ? caught.message : t('offerFailed'));
     } finally {
       setBusy(false);
     }
@@ -184,10 +164,10 @@ export default function CheckoutPage() {
   if (cart && cart.lines.length === 0 && stage.kind === 'details') {
     return (
       <main className="shell">
-        <h1>{ar ? 'إتمام الشراء' : 'Checkout'}</h1>
-        <p className="notice">{ar ? 'سلتك فارغة.' : 'Your cart is empty.'}</p>
+        <h1>{t('title')}</h1>
+        <p className="notice">{tCart('empty')}</p>
         <Link href={`${prefix}${ROUTES.store}`} className="btn btn-primary">
-          {ar ? 'تصفّح المتجر' : 'Browse the store'}
+          {tCart('browseStore')}
         </Link>
       </main>
     );
@@ -196,21 +176,23 @@ export default function CheckoutPage() {
   if (stage.kind === 'manual') {
     return (
       <main className="shell">
-        <h1>{ar ? 'أكمل الدفع' : 'Complete your payment'}</h1>
+        <h1>{t('completePayment')}</h1>
         <p className="notice">
-          {ar ? 'رقم طلبك: ' : 'Your order number: '}
-          <strong dir="ltr">{stage.orderNumber}</strong>
+          {t.rich('orderNumber', {
+            number: stage.orderNumber,
+            strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+          })}
         </p>
         <p className="price">
           <strong>{formatPrice(stage.session.amount)}</strong>
         </p>
-        <PaymentInstructionsPanel instructions={stage.session.instructions} locale={locale} />
+        <PaymentInstructionsPanel instructions={stage.session.instructions} />
         <Link
           href={`${prefix}${ROUTES.order(stage.orderNumber)}`}
           className="btn btn-primary"
           onClick={() => router.refresh()}
         >
-          {ar ? 'عرض الطلب' : 'View the order'}
+          {t('viewOrder')}
         </Link>
       </main>
     );
@@ -218,17 +200,17 @@ export default function CheckoutPage() {
 
   return (
     <main className="shell checkout-page">
-      <h1>{ar ? 'إتمام الشراء' : 'Checkout'}</h1>
+      <h1>{t('title')}</h1>
 
       {/* Two steps, said out loud. A form that turns into payment buttons with
           no signal between them reads as "did that work?" — the moment a
           shopper reloads and loses the page. */}
-      <ol className="checkout-steps" aria-label={ar ? 'خطوات الشراء' : 'Checkout steps'}>
+      <ol className="checkout-steps" aria-label={t('steps')}>
         <li aria-current={stage.kind === 'details' ? 'step' : undefined}>
-          <span>1</span> {ar ? 'بياناتك' : 'Your details'}
+          <span>1</span> {t('stepDetails')}
         </li>
         <li aria-current={stage.kind !== 'details' ? 'step' : undefined}>
-          <span>2</span> {ar ? 'الدفع' : 'Payment'}
+          <span>2</span> {t('stepPayment')}
         </li>
       </ol>
 
@@ -236,10 +218,10 @@ export default function CheckoutPage() {
         <div className="checkout-main">
           {stage.kind === 'details' ? (
             <form className="checkout-form" onSubmit={(event) => void submitDetails(event)}>
-              <h2>{ar ? 'بياناتك' : 'Your details'}</h2>
+              <h2>{t('stepDetails')}</h2>
 
               <label>
-                {ar ? 'البريد الإلكتروني' : 'Email address'}
+                {t('email')}
                 <input
                   type="email"
                   value={email}
@@ -248,16 +230,12 @@ export default function CheckoutPage() {
                   required
                   dir="ltr"
                 />
-                <small>
-                  {ar
-                    ? 'يُرسَل إليه إيصال الشراء والمفتاح.'
-                    : 'Your receipt and your key are sent here.'}
-                </small>
+                <small>{t('emailHint')}</small>
               </label>
 
               {needsActivationEmail ? (
                 <label className="highlight">
-                  {ar ? 'بريد تفعيل الترخيص' : 'Licence activation email'}
+                  {t('activationEmail')}
                   <input
                     type="email"
                     value={activationEmail}
@@ -265,16 +243,12 @@ export default function CheckoutPage() {
                     required
                     dir="ltr"
                   />
-                  <small>
-                    {ar
-                      ? 'أحد منتجات سلتك يُفعَّل على بريد تحدّده أنت — وقد يكون غير بريد الشراء. المفتاح الصادر على العنوان الخطأ لا يمكن استخدامه ولا إلغاؤه.'
-                      : 'One item in your cart activates on an address you choose — often not the one you order from. A key issued against the wrong address cannot be used or reversed.'}
-                  </small>
+                  <small>{t('activationEmailHint')}</small>
                 </label>
               ) : null}
 
               <label>
-                {ar ? 'الاسم (اختياري)' : 'Name (optional)'}
+                {t('name')}
                 <input
                   type="text"
                   value={name}
@@ -284,7 +258,7 @@ export default function CheckoutPage() {
               </label>
 
               <label>
-                {ar ? 'الدولة (اختياري)' : 'Country (optional)'}
+                {t('country')}
                 <CountrySelect locale={locale} value={country} onChange={setCountry} />
               </label>
 
@@ -294,11 +268,7 @@ export default function CheckoutPage() {
                   checked={marketingOptIn}
                   onChange={(event) => setMarketingOptIn(event.target.checked)}
                 />
-                <span>
-                  {ar
-                    ? 'أرغب في تلقّي العروض والخصومات بالبريد.'
-                    : 'Send me offers and discounts by email.'}
-                </span>
+                <span>{t('marketingOptIn')}</span>
               </label>
 
               {error ? (
@@ -308,15 +278,17 @@ export default function CheckoutPage() {
               ) : null}
 
               <button type="submit" className="btn btn-primary btn-wide" disabled={busy}>
-                {busy ? '...' : ar ? 'متابعة إلى الدفع' : 'Continue to payment'}
+                {busy ? '...' : t('continue')}
               </button>
             </form>
           ) : stage.kind === 'card' ? (
             <div className="checkout-form">
-              <h2>{ar ? 'ادفع بالبطاقة' : 'Pay by card'}</h2>
+              <h2>{t('payByCard')}</h2>
               <p className="notice">
-                {ar ? 'رقم طلبك: ' : 'Your order number: '}
-                <strong dir="ltr">{stage.checkout.order.number}</strong>
+                {t.rich('orderNumber', {
+                  number: stage.checkout.order.number,
+                  strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+                })}
               </p>
               <p className="price">
                 <strong>{formatPrice(stage.session.amount)}</strong>
@@ -335,15 +307,17 @@ export default function CheckoutPage() {
             </div>
           ) : (
             <div className="checkout-form">
-              <h2>{ar ? 'طريقة الدفع' : 'How would you like to pay?'}</h2>
+              <h2>{t('howToPay')}</h2>
               <p className="notice">
-                {ar ? 'رقم طلبك: ' : 'Your order number: '}
-                <strong dir="ltr">{stage.checkout.order.number}</strong>
+                {t.rich('orderNumber', {
+                  number: stage.checkout.order.number,
+                  strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+                })}
               </p>
 
               {stage.checkout.crossSell.length > 0 ? (
                 <section className="cross-sell">
-                  <h3>{ar ? 'أضفها ووفّر' : 'Add it and save'}</h3>
+                  <h3>{t('crossSellTitle')}</h3>
                   {stage.checkout.crossSell.map((offer) => (
                     <div key={offer.variantId} className="cross-sell-item">
                       <div className="cross-sell-media">
@@ -357,9 +331,7 @@ export default function CheckoutPage() {
                           <strong>{formatPrice(offer.bundlePrice)}</strong>
                           <s>{formatPrice(offer.price)}</s>
                           <span className="badge badge-accent">
-                            {ar
-                              ? `وفّر ${String(offer.savePercent)}%`
-                              : `Save ${String(offer.savePercent)}%`}
+                            {t('save', { percent: String(offer.savePercent) })}
                           </span>
                         </p>
                       </div>
@@ -369,7 +341,7 @@ export default function CheckoutPage() {
                         disabled={busy}
                         onClick={() => void addCrossSell(offer)}
                       >
-                        {ar ? 'أضف' : 'Add'}
+                        {t('addOffer')}
                       </button>
                     </div>
                   ))}
@@ -387,18 +359,9 @@ export default function CheckoutPage() {
                 // where every one leads to a 503 costs the order and the
                 // goodwill; an address to write to keeps at least the order.
                 <p className="notice">
-                  {ar ? (
-                    <>
-                      لا توجد طريقة دفع متاحة الآن. طلبك محفوظ برقمه —{' '}
-                      <Link href={`${prefix}${ROUTES.contact}`}>راسلنا</Link> وسنُكمله معك.
-                    </>
-                  ) : (
-                    <>
-                      No payment method is available right now. Your order is saved under its number
-                      — <Link href={`${prefix}${ROUTES.contact}`}>write to us</Link> and we will
-                      finish it with you.
-                    </>
-                  )}
+                  {t.rich('noMethods', {
+                    contact: (chunks) => <Link href={`${prefix}${ROUTES.contact}`}>{chunks}</Link>,
+                  })}
                 </p>
               ) : (
                 <div className="pay-methods">
@@ -412,7 +375,7 @@ export default function CheckoutPage() {
                       disabled={busy}
                       onClick={() => void pay(stage.checkout, provider)}
                     >
-                      {ar ? METHOD_LABELS[provider].ar : METHOD_LABELS[provider].en}
+                      {t(METHOD_LABELS[provider])}
                     </button>
                   ))}
                 </div>
@@ -422,30 +385,21 @@ export default function CheckoutPage() {
                   published and linked from almost nowhere; the moment before
                   paying for a key that cannot be returned is where it belongs. */}
               <p className="meta checkout-terms">
-                {ar ? (
-                  <>
-                    بالمتابعة إلى الدفع فأنت توافق على{' '}
-                    <Link href={`${prefix}/terms`}>شروط الخدمة</Link> و
-                    <Link href={`${prefix}/refunds`}>سياسة الاسترجاع</Link>.
-                  </>
-                ) : (
-                  <>
-                    By continuing to payment you agree to the{' '}
-                    <Link href={`${prefix}/terms`}>Terms of Service</Link> and the{' '}
-                    <Link href={`${prefix}/refunds`}>Refund Policy</Link>.
-                  </>
-                )}
+                {t.rich('terms', {
+                  terms: (chunks) => <Link href={`${prefix}/terms`}>{chunks}</Link>,
+                  refunds: (chunks) => <Link href={`${prefix}/refunds`}>{chunks}</Link>,
+                })}
               </p>
 
               <button type="button" className="linky" onClick={() => setStage({ kind: 'details' })}>
-                {ar ? 'تعديل بياناتي' : 'Edit my details'}
+                {t('editDetails')}
               </button>
             </div>
           )}
         </div>
 
         <aside className="cart-summary">
-          <h2>{ar ? 'الملخّص' : 'Summary'}</h2>
+          <h2>{tCart('summary')}</h2>
           {cart ? (
             <>
               <ul className="summary-lines">
@@ -460,7 +414,7 @@ export default function CheckoutPage() {
               </ul>
               <dl className="totals">
                 <div>
-                  <dt>{ar ? 'المجموع' : 'Subtotal'}</dt>
+                  <dt>{tc('subtotal')}</dt>
                   <dd>{formatPrice(cart.subtotal)}</dd>
                 </div>
                 {cart.coupon ? (
@@ -470,12 +424,12 @@ export default function CheckoutPage() {
                   </div>
                 ) : null}
                 <div className="totals-total">
-                  <dt>{ar ? 'الإجمالي' : 'Total'}</dt>
+                  <dt>{tc('total')}</dt>
                   <dd>{formatPrice(cart.total)}</dd>
                 </div>
               </dl>
               <Link href={`${prefix}${ROUTES.cart}`} className="linky">
-                {ar ? 'تعديل السلة' : 'Edit cart'}
+                {t('editCart')}
               </Link>
 
               <div style={{ marginBlockStart: '16px' }}>
