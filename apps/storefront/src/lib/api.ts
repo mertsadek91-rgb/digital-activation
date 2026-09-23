@@ -20,6 +20,7 @@ import {
   type ContentPage,
   type Home,
   type ProductReviews,
+  type PublicMarketing,
   type RedirectTarget,
   catalogBrandSchema,
   catalogCollectionSchema,
@@ -31,6 +32,7 @@ import {
   blogIndexSchema,
   contentPageSchema,
   productReviewsSchema,
+  publicMarketingSchema,
   redirectTargetSchema,
   homeSchema,
 } from '@da/contracts';
@@ -282,5 +284,21 @@ export function getProductReviews(
     `/reviews/products/${encodeURIComponent(slug)}`,
     { ...options, revalidate: options.revalidate ?? 60 },
     productReviewsSchema,
+  );
+}
+
+/**
+ * The marketing features' storefront-visible settings (disabled ones are null).
+ *
+ * Quiet on failure: every consumer is decoration around the page — a trust
+ * block, a registration line — and a page must not fail because the panel's
+ * settings could not be read. A minute's revalidation, so a change made on the
+ * panel is on the site before whoever made it has finished checking.
+ */
+export function getMarketingPublic(options: FetchOptions): Promise<PublicMarketing | null> {
+  return request(
+    '/marketing/public',
+    { ...options, revalidate: options.revalidate ?? 60 },
+    publicMarketingSchema,
   );
 }

@@ -14,7 +14,7 @@ import { openGraphDefaults, robotsMeta } from '../../lib/seo';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { WhatsAppButton } from '../../components/whatsapp-button';
-import { getCollections } from '../../lib/api';
+import { getCollections, getMarketingPublic } from '../../lib/api';
 import { isArabic } from '../../i18n/locale';
 import { routing } from '../../i18n/routing';
 
@@ -90,7 +90,11 @@ export default async function LocaleLayout({
   // Fetched once here and handed to both the menu and the footer. Two fetches
   // for the same list on every page would be two cache entries that can
   // disagree about which categories exist.
-  const collections = (await getCollections({ locale, revalidate: 900 })) ?? [];
+  const [collectionList, marketing] = await Promise.all([
+    getCollections({ locale, revalidate: 900 }),
+    getMarketingPublic({ locale }),
+  ]);
+  const collections = collectionList ?? [];
 
   // The store itself, on every page rather than only the home page. A product
   // names its seller as `#organization`, and that reference resolved to
@@ -117,7 +121,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <SiteHeader locale={locale} collections={collections} />
           {children}
-          <SiteFooter locale={locale} collections={collections} />
+          <SiteFooter locale={locale} collections={collections} trust={marketing?.trust ?? null} />
           <WhatsAppButton />
         </NextIntlClientProvider>
       </body>

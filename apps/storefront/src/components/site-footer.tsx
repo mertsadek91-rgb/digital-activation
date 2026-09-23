@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CONTACT_REPLY_HOURS, ROUTES } from '@da/contracts';
+import { CONTACT_REPLY_HOURS, type PublicMarketing, ROUTES } from '@da/contracts';
 import { BRAND } from '@da/ui';
 
 import { isArabic } from '../i18n/locale';
@@ -18,6 +18,7 @@ import {
   XIcon,
 } from './icons';
 import { PaymentsBar } from './product-trust';
+import { RegistrationDetails, hasRegistration } from './trust-block';
 import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
@@ -88,9 +89,12 @@ const POLICY_PAGES = [
 export function SiteFooter({
   locale,
   collections = [],
+  trust = null,
 }: {
   locale: string;
   collections?: { slug: string; name: string }[];
+  /** The marketing panel's trust settings; null while that feature is off. */
+  trust?: PublicMarketing['trust'];
 }) {
   const t = useTranslations('footer');
   const th = useTranslations('header');
@@ -434,6 +438,12 @@ export function SiteFooter({
               brand: ar ? BRAND.nameAr : BRAND.nameEn,
             })}
           </p>
+
+          {/* Registration and VAT numbers, as the store entered them. A number
+              a buyer can look up is worth more than any badge. */}
+          {trust && hasRegistration(trust) ? (
+            <RegistrationDetails trust={trust} className="footer-registration" />
+          ) : null}
 
           <p className="footer-made-note">
             {t('madeNote')}

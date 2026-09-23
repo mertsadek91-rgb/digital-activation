@@ -1,0 +1,125 @@
+/* The trust, review-request and purchase-notice settings screens. */
+
+.signals-back {
+  margin: 0 0 4px;
+  font-size: var(--text-sm);
+}
+
+.signals-layout {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 1100px) {
+  .signals-layout {
+    grid-template-columns: minmax(0, 1fr) 24rem;
+    align-items: start;
+  }
+  .signals-preview {
+    position: sticky;
+    top: 16px;
+  }
+}
+.signals-form {
+  display: grid;
+  gap: 0;
+}
+
+.signals-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-block-end: 10px;
+  font-size: var(--text-sm);
+}
+.signals-toggle input {
+  inline-size: 16px;
+  block-size: 16px;
+  margin-block-start: 2px;
+}
+.signals-toggle > span {
+  display: grid;
+  gap: 2px;
+}
+
+.signals-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 12px;
+  margin-block-end: 10px;
+}
+.signals-wide {
+  grid-column: 1 / -1;
+}
+.signals-number,
+.signals-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+.signals-number input,
+.signals-text input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+.signals-number input {
+  max-inline-size: 10rem;
+}
+.signals-text input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.signals-preview {
+  display: grid;
+  gap: 12px;
+}
+.signals-preview h2 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+.signals-preview-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.signals-preview-lang {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+.signals-preview-row strong {
+  display: block;
+  font-size: var(--text-sm);
+}
+.signals-preview-row p {
+  margin: 2px 0;
+  font-size: var(--text-sm);
+}
+.signals-preview-registration {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.signals-link {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+
+.signals-stats {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  display: grid;
+  gap: 4px;
+}

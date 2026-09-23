@@ -643,5 +643,26 @@
     "notFoundTitle": "الصفحة غير موجودة",
     "notFoundDescription": "الرابط الذي فتحته لم يعد يشير إلى صفحة في المتجر.",
     "page": "صفحة {page}"
+  },
+  "trustSignals": {
+    "label": "ضمانات المتجر",
+    "guarantee": "الضمان",
+    "delivery": "التسليم",
+    "registration": "بيانات التسجيل",
+    "commercialRegistration": "السجل التجاري",
+    "vatNumber": "الرقم الضريبي",
+    "maroof": "صفحتنا على منصة معروف"
+  },
+  "socialProof": {
+    "summary": "اشتُري {count, plural, zero {{count, number, latn} مرة} one {مرة واحدة} two {مرتين} few {{count, number, latn} مرات} many {{count, number, latn} مرة} other {{count, number, latn} مرة}} خلال {window}",
+    "windowHours": "{count, plural, zero {آخر {count, number, latn} ساعة} one {الساعة الأخيرة} two {الساعتين الأخيرتين} few {آخر {count, number, latn} ساعات} many {آخر {count, number, latn} ساعة} other {آخر {count, number, latn} ساعة}}",
+    "windowDays": "{count, plural, zero {آخر {count, number, latn} يوم} one {اليوم الأخير} two {اليومين الأخيرين} few {آخر {count, number, latn} أيام} many {آخر {count, number, latn} يوماً} other {آخر {count, number, latn} يوم}}",
+    "noticeCountry": "اشترى أحدهم من {country} هذا المنتج {ago}",
+    "notice": "اشترى أحدهم هذا المنتج {ago}",
+    "agoHours": "قبل بضع ساعات",
+    "agoDay": "قبل يوم تقريباً",
+    "agoDays": "قبل بضعة أيام",
+    "region": "مشتريات حديثة",
+    "dismiss": "إخفاء إشعارات الشراء"
   }
 }

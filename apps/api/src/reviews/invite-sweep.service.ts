@@ -3,8 +3,10 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { FulfillmentState } from '@da/db';
 
+import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+import { reviewStages } from './review-stages.js';
 import { ReviewsService } from './reviews.service.js';
 
 /**
@@ -26,15 +28,13 @@ import { ReviewsService } from './reviews.service.js';
  * which keeps a marketing email off the critical path of the one queue that
  * carries licence deliveries.
  *
- * Two stages, matching the `ReviewInvite.stage` column: day 3, when the thing
- * has been used and is still recent, and day 10 for the people who meant to
- * and did not. There is no third, because a third is when people stop reading
- * anything the sender writes.
+ * Two stages, matching the `ReviewInvite.stage` column: by default day 3,
+ * when the thing has been used and is still recent, and day 10 for the people
+ * who meant to and did not. The days come from the `reviewRequests` marketing
+ * settings (see `reviewStages`), read on every pass so a change on the panel
+ * applies from the next hour without a deploy. There is no third, because a
+ * third is when people stop reading anything the sender writes.
  */
-const STAGES: { stage: number; afterDays: number }[] = [
-  { stage: 1, afterDays: 3 },
-  { stage: 2, afterDays: 10 },
-];
 
 /**
  * How many go out in one pass.
@@ -78,6 +78,7 @@ export class InviteSweepService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly reviews: ReviewsService,
+    private readonly settings: MarketingSettingsService,
   ) {}
 
   private get timeZone(): string {
@@ -124,7 +125,8 @@ export class InviteSweepService {
     let sent = 0;
     let skipped = 0;
 
-    for (const { stage, afterDays } of STAGES) {
+    const stages = reviewStages(await this.settings.get('reviewRequests'));
+    for (const { stage, afterDays } of stages) {
       const due = new Date(Date.now() - afterDays * 24 * 60 * 60 * 1000);
 
       const orders = await this.prisma.client.order.findMany({
