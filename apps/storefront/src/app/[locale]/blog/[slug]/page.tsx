@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { BRAND } from '@da/ui';
@@ -70,6 +70,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PostPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
+  const tf = await getTranslations('format');
   const ar = locale === 'ar';
 
   const post = await getPost(slug, { locale });
@@ -142,7 +143,7 @@ export default async function PostPage({ params }: Props) {
               <time dateTime={post.publishedAt}>{formatArticleDate(post.publishedAt, locale)}</time>
             ) : null}
             {post.readingMinutes > 0 ? (
-              <span>{readingLabel(post.readingMinutes, locale)}</span>
+              <span>{readingLabel(post.readingMinutes, tf)}</span>
             ) : null}
           </p>
           {/* Rendered as the opening paragraph rather than hidden in a meta
@@ -185,7 +186,7 @@ export default async function PostPage({ params }: Props) {
               <li key={other.slug}>
                 <Link href={`${prefix}${ROUTES.post(other.slug)}`}>{other.title}</Link>
                 {other.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(other.readingMinutes, locale)}</span>
+                  <span className="post-meta">{readingLabel(other.readingMinutes, tf)}</span>
                 ) : null}
               </li>
             ))}

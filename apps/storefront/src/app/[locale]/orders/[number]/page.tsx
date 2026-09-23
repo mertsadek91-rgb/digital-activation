@@ -4,6 +4,7 @@ import type { Order } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { cartApi, CartError } from '../../../../lib/cart-client';
@@ -30,6 +31,7 @@ export default function OrderPage() {
   const params = useParams<{ locale: string; number: string }>();
   const locale = params.locale ?? 'ar';
   const number = params.number ?? '';
+  const tf = useTranslations('format');
   const ar = locale === 'ar';
   const prefix = ar ? '' : `/${locale}`;
 
@@ -131,7 +133,7 @@ export default function OrderPage() {
       </h1>
 
       <p className={`pill ${waiting ? 'pill-draft' : 'pill-published'}`}>
-        {formatOrderStatus(order.status, locale)}
+        {formatOrderStatus(order.status, tf)}
       </p>
 
       {waiting && confirming ? (
@@ -173,7 +175,7 @@ export default function OrderPage() {
               <p className="order-line-spec" dir="ltr">
                 {line.sku} × {line.qty}
               </p>
-              <p className="order-line-state">{formatLineState(line.fulfillmentState, locale)}</p>
+              <p className="order-line-state">{formatLineState(line.fulfillmentState, tf)}</p>
 
               {/* What will land in the inbox, said before it lands. A customer
                   expecting a key who receives a username and a password reads

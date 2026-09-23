@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
@@ -84,6 +84,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
+  const tf = await getTranslations('format');
   const ar = locale === 'ar';
 
   const [product, reviews] = await Promise.all([
@@ -396,7 +397,7 @@ export default async function ProductPage({ params }: Props) {
                   {article.summary ? <span>{article.summary}</span> : null}
                 </Link>
                 {article.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(article.readingMinutes, locale)}</span>
+                  <span className="post-meta">{readingLabel(article.readingMinutes, tf)}</span>
                 ) : null}
               </li>
             ))}

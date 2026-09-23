@@ -68,12 +68,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('home');
+  const tf = await getTranslations('format');
 
   const home = await getHome({ locale, revalidate: 300 });
 
-  const faq = [1, 2, 3, 4, 5].map((n) => ({
-    q: t(`faq${String(n)}Q`),
-    a: t(`faq${String(n)}A`),
+  const faq = ([1, 2, 3, 4, 5] as const).map((n) => ({
+    q: t(`faq${n}Q`),
+    a: t(`faq${n}A`),
   }));
 
   const href = (path: string): string => (locale === 'ar' ? path : `/${locale}${path}`);
@@ -268,7 +269,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
                     </Link>
                     {post.readingMinutes > 0 ? (
-                      <span className="post-meta">{readingLabel(post.readingMinutes, locale)}</span>
+                      <span className="post-meta">{readingLabel(post.readingMinutes, tf)}</span>
                     ) : null}
                   </li>
                 ))}
@@ -302,14 +303,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <h2 id="steps-title">{t('stepsTitle')}</h2>
           </header>
           <ol className="steps-grid">
-            {[1, 2, 3].map((n) => (
+            {([1, 2, 3] as const).map((n) => (
               <li key={n}>
                 <span className="step-art" aria-hidden="true">
                   <StepMark step={n} />
                   <span className="step-number">{n}</span>
                 </span>
-                <h3>{t(`step${String(n)}Title`)}</h3>
-                <p>{t(`step${String(n)}Body`)}</p>
+                <h3>{t(`step${n}Title`)}</h3>
+                <p>{t(`step${n}Body`)}</p>
               </li>
             ))}
           </ol>

@@ -20,7 +20,7 @@
     "trustSupportBody": "مساعدة في التثبيت والتفعيل بالعربية، من نفس الفريق الذي باعك المفتاح.",
     "categoriesTitle": "تصفّح بحسب الفئة",
     "categoriesBody": "كل فئة تعرض ما هو متوفّر فعلاً في المخزون.",
-    "productCount": "{count, plural, =0 {لا منتجات} one {منتج واحد} two {منتجان} few {# منتجات} other {# منتجاً}}",
+    "productCount": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {{count, number, latn} منتجات} many {{count, number, latn} منتجاً} other {{count, number, latn} منتج}}",
     "bestSellersTitle": "الأكثر مبيعاً",
     "bestSellersBody": "مرتّبة بعدد عمليات الشراء الحقيقية، لا باختيارنا.",
     "newestTitle": "أحدث الإضافات",
@@ -49,5 +49,67 @@
     "faq5A": "خطوات التفعيل تصل مع المفتاح، وفريق الدعم يساعدك بالعربية إن تعطّل شيء. المساعدة في التثبيت والتفعيل مشمولة في السعر.",
     "previewNotice": "معاينة: هذه الصفحة تعرض منتجات غير منشورة لأنها تعمل على نطاق غير مفهرس.",
     "emptyCatalog": "لا منتجات منشورة بعد."
+  },
+  "format": {
+    "lifetime": "مدى الحياة",
+    "period": {
+      "DAY": "{count, plural, zero {{count, number, latn} يوم} one {يوم} two {يومان} few {{count, number, latn} أيام} many {{count, number, latn} يوماً} other {{count, number, latn} يوم}}",
+      "MONTH": "{count, plural, zero {{count, number, latn} شهر} one {شهر} two {شهران} few {{count, number, latn} أشهر} many {{count, number, latn} شهراً} other {{count, number, latn} شهر}}",
+      "YEAR": "{count, plural, zero {{count, number, latn} سنة} one {سنة} two {سنتان} few {{count, number, latn} سنوات} many {{count, number, latn} سنة} other {{count, number, latn} سنة}}"
+    },
+    "platform": {
+      "WINDOWS": "ويندوز",
+      "MAC": "ماك",
+      "LINUX": "لينكس",
+      "CROSS_PLATFORM": "متعدد المنصّات"
+    },
+    "devicesUnlimited": "غير محدود",
+    "devices": "{count, plural, zero {{count, number, latn} جهاز} one {جهاز واحد} two {جهازان} few {{count, number, latn} أجهزة} many {{count, number, latn} جهازاً} other {{count, number, latn} جهاز}}",
+    "delivery": {
+      "instant": "تسليم فوري",
+      "fast": "تسليم سريع بعد الشراء",
+      "minutes": "{count, plural, zero {{count, number, latn} دقيقة} one {دقيقة} two {دقيقتين} few {{count, number, latn} دقائق} many {{count, number, latn} دقيقة} other {{count, number, latn} دقيقة}}",
+      "hours": "{count, plural, zero {{count, number, latn} ساعة} one {ساعة} two {ساعتين} few {{count, number, latn} ساعات} many {{count, number, latn} ساعة} other {{count, number, latn} ساعة}}",
+      "within": "خلال {window}",
+      "withinOfPurchase": "خلال {window} من إتمام الشراء"
+    },
+    "fulfillment": {
+      "fromStockOut": "من مخزوننا — نفد حالياً، ويعود قريباً",
+      "fromStock": "متوفّر لدينا — يُسلَّم فوراً",
+      "onDemand": "يُجهَّز بعد الشراء، حتى لا تبدأ مدّة الترخيص قبل أن تستخدمه",
+      "manualSetup": "يُجهَّز يدوياً على بياناتك بعد الشراء"
+    },
+    "activation": {
+      "RETAIL_ONLINE": "تفعيل أونلاين",
+      "RETAIL_PHONE": "تفعيل عبر الهاتف",
+      "VOLUME_MAK": "مفتاح MAK — تفعيل عبر الهاتف",
+      "KMS": "تفعيل KMS",
+      "BIND_MICROSOFT_ACCOUNT": "مرتبط بحساب مايكروسوفت",
+      "REDEEM_CODE": "كود استبدال",
+      "ACCOUNT_CREDENTIALS": "حساب جاهز",
+      "PANEL_INVITE": "دعوة عبر بانل",
+      "CAL_KEY": "مفتاح CAL",
+      "NOT_APPLICABLE": "خدمة — لا يحتاج تفعيلاً"
+    },
+    "orderStatus": {
+      "PENDING_PAYMENT": "في انتظار الدفع",
+      "PAYMENT_REVIEW": "قيد المراجعة",
+      "PAID": "مدفوع",
+      "FULFILLING": "قيد التجهيز",
+      "FULFILLED": "تم التجهيز",
+      "COMPLETED": "مكتمل",
+      "CANCELLED": "ملغى",
+      "REFUNDED": "مُسترَد",
+      "PARTIALLY_REFUNDED": "مُسترَد جزئياً",
+      "FAILED": "فشل"
+    },
+    "lineState": {
+      "PENDING": "في الانتظار",
+      "AUTO_ASSIGNED": "تم تخصيص المفتاح",
+      "MANUAL_QUEUE": "قيد التجهيز",
+      "DELIVERED": "تم التسليم",
+      "FAILED": "تعذّر — فريقنا يتابعه"
+    },
+    "reading": "{count, plural, zero {{count, number, latn} دقيقة قراءة} one {دقيقة قراءة} two {دقيقتا قراءة} few {{count, number, latn} دقائق قراءة} many {{count, number, latn} دقيقة قراءة} other {{count, number, latn} دقيقة قراءة}}"
   }
 }

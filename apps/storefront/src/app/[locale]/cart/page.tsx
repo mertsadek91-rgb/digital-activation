@@ -5,6 +5,7 @@ import { MAX_LINE_QTY, ROUTES } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { ProductTrust } from '../../../components/product-trust';
@@ -225,6 +226,7 @@ function Line({
   busy: boolean;
   onQty: (qty: number) => void;
 }) {
+  const tf = useTranslations('format');
   const ar = locale === 'ar';
   const prefix = ar ? '' : `/${locale}`;
   // The room left above what this line already has, plus what it has.
@@ -244,10 +246,10 @@ function Line({
         <Link href={`${prefix}${ROUTES.product(line.productSlug)}`} className="cart-line-name">
           {line.productName}
         </Link>
-        <p className="cart-line-spec">{variantLabel(line, locale)}</p>
+        <p className="cart-line-spec">{variantLabel(line, tf)}</p>
         <p className="cart-line-spec">
-          {formatDelivery(line.deliverySlaSeconds, locale, line.fulfillmentMode)} ·{' '}
-          {formatFulfillment(line.fulfillmentMode, locale)}
+          {formatDelivery(line.deliverySlaSeconds, tf, line.fulfillmentMode)} ·{' '}
+          {formatFulfillment(line.fulfillmentMode, tf)}
         </p>
         {line.requiresActivationEmail ? (
           <p className="cart-line-note">

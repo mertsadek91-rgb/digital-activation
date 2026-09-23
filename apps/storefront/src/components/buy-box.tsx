@@ -3,6 +3,7 @@
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { cartApi, CartError } from '../lib/cart-client';
@@ -40,6 +41,7 @@ import { MinusIcon, PlusIcon, SpecMark, type SpecKind } from './icons';
  */
 export function BuyBox({ product, locale }: { product: CatalogProduct; locale: string }) {
   const ar = locale === 'ar';
+  const tf = useTranslations('format');
 
   const [selectedId, setSelectedId] = useState(product.selectedVariantId);
   const [qty, setQty] = useState(1);
@@ -143,32 +145,32 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     {
       kind: 'term',
       label: ar ? 'مدّة الترخيص' : 'Licence term',
-      value: formatLicensePeriod(selected, locale),
+      value: formatLicensePeriod(selected, tf),
     },
     {
       kind: 'devices',
       label: ar ? 'عدد الأجهزة' : 'Devices',
-      value: formatDevices(selected.deviceCount, locale),
+      value: formatDevices(selected.deviceCount, tf),
     },
     {
       kind: 'activation',
       label: ar ? 'نوع التفعيل' : 'Activation',
-      value: formatActivation(selected.activationMethod, locale),
+      value: formatActivation(selected.activationMethod, tf),
     },
     {
       kind: 'delivery',
       label: ar ? 'التسليم' : 'Delivery',
-      value: formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode),
+      value: formatDelivery(selected.deliverySlaSeconds, tf, selected.fulfillmentMode),
     },
     {
       kind: 'supply',
       label: ar ? 'طريقة التوريد' : 'How it is supplied',
-      value: formatFulfillment(selected.fulfillmentMode, locale, selected.inStock),
+      value: formatFulfillment(selected.fulfillmentMode, tf, selected.inStock),
     },
     {
       kind: 'platform',
       label: ar ? 'المنصّة' : 'Platform',
-      value: formatPlatform(selected.platform, locale),
+      value: formatPlatform(selected.platform, tf),
     },
   ];
 
@@ -280,7 +282,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                     setAdded(false);
                   }}
                 />
-                <span className="variant-label">{variantLabel(variant, locale)}</span>
+                <span className="variant-label">{variantLabel(variant, tf)}</span>
                 <span className="variant-price">{formatPrice(variant.price)}</span>
                 {!variant.inStock ? (
                   <span className="variant-out">{ar ? 'نافد' : 'Sold out'}</span>

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
@@ -49,6 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const tf = await getTranslations('format');
   const ar = locale === 'ar';
   const prefix = ar ? '' : `/${locale}`;
 
@@ -116,7 +117,7 @@ export default async function BlogPage({ params }: Props) {
                       </time>
                     ) : null}
                     {post.readingMinutes > 0 ? (
-                      <span>{readingLabel(post.readingMinutes, locale)}</span>
+                      <span>{readingLabel(post.readingMinutes, tf)}</span>
                     ) : null}
                   </p>
                   <div className="post-action">

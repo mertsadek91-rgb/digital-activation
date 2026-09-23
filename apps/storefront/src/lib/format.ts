@@ -1,7 +1,19 @@
 import type { CatalogVariant, DisplayPrice, FulfillmentMode, Order } from '@da/contracts';
+import type { createTranslator, Messages } from 'next-intl';
+
+import { isArabic } from '../i18n/locale';
 
 /** The part of a variant that describes its term. A cart line carries it too. */
 type LicenceTerm = Pick<CatalogVariant, 'licensePeriodValue' | 'licensePeriodUnit'>;
+
+/**
+ * The `format` namespace's translator — `useTranslations('format')` in a
+ * client component, `await getTranslations('format')` on the server. The
+ * helpers take it rather than a locale so that the wording lives in the
+ * message files with everything else, and so a client component formats with
+ * the same messages the server rendered it with.
+ */
+export type FormatT = ReturnType<typeof createTranslator<Messages, 'format'>>;
 
 /**
  * Presentation helpers.
@@ -20,72 +32,40 @@ export function formatPrice(price: Pick<DisplayPrice, 'amount' | 'currency'>): s
   return amount;
 }
 
-const PERIOD_AR: Record<string, [string, string, string]> = {
-  // [singular, dual, plural] — Arabic needs all three, and getting this wrong
-  // is immediately visible: "3 سنة" instead of "3 سنوات".
-  DAY: ['يوم', 'يومان', 'أيام'],
-  MONTH: ['شهر', 'شهران', 'أشهر'],
-  YEAR: ['سنة', 'سنتان', 'سنوات'],
-};
-
-const PERIOD_EN: Record<string, [string, string]> = {
-  DAY: ['day', 'days'],
-  MONTH: ['month', 'months'],
-  YEAR: ['year', 'years'],
-};
-
 /**
  * The licence term in words.
  *
  * Takes only the two fields it reads, not a whole variant. A cart line carries
  * the same two and nothing else, and there is no reason for the cart to be
  * unable to describe its own contents.
+ *
+ * The counted forms are ICU plurals in `format.period`. Arabic needs all six
+ * agreements, and getting this wrong is immediately visible: "3 سنة" instead
+ * of "3 سنوات", or "11 أشهر" where it should be "11 شهراً".
  */
-export function formatLicensePeriod(variant: LicenceTerm, locale: string): string {
-  if (variant.licensePeriodUnit === 'LIFETIME') {
-    return locale === 'ar' ? 'مدى الحياة' : 'Lifetime';
-  }
+export function formatLicensePeriod(variant: LicenceTerm, t: FormatT): string {
+  const unit = variant.licensePeriodUnit;
+  if (unit === 'LIFETIME') return t('lifetime');
 
   const value = variant.licensePeriodValue ?? 1;
-
-  if (locale === 'ar') {
-    const forms = PERIOD_AR[variant.licensePeriodUnit];
-    if (!forms) return String(value);
-    if (value === 1) return forms[0];
-    if (value === 2) return forms[1];
-    return `${String(value)} ${forms[2]}`;
-  }
-
-  const forms = PERIOD_EN[variant.licensePeriodUnit];
-  if (!forms) return String(value);
-  return `${String(value)} ${value === 1 ? forms[0] : forms[1]}`;
+  // A unit the contract grows before these messages do still prints its number.
+  if (unit !== 'DAY' && unit !== 'MONTH' && unit !== 'YEAR') return String(value);
+  return t(`period.${unit}`, { count: value });
 }
-
-const PLATFORM: Record<CatalogVariant['platform'], { ar: string; en: string }> = {
-  WINDOWS: { ar: 'ويندوز', en: 'Windows' },
-  MAC: { ar: 'ماك', en: 'macOS' },
-  LINUX: { ar: 'لينكس', en: 'Linux' },
-  CROSS_PLATFORM: { ar: 'متعدد المنصّات', en: 'Cross-platform' },
-};
 
 /**
  * The platform in words. It was the enum lower-cased — "windows",
  * "cross platform" — which is English on the Arabic page and not quite
  * English on the English one.
  */
-export function formatPlatform(platform: CatalogVariant['platform'], locale: string): string {
-  const label = PLATFORM[platform];
-  return locale === 'ar' ? label.ar : label.en;
+export function formatPlatform(platform: CatalogVariant['platform'], t: FormatT): string {
+  return t(`platform.${platform}`);
 }
 
-export function formatDevices(count: number, locale: string): string {
-  if (count === 0) return locale === 'ar' ? 'غير محدود' : 'Unlimited';
-  if (locale === 'ar') {
-    if (count === 1) return 'جهاز واحد';
-    if (count === 2) return 'جهازان';
-    return `${String(count)} أجهزة`;
-  }
-  return count === 1 ? '1 device' : `${String(count)} devices`;
+export function formatDevices(count: number, t: FormatT): string {
+  // Zero is how the catalog writes "no limit", not a count of nothing.
+  if (count === 0) return t('devicesUnlimited');
+  return t('devices', { count });
 }
 
 /**
@@ -99,31 +79,24 @@ export function formatDevices(count: number, locale: string): string {
  */
 export function formatDelivery(
   seconds: number,
-  locale: string,
+  t: FormatT,
   mode: FulfillmentMode = 'FROM_STOCK',
 ): string {
-  const ar = locale === 'ar';
   const fromStock = mode === 'FROM_STOCK';
 
   if (seconds <= 120) {
-    if (fromStock) return ar ? 'تسليم فوري' : 'Instant delivery';
+    if (fromStock) return t('delivery.instant');
     // The supplier is fast, but a person still places the order.
-    return ar ? 'تسليم سريع بعد الشراء' : 'Fast delivery after purchase';
+    return t('delivery.fast');
   }
 
   const window =
     seconds < 3600
-      ? ar
-        ? `${String(Math.round(seconds / 60))} دقيقة`
-        : `${String(Math.round(seconds / 60))} minutes`
-      : (() => {
-          const hours = Math.round(seconds / 3600);
-          if (ar) return hours === 1 ? 'ساعة' : `${String(hours)} ساعات`;
-          return hours === 1 ? 'an hour' : `${String(hours)} hours`;
-        })();
+      ? t('delivery.minutes', { count: Math.round(seconds / 60) })
+      : t('delivery.hours', { count: Math.round(seconds / 3600) });
 
-  if (fromStock) return ar ? `خلال ${window}` : `Within ${window}`;
-  return ar ? `خلال ${window} من إتمام الشراء` : `Within ${window} of purchase`;
+  if (fromStock) return t('delivery.within', { window });
+  return t('delivery.withinOfPurchase', { window });
 }
 
 /**
@@ -146,62 +119,24 @@ export function formatDelivery(
  * which is when it arrives. The waiting state is "قيد التجهيز", being
  * prepared. The comments in this file still say supplier, because why a line
  * is bought after the sale rather than before it is something the next person
- * editing this code has to understand; the rule is about the strings.
+ * editing this code has to understand; the rule is about the strings, which
+ * are `format.fulfillment` in the message files.
  */
-export function formatFulfillment(
-  mode: FulfillmentMode,
-  locale: string,
-  inStock?: boolean,
-): string {
-  const ar = locale === 'ar';
+export function formatFulfillment(mode: FulfillmentMode, t: FormatT, inStock?: boolean): string {
   switch (mode) {
     case 'FROM_STOCK':
-      if (inStock === false) {
-        return ar
-          ? 'من مخزوننا — نفد حالياً، ويعود قريباً'
-          : 'From our own stock — none left right now';
-      }
-      return ar ? 'متوفّر لدينا — يُسلَّم فوراً' : 'Held in stock — delivered immediately';
+      if (inStock === false) return t('fulfillment.fromStockOut');
+      return t('fulfillment.fromStock');
     case 'ON_DEMAND':
-      return ar
-        ? 'يُجهَّز بعد الشراء، حتى لا تبدأ مدّة الترخيص قبل أن تستخدمه'
-        : 'Prepared after purchase, so the licence term does not start before you use it';
+      return t('fulfillment.onDemand');
     case 'MANUAL_SETUP':
-      return ar
-        ? 'يُجهَّز يدوياً على بياناتك بعد الشراء'
-        : 'Prepared by hand against your own details after purchase';
+      return t('fulfillment.manualSetup');
   }
 }
 
-const ACTIVATION_AR: Record<string, string> = {
-  RETAIL_ONLINE: 'تفعيل أونلاين',
-  RETAIL_PHONE: 'تفعيل عبر الهاتف',
-  VOLUME_MAK: 'مفتاح MAK — تفعيل عبر الهاتف',
-  KMS: 'تفعيل KMS',
-  BIND_MICROSOFT_ACCOUNT: 'مرتبط بحساب مايكروسوفت',
-  REDEEM_CODE: 'كود استبدال',
-  ACCOUNT_CREDENTIALS: 'حساب جاهز',
-  PANEL_INVITE: 'دعوة عبر بانل',
-  CAL_KEY: 'مفتاح CAL',
-  NOT_APPLICABLE: 'خدمة — لا يحتاج تفعيلاً',
-};
-
-const ACTIVATION_EN: Record<string, string> = {
-  RETAIL_ONLINE: 'Online activation',
-  RETAIL_PHONE: 'Phone activation',
-  VOLUME_MAK: 'MAK key — phone activation',
-  KMS: 'KMS activation',
-  BIND_MICROSOFT_ACCOUNT: 'Bound to a Microsoft account',
-  REDEEM_CODE: 'Redeem code',
-  ACCOUNT_CREDENTIALS: 'Ready-made account',
-  PANEL_INVITE: 'Panel invitation',
-  CAL_KEY: 'CAL key',
-  NOT_APPLICABLE: 'Service — nothing to activate',
-};
-
-export function formatActivation(method: string, locale: string): string {
-  const table = locale === 'ar' ? ACTIVATION_AR : ACTIVATION_EN;
-  return table[method] ?? method;
+export function formatActivation(method: string, t: FormatT): string {
+  const key = `activation.${method}` as `activation.${CatalogVariant['activationMethod']}`;
+  return t.has(key) ? t(key) : method;
 }
 
 /*
@@ -211,80 +146,33 @@ export function formatActivation(method: string, locale: string): string {
  * order list, because the two pages show the same order and a customer who
  * reads "قيد التجهيز" on one and something else on the other reads it
  * as two different things happening.
- */
-const STATUS_AR: Record<string, string> = {
-  PENDING_PAYMENT: 'في انتظار الدفع',
-  PAYMENT_REVIEW: 'قيد المراجعة',
-  PAID: 'مدفوع',
-  FULFILLING: 'قيد التجهيز',
-  FULFILLED: 'تم التجهيز',
-  COMPLETED: 'مكتمل',
-  CANCELLED: 'ملغى',
-  REFUNDED: 'مُسترَد',
-  PARTIALLY_REFUNDED: 'مُسترَد جزئياً',
-  FAILED: 'فشل',
-};
-
-const STATE_AR: Record<string, string> = {
-  PENDING: 'في الانتظار',
-  AUTO_ASSIGNED: 'تم تخصيص المفتاح',
-  MANUAL_QUEUE: 'قيد التجهيز',
-  DELIVERED: 'تم التسليم',
-  FAILED: 'تعذّر — فريقنا يتابعه',
-};
-
-const STATE_EN: Record<string, string> = {
-  PENDING: 'Pending',
-  AUTO_ASSIGNED: 'Key assigned',
-  MANUAL_QUEUE: 'Being prepared',
-  DELIVERED: 'Delivered',
-  FAILED: 'Failed — our team is on it',
-};
-
-/**
- * The same statuses in English.
  *
- * Both pages printed the enum with its underscores removed, so an English
- * customer was told their order was `PENDING PAYMENT` — the database's word
- * for it, in capitals, which reads as a fault rather than as "we are waiting
- * for your transfer". These are the Arabic meanings, not new promises: each
- * one says the same thing its Arabic counterpart above says.
+ * The English statuses (`format.orderStatus` in en.json) exist because both
+ * pages printed the enum with its underscores removed, so an English customer
+ * was told their order was `PENDING PAYMENT` — the database's word for it, in
+ * capitals, which reads as a fault rather than as "we are waiting for your
+ * transfer". They are the Arabic meanings, not new promises: each one says the
+ * same thing its Arabic counterpart says.
  */
-const STATUS_EN: Record<string, string> = {
-  PENDING_PAYMENT: 'Awaiting payment',
-  PAYMENT_REVIEW: 'Payment under review',
-  PAID: 'Paid',
-  FULFILLING: 'Being prepared',
-  FULFILLED: 'Prepared',
-  COMPLETED: 'Complete',
-  CANCELLED: 'Cancelled',
-  REFUNDED: 'Refunded',
-  PARTIALLY_REFUNDED: 'Partially refunded',
-  FAILED: 'Failed',
-};
-
-export function formatOrderStatus(status: Order['status'], locale: string): string {
-  if (locale === 'ar') return STATUS_AR[status] ?? status;
+export function formatOrderStatus(status: Order['status'], t: FormatT): string {
+  const key = `orderStatus.${status}` as const;
   // Falls back to the enum without its underscores for a status nobody has
   // translated yet: a word in capitals is poor, and a blank is worse.
-  return STATUS_EN[status] ?? status.replace(/_/g, ' ');
+  return t.has(key) ? t(key) : status.replace(/_/g, ' ');
 }
 
 /** Where one line of an order has got to. */
 export function formatLineState(
   state: Order['lines'][number]['fulfillmentState'],
-  locale: string,
+  t: FormatT,
 ): string {
-  const table = locale === 'ar' ? STATE_AR : STATE_EN;
-  return table[state] ?? state;
+  const key = `lineState.${state}` as const;
+  return t.has(key) ? t(key) : state;
 }
 
 /** Short label for a variant picker button, or for a cart line. */
-export function variantLabel(
-  variant: LicenceTerm & { deviceCount: number },
-  locale: string,
-): string {
-  return `${formatLicensePeriod(variant, locale)} · ${formatDevices(variant.deviceCount, locale)}`;
+export function variantLabel(variant: LicenceTerm & { deviceCount: number }, t: FormatT): string {
+  return `${formatLicensePeriod(variant, t)} · ${formatDevices(variant.deviceCount, t)}`;
 }
 
 /**
@@ -298,7 +186,7 @@ export function variantLabel(
 export function formatArticleDate(iso: string, locale: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat(locale === 'en' ? 'en-GB' : 'ar', {
+  return new Intl.DateTimeFormat(isArabic(locale) ? 'ar' : 'en-GB', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -308,10 +196,6 @@ export function formatArticleDate(iso: string, locale: string): string {
 }
 
 /** "٥ دقائق قراءة" — the plural rules Arabic needs, not a bare number. */
-export function readingLabel(minutes: number, locale: string): string {
-  if (locale === 'en') return `${String(minutes)} min read`;
-  if (minutes === 1) return 'دقيقة قراءة';
-  if (minutes === 2) return 'دقيقتا قراءة';
-  if (minutes <= 10) return `${String(minutes)} دقائق قراءة`;
-  return `${String(minutes)} دقيقة قراءة`;
+export function readingLabel(minutes: number, t: FormatT): string {
+  return t('reading', { count: minutes });
 }

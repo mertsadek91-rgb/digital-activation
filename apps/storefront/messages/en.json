@@ -20,7 +20,7 @@
     "trustSupportBody": "Help with installation and activation, from the same team that sold you the key.",
     "categoriesTitle": "Browse by category",
     "categoriesBody": "Each category shows what is actually in the catalogue.",
-    "productCount": "{count, plural, =0 {no products} one {1 product} other {# products}}",
+    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}",
     "bestSellersTitle": "Best selling",
     "bestSellersBody": "Ordered by real purchases, not by our pick.",
     "newestTitle": "New arrivals",
@@ -49,5 +49,67 @@
     "faq5A": "Activation steps arrive with the key, and support will walk you through it if something fails. Help with installation and activation is included in the price.",
     "previewNotice": "Preview: this page is showing unpublished products because it is running on a host that is not indexed.",
     "emptyCatalog": "No published products yet."
+  },
+  "format": {
+    "lifetime": "Lifetime",
+    "period": {
+      "DAY": "{count, plural, one {# day} other {# days}}",
+      "MONTH": "{count, plural, one {# month} other {# months}}",
+      "YEAR": "{count, plural, one {# year} other {# years}}"
+    },
+    "platform": {
+      "WINDOWS": "Windows",
+      "MAC": "macOS",
+      "LINUX": "Linux",
+      "CROSS_PLATFORM": "Cross-platform"
+    },
+    "devicesUnlimited": "Unlimited",
+    "devices": "{count, plural, one {# device} other {# devices}}",
+    "delivery": {
+      "instant": "Instant delivery",
+      "fast": "Fast delivery after purchase",
+      "minutes": "{count, plural, one {# minute} other {# minutes}}",
+      "hours": "{count, plural, one {an hour} other {# hours}}",
+      "within": "Within {window}",
+      "withinOfPurchase": "Within {window} of purchase"
+    },
+    "fulfillment": {
+      "fromStockOut": "From our own stock — none left right now",
+      "fromStock": "Held in stock — delivered immediately",
+      "onDemand": "Prepared after purchase, so the licence term does not start before you use it",
+      "manualSetup": "Prepared by hand against your own details after purchase"
+    },
+    "activation": {
+      "RETAIL_ONLINE": "Online activation",
+      "RETAIL_PHONE": "Phone activation",
+      "VOLUME_MAK": "MAK key — phone activation",
+      "KMS": "KMS activation",
+      "BIND_MICROSOFT_ACCOUNT": "Bound to a Microsoft account",
+      "REDEEM_CODE": "Redeem code",
+      "ACCOUNT_CREDENTIALS": "Ready-made account",
+      "PANEL_INVITE": "Panel invitation",
+      "CAL_KEY": "CAL key",
+      "NOT_APPLICABLE": "Service — nothing to activate"
+    },
+    "orderStatus": {
+      "PENDING_PAYMENT": "Awaiting payment",
+      "PAYMENT_REVIEW": "Payment under review",
+      "PAID": "Paid",
+      "FULFILLING": "Being prepared",
+      "FULFILLED": "Prepared",
+      "COMPLETED": "Complete",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded",
+      "PARTIALLY_REFUNDED": "Partially refunded",
+      "FAILED": "Failed"
+    },
+    "lineState": {
+      "PENDING": "Pending",
+      "AUTO_ASSIGNED": "Key assigned",
+      "MANUAL_QUEUE": "Being prepared",
+      "DELIVERED": "Delivered",
+      "FAILED": "Failed — our team is on it"
+    },
+    "reading": "{count} min read"
   }
 }

@@ -4,6 +4,7 @@ import type { AccountOrder, AccountOrderList, CustomerMe } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AccountNav } from '../../../../components/account-nav';
@@ -107,7 +108,7 @@ export default function OrdersPage() {
 
       <ul className="order-history">
         {(list?.rows ?? []).map((order) => (
-          <OrderCard key={order.number} order={order} ar={ar} locale={locale} prefix={prefix} />
+          <OrderCard key={order.number} order={order} ar={ar} prefix={prefix} />
         ))}
       </ul>
     </main>
@@ -117,17 +118,16 @@ export default function OrdersPage() {
 function OrderCard({
   order,
   ar,
-  locale,
   prefix,
 }: {
   order: AccountOrder;
   ar: boolean;
-  locale: string;
   prefix: string;
 }) {
   // Paid is the line this page draws, not fulfilled: an order that has been
   // paid for is one the store owes something on, and that is the distinction a
   // customer scanning the list is looking for.
+  const tf = useTranslations('format');
   const paid = order.paidAt !== null;
   const money = (amount: string): string => formatPrice({ amount, currency: order.currency });
 
@@ -149,7 +149,7 @@ function OrderCard({
           </p>
         </div>
         <span className={`pill ${paid ? 'pill-published' : 'pill-draft'}`}>
-          {formatOrderStatus(order.status, locale)}
+          {formatOrderStatus(order.status, tf)}
         </span>
       </div>
 
@@ -161,7 +161,7 @@ function OrderCard({
               <p className="order-line-spec" dir="ltr">
                 {line.sku} × {line.qty}
               </p>
-              <p className="order-line-state">{formatLineState(line.fulfillmentState, locale)}</p>
+              <p className="order-line-state">{formatLineState(line.fulfillmentState, tf)}</p>
             </div>
             <p className="order-line-total">{money(line.lineTotal)}</p>
           </li>
