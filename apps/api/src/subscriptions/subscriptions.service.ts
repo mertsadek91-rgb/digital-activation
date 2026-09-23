@@ -5,6 +5,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { FulfillmentMode, Locale, PublishStatus, StockAlertKind } from '@da/db';
 
+import { WelcomeService } from '../growth/welcome.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { backInStock, newsletterConfirm } from '../mail/templates.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -27,7 +28,7 @@ const PER_PASS = 50;
 const LOCK_KEY = 761_204_004;
 
 /** Distinct labels, so a confirm link can never be replayed as an unsubscribe. */
-type Purpose = 'newsletter-confirm' | 'newsletter-unsubscribe';
+type Purpose = 'newsletter-confirm' | 'newsletter-unsubscribe' | 'welcome-confirm';
 
 function secret(): string {
   const value = process.env.JWT_ACCESS_SECRET;
@@ -63,6 +64,7 @@ export class SubscriptionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
+    private readonly welcome: WelcomeService,
   ) {}
 
   private get storefront(): string {
@@ -197,7 +199,11 @@ export class SubscriptionsService {
   // --- newsletter -----------------------------------------------------------
 
   /** Sends the confirmation. Subscribes nobody until the link is followed. */
-  async subscribe(input: { email: string; locale: 'ar' | 'en' }): Promise<{ ok: true }> {
+  async subscribe(input: {
+    email: string;
+    locale: 'ar' | 'en';
+    source?: 'footer' | 'welcome';
+  }): Promise<{ ok: true }> {
     const existing = await this.prisma.client.customer.findUnique({
       where: { email: input.email },
       select: { marketingOptInAt: true },
@@ -208,8 +214,22 @@ export class SubscriptionsService {
 
     const prefix = input.locale === 'en' ? '/en' : '';
     const url = new URL(`${prefix}/newsletter/confirm`, this.storefront);
-    url.searchParams.set('token', newsletterToken(input.email, 'newsletter-confirm'));
 
+    // The welcome window signs its own purpose, so the one confirmation that
+    // may mint a code is told apart from the footer's without storing a thing
+    // before the click.
+    if (input.source === 'welcome') {
+      url.searchParams.set('token', newsletterToken(input.email, 'welcome-confirm'));
+      await this.mail.send({
+        to: input.email,
+        template: 'welcome.confirm',
+        locale: input.locale,
+        rendered: await this.welcome.confirmation(input.locale, url.toString()),
+      });
+      return { ok: true };
+    }
+
+    url.searchParams.set('token', newsletterToken(input.email, 'newsletter-confirm'));
     await this.mail.send({
       to: input.email,
       template: 'newsletter.confirm',
@@ -220,7 +240,8 @@ export class SubscriptionsService {
   }
 
   async confirm(token: string, locale: 'ar' | 'en'): Promise<{ ok: true }> {
-    const email = readNewsletterToken(token, 'newsletter-confirm');
+    const welcomeEmail = readNewsletterToken(token, 'welcome-confirm');
+    const email = welcomeEmail ?? readNewsletterToken(token, 'newsletter-confirm');
     if (!email) throw new BadRequestException('This link is not valid.');
 
     const now = new Date();
@@ -238,6 +259,8 @@ export class SubscriptionsService {
       where: { email, marketingOptInAt: null },
       data: { marketingOptInAt: now },
     });
+    // Only now, with consent recorded, may a welcome code be minted and sent.
+    if (welcomeEmail) await this.welcome.onConfirmed(email, locale);
     return { ok: true };
   }
 
