@@ -23,6 +23,7 @@ import { BoltIcon, ProductGlyph, ShieldCheckIcon } from './icons';
  */
 export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
   const t = useTranslations('productCard');
+  const to = useTranslations('offers');
   const tc = useTranslations('common');
   const href = isArabic(locale) ? `/store/${card.slug}` : `/${locale}/store/${card.slug}`;
   const lowStock =
@@ -89,11 +90,20 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
             ) : null}
           </div>
 
+          {/* A sale's discount carries its Ministry of Commerce licence number
+              wherever the discount is shown, the grid included. */}
+          {card.sale?.licenceNumber ? (
+            <p className="card-licence">
+              {to.rich('licence', {
+                number: card.sale.licenceNumber,
+                ltr: (chunks) => <span dir="ltr">{chunks}</span>,
+              })}
+            </p>
+          ) : null}
+
           <div className="card-footer">
             <p className="card-price">
-              {card.variantCount > 1 ? (
-                <span className="card-from">{t('from')}</span>
-              ) : null}
+              {card.variantCount > 1 ? <span className="card-from">{t('from')}</span> : null}
               <strong>{formatPrice(card.price)}</strong>
               {card.price.compareAt ? (
                 <s>

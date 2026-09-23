@@ -12,6 +12,7 @@ import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
+import { SaleNotice } from '../../../../components/sale-notice';
 import { Reviews } from '../../../../components/reviews';
 import { StockAlert } from '../../../../components/stock-alert';
 import { isArabic } from '../../../../i18n/locale';
@@ -156,7 +157,9 @@ export default async function ProductPage({ params }: Props) {
       inStock: selected.inStock,
       // The range the licence picker shows, from the same variant prices.
       ...(product.variants.length > 1 ? { priceRange: priceRangeOf(product.variants) } : {}),
-      priceValidUntil: PRICE_VALID_UNTIL,
+      // During a seasonal sale the offer is valid until the sale ends, when
+      // the price really comes back — the same date the page counts down to.
+      priceValidUntil: product.sale ? product.sale.endsAt.slice(0, 10) : PRICE_VALID_UNTIL,
       // The Golden Warranty is a replacement promise, not a refund: a key that
       // does not work within seven days is replaced free. Declared only on the
       // products that carry it — it has exclusions, and a product outside it
@@ -233,15 +236,17 @@ export default async function ProductPage({ params }: Props) {
           {/* Real orders only, and only above the floor where a count is proof
               rather than noise. */}
           {product.salesCount > 0 ? (
-            <p className="proof">
-              {t('salesProof', { count: product.salesCount })}
-            </p>
+            <p className="proof">{t('salesProof', { count: product.salesCount })}</p>
           ) : null}
 
           {/* The price, the picker, the specification table and the buy
               button move together. They all describe the selected variant, and
               a page where choosing "3 years" leaves the 1-year price on screen
               is worse than one with no picker. */}
+          {/* The badge and licence number sit above the price they explain;
+              the price itself already is the sale price. */}
+          {product.sale ? <SaleNotice sale={product.sale} /> : null}
+
           <BuyBox product={product} locale={locale} />
 
           {!selected.inStock ? (
@@ -261,9 +266,7 @@ export default async function ProductPage({ params }: Props) {
             </div>
           ) : null}
 
-          {product.isDraft ? (
-            <p className="draft-flag">{tc('draftPreview')}</p>
-          ) : null}
+          {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
         </div>
       </div>
 
