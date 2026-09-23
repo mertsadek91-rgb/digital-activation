@@ -9,7 +9,14 @@ import {
   type Readiness,
   type SetProductCopy,
 } from '@da/contracts';
-import { FulfillmentMode, Locale, type Prisma, PublishStatus, StockMovementReason } from '@da/db';
+import {
+  FulfillmentMode,
+  Locale,
+  type Prisma,
+  PublishStatus,
+  refreshProductPrice,
+  StockMovementReason,
+} from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
@@ -266,19 +273,28 @@ export class AdminService {
       });
     }
 
-    const updated = await this.prisma.client.product.update({
-      where: { id: product.id },
-      data: {
-        status,
-        publishedAt:
-          status === PublishStatus.PUBLISHED ? (product.publishedAt ?? new Date()) : null,
-        seoReady: readiness.publishable,
-      },
-    });
+    // One transaction now, because a third write joined the two: publishing
+    // flips every variant's status, which is exactly what `minPriceUsd` is
+    // computed from. Outside a transaction a price-sorted page could read the
+    // product published with a null price and sort it last.
+    const updated = await this.prisma.client.$transaction(async (tx) => {
+      const row = await tx.product.update({
+        where: { id: product.id },
+        data: {
+          status,
+          publishedAt:
+            status === PublishStatus.PUBLISHED ? (product.publishedAt ?? new Date()) : null,
+          seoReady: readiness.publishable,
+        },
+      });
 
-    await this.prisma.client.variant.updateMany({
-      where: { productId: product.id },
-      data: { status },
+      await tx.variant.updateMany({
+        where: { productId: product.id },
+        data: { status },
+      });
+
+      await refreshProductPrice(tx, product.id);
+      return row;
     });
 
     await this.audit.record({
