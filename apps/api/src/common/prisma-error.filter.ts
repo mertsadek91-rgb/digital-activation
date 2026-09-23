@@ -8,6 +8,10 @@ import {
 import { Prisma } from '@da/db';
 import type { FastifyReply } from 'fastify';
 
+import { type ErrorReporter, NoopErrorReporter } from '../infra/error-reporter.js';
+
+import { errorContext } from './server-error.filter.js';
+
 /**
  * The Prisma errors that mean "you asked for something that is not there" or
  * "that already exists", answered as 404 and 409 instead of 500.
@@ -19,11 +23,16 @@ import type { FastifyReply } from 'fastify';
  * names tables and columns, which a browser has no business reading.
  *
  * Everything else is rethrown untouched, so Nest's own handling of
- * HttpExceptions and genuine faults is unchanged.
+ * HttpExceptions and genuine faults is unchanged. An unmapped code is a
+ * genuine fault and goes to the error reporter: this filter answers Prisma
+ * errors before the catch-all `ServerErrorFilter` sees them, so nobody else
+ * would.
  */
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaErrorFilter implements ExceptionFilter<Prisma.PrismaClientKnownRequestError> {
   private readonly logger = new Logger(PrismaErrorFilter.name);
+
+  constructor(private readonly reporter: ErrorReporter = new NoopErrorReporter()) {}
 
   catch(error: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost): void {
     const reply = host.switchToHttp().getResponse<FastifyReply>();
@@ -31,6 +40,7 @@ export class PrismaErrorFilter implements ExceptionFilter<Prisma.PrismaClientKno
     const mapped = MAPPED[error.code];
     if (!mapped) {
       this.logger.error(`Unhandled Prisma error ${error.code}: ${error.message}`);
+      this.reporter.report(error, errorContext(host, HttpStatus.INTERNAL_SERVER_ERROR));
       void reply.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: 'Internal server error',

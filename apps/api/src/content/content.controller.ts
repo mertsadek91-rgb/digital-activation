@@ -1,6 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, Post, Query, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import type { FastifyRequest } from 'fastify';
 import {
   type ArticleWithProducts,
@@ -14,6 +14,7 @@ import {
 } from '@da/contracts';
 import type { z } from 'zod';
 
+import { VisitorThrottle } from '../common/explicit-throttler.guard.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogService } from '../catalog/catalog.service.js';
@@ -113,12 +114,13 @@ export class ContentController {
   /**
    * Called by the storefront when a path matched nothing at all.
    *
-   * An anonymous write, but not throttled per address: it is sent from the
-   * storefront's server, so every visitor arrives from the same IP and a limit
-   * would count them all together. The service's probe filter is what keeps a
-   * crawler walking random paths from filling the table.
+   * An anonymous write, limited to thirty a minute per visitor — the address
+   * the storefront's server forwards with INTERNAL_API_KEY, since the call
+   * comes from that server. With no key configured it is not limited, and the
+   * service's probe filter is what keeps a crawler walking random paths from
+   * filling the table.
    */
-  @SkipThrottle()
+  @VisitorThrottle(30)
   @Post('not-found')
   @ApiOperation({ summary: 'Record a path that answered 404' })
   async notFound(

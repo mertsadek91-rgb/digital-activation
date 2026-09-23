@@ -1,6 +1,5 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
 import {
   type CatalogCollection,
   type CatalogProductWithRelated,
@@ -14,6 +13,7 @@ import {
   searchQuerySchema,
 } from '@da/contracts';
 
+import { VisitorThrottle } from '../common/explicit-throttler.guard.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogService } from './catalog.service.js';
@@ -61,13 +61,13 @@ export class CatalogController {
   /**
    * The search box.
    *
-   * Not throttled per address, although the query is arbitrary text: the
-   * search page is rendered on the storefront's server, so every shopper's
-   * query arrives from the same IP and a limit here would be one limit for the
-   * whole shop. It needs the storefront to forward a per-visitor key before it
-   * can be limited honestly.
+   * Sixty a minute per visitor: a person typing and refining never gets near
+   * it, a script enumerating the catalog through the search index does. The
+   * page is rendered on the storefront's server, so the visitor is the address
+   * it forwards with INTERNAL_API_KEY — and with no key configured the route
+   * is not limited at all, since every shopper would share one count.
    */
-  @SkipThrottle()
+  @VisitorThrottle(60)
   @Get('search')
   @ApiOperation({ summary: 'Products matching a query, best first' })
   search(

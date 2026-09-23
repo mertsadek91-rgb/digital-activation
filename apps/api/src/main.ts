@@ -1,11 +1,15 @@
 import fastifyCookie from '@fastify/cookie';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 import { PrismaErrorFilter } from './common/prisma-error.filter.js';
+import { ServerErrorFilter } from './common/server-error.filter.js';
+import { ERROR_REPORTER, type ErrorReporter } from './infra/error-reporter.js';
+import { requestIdFor } from './infra/logging.js';
 
 function trustedHops(): number {
   const hops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
@@ -22,6 +26,11 @@ async function bootstrap(): Promise<void> {
       // could pick the address the rate limits and the audit log see. One hop
       // is Coolify's proxy; set TRUST_PROXY_HOPS=2 behind a CDN as well.
       trustProxy: (_address: string, hop: number) => hop < trustedHops(),
+      // One id per request, shared by Fastify, the request log and the error
+      // reporter: a caller's X-Request-Id when it is well-formed, else a UUID.
+      // Fastify's own header option would take the header unchecked.
+      requestIdHeader: false,
+      genReqId: requestIdFor,
     }),
     {
       bufferLogs: true,
@@ -32,6 +41,12 @@ async function bootstrap(): Promise<void> {
       rawBody: true,
     },
   );
+
+  // Every `new Logger(...)` in the code base writes through pino from here on,
+  // and what was logged while the modules were being built — buffered by
+  // `bufferLogs` above — is flushed through it too.
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   // No global ValidationPipe: it is built on class-validator, which would mean
   // a second definition of every shape @da/contracts already describes in zod.
@@ -59,7 +74,10 @@ async function bootstrap(): Promise<void> {
   app
     .getHttpAdapter()
     .getInstance()
-    .addHook('onSend', async (_request, reply, payload) => {
+    .addHook('onSend', async (request, reply, payload) => {
+      // So a customer's "something went wrong" screenshot can be matched to
+      // the log line.
+      reply.header('x-request-id', request.id);
       reply.header('X-Content-Type-Options', 'nosniff');
       reply.header('X-Frame-Options', 'DENY');
       reply.header('Referrer-Policy', 'no-referrer');
@@ -79,13 +97,22 @@ async function bootstrap(): Promise<void> {
     // the browser blocks every PATCH from the admin panel at preflight, so
     // publishing and stock edits fail in the UI while passing from curl.
     methods: ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE'],
+    // So the admin can show the id of a failed request, for matching to the log.
+    exposedHeaders: ['x-request-id'],
   });
 
   app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
 
-  // Prisma errors that are the caller's problem, answered as such rather than
-  // as a 500 — see the filter for which ones.
-  app.useGlobalFilters(new PrismaErrorFilter());
+  // Nest consults global filters last-registered first, so the Prisma filter
+  // sees Prisma errors before the catch-all does. Prisma errors that are the
+  // caller's problem are answered as such rather than as a 500 — see the
+  // filter for which ones. Every other 5xx goes to the error reporter, which
+  // is a no-op unless SENTRY_DSN is set.
+  const reporter = app.get<ErrorReporter>(ERROR_REPORTER);
+  app.useGlobalFilters(
+    new ServerErrorFilter(app.get(HttpAdapterHost), reporter),
+    new PrismaErrorFilter(reporter),
+  );
 
   // So a deploy's SIGTERM runs onModuleDestroy — the Prisma pools close and an
   // in-flight request finishes — instead of the process being cut mid-write.
@@ -103,8 +130,7 @@ async function bootstrap(): Promise<void> {
 
   const port = Number(process.env.API_PORT ?? 4000);
   await app.listen({ port, host: '0.0.0.0' });
-  // eslint-disable-next-line no-console
-  console.log(`API listening on http://localhost:${port} (docs at /docs)`);
+  logger.log(`API listening on http://localhost:${port} (docs at /docs)`, 'Bootstrap');
 }
 
 void bootstrap();
