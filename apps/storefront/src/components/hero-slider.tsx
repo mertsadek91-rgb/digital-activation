@@ -264,7 +264,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
             </div>
 
             {/* Title & Description */}
-            <h3 className="hero-slide-title">{isAr ? slide.titleAr : slide.titleEn}</h3>
+            <h2 className="hero-slide-title">{isAr ? slide.titleAr : slide.titleEn}</h2>
             <p className="hero-slide-desc">{isAr ? slide.descAr : slide.descEn}</p>
 
             {/* Checklist Features */}

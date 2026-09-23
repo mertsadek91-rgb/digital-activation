@@ -944,17 +944,22 @@
 }
 
 .hero-slider-dot {
+  /* An 8px dot inside a 24px target: the visible dot is the content box, the
+     padding is the part a thumb can hit. Anything smaller fails the 24px
+     minimum target size, and these sit right under a thumb on a phone. */
+  box-sizing: content-box;
   inline-size: 8px;
   block-size: 8px;
+  padding: 8px;
+  background-clip: content-box;
   border-radius: var(--radius-pill);
-  background: var(--color-border-strong);
+  background-color: var(--color-border-strong);
   border: none;
-  padding: 0;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .hero-slider-dot.is-active {
   inline-size: 24px;
-  background: var(--color-brand);
+  background-color: var(--color-brand);
 }

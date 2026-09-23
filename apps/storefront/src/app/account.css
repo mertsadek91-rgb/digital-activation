@@ -480,7 +480,7 @@
 }
 .renewal-when strong {
   font-size: 0.8rem;
-  color: #6b7472;
+  color: var(--color-ink-muted);
   font-weight: 600;
 }
 .renewal-days {
@@ -506,7 +506,7 @@
 .for-you-reason {
   margin: 0;
   font-size: 0.85rem;
-  color: #6b7472;
+  color: var(--color-ink-muted);
   line-height: 1.5;
 }
 

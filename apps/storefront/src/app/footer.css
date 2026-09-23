@@ -416,8 +416,10 @@
   gap: 6px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #059669;
-  background: #ecfdf5;
+  /* The success tokens rather than a brighter green: #059669 on #ecfdf5 is
+     3.57:1, and this is 12px bold text. */
+  color: var(--color-success);
+  background: var(--color-success-soft);
   border: 1px solid #a7f3d0;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
