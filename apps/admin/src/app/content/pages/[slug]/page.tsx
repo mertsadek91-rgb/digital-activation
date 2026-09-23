@@ -3,6 +3,7 @@
 import type {
   AdminPage,
   AdminPageLocale,
+  AdminPageVersion,
   ContentBlock,
   EditableStatus,
   PageTemplateValue,
@@ -319,10 +320,128 @@ export default function ContentPageEditor() {
               </div>
             ) : null}
           </section>
+
+          <HistoryPanel
+            slug={page.slug}
+            locale={locale}
+            canWrite={canWrite}
+            // Bumped by every save, so an open history list picks up the
+            // version that save just wrote.
+            revision={`${String(page.ar.version)}-${String(page.en.version)}`}
+            onRestore={async (versionId, version) => {
+              if (dirty && !window.confirm(t('discardConfirm'))) return;
+              if (!window.confirm(t('historyRestoreConfirm', { version }))) return;
+              setBusy(true);
+              setError(null);
+              setNote(null);
+              try {
+                take(await api.restorePageVersion(page.slug, versionId), locale);
+                setNote(t('historyRestored', { version }));
+              } catch (caught) {
+                setError(messageOf(caught, c('actionFailed')));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          />
         </div>
       ) : (
         <p className="meta">{c('loading')}</p>
       )}
     </Nav>
+  );
+}
+
+/**
+ * The page's saved versions, for the language being edited.
+ *
+ * Closed until asked for: most visits to this screen are an edit, not an
+ * archaeology, and the list can be long. Restoring saves the old text as a
+ * new version on the server — the history grows, it is never rewound — so
+ * a restore can itself be undone from the same list.
+ */
+function HistoryPanel({
+  slug,
+  locale,
+  canWrite,
+  revision,
+  onRestore,
+}: {
+  slug: string;
+  locale: 'ar' | 'en';
+  canWrite: boolean;
+  revision: string;
+  onRestore: (versionId: string, version: number) => Promise<void>;
+}) {
+  const t = useT('content');
+  const c = useT('common');
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<AdminPageVersion[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await api.pageVersions(slug);
+        if (!cancelled) {
+          setRows(list.rows);
+          setError(null);
+        }
+      } catch (caught) {
+        if (!cancelled) setError(messageOf(caught, c('actionFailed')));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, slug, revision, c]);
+
+  const mine = (rows ?? []).filter((row) => row.locale === locale);
+
+  return (
+    <section className="edit-section">
+      <h3>{t('historyHeading')}</h3>
+      {!open ? (
+        <button type="button" className="ghost" onClick={() => setOpen(true)}>
+          {t('historyShow')}
+        </button>
+      ) : null}
+      {error ? <p className="error">{error}</p> : null}
+      {open && rows && mine.length === 0 ? <p className="meta">{t('historyEmpty')}</p> : null}
+      {open && !rows && !error ? <p className="meta">{c('loading')}</p> : null}
+      {mine.length > 0 ? (
+        <ul className="order-notes-list">
+          {mine.map((row) => (
+            <li key={row.id} className="order-note-item">
+              <p className="note-text">
+                v{row.version} · {row.title}
+              </p>
+              <div className="note-meta-row">
+                <span className="note-author">{row.author ?? t('historyUnknownAuthor')}</span>
+                <span>·</span>
+                <span className="note-date" dir="ltr">
+                  {row.createdAt.slice(0, 16).replace('T', ' ')}
+                </span>
+                <span>·</span>
+                <span>{t('historyBlocks', { count: row.blockCount })}</span>
+                {row.current ? (
+                  <span className="pill pill-published">{t('historyCurrent')}</span>
+                ) : canWrite ? (
+                  <button
+                    type="button"
+                    className="ghost btn-sm"
+                    onClick={() => void onRestore(row.id, row.version)}
+                  >
+                    {t('historyRestore')}
+                  </button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }

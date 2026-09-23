@@ -1162,6 +1162,16 @@ export const en: AdminMessages = {
     localeMissingNote:
       'Not written in this language yet, so the page shows the other one in its place. Saving creates it.',
     versionNote: 'Version {version} — every save keeps a full copy.',
+    historyHeading: 'History',
+    historyShow: 'Show earlier versions',
+    historyEmpty: 'No saved versions for this language yet.',
+    historyCurrent: 'Current',
+    historyRestore: 'Restore',
+    historyRestoreConfirm:
+      'Restore version {version}? Its text is saved as a new version; the URL and status stay as they are, and a published page shows it at once.',
+    historyRestored: 'Version {version} restored as a new version.',
+    historyBlocks: '{count} blocks',
+    historyUnknownAuthor: 'before the panel',
     pagesTitle: 'Pages',
     pagesLede:
       'The store’s editorial pages: policies, the warranty, contact. One URL per page, in two languages.',
