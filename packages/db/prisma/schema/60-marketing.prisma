@@ -280,3 +280,41 @@ model StockAlert {
   @@index([kind, dueAt])
   @@schema("public")
 }
+
+/// One row per renewal reminder a licence line fell due for — sent, or held
+/// out on purpose.
+///
+/// Its own table rather than `StockAlert` (kind RENEWAL_DUE): that table is
+/// unique on (kind, email, variantId), one row per watcher, while a licence
+/// gets several reminders (30, 14 and 3 days before, one after) and the same
+/// customer can hold several lines of one variant with different end dates.
+/// The unique (orderItemId, offsetDays) is what makes the daily sweep
+/// idempotent: a reminder is claimed by inserting its row.
+///
+/// Plain id columns and no relations, so the feature adds no fields to the
+/// order, customer and promotion models that other work is also changing.
+/// The rows are a log; nothing needs to cascade through them.
+model RenewalReminder {
+  id          String    @id @default(cuid())
+  orderItemId String
+  orderId     String
+  variantId   String
+  productId   String
+  customerId  String?
+  email       String
+  /// Relative to expiry: 30 is thirty days before, -7 seven days after.
+  offsetDays  Int
+  expiresAt   DateTime
+  /// In the measured holdout: due, and deliberately not sent.
+  heldOut     Boolean   @default(false)
+  /// Null when held out, or when the send failed.
+  sentAt      DateTime?
+  /// The single-use renewal code, when the customer had marketing consent.
+  promotionId String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([orderItemId, offsetDays])
+  @@index([createdAt])
+  @@index([email])
+  @@schema("public")
+}

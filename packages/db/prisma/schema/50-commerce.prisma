@@ -82,6 +82,11 @@ model CartRecoveryEvent {
   promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   promotionId String?
 
+  /// True when the cart fell in the measured holdout: the step was due and
+  /// deliberately not sent, so recovered revenue can be compared against carts
+  /// that were left alone instead of being credited wholesale to the ladder.
+  heldOut Boolean @default(false)
+
   sentAt    DateTime  @default(now())
   openedAt  DateTime?
   clickedAt DateTime?
