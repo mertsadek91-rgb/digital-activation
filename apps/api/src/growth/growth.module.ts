@@ -7,6 +7,7 @@ import { MarketingModule } from '../marketing/marketing.module.js';
 
 import { BusinessQuoteService } from './business.service.js';
 import { GrowthAdminController, GrowthController } from './growth.controller.js';
+import { ReferralExpiryService } from './referral-expiry.service.js';
 import { ReferralService } from './referral.service.js';
 import { WelcomeService } from './welcome.service.js';
 
@@ -19,7 +20,7 @@ import { WelcomeService } from './welcome.service.js';
 @Module({
   imports: [MarketingModule, MailModule, AuthModule, AccountModule],
   controllers: [GrowthController, GrowthAdminController],
-  providers: [BusinessQuoteService, WelcomeService, ReferralService],
+  providers: [BusinessQuoteService, WelcomeService, ReferralService, ReferralExpiryService],
   exports: [WelcomeService, ReferralService],
 })
 export class GrowthModule {}

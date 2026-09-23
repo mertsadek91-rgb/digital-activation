@@ -38,6 +38,7 @@ import {
   nextOrderNumber,
   sellUnheld,
 } from './orders.js';
+import { type OrderActor, recordOrderTransition, transitionOrder } from './order-status.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { StripeService } from './stripe.service.js';
 
@@ -643,6 +644,8 @@ export class CheckoutService {
     /** What the provider says it took, in minor units. Checked when present. */
     amountMinor?: number;
     riskLevel?: RiskLevel;
+    /** Who is applying it, for the status history. Defaults to the provider. */
+    actor?: OrderActor;
   }): Promise<{ status: OrderStatus; alreadyApplied: boolean; consumed: number }> {
     return this.prisma.client.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
@@ -803,6 +806,16 @@ export class CheckoutService {
         }
       }
 
+      // One event for the net move, written after the compare-and-set won:
+      // the brief PAID before a coupon ran out never left this transaction.
+      await recordOrderTransition(tx, {
+        orderId: order.id,
+        from: OrderStatus.PENDING_PAYMENT,
+        to: status,
+        actor: input.actor ?? { type: 'PROVIDER', id: input.providerRef },
+        reason: reasons.length > 0 ? reasons.join(' ') : `Paid via ${input.provider}`,
+      });
+
       if (reasons.length > 0) {
         await tx.orderNote.create({
           data: {
@@ -933,21 +946,17 @@ export class CheckoutService {
         });
       }
       // Conditional, so the sale is given back once however many refund
-      // events arrive for the same order.
-      const becameRefunded = input.fullyRefunded
-        ? (
-            await tx.order.updateMany({
-              where: { id: payment.orderId, NOT: { status: OrderStatus.REFUNDED } },
-              data: { status: OrderStatus.REFUNDED },
-            })
-          ).count === 1
-        : false;
-      if (!input.fullyRefunded) {
-        await tx.order.update({
-          where: { id: payment.orderId },
-          data: { status: OrderStatus.PARTIALLY_REFUNDED },
-        });
-      }
+      // events arrive for the same order. 'skip', because the money has gone
+      // back whatever the status can say: a late partial event after the full
+      // one must not demote REFUNDED, and must not fail the webhook either.
+      const moved = await transitionOrder(tx, {
+        orderId: payment.orderId,
+        to: input.fullyRefunded ? OrderStatus.REFUNDED : OrderStatus.PARTIALLY_REFUNDED,
+        actor: { type: 'PROVIDER', id: input.chargeId },
+        reason: `Refunded in Stripe (${input.fullyRefunded ? 'full' : 'partial'})`,
+        ifIllegal: 'skip',
+      });
+      const becameRefunded = input.fullyRefunded && moved;
       if (becameRefunded) await countSale(tx, payment.orderId, -1);
       await tx.orderNote.create({
         data: {
@@ -1036,10 +1045,18 @@ export class CheckoutService {
         where: { id: payment.id },
         data: { state: PaymentState.REFUNDED },
       });
-      await tx.order.update({
-        where: { id: order.id },
-        data: { status: OrderStatus.REFUNDED },
+      const moved = await transitionOrder(tx, {
+        orderId: order.id,
+        from: order.status,
+        to: OrderStatus.REFUNDED,
+        actor: { type: 'STAFF', id: input.staffId || null },
+        reason: input.reason,
       });
+      // Lost the compare-and-set: somebody else moved the order since it was
+      // read. Rolling back keeps the refund row from being counted twice.
+      if (!moved) {
+        throw new BadRequestException(`Order ${input.number} just changed. Refresh and try again.`);
+      }
       await countSale(tx, order.id, -1);
     });
     return { status: OrderStatus.REFUNDED, via: 'recorded' };

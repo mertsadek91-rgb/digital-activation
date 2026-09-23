@@ -49,6 +49,7 @@ export function Nav({
     | 'products'
     | 'categories'
     | 'orders'
+    | 'customers'
     | 'queue'
     | 'vault'
     | 'reviews'
@@ -167,6 +168,7 @@ export function Nav({
     { key: 'dashboard', label: t('dashboard') },
     { key: 'queue', label: t('queue'), count: waiting, overdue },
     { key: 'orders', label: t('orders') },
+    { key: 'customers', label: t('customers') },
     { key: 'products', label: t('products') },
     { key: 'categories', label: t('categories') },
     { key: 'messages', label: t('messages'), count: inboxWaiting, overdue: inboxOverdue },

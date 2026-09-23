@@ -32,3 +32,4 @@ export * from './marketing-signals.js';
 export * from './growth.js';
 export * from './offers.js';
 export * from './whatsapp.js';
+export * from './customers-admin.js';

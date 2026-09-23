@@ -5,6 +5,7 @@ import type {
   AdminPageList,
   AdminPageLocale,
   AdminPageRow,
+  AdminPageVersionList,
   CreatePage,
   SetPage,
 } from '@da/contracts';
@@ -279,6 +280,95 @@ export class ContentPagesService {
     });
 
     return this.get(nextSlug ?? slug);
+  }
+
+  /** Every saved state of both locales, newest first, without the bodies. */
+  async versions(slug: string): Promise<AdminPageVersionList> {
+    const rows = await this.load(slug);
+    const current = new Map(rows.map((row) => [row.id, row.version]));
+    const versions = await this.prisma.client.pageVersion.findMany({
+      where: { pageId: { in: rows.map((row) => row.id) } },
+      orderBy: [{ createdAt: 'desc' }, { version: 'desc' }],
+      take: 200,
+      include: {
+        page: { select: { locale: true } },
+        createdBy: { select: { name: true } },
+      },
+    });
+    return {
+      rows: versions.map((version) => ({
+        id: version.id,
+        locale: version.page.locale === Locale.EN ? 'en' : 'ar',
+        version: version.version,
+        title: version.title,
+        blockCount: Array.isArray(version.blocks) ? version.blocks.length : 0,
+        seoTitle: seoField(version.seo, 'title'),
+        author: version.createdBy?.name ?? null,
+        createdAt: version.createdAt.toISOString(),
+        current: current.get(version.pageId) === version.version,
+      })),
+    };
+  }
+
+  /**
+   * Puts an old state back, as a new version.
+   *
+   * A new version rather than a rewind, so restoring is itself in the history
+   * and can be undone the same way — and so the version numbers only ever go
+   * up, which is what "the page as it read on a date" relies on.
+   *
+   * Only what a version holds comes back: title, body and SEO copy. The URL,
+   * the template and the publish status are the page's now, not the
+   * snapshot's, so no redirect is written and nothing is published or taken
+   * down by restoring. A published page gets the old wording live at once,
+   * which is the point of restoring a policy that was edited wrongly.
+   */
+  async restore(slug: string, versionId: string, actorId: string | undefined): Promise<AdminPage> {
+    const rows = await this.load(slug);
+    const snapshot = await this.prisma.client.pageVersion.findFirst({
+      where: { id: versionId, pageId: { in: rows.map((row) => row.id) } },
+    });
+    if (!snapshot) {
+      throw new NotFoundException(
+        say('لا توجد هذه النسخة لهذه الصفحة.', 'That version does not belong to this page.'),
+      );
+    }
+    const row = rows.find((entry) => entry.id === snapshot.pageId);
+    if (!row)
+      throw new NotFoundException(say('لا توجد صفحة بهذا الرابط.', 'No page with that URL.'));
+
+    await this.prisma.client.$transaction(async (tx) => {
+      const saved = await tx.page.update({
+        where: { id: row.id },
+        data: {
+          title: snapshot.title,
+          blocks: snapshot.blocks as Prisma.InputJsonValue,
+          seo: snapshot.seo as Prisma.InputJsonValue,
+          version: { increment: 1 },
+        },
+      });
+      await tx.pageVersion.create({
+        data: {
+          pageId: saved.id,
+          version: saved.version,
+          title: saved.title,
+          blocks: saved.blocks as Prisma.InputJsonValue,
+          seo: saved.seo as Prisma.InputJsonValue,
+          createdById: actorId ?? null,
+        },
+      });
+    });
+
+    await this.audit.record({
+      actorId,
+      action: 'page.restored',
+      entity: 'Page',
+      entityId: row.id,
+      before: summarise(row),
+      after: { restoredVersion: snapshot.version, versionId: snapshot.id },
+    });
+
+    return this.get(slug);
   }
 
   private async load(slug: string): Promise<Page[]> {

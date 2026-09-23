@@ -406,7 +406,30 @@ export const adminOrderLineSchema = z.object({
   deliveredAt: z.string().nullable(),
 });
 
+/**
+ * One status change, as the order's timeline shows it.
+ *
+ * `actor` is a staff member's name for STAFF, the provider's reference for
+ * PROVIDER, and null for SYSTEM (a sweep, or the delivery pipeline).
+ */
+export const adminOrderEventSchema = z.object({
+  id: z.string(),
+  /** Null only for an order's first recorded status. */
+  from: adminOrderRowSchema.shape.status.nullable(),
+  to: adminOrderRowSchema.shape.status,
+  actorType: z.enum(['SYSTEM', 'STAFF', 'PROVIDER']),
+  actor: z.string().nullable(),
+  reason: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type AdminOrderEvent = z.infer<typeof adminOrderEventSchema>;
+
 export const adminOrderDetailSchema = adminOrderRowSchema.extend({
+  /**
+   * Status history, oldest first. Empty for orders placed before it was
+   * recorded; the timeline then starts from `placedAt` alone.
+   */
+  history: z.array(adminOrderEventSchema),
   activationEmail: z.string().nullable(),
   couponCode: z.string().nullable(),
   locale: localeSchema,

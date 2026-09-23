@@ -8,6 +8,7 @@ import {
   type AdminBrandList,
   type AdminPage,
   type AdminPageList,
+  type AdminPageVersionList,
   type CreateArticle,
   type CreatePage,
   type SetArticle,
@@ -81,6 +82,24 @@ export class ContentAdminController {
     @Req() request: StaffRequest,
   ): Promise<AdminPage> {
     return this.pages.update(slug, body, request.staff?.sub);
+  }
+
+  @Get('pages/:slug/versions')
+  @ApiOperation({ summary: 'Saved states of a page, both locales, newest first' })
+  pageVersions(@Param('slug') slug: string): Promise<AdminPageVersionList> {
+    return this.pages.versions(slug);
+  }
+
+  @Post('pages/:slug/versions/:versionId/restore')
+  @ApiOperation({
+    summary: 'Save an old version as the newest one; URL, template and status unchanged',
+  })
+  restorePageVersion(
+    @Param('slug') slug: string,
+    @Param('versionId') versionId: string,
+    @Req() request: StaffRequest,
+  ): Promise<AdminPage> {
+    return this.pages.restore(slug, versionId, request.staff?.sub);
   }
 
   // --- blog -------------------------------------------------------------------

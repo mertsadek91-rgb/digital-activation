@@ -261,3 +261,29 @@ export const setBrandSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, { message: 'لا تغييرات في الطلب.' });
 export type SetBrand = z.infer<typeof setBrandSchema>;
+
+// --- page history -----------------------------------------------------------
+
+/**
+ * One saved state of one locale of a page.
+ *
+ * The body is not in the list: a page's history can run to hundreds of rows
+ * and the panel shows it as a column of dates and names. Restoring reads the
+ * snapshot on the server, so the client never has to hold one.
+ */
+export const adminPageVersionSchema = z.object({
+  id: z.string(),
+  locale: localeSchema,
+  version: z.number().int().min(0),
+  title: z.string(),
+  blockCount: z.number().int().min(0),
+  seoTitle: z.string(),
+  author: z.string().nullable(),
+  createdAt: z.string(),
+  /** True for the snapshot matching the row's current version. */
+  current: z.boolean(),
+});
+export type AdminPageVersion = z.infer<typeof adminPageVersionSchema>;
+
+export const adminPageVersionListSchema = z.object({ rows: z.array(adminPageVersionSchema) });
+export type AdminPageVersionList = z.infer<typeof adminPageVersionListSchema>;

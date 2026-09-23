@@ -13,6 +13,7 @@ import {
 } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { transitionOrder } from '../checkout/order-status.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
 import { MailService } from '../mail/mail.service.js';
 import {
@@ -698,19 +699,34 @@ export class FulfillmentService {
       return;
     }
 
+    // Through the transition map, with 'skip': a re-delivery on an order
+    // already FULFILLED or COMPLETED is not a status change, and must not walk
+    // a COMPLETED order back or fail the delivery that triggered it.
     if (delivered === items.length) {
-      await this.prisma.client.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.FULFILLED, fulfilledAt: new Date() },
-      });
+      await this.prisma.client.$transaction((tx) =>
+        transitionOrder(tx, {
+          orderId,
+          from: order.status,
+          to: OrderStatus.FULFILLED,
+          actor: { type: 'SYSTEM' },
+          reason: 'Every line delivered',
+          data: { fulfilledAt: new Date() },
+          ifIllegal: 'skip',
+        }),
+      );
       return;
     }
 
     if (delivered > 0 && order.status === OrderStatus.PAID) {
-      await this.prisma.client.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.FULFILLING },
-      });
+      await this.prisma.client.$transaction((tx) =>
+        transitionOrder(tx, {
+          orderId,
+          from: order.status,
+          to: OrderStatus.FULFILLING,
+          actor: { type: 'SYSTEM' },
+          reason: `${String(delivered)} of ${String(items.length)} lines delivered`,
+        }),
+      );
     }
   }
 
