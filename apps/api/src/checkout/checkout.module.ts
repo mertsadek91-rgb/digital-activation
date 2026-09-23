@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AccountModule } from '../account/account.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
@@ -24,7 +25,8 @@ import { StripeService } from './stripe.service.js';
   // method where the details a customer needs are not on the screen they end up
   // on — they are in a banking app, later — so the message is part of taking
   // the order rather than part of fulfilling it.
-  imports: [AuthModule, CartModule, FulfillmentModule, MailModule],
+  // AccountModule so the order page can accept a signed-in customer.
+  imports: [AccountModule, AuthModule, CartModule, FulfillmentModule, MailModule],
   controllers: [CheckoutController, PaymentSettingsController],
   providers: [CheckoutService, PaymentSettingsService, StripeService],
   // PaymentSettingsService too, because the launch checklist asks it the one

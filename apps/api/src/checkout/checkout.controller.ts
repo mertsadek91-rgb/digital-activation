@@ -30,7 +30,9 @@ import type { FastifyRequest } from 'fastify';
 import type Stripe from 'stripe';
 import { z } from 'zod';
 
+import { orderLink, verifyOrderAccessKey } from '../common/order-link.js';
 import { ZodPipe } from '../common/zod.pipe.js';
+import { AccountService } from '../account/account.service.js';
 
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { MailService } from '../mail/mail.service.js';
@@ -50,6 +52,7 @@ export class CheckoutController {
     private readonly paymentSettings: PaymentSettingsService,
     private readonly fulfillment: FulfillmentService,
     private readonly mail: MailService,
+    private readonly account: AccountService,
   ) {}
 
   /**
@@ -82,14 +85,31 @@ export class CheckoutController {
     });
   }
 
+  /**
+   * One order, for whoever can show it is theirs.
+   *
+   * Three proofs, any one of which will do: the cart cookie of the browser
+   * that placed it, the signed-in customer it belongs to, or the key carried
+   * in the link the order emails send. The last two are what make that link
+   * work on a phone, or a day later — before, only the first counted, and the
+   * page with the licence on it answered 404 from anywhere else.
+   */
   @Get('orders/:number')
-  @ApiOperation({ summary: 'One order, for the cart that placed it' })
-  order(
+  @ApiOperation({ summary: 'One order, for the cart, customer or emailed link that owns it' })
+  async order(
     @Param('number') number: string,
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
+    @Query('key') key: string | undefined,
     @Req() request: FastifyRequest,
   ): Promise<Order> {
-    return this.checkout.renderOrder(number, query, { cartToken: request.cookies?.da_cart });
+    if (verifyOrderAccessKey(number, key)) {
+      return this.checkout.renderOrder(number, query, { skipOwnerCheck: true });
+    }
+    const session = await this.account.sessionFor(request.cookies?.da_customer);
+    return this.checkout.renderOrder(number, query, {
+      cartToken: request.cookies?.da_cart,
+      customerId: session?.customerId,
+    });
   }
 
   /**
@@ -224,10 +244,16 @@ export class CheckoutController {
             lineTotal: `${line.lineTotal.amount} ${line.lineTotal.currency}`,
             supplyNote: '',
           })),
-          orderUrl: new URL(
-            ROUTES.order(order.number),
-            process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
-          ).toString(),
+          // In the order's language and carrying its key: this email is read
+          // later, from a banking app or another device, where the cart cookie
+          // that placed the order is not.
+          orderUrl: orderLink(
+            process.env.STOREFRONT_URL ??
+              process.env.NEXT_PUBLIC_SITE_URL ??
+              'http://localhost:3000',
+            `${order.locale === 'en' ? '/en' : ''}${ROUTES.order(encodeURIComponent(order.number))}`,
+            order.number,
+          ),
         }),
         // Never the account details: the log answers whether we tried, and the
         // message itself is where the numbers belong.

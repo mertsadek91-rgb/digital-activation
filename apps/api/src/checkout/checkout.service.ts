@@ -956,7 +956,11 @@ export class CheckoutService {
   async renderOrder(
     number: string,
     query: CartQuery,
-    access?: { cartToken?: string | undefined; skipOwnerCheck?: boolean },
+    access?: {
+      cartToken?: string | undefined;
+      customerId?: string | undefined;
+      skipOwnerCheck?: boolean;
+    },
   ): Promise<Order> {
     const order = await this.prisma.client.order.findUnique({
       where: { number },
@@ -986,7 +990,9 @@ export class CheckoutService {
 
     if (access?.skipOwnerCheck !== true) {
       const token = access?.cartToken;
-      if (!token || order.cart?.token !== token) {
+      const byCart = Boolean(token) && order.cart?.token === token;
+      const byCustomer = Boolean(access?.customerId) && order.customerId === access?.customerId;
+      if (!byCart && !byCustomer) {
         // The same answer as a missing order, deliberately. Telling a guesser
         // that DA-2026-00042 exists but is not theirs still tells them how
         // many orders the store has taken.

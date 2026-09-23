@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module.js';
 import { registerPanelLocale } from './common/panel-locale.js';
+import { PrismaErrorFilter } from './common/prisma-error.filter.js';
 
 function trustedHops(): number {
   const hops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
@@ -76,6 +77,14 @@ async function bootstrap(): Promise<void> {
   });
 
   app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
+
+  // Prisma errors that are the caller's problem, answered as such rather than
+  // as a 500 — see the filter for which ones.
+  app.useGlobalFilters(new PrismaErrorFilter());
+
+  // So a deploy's SIGTERM runs onModuleDestroy — the Prisma pools close and an
+  // in-flight request finishes — instead of the process being cut mid-write.
+  app.enableShutdownHooks();
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()

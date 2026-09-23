@@ -21,6 +21,7 @@ import {
   type OrderLineView,
   orderReceived,
 } from '../mail/templates.js';
+import { orderLink } from '../common/order-link.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type ParsedSecret, canonical, parse, parseBlock } from '../vault/credential.js';
@@ -59,10 +60,13 @@ export class FulfillmentService {
     return process.env.STOREFRONT_URL ?? 'http://localhost:3000';
   }
 
-  /** The order page, in the locale the customer bought in. */
+  /**
+   * The order page, in the locale the customer bought in, carrying the key
+   * that opens it from any device — see `order-link.ts`.
+   */
   private orderUrl(number: string, locale: Locale): string {
     const prefix = locale === Locale.EN ? '/en' : '';
-    return `${this.storefront}${prefix}/orders/${encodeURIComponent(number)}`;
+    return orderLink(this.storefront, `${prefix}/orders/${encodeURIComponent(number)}`, number);
   }
 
   private lang(locale: Locale): 'ar' | 'en' {

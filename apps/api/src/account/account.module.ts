@@ -23,5 +23,7 @@ import { ForYouService } from './for-you.service.js';
   imports: [VaultModule, FulfillmentModule, MailModule, ReviewsModule, CatalogModule],
   controllers: [AccountController],
   providers: [AccountService, ForYouService],
+  // The order page accepts a signed-in customer as proof the order is theirs.
+  exports: [AccountService],
 })
 export class AccountModule {}
