@@ -572,7 +572,9 @@ export const api = {
   // --- customers ---------------------------------------------------------------
 
   customers: (q?: string, page = 1) =>
-    request<AdminCustomerList>(`/admin/customers${query({ q, page: page > 1 ? page : undefined })}`),
+    request<AdminCustomerList>(
+      `/admin/customers${query({ q, page: page > 1 ? page : undefined })}`,
+    ),
 
   customer: (id: string) =>
     request<AdminCustomerDetail>(`/admin/customers/${encodeURIComponent(id)}`),

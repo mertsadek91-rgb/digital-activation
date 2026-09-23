@@ -82,10 +82,7 @@ export function canTransition(from: OrderStatus, to: OrderStatus): boolean {
 
 function refuse(from: OrderStatus, to: OrderStatus): never {
   throw new ConflictException(
-    say(
-      `لا يمكن نقل الطلب من ${from} إلى ${to}.`,
-      `An order cannot move from ${from} to ${to}.`,
-    ),
+    say(`لا يمكن نقل الطلب من ${from} إلى ${to}.`, `An order cannot move from ${from} to ${to}.`),
   );
 }
 

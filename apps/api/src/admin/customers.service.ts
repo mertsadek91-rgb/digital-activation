@@ -33,10 +33,7 @@ const EXPORT_BATCH = 500;
  * written in decides: opted in, then out, is out — and opted out, then back
  * in through a new signup, is in. Neither set is NONE, which is not consent.
  */
-export function consentState(
-  optInAt: Date | null,
-  optOutAt: Date | null,
-): MarketingConsentState {
+export function consentState(optInAt: Date | null, optOutAt: Date | null): MarketingConsentState {
   if (optInAt && (!optOutAt || optInAt > optOutAt)) return 'OPTED_IN';
   if (optOutAt) return 'OPTED_OUT';
   return 'NONE';

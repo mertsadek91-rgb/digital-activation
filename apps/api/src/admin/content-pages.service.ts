@@ -334,7 +334,8 @@ export class ContentPagesService {
       );
     }
     const row = rows.find((entry) => entry.id === snapshot.pageId);
-    if (!row) throw new NotFoundException(say('لا توجد صفحة بهذا الرابط.', 'No page with that URL.'));
+    if (!row)
+      throw new NotFoundException(say('لا توجد صفحة بهذا الرابط.', 'No page with that URL.'));
 
     await this.prisma.client.$transaction(async (tx) => {
       const saved = await tx.page.update({
