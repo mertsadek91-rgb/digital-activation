@@ -19,6 +19,7 @@ export * from './product-content.js';
 export * from './cart.js';
 export * from './checkout.js';
 export * from './content.js';
+export * from './content-admin.js';
 export * from './fulfillment.js';
 export * from './media.js';
 export * from './promotion.js';
