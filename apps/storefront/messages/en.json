@@ -294,7 +294,13 @@
     "activationEmailNote": "We will ask for the activation email at checkout",
     "priceChanged": "The current price is <bdi>{price}</bdi> — you keep the price you added at.",
     "quantity": "Quantity",
-    "removeLine": "Remove"
+    "removeLine": "Remove",
+    "restored": "Here is your cart as you left it.",
+    "restoredWithCode": "Here is your cart as you left it, with the discount applied.",
+    "restoreExpired": "That cart link has expired or its order is complete. This is your current cart.",
+    "restoreFailed": "Could not open the cart from that link.",
+    "addedFromLink": "Added to your cart.",
+    "addFromLinkFailed": "Could not add that product from the link."
   },
   "checkout": {
     "title": "Checkout",

@@ -1,0 +1,95 @@
+/*
+ * The renewal and cart-recovery settings screens. Their own file, imported by
+ * the screens, so the shared stylesheet is not edited by every feature.
+ */
+.retention-back {
+  display: inline-block;
+  margin-block-end: 8px;
+}
+.retention-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-block: 12px;
+}
+.retention-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.retention-label {
+  font-weight: 600;
+}
+.retention-field input {
+  max-width: 100%;
+}
+.retention-field.has-error input {
+  border-color: var(--color-danger, #b3261e);
+}
+.retention-error {
+  color: var(--color-danger, #b3261e);
+  font-size: 0.85rem;
+}
+.retention-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-block: 12px;
+}
+.retention-step {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) repeat(2, minmax(140px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+@media (max-width: 640px) {
+  .retention-step {
+    grid-template-columns: 1fr;
+  }
+}
+.retention-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-block: 8px;
+}
+.retention-table th,
+.retention-table td {
+  text-align: start;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+.retention-table td.num,
+.retention-table th.num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.retention-kpis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-block: 12px;
+}
+.retention-kpis div {
+  display: flex;
+  flex-direction: column;
+}
+.retention-kpis strong {
+  font-size: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+.retention-lift dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 8px 0;
+}
+.retention-lift dt {
+  font-weight: 600;
+}
+.retention-lift dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}

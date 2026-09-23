@@ -16,9 +16,11 @@
  */
 import {
   type Cart,
+  type CartRestoreResult,
   type Checkout,
   type Order,
   type PaymentSession,
+  cartRestoreResultSchema,
   cartSchema,
   checkoutSchema,
   orderSchema,
@@ -143,6 +145,21 @@ export const cartApi = {
 
   removeCoupon: (options: Options): Promise<Cart> =>
     request('/cart/coupon', cartSchema, { ...options, method: 'DELETE' }).then(announce),
+
+  /**
+   * Opens the cart a recovery email points at in this browser. The API sets
+   * the cookie; `restored` is false when the link had expired or its cart was
+   * already paid for, and the cart returned is then the one this browser had.
+   */
+  restore: (token: string, options: Options): Promise<CartRestoreResult> =>
+    request('/cart/restore', cartRestoreResultSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    }).then((result) => {
+      announce(result.cart);
+      return result;
+    }),
 
   startCheckout: (
     body: {

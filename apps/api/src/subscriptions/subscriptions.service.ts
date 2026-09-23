@@ -244,9 +244,13 @@ export class SubscriptionsService {
   async unsubscribe(token: string): Promise<{ ok: true }> {
     const email = readNewsletterToken(token, 'newsletter-unsubscribe');
     if (!email) throw new BadRequestException('This link is not valid.');
+    // The withdrawal is stamped, not just the consent cleared: without it an
+    // address that said "stop" looks like one that never said anything, and
+    // the cart reminders — which go to people who never opted in — would keep
+    // writing to somebody who asked them not to.
     await this.prisma.client.customer.updateMany({
       where: { email },
-      data: { marketingOptInAt: null },
+      data: { marketingOptInAt: null, marketingOptOutAt: new Date() },
     });
     return { ok: true };
   }

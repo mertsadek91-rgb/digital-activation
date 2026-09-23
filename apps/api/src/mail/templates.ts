@@ -24,12 +24,14 @@ export interface Rendered {
 const BRAND_AR = 'متجر التفعيل الرقمي';
 const BRAND_EN = 'Digital Activation';
 
-const TEAL = '#148576';
-const INK = '#1c2422';
-const MUTED = '#6b7472';
-const BORDER = '#e2e5e4';
+// The palette and the helpers below are exported for templates that live with
+// their feature (the retention emails), so every message shares one frame.
+export const TEAL = '#148576';
+export const INK = '#1c2422';
+export const MUTED = '#6b7472';
+export const BORDER = '#e2e5e4';
 
-function shell(input: {
+export function shell(input: {
   locale: 'ar' | 'en';
   title: string;
   body: string;
@@ -68,7 +70,7 @@ ${input.body}
 }
 
 /** Everything interpolated goes through this. An order number is user data. */
-function escape(value: string): string {
+export function escape(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -76,7 +78,7 @@ function escape(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function button(href: string, label: string): string {
+export function button(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0;"><tr><td style="background:${TEAL};border-radius:5px;">
     <a href="${escape(href)}" style="display:inline-block;padding:12px 24px;font:700 15px/1 'Segoe UI',Tahoma,Arial,sans-serif;color:#ffffff;text-decoration:none;">${escape(label)}</a>
   </td></tr></table>`;
