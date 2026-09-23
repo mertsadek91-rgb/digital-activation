@@ -526,7 +526,8 @@
     "myReviews": "My reviews",
     "forYou": "Chosen for you",
     "metaTitle": "My account",
-    "paidOn": "paid <ltr>{date}</ltr>"
+    "paidOn": "paid <ltr>{date}</ltr>",
+    "referral": "Invite a friend"
   },
   "licences": {
     "copy": "Copy",
@@ -636,5 +637,60 @@
     "notFoundTitle": "Page not found",
     "notFoundDescription": "The link you opened no longer points to a page in this store.",
     "page": "Page {page}"
+  },
+  "growth": {
+    "close": "Close"
+  },
+  "businessQuote": {
+    "link": "Need {count}+ licences? Get a business quote",
+    "title": "Business quote",
+    "lede": "For {product}. We reply with a written quote and a VAT invoice, usually within one working day.",
+    "company": "Company name",
+    "name": "Your name",
+    "email": "Email",
+    "phone": "Phone",
+    "vatNumber": "VAT number",
+    "optional": "(optional)",
+    "seats": "Number of licences",
+    "message": "Anything else",
+    "submit": "Send request",
+    "sent": "We have your request and sent a confirmation to your inbox. Our sales team will be in touch soon.",
+    "error": "The request could not be sent. Check the fields and try again."
+  },
+  "welcome": {
+    "defaultHeadline": "Licence deals in your inbox",
+    "body": "Deals and new releases only, and you can unsubscribe at any time.",
+    "offer": "Confirm your email for {percent}% off your first order.",
+    "licence": "Discount licence no.",
+    "email": "Email",
+    "consent": "I agree to receive deal emails from the store. We send a confirmation first, will not email you before you confirm, and you can unsubscribe at any time.",
+    "submit": "Subscribe",
+    "noThanks": "No thanks",
+    "sent": "We sent a confirmation email. Follow its link to finish subscribing.",
+    "sentWithCode": "We sent a confirmation email. Once you follow its link, we will send your first-order code.",
+    "needConsent": "Tick the consent box first.",
+    "error": "Could not subscribe. Check the address and try again."
+  },
+  "referral": {
+    "landingTitle": "An invitation from a friend",
+    "landingOffer": "You get {percent}% off your first order.",
+    "landingGeneric": "You get a discount on your first order.",
+    "landingHow": "It is applied in the cart automatically when you add your first product — there is no code to copy. First order only, and not combined with another code.",
+    "licence": "Discount licence no.",
+    "working": "One moment…",
+    "invalidTitle": "This link is not active",
+    "invalidBody": "The programme may be paused, or the link was copied short. The store itself is open.",
+    "browse": "Browse the store",
+    "accountTitle": "Invite a friend",
+    "off": "The referral programme is not running at the moment.",
+    "terms": "Your friend gets {percent}% off their first order, and you get a ${reward} code {days} days after they pay, unless the order is refunded.",
+    "yourLink": "Your link",
+    "copy": "Copy link",
+    "copied": "Copied",
+    "shareWhatsApp": "Share on WhatsApp",
+    "shareText": "{percent}% off a first order of software licences: {link}",
+    "pending": "Waiting to clear",
+    "rewarded": "Rewards received",
+    "fineprint": "Referring yourself or another address of yours does not count. The reward is a single-use code in your name, sent by email."
   }
 }

@@ -7,6 +7,7 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { BusinessQuote } from '../../../../components/business-quote';
 import { BuyBox } from '../../../../components/buy-box';
 import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
@@ -18,6 +19,7 @@ import { isArabic } from '../../../../i18n/locale';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
+import { getPublicMarketing } from '../../../../lib/growth-server';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
 
@@ -90,9 +92,10 @@ export default async function ProductPage({ params }: Props) {
   const tf = await getTranslations('format');
   const ar = isArabic(locale);
 
-  const [product, reviews] = await Promise.all([
+  const [product, reviews, marketing] = await Promise.all([
     getProduct(slug, { locale }),
     getProductReviews(slug, { locale }),
+    getPublicMarketing(),
   ]);
   // A slug that no longer exists may have been renamed rather than removed —
   // the redirect map is consulted before the 404, and the miss is recorded.
@@ -243,6 +246,15 @@ export default async function ProductPage({ params }: Props) {
               a page where choosing "3 years" leaves the 1-year price on screen
               is worse than one with no picker. */}
           <BuyBox product={product} locale={locale} />
+
+          {marketing?.business ? (
+            <BusinessQuote
+              productSlug={product.slug}
+              productName={product.name}
+              minSeats={marketing.business.minSeats}
+              locale={locale}
+            />
+          ) : null}
 
           {!selected.inStock ? (
             <div className="oos">
