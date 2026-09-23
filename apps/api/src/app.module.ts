@@ -19,6 +19,7 @@ import { MediaModule } from './media/media.module.js';
 import { validateEnv } from './config/env.js';
 import { HealthController } from './health/health.controller.js';
 import { PrismaModule } from './prisma/prisma.module.js';
+import { RetentionModule } from './retention/retention.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
 import { VaultModule } from './vault/vault.module.js';
@@ -74,6 +75,7 @@ import { VaultModule } from './vault/vault.module.js';
     ReviewsModule,
     SubscriptionsModule,
     MarketingModule,
+    RetentionModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],

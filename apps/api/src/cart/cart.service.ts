@@ -113,7 +113,15 @@ export class CartService {
         where: { token },
         include: CART_INCLUDE,
       });
-      if (existing && existing.stage !== CartStage.CLOSED) return existing;
+      // RECOVERED is a paid cart too — one a recovery email brought back —
+      // and is as finished as CLOSED.
+      if (
+        existing &&
+        existing.stage !== CartStage.CLOSED &&
+        existing.stage !== CartStage.RECOVERED
+      ) {
+        return existing;
+      }
     }
 
     return this.prisma.client.cart.create({

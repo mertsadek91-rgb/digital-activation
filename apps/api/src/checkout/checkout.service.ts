@@ -146,9 +146,20 @@ export class CheckoutService {
     const promotion = fresh.couponCode
       ? await this.prisma.client.promotion.findFirst({
           where: { code: fresh.couponCode, isActive: true },
-          select: { id: true, perCustomerLimit: true },
+          select: { id: true, perCustomerLimit: true, issuedToId: true },
         })
       : null;
+
+    // A code minted for one customer (renewal and cart-recovery offers) is
+    // theirs. Its usage limit already stops it being used twice; this stops
+    // it being used once by somebody it was forwarded to.
+    if (promotion?.issuedToId && promotion.issuedToId !== customer.id) {
+      throw new BadRequestException(
+        query.locale === 'en'
+          ? 'This code was issued to another customer.'
+          : 'هذا الكود صادر لعميل آخر.',
+      );
+    }
 
     // Refused before payment rather than discovered after it. `markPaid`
     // checks again — two tabs can race past this — but the shopper who has
@@ -750,9 +761,18 @@ export class CheckoutService {
       await countSale(tx, order.id, 1);
 
       if (order.cartId) {
+        // RECOVERED only when a recovery email actually went to this cart
+        // (not a held-out step), so the ladder is credited with the carts it
+        // wrote to and nothing else.
+        const emailed = await tx.cartRecoveryEvent.count({
+          where: { cartId: order.cartId, heldOut: false },
+        });
         await tx.cart.update({
           where: { id: order.cartId },
-          data: { stage: CartStage.CLOSED, recoveredOrderId: order.id },
+          data: {
+            stage: emailed > 0 ? CartStage.RECOVERED : CartStage.CLOSED,
+            recoveredOrderId: order.id,
+          },
         });
       }
 
