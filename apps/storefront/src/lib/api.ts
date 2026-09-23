@@ -63,6 +63,12 @@ interface FetchOptions {
   sort?: string;
   /** What was searched for. Only the search endpoint reads it. */
   q?: string;
+  /**
+   * Listing filters, already in the API's form (`apiFilters` in
+   * `lib/listing`). Part of the URL, so each filtered state is cached on its
+   * own like every other response.
+   */
+  filters?: Record<string, string>;
 }
 
 /**
@@ -90,6 +96,8 @@ function buildUrl(pathname: string, options: FetchOptions & { currency: string }
   if (options.perPage) url.searchParams.set('perPage', String(options.perPage));
   if (options.sort) url.searchParams.set('sort', options.sort);
   if (options.q !== undefined) url.searchParams.set('q', options.q);
+  for (const [key, value] of Object.entries(options.filters ?? {}))
+    url.searchParams.set(key, value);
 
   const token = process.env.PREVIEW_TOKEN;
   if (token && !indexingPolicy(process.env.NEXT_PUBLIC_SITE_URL).index) {

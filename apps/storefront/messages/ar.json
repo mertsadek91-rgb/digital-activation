@@ -754,5 +754,42 @@
     "countdown": "ينتهي سعر التخفيض خلال {days}<ltr>{time}</ltr>",
     "countdownDays": "{days, plural, zero {{days, number, latn} يوم} one {يوم} two {يومين} few {{days, number, latn} أيام} many {{days, number, latn} يوماً} other {{days, number, latn} يوم}} و ",
     "countdownOver": "انتهى التخفيض. حدِّث الصفحة لرؤية السعر الحالي."
+  },
+  "filters": {
+    "title": "تصفية النتائج",
+    "button": "{count, plural, =0 {التصفية} other {التصفية (#)}}",
+    "apply": "عرض النتائج",
+    "clearAll": "مسح الكل",
+    "close": "إغلاق التصفية",
+    "active": "عوامل التصفية المختارة",
+    "remove": "إزالة عامل التصفية: {label}",
+    "brand": "العلامة التجارية",
+    "platform": "النظام",
+    "term": "مدة الترخيص",
+    "devices": "عدد الأجهزة",
+    "price": "السعر",
+    "availability": "التوفّر",
+    "termOption": {
+      "lifetime": "مدى الحياة",
+      "year": "سنوي",
+      "month": "شهري أو أقل"
+    },
+    "devicesOption": {
+      "1": "جهاز واحد",
+      "2-5": "من 2 إلى 5 أجهزة",
+      "5+": "أكثر من 5 أو غير محدود"
+    },
+    "priceUnder": "أقل من {max}",
+    "priceBetween": "{min} – {max}",
+    "priceOver": "{min} فأكثر",
+    "priceAny": "أي سعر",
+    "priceNote": "نطاقات السعر محددة بالدولار الأمريكي وتظهر بعملتك.",
+    "inStock": "متاح الآن",
+    "onSale": "عليه خصم",
+    "noResults": "لا توجد منتجات تطابق هذه الاختيارات.",
+    "noResultsHint": "أزل أحد عوامل التصفية، أو امسحها كلها لعرض كل المنتجات.",
+    "sortFeatured": "المقترح",
+    "sortPriceAsc": "السعر: من الأقل إلى الأعلى",
+    "sortPriceDesc": "السعر: من الأعلى إلى الأقل"
   }
 }

@@ -754,5 +754,42 @@
     "countdown": "The sale price ends in {days}<ltr>{time}</ltr>",
     "countdownDays": "{days, plural, one {# day} other {# days}} ",
     "countdownOver": "The sale has ended. Refresh the page to see the current price."
+  },
+  "filters": {
+    "title": "Filters",
+    "button": "{count, plural, =0 {Filters} other {Filters (#)}}",
+    "apply": "Show results",
+    "clearAll": "Clear all",
+    "close": "Close filters",
+    "active": "Active filters",
+    "remove": "Remove filter: {label}",
+    "brand": "Brand",
+    "platform": "Platform",
+    "term": "Licence term",
+    "devices": "Devices",
+    "price": "Price",
+    "availability": "Availability",
+    "termOption": {
+      "lifetime": "Lifetime",
+      "year": "Yearly",
+      "month": "Monthly or shorter"
+    },
+    "devicesOption": {
+      "1": "1 device",
+      "2-5": "2–5 devices",
+      "5+": "More than 5, or unlimited"
+    },
+    "priceUnder": "Under {max}",
+    "priceBetween": "{min} – {max}",
+    "priceOver": "{min} and over",
+    "priceAny": "Any price",
+    "priceNote": "Price bands are set in US dollars and shown in your currency.",
+    "inStock": "Available now",
+    "onSale": "On sale",
+    "noResults": "Nothing matches these filters.",
+    "noResultsHint": "Remove a filter, or clear them all to see every product.",
+    "sortFeatured": "Featured",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low"
   }
 }

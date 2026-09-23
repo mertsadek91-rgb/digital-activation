@@ -33,6 +33,22 @@ export function formatPrice(price: Pick<DisplayPrice, 'amount' | 'currency'>): s
 }
 
 /**
+ * A whole amount in a currency — a price band's edge, not a price. Same
+ * symbol and digits as `formatPrice`, no decimals: "under 94" is a band, and
+ * "under 93.75" reads like a price somebody forgot to round.
+ */
+export function formatWholeAmount(amount: string, currency: string): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    numberingSystem: 'latn',
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(Number(amount));
+}
+
+/**
  * The licence term in words.
  *
  * Takes only the two fields it reads, not a whole variant. A cart line carries
