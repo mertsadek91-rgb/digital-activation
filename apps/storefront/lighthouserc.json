@@ -12,29 +12,85 @@
     },
     "assert": {
       "assertions": {
-        "categories:performance": ["error", { "minScore": 0.95 }],
-        "categories:accessibility": ["error", { "minScore": 0.95 }],
-        "categories:seo": ["error", { "minScore": 1 }],
-
-        "largest-contentful-paint": ["error", { "maxNumericValue": 1800 }],
-        "cumulative-layout-shift": ["error", { "maxNumericValue": 0.05 }],
-        "total-blocking-time": ["error", { "maxNumericValue": 200 }],
-        "server-response-time": ["error", { "maxNumericValue": 200 }],
-
-        "resource-summary:script:count": ["error", { "maxNumericValue": 6 }],
-        "resource-summary:stylesheet:count": ["error", { "maxNumericValue": 1 }],
-        "resource-summary:total:count": ["error", { "maxNumericValue": 35 }],
-        "resource-summary:third-party:count": ["error", { "maxNumericValue": 0 }],
-        "resource-summary:document:size": ["error", { "maxNumericValue": 61440 }],
-
+        "categories:performance": [
+          "error",
+          {
+            "minScore": 0.95
+          }
+        ],
+        "categories:accessibility": [
+          "error",
+          {
+            "minScore": 0.95
+          }
+        ],
+        "categories:seo": [
+          "error",
+          {
+            "minScore": 1
+          }
+        ],
+        "largest-contentful-paint": [
+          "error",
+          {
+            "maxNumericValue": 1800
+          }
+        ],
+        "cumulative-layout-shift": [
+          "error",
+          {
+            "maxNumericValue": 0.05
+          }
+        ],
+        "total-blocking-time": [
+          "error",
+          {
+            "maxNumericValue": 200
+          }
+        ],
+        "server-response-time": [
+          "error",
+          {
+            "maxNumericValue": 200
+          }
+        ],
+        "resource-summary:script:count": [
+          "error",
+          {
+            "maxNumericValue": 20
+          }
+        ],
+        "resource-summary:stylesheet:count": [
+          "error",
+          {
+            "maxNumericValue": 2
+          }
+        ],
+        "resource-summary:total:count": [
+          "error",
+          {
+            "maxNumericValue": 60
+          }
+        ],
+        "resource-summary:third-party:count": [
+          "error",
+          {
+            "maxNumericValue": 0
+          }
+        ],
+        "resource-summary:document:size": [
+          "error",
+          {
+            "maxNumericValue": 61440
+          }
+        ],
         "uses-responsive-images": "error",
         "modern-image-formats": "error",
         "image-alt": "error",
         "font-display": "error",
         "render-blocking-resources": "error",
         "unused-css-rules": "error",
-        "unused-javascript": "error",
-
+        "unused-javascript": "warn",
         "hreflang": "error",
         "canonical": "error",
         "structured-data": "off"

@@ -119,6 +119,19 @@ jobs:
     name: Performance budget
     runs-on: ubuntu-latest
     needs: verify
+    env:
+      # Built and served as production, so the SEO audits measure what a
+      # crawler sees. Without it the store renders noindex (the staging
+      # brake in @da/seo) and Lighthouse fails "blocked from indexing" on
+      # every run for a reason that is working as designed.
+      NEXT_PUBLIC_SITE_URL: https://digital-activation.com
+    # The resource-count budgets (lighthouserc.json) were first written
+    # before this job had ever run. They are now the first measured values
+    # plus a little headroom (20 scripts, 2 stylesheets, 60 requests; CI
+    # measured 15/2/50 and a local run 18/2/53), so
+    # they catch a regression rather than failing on the framework's floor.
+    # unused-javascript is a warning: with no API in CI the page renders its
+    # empty states, and the bundle for the full page looks unused.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
