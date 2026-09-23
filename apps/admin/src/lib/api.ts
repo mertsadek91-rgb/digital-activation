@@ -14,6 +14,8 @@ import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18
 import type {
   MarketingFeature,
   MarketingSettings,
+  ReviewRequestStats,
+  SocialProofPreview,
   AdminArticle,
   AdminArticleList,
   AdminBrand,
@@ -524,6 +526,12 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(value),
     }),
+
+  /** Which products would show a purchase notice now, under the saved settings. */
+  socialProofPreview: () => request<SocialProofPreview>('/admin/marketing/social-proof/preview'),
+
+  /** Review invitations sent in the last 30 days. */
+  reviewRequestStats: () => request<ReviewRequestStats>('/admin/marketing/review-requests/stats'),
 
   /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
   refundOrder: (number: string, reason: string) =>
