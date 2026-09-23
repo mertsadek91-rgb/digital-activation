@@ -358,7 +358,11 @@ Two things to run once, as the owner role, in this order:
      the migration before the code**;
    - `20260923180000_retention_reminders` (`RenewalReminder`,
      `CartRecoveryEvent.heldOut`);
-   - `20260923190000_referral_redemption` (`ReferralRedemption`).
+   - `20260923190000_referral_redemption` (`ReferralRedemption`);
+   - `20260923200000_whatsapp_channel` (WhatsApp number and consent on
+     `Customer`, `NotificationLog.providerMessageId`/`deliveryStatus`,
+     `RenewalReminder.channel`, `WhatsappInbound`) — the checkout writes the
+     new `Customer` columns, so deploy it before the code.
      All are additive.
 2. Re-run `packages/db/prisma/init/roles.prod.sql` — it now revokes UPDATE and
    DELETE on `AuditLog`, `StockMovement` and `KeyImportBatch` from `da_app`, and
@@ -384,3 +388,130 @@ seasonal-sale and offer screens refuse to enable a discount without it.
 Promotional emails go only to customers with recorded marketing consent and
 carry a one-click unsubscribe. Set `API_PUBLIC_URL` (or `NEXT_PUBLIC_API_URL`)
 so the `List-Unsubscribe` header can point at the API.
+
+## 10. WhatsApp
+
+Optional. Cart recovery and renewal reminders can go on WhatsApp **instead
+of** email to customers who ticked the WhatsApp box at checkout — the Cloud
+API directly, no reseller. Until the four variables below are set and the
+channel is switched on (Admin → Marketing → WhatsApp), nothing changes:
+everything stays on email.
+
+### Meta setup, once
+
+1. **Business verification.** Meta Business Suite → Settings → Security
+   Centre → Start verification, with the commercial registration. Without it
+   the number is capped at 250 business-initiated conversations a day.
+2. **App and number.** developers.facebook.com → Create app → Business →
+   add the WhatsApp product. In WhatsApp Manager add the store's number (one
+   that is not already on the WhatsApp app — it cannot be on both), verify it
+   by SMS or call, and set the display name, which Meta reviews. Copy the
+   **Phone number ID** (a long number, not the phone number) into
+   `WHATSAPP_PHONE_NUMBER_ID`.
+3. **Permanent token.** Business Settings → Users → System users → Add
+   (role Admin) → Assign assets: the app (full control) and the WhatsApp
+   account → Generate token, expiry **Never**, permissions
+   `whatsapp_business_messaging` and `whatsapp_business_management`. That is
+   `WHATSAPP_ACCESS_TOKEN`. The token on the app's "API setup" page lasts 24
+   hours; do not use it.
+4. **App secret.** App dashboard → App settings → Basic → App secret →
+   `WHATSAPP_APP_SECRET`. Every webhook delivery is checked against it
+   (`X-Hub-Signature-256`); without it the webhook refuses everything.
+5. **Webhook.** Generate any long random string for `WHATSAPP_VERIFY_TOKEN`
+   and restart the API. App dashboard → WhatsApp → Configuration → Webhook →
+   Edit: callback URL `<API_PUBLIC_URL>/v1/webhooks/whatsapp` (the admin
+   screen prints it when `API_PUBLIC_URL` is set), verify token the same
+   string. Meta calls the URL once to check it. Then **Webhook fields →
+   subscribe to `messages`** — that one field carries both the delivery
+   statuses and the customers' replies (STOP).
+6. Switch the app to **Live** mode, or only the test numbers listed on the
+   app can receive anything.
+
+### Templates to submit
+
+WhatsApp Manager → Message templates → Create. Two templates, each approved
+in Arabic (`ar`) and English (`en`) under the same name; put the names on the
+admin screen. The code sends exactly these variables in this order
+(`apps/api/src/whatsapp/templates.ts`), so the wording may change but the
+number of `{{n}}` may not.
+
+The URL button in both: type **Visit website**, URL type **Dynamic**, URL
+`<STOREFRONT_URL>/{{1}}` (for example `https://digital-activation.com/{{1}}`).
+The code sends the path after the domain — `cart?restore=…` or
+`en/cart?add=…` — so the button opens the signed link.
+
+**1. Abandoned cart — category Marketing**, suggested name `cart_reminder`.
+
+Arabic body:
+
+```
+مرحباً {{1}}، ما زالت سلتك في ديجيتال أكتيفيشن بانتظارك: {{2}}.
+أكمل طلبك من الزر أدناه متى شئت، وستجد السلة كما تركتها.
+```
+
+Arabic footer: `لإيقاف هذه الرسائل أرسل: إيقاف`
+Arabic button text: `أكمل الطلب`
+
+English body:
+
+```
+Hi {{1}}, your cart at Digital Activation is still waiting: {{2}}.
+Complete your order with the button below whenever you are ready — it is just as you left it.
+```
+
+English footer: `Reply STOP to stop these messages`
+English button text: `Complete order`
+
+Samples for review: `{{1}}` = `سارة` / `Sarah`; `{{2}}` =
+`Microsoft Office 2021 Pro Plus (SAR 249.00)`; button `{{1}}` =
+`cart?restore=sample`. `{{2}}` may also carry the discount line — "with 10%
+off applied when you open the link — discount licence …" — when the rung has
+one; the licence number is added by the code from the cart-recovery screen.
+
+**2. Renewal reminder — category Utility**, suggested name
+`licence_renewal_reminder`. No offer, ever: a Utility template with a
+promotion in it is re-categorised as Marketing, and the renewal code stays in
+the email for customers with email consent.
+
+Arabic body:
+
+```
+مرحباً {{1}}، هذا تذكير بموعد ترخيص {{2}}: {{3}}.
+يمكنك تجديده من الزر أدناه ليستمر دون انقطاع.
+```
+
+Arabic footer: `لإيقاف هذه الرسائل أرسل: إيقاف`
+Arabic button text: `جدّد الترخيص`
+
+English body:
+
+```
+Hi {{1}}, a reminder about your {{2}} licence: it {{3}}.
+You can renew it with the button below so it keeps working without a break.
+```
+
+English footer: `Reply STOP to stop these messages`
+English button text: `Renew licence`
+
+Samples: `{{1}}` = `سارة` / `Sarah`; `{{2}}` = `Microsoft 365 Personal`;
+`{{3}}` = `ينتهي في 12 أكتوبر 2026` / `ends on 12 October 2026` (after
+expiry the code sends `انتهى في …` / `ended on …`); button `{{1}}` =
+`cart?add=sample`.
+
+### How it behaves
+
+- A step goes to WhatsApp only when the channel is on, "prefer WhatsApp" is
+  on, the token and number id are set, that purpose has a template name, and
+  the customer has WhatsApp consent not withdrawn since. Otherwise email, as
+  before. Never both: a WhatsApp send replaces the email for that step. If
+  Meta refuses the message outright (template missing, number not on
+  WhatsApp), the step falls back to email where email is allowed.
+- Holdout, quiet hours, stale-step and once-per-offset rules are the cart
+  recovery and renewal settings', unchanged; the channel is recorded on
+  `CartRecoveryEvent.channel` and `RenewalReminder.channel`.
+- A reply of STOP / إيقاف / إلغاء / unsubscribe (any case, any hamza) clears
+  the customer's WhatsApp opt-in and gets one confirmation. Meta's error
+  131050 (the customer blocked marketing inside WhatsApp) is recorded the
+  same way. Email consent is untouched by either.
+- The admin screen's test send (ADMIN only, 5 a minute, audited) sends the
+  saved template with sample values to one number in international form.
