@@ -1,0 +1,127 @@
+/* The offers and seasonal-sales screens. Builds on `.promo-form .field`. */
+
+.offers-admin,
+.offers-section {
+  display: grid;
+  gap: var(--spacing-1);
+  margin-block-start: var(--spacing-2);
+}
+
+.offers-section h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.offers-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-1);
+}
+
+.offers-rows > li {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.offers-pair {
+  display: grid;
+  gap: var(--spacing-1);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  align-items: start;
+}
+
+.offers-pair .actions {
+  grid-column: 1 / -1;
+}
+
+.offers-pair .field,
+.offers-filter,
+.offers-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
+.offers-pair select,
+.offers-pair input,
+.offers-filter input {
+  font: inherit;
+  font-size: var(--text-base);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  min-block-size: 40px;
+}
+
+.offers-inline {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.offers-inline select {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* Loud on purpose: a discount shown in Saudi Arabia without its licence
+   number is the one mistake this screen exists to prevent. */
+.offers-alarm {
+  margin: 0;
+  padding: 10px 12px;
+  border: 2px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.offers-sale {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+}
+
+.offers-sale p {
+  margin: 4px 0 0;
+}
+
+.offers-scope {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.offers-picks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-block-size: 18rem;
+  overflow-y: auto;
+}
+
+.offers-stats table {
+  border-collapse: collapse;
+  inline-size: 100%;
+  max-inline-size: 40rem;
+  font-size: var(--text-sm);
+}
+
+.offers-stats th,
+.offers-stats td {
+  padding: 6px 8px;
+  border-block-end: 1px solid var(--color-border);
+  text-align: start;
+}

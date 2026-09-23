@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CardPayment } from '../../../components/card-payment';
 import { CountrySelect } from '../../../components/country-select';
 import { useMarketing } from '../../../components/marketing-context';
+import { DiscountLicence } from '../../../components/offer-suggestions';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
 import { ProductTrust } from '../../../components/product-trust';
 import { TrustBlock } from '../../../components/trust-block';
@@ -62,6 +63,7 @@ export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const trust = useMarketing()?.trust ?? null;
   const tCart = useTranslations('cart');
+  const tOffers = useTranslations('offers');
   const tc = useTranslations('common');
 
   const [cart, setCart] = useState<Cart | null>(null);
@@ -424,7 +426,19 @@ export default function CheckoutPage() {
                   <dt>{tc('subtotal')}</dt>
                   <dd>{formatPrice(cart.subtotal)}</dd>
                 </div>
-                {cart.coupon ? (
+                {/* The one discount the total carries: the coupon, or the
+                    volume / pair discount that beat it. */}
+                {cart.automaticDiscount ? (
+                  <div className="totals-discount">
+                    <dt>
+                      {cart.automaticDiscount.kind === 'volume'
+                        ? tOffers('volumeApplied', { percent: cart.automaticDiscount.percent })
+                        : tOffers('pairApplied')}
+                      <DiscountLicence number={cart.automaticDiscount.licenceNumber} />
+                    </dt>
+                    <dd>−{formatPrice(cart.discount)}</dd>
+                  </div>
+                ) : cart.coupon ? (
                   <div className="totals-discount">
                     <dt>{cart.coupon.name}</dt>
                     <dd>−{formatPrice(cart.discount)}</dd>

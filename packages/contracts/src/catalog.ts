@@ -73,6 +73,27 @@ export const displayPriceSchema = z.object({
 });
 export type DisplayPrice = z.infer<typeof displayPriceSchema>;
 
+/**
+ * A scheduled sale running on a product now.
+ *
+ * Travels beside the price rather than inside it: the price itself is already
+ * the sale price, with the real current price as its compare-at, so nothing
+ * that reads `DisplayPrice` — the card, the structured data — needs to know a
+ * sale exists. This is only what the badge, the licence line and an honest
+ * countdown need. `endsAt` is when the price really comes back.
+ */
+export const saleBadgeSchema = z.object({
+  id: z.string(),
+  /** In the page's locale already. */
+  name: z.string(),
+  percent: z.number().min(0).max(90),
+  endsAt: z.string(),
+  /** The Ministry of Commerce discount licence, shown beside the discount. */
+  licenceNumber: z.string(),
+  showCountdown: z.boolean(),
+});
+export type SaleBadge = z.infer<typeof saleBadgeSchema>;
+
 export const catalogVariantSchema = z.object({
   id: z.string(),
   sku: z.string(),
@@ -158,6 +179,9 @@ export const catalogProductSchema = z.object({
 
   /** True when this product is not published; only reachable in preview. */
   isDraft: z.boolean(),
+
+  /** The seasonal sale on this product now, if any. Its prices already include it. */
+  sale: saleBadgeSchema.nullable().default(null),
 });
 export type CatalogProduct = z.infer<typeof catalogProductSchema>;
 
@@ -191,6 +215,8 @@ export const catalogCardSchema = z.object({
   salesCount: z.number().int().min(0),
   brand: z.string().nullable(),
   isDraft: z.boolean(),
+  /** The seasonal sale on this product now, if any. `price` already includes it. */
+  sale: saleBadgeSchema.nullable().default(null),
 });
 export type CatalogCard = z.infer<typeof catalogCardSchema>;
 

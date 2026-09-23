@@ -30,3 +30,4 @@ export * from './marketing.js';
 export * from './retention.js';
 export * from './marketing-signals.js';
 export * from './growth.js';
+export * from './offers.js';

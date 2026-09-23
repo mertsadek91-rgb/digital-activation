@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { SalesModule } from '../offers/sales.module.js';
 
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
@@ -27,7 +28,8 @@ import { StripeService } from './stripe.service.js';
   // on — they are in a banking app, later — so the message is part of taking
   // the order rather than part of fulfilling it.
   // AccountModule so the order page can accept a signed-in customer.
-  imports: [AccountModule, AuthModule, CartModule, FulfillmentModule, MailModule],
+  // SalesModule so a cross-sell offer quotes the sale price the cart will use.
+  imports: [AccountModule, AuthModule, CartModule, FulfillmentModule, MailModule, SalesModule],
   controllers: [CheckoutController, PaymentSettingsController],
   providers: [CheckoutService, ExpirySweepService, PaymentSettingsService, StripeService],
   // PaymentSettingsService too, because the launch checklist asks it the one

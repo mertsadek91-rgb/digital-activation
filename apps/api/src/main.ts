@@ -46,19 +46,10 @@ async function bootstrap(): Promise<void> {
   // itself lives beside the storage it opens, where it can be tested.
   registerPanelLocale(app.getHttpAdapter().getInstance());
 
-  // Form bodies are accepted and ignored, for one caller: the mailbox
-  // provider's RFC 8058 one-click unsubscribe, which POSTs
-  // `List-Unsubscribe=One-Click` as a form. Without a parser Fastify answers
-  // 415 and the unsubscribe silently fails. Every route validates its body
-  // with zod, so a string where JSON was expected is still refused.
-  app
-    .getHttpAdapter()
-    .getInstance()
-    .addContentTypeParser(
-      'application/x-www-form-urlencoded',
-      { parseAs: 'string' },
-      (_request, body, done) => done(null, body),
-    );
+  // No form-body parser is added here: Nest's Fastify adapter already
+  // registers one for application/x-www-form-urlencoded, which is what the
+  // mailbox provider's RFC 8058 one-click unsubscribe POSTs. Registering a
+  // second throws at boot and takes the whole API down with it.
 
   // Security headers on every response. The API serves JSON, never a page, so
   // the policy is "nothing": no scripts, no frames, no sniffing a JSON body

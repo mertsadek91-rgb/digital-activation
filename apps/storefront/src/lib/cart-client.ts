@@ -18,12 +18,17 @@ import {
   type Cart,
   type CartRestoreResult,
   type Checkout,
+  type OfferSuggestionContext,
+  type OfferSuggestions,
   type Order,
+  type OrderSuggestions,
   type PaymentSession,
   cartRestoreResultSchema,
   cartSchema,
   checkoutSchema,
+  offerSuggestionsSchema,
   orderSchema,
+  orderSuggestionsSchema,
   paymentSessionSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
@@ -105,6 +110,30 @@ export interface CartEventDetail {
   cart: Cart;
 }
 
+/**
+ * A shopper's own add-to-cart, as distinct from any other cart change — what
+ * the "goes well with" dialog opens on. Only `cartApi.add` sends it: a
+ * suggestion added from the dialog or the cart page must not open the dialog
+ * again on top of itself.
+ */
+export const CART_ADDED_EVENT = 'da:cart-added';
+
+export interface CartAddedDetail {
+  cart: Cart;
+  variantId: string;
+}
+
+function announceAdded(variantId: string): (cart: Cart) => Cart {
+  return (cart) => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent<CartAddedDetail>(CART_ADDED_EVENT, { detail: { cart, variantId } }),
+      );
+    }
+    return cart;
+  };
+}
+
 function announce(cart: Cart): Cart {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent<CartEventDetail>(CART_EVENT, { detail: { cart } }));
@@ -120,7 +149,43 @@ export const cartApi = {
       ...options,
       method: 'POST',
       body: JSON.stringify({ variantId, qty }),
+    })
+      .then(announce)
+      .then(announceAdded(variantId)),
+
+  /** A one-click add from a suggestion: announced to the header, not to the dialog. */
+  addSuggestion: (variantId: string, options: Options): Promise<Cart> =>
+    request('/cart/items', cartSchema, {
+      ...options,
+      method: 'POST',
+      body: JSON.stringify({ variantId, qty: 1 }),
     }).then(announce),
+
+  /** "Goes well with" cards for these products. Public: slugs in, cards out. */
+  suggestions: (
+    slugs: string[],
+    context: OfferSuggestionContext,
+    options: Options,
+  ): Promise<OfferSuggestions> =>
+    request(
+      `/offers/suggestions?products=${encodeURIComponent(slugs.join(','))}&context=${context}`,
+      offerSuggestionsSchema,
+      options,
+    ),
+
+  /** "Complete your setup" for a paid order, with the order's link key. */
+  orderSuggestions: (
+    number: string,
+    options: Options & { key?: string | null },
+  ): Promise<OrderSuggestions> => {
+    const { key, ...rest } = options;
+    const query = key ? `?key=${encodeURIComponent(key)}` : '';
+    return request(
+      `/offers/orders/${encodeURIComponent(number)}${query}`,
+      orderSuggestionsSchema,
+      rest,
+    );
+  },
 
   addCrossSell: (variantId: string, options: Options): Promise<Cart> =>
     request('/cart/items', cartSchema, {

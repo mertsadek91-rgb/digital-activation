@@ -1,12 +1,13 @@
 'use client';
 
-import type { Order } from '@da/contracts';
+import type { Order, OrderSuggestions } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { SuggestionList } from '../../../../components/offer-suggestions';
 import { isArabic } from '../../../../i18n/locale';
 import { cartApi, CartError } from '../../../../lib/cart-client';
 import { formatLineState, formatOrderStatus, formatPrice } from '../../../../lib/format';
@@ -106,8 +107,7 @@ export default function OrderPage() {
           // opens for the browser that placed it, a signed-in customer, or
           // the link in the order email. Say which door is open.
           <p className="meta">
-            {t('notFoundHint')}{' '}
-            <Link href={`${prefix}/account`}>{t('myAccount')}</Link>
+            {t('notFoundHint')} <Link href={`${prefix}/account`}>{t('myAccount')}</Link>
           </p>
         ) : null}
         <Link href={`${prefix}${ROUTES.store}`} className="btn btn-ghost">
@@ -137,9 +137,7 @@ export default function OrderPage() {
           {t('confirming')}
         </p>
       ) : waiting ? (
-        <p className="notice notice-warn">
-          {t('notPaid')}
-        </p>
+        <p className="notice notice-warn">{t('notPaid')}</p>
       ) : null}
 
       <dl className="order-meta">
@@ -204,7 +202,7 @@ export default function OrderPage() {
         </div>
         {Number(order.discount.amount) > 0 ? (
           <div className="totals-discount">
-            <dt>{order.couponCode ?? (tc('discount'))}</dt>
+            <dt>{order.couponCode ?? tc('discount')}</dt>
             <dd>−{formatPrice(order.discount)}</dd>
           </div>
         ) : null}
@@ -219,9 +217,7 @@ export default function OrderPage() {
           kind of sentence that turns a delivered order into a support ticket —
           so it says where the key actually is: the email, and only the email,
           with the activation steps here. */}
-      <p className="lede">
-        {t('keyNote')}
-      </p>
+      <p className="lede">{t('keyNote')}</p>
 
       {/* The answer to "I deleted the email", one click away rather than a
           support ticket. */}
@@ -230,6 +226,74 @@ export default function OrderPage() {
           {t('openLicences')}
         </Link>
       </p>
+
+      {!waiting ? (
+        <SetupSuggestions number={order.number} locale={locale} currency={order.currency} />
+      ) : null}
     </main>
+  );
+}
+
+/**
+ * "Complete your setup": what goes with a paid order.
+ *
+ * Adding one puts it in a new cart — the paid cart is closed — and the shopper
+ * pays for it the ordinary way; nothing is charged from this page. Because
+ * this page is opened by the cart cookie, which the new cart replaces, the
+ * order's signed link key goes into the address once something is added, so
+ * a reload still opens the order.
+ */
+function SetupSuggestions({
+  number,
+  locale,
+  currency,
+}: {
+  number: string;
+  locale: string;
+  currency: string;
+}) {
+  const to = useTranslations('offers');
+  const [data, setData] = useState<OrderSuggestions | null>(null);
+  const [added, setAdded] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    const key = new URLSearchParams(window.location.search).get('key');
+    cartApi
+      .orderSuggestions(number, { locale, currency, key })
+      .then((result) => {
+        if (live) setData(result);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [number, locale, currency]);
+
+  if (!data || data.items.length === 0) return null;
+
+  return (
+    <section className="offer-strip" aria-labelledby="order-setup">
+      <h2 id="order-setup">{to('setupTitle')}</h2>
+      <p className="lede-sm">{to('setupLede')}</p>
+      <SuggestionList
+        items={data.items}
+        locale={locale}
+        licenceNumber={data.licenceNumber}
+        onAdded={() => {
+          const url = new URL(window.location.href);
+          if (!url.searchParams.get('key')) {
+            url.searchParams.set('key', data.accessKey);
+            window.history.replaceState(window.history.state, '', url.toString());
+          }
+          setAdded(true);
+        }}
+      />
+      {added ? (
+        <p className="notice" role="status">
+          {to('setupAdded')}
+        </p>
+      ) : null}
+    </section>
   );
 }

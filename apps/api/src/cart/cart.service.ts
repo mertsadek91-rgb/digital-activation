@@ -6,6 +6,7 @@ import {
   type Cart,
   type CartLine,
   type CartQuery,
+  type OrderOfferSnapshot,
   type PromotionRules,
   MAX_LINE_QTY,
   promotionRulesSchema,
@@ -23,6 +24,15 @@ import {
 
 import { convert, displayPrice, type FxTable } from '../catalog/pricing.js';
 import { couponRefusal } from '../common/coupon-eligibility.js';
+import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
+import {
+  bestDiscount,
+  nextTier,
+  pairDiscount,
+  tierFor,
+  volumeDiscountUsd,
+} from '../offers/offer-rules.js';
+import { SalesService, saleBadge, saleFor, salePriced } from '../offers/sales.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { hold, releaseAll, renew } from './reservations.js';
@@ -38,6 +48,8 @@ const CART_INCLUDE = {
           product: {
             include: {
               translations: true,
+              // For matching seasonal sales scoped by category.
+              categories: { select: { categoryId: true } },
               media: {
                 where: { isHero: true },
                 take: 1,
@@ -69,7 +81,11 @@ type CartRow = Prisma.CartGetPayload<{ include: typeof CART_INCLUDE }>;
  */
 @Injectable()
 export class CartService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sales: SalesService,
+    private readonly marketing: MarketingSettingsService,
+  ) {}
 
   private localeFor(query: CartQuery): Locale {
     return query.locale === 'en' ? Locale.EN : Locale.AR;
@@ -141,7 +157,7 @@ export class CartService {
 
     const variant = await this.prisma.client.variant.findUnique({
       where: { id: input.variantId },
-      include: { product: true },
+      include: { product: { include: { categories: { select: { categoryId: true } } } } },
     });
     if (!variant) throw new NotFoundException('لا يوجد هذا المتغيّر.');
 
@@ -156,6 +172,15 @@ export class CartService {
 
     const existing = cart.items.find((item) => item.variantId === input.variantId);
     const wanted = (existing?.qty ?? 0) + input.qty;
+
+    // The shelf price, sale included, is what the line is added at. A line
+    // already in the cart keeps its own price here; `render` reconciles it
+    // with any sale that has started or ended since.
+    const sale = saleFor(await this.sales.live(), {
+      id: variant.productId,
+      categoryIds: variant.product.categories.map((link) => link.categoryId),
+    });
+    const shelf = salePriced(variant, sale);
 
     const granted = await this.prisma.client.$transaction(async (tx) => {
       const result = await hold(tx, {
@@ -182,8 +207,11 @@ export class CartService {
             qty: result.granted,
             // Snapshot, so a repricing mid-session cannot move the total under
             // somebody who is already deciding.
-            unitPriceUsd: variant.priceUsd,
+            unitPriceUsd: shelf.priceUsd,
             fromCrossSell: input.fromCrossSell,
+            // Except a sale price, which was advertised with an end date.
+            saleId: sale?.id ?? null,
+            saleEndsAt: sale?.endsAt ?? null,
           },
         });
       }
@@ -385,6 +413,18 @@ export class CartService {
    * was worth without replaying its lines.
    */
   async render(token: string, query: CartQuery, adjustments: Cart['adjustments']): Promise<Cart> {
+    return (await this.renderWithOffers(token, query, adjustments)).cart;
+  }
+
+  /**
+   * `render`, plus the record of which offers the totals used — what the
+   * checkout writes onto the order it drafts from this cart.
+   */
+  async renderWithOffers(
+    token: string,
+    query: CartQuery,
+    adjustments: Cart['adjustments'],
+  ): Promise<{ cart: Cart; offers: OrderOfferSnapshot }> {
     const cart = await this.prisma.client.cart.findUnique({
       where: { token },
       include: CART_INCLUDE,
@@ -392,7 +432,42 @@ export class CartService {
     if (!cart) throw new NotFoundException('لا توجد سلة بهذا الرمز.');
 
     const locale = this.localeFor(query);
-    const fx = await this.fxTable();
+    const now = new Date();
+    const [fx, sales, offerSettings] = await Promise.all([
+      this.fxTable(),
+      this.sales.live(now),
+      this.marketing.get('offers'),
+    ]);
+
+    // Seasonal sales first, because they are prices, not discounts: every
+    // total below is computed from the reconciled line prices.
+    const saleOf = new Map<string, ReturnType<typeof saleFor>>();
+    const saleEnded = new Set<string>();
+    for (const item of cart.items) {
+      const sale = saleFor(sales, {
+        id: item.variant.productId,
+        categoryIds: item.variant.product.categories.map((link) => link.categoryId),
+      });
+      saleOf.set(item.id, sale);
+      const shelfUsd = salePriced(item.variant, sale).priceUsd;
+
+      // Priced by a sale that is no longer in force — it reached its end, or
+      // was switched off — so the price it was advertised with has come back.
+      const lapsed = item.saleId !== null && (sale === null || sale.id !== item.saleId);
+      // A sale running now that beats the line's price: nobody pays more
+      // than the price on the shelf beside them.
+      const undercut = sale !== null && shelfUsd.lessThan(item.unitPriceUsd);
+      if (!lapsed && !undercut) continue;
+
+      if (lapsed && shelfUsd.greaterThan(item.unitPriceUsd)) saleEnded.add(item.id);
+      item.unitPriceUsd = shelfUsd;
+      item.saleId = sale?.id ?? null;
+      item.saleEndsAt = sale?.endsAt ?? null;
+      await this.prisma.client.cartItem.update({
+        where: { id: item.id },
+        data: { unitPriceUsd: shelfUsd, saleId: item.saleId, saleEndsAt: item.saleEndsAt },
+      });
+    }
 
     const lines: CartLine[] = cart.items.map((item) => {
       const variant = item.variant;
@@ -400,9 +475,12 @@ export class CartService {
         variant.product.translations.find((entry) => entry.locale === locale) ??
         variant.product.translations[0];
       const hero = variant.product.media[0];
+      const sale = saleOf.get(item.id) ?? null;
 
       const lineTotalUsd = item.unitPriceUsd.times(item.qty);
-      const nowUsd = variant.priceUsd;
+      // The shelf price now, sale included — so a line on sale is not
+      // reported as "the price has changed" merely for being on sale.
+      const nowUsd = salePriced(variant, sale).priceUsd;
       const moved = !nowUsd.equals(item.unitPriceUsd);
 
       // Headroom, not availability. This cart's own qty is already inside
@@ -450,6 +528,8 @@ export class CartService {
         fulfillmentMode: variant.fulfillmentMode,
         requiresActivationEmail: variant.requiresActivationEmail,
         fromCrossSell: item.fromCrossSell,
+        sale: sale && item.saleId === sale.id ? saleBadge(sale, query.locale) : null,
+        saleEnded: saleEnded.has(item.id),
       };
     });
 
@@ -457,9 +537,52 @@ export class CartService {
       (total, item) => total.plus(item.unitPriceUsd.times(item.qty)),
       new Prisma.Decimal(0),
     );
+    const itemCount = cart.items.reduce((total, item) => total + item.qty, 0);
 
-    const { discountUsd, coupon } = await this.discountFor(cart, subtotalUsd, query, fx);
+    const couponResult = await this.discountFor(cart, subtotalUsd, query, fx);
+
+    // One discount per cart: the best of the coupon, the volume tier and the
+    // pair discount — see `bestDiscount` and the rules in @da/contracts/offers.
+    const offersOn = offerSettings.enabled && cart.items.length > 0;
+    const tier = offersOn ? tierFor(offerSettings.volumeTiers, itemCount) : null;
+    const pair = offersOn
+      ? pairDiscount(
+          cart.items.map((item) => ({
+            productId: item.variant.productId,
+            qty: item.qty,
+            unitPriceUsd: item.unitPriceUsd,
+          })),
+          offerSettings.pairs,
+        )
+      : null;
+
+    const best = bestDiscount([
+      { kind: 'coupon', amountUsd: couponResult.discountUsd },
+      { kind: 'volume', amountUsd: volumeDiscountUsd(subtotalUsd, tier) },
+      { kind: 'pair', amountUsd: pair?.discountUsd ?? new Prisma.Decimal(0) },
+    ]);
+    const discountUsd = Prisma.Decimal.min(
+      best?.amountUsd ?? new Prisma.Decimal(0),
+      subtotalUsd,
+    ).toDecimalPlaces(2);
     const totalUsd = Prisma.Decimal.max(new Prisma.Decimal(0), subtotalUsd.minus(discountUsd));
+
+    const automaticPercent =
+      best?.kind === 'volume'
+        ? (tier?.percent ?? null)
+        : best?.kind === 'pair'
+          ? (pair?.percent ?? null)
+          : null;
+    const automatic =
+      best && best.kind !== 'coupon'
+        ? {
+            kind: best.kind,
+            percent: automaticPercent ?? 0,
+            amount: displayPrice(discountUsd, null, query.currency, fx),
+            // The offers carry one licence number, for tiers and pairs alike.
+            licenceNumber: offerSettings.volumeLicenceNumber,
+          }
+        : null;
 
     await this.prisma.client.cart.update({
       where: { id: cart.id },
@@ -477,20 +600,44 @@ export class CartService {
       .map((entry) => entry.expiresAt)
       .sort((a, b) => a.getTime() - b.getTime())[0];
 
-    return {
+    const rendered: Cart = {
       token: cart.token,
       locale: query.locale,
       currency: query.currency,
       lines,
-      itemCount: cart.items.reduce((total, item) => total + item.qty, 0),
+      itemCount,
       subtotal: displayPrice(subtotalUsd, null, query.currency, fx),
       discount: displayPrice(discountUsd, null, query.currency, fx),
       total: displayPrice(totalUsd, null, query.currency, fx),
-      coupon,
+      coupon: couponResult.coupon,
       couponError: null,
+      automaticDiscount: automatic,
+      // Attached, worth something, and not the one applied.
+      couponSuperseded: couponResult.coupon !== null && automatic !== null,
+      volume:
+        offersOn && offerSettings.volumeTiers.length > 0
+          ? {
+              applied: tier ? { minItems: tier.minItems, percent: tier.percent } : null,
+              next: nextTier(offerSettings.volumeTiers, itemCount),
+              showProgressBar: offerSettings.showProgressBar,
+              licenceNumber: offerSettings.volumeLicenceNumber,
+            }
+          : null,
       reservationExpiresAt: expiry ? expiry.toISOString() : null,
       adjustments,
     };
+
+    const offers: OrderOfferSnapshot = {
+      discount: best?.kind ?? null,
+      percent: automaticPercent,
+      licenceNumber: automatic ? offerSettings.volumeLicenceNumber : '',
+      saleIds: [
+        ...new Set(cart.items.map((item) => item.saleId).filter((id): id is string => !!id)),
+      ],
+      pairMatched: pair?.matched ?? false,
+    };
+
+    return { cart: rendered, offers };
   }
 
   /**
@@ -550,7 +697,12 @@ export class CartService {
       if (rules.productIds && rules.productIds.length > 0) {
         return rules.productIds.includes(item.variant.productId);
       }
-      if (rules.excludeDiscounted && item.variant.compareAtUsd !== null) return false;
+      // A line on a seasonal sale is discounted as much as one with a
+      // compare-at; `render` has already reconciled `saleId` to the sale in
+      // force, so this is the sale the shopper is looking at.
+      if (rules.excludeDiscounted && (item.variant.compareAtUsd !== null || item.saleId !== null)) {
+        return false;
+      }
       return true;
     });
 

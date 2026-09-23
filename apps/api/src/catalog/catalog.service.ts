@@ -24,6 +24,8 @@ import {
 import { ArticleKind, FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
 import { toArticleCard } from '../common/article-card.js';
+import type { LiveSale } from '../offers/offer-rules.js';
+import { SalesService, saleBadge, saleFor, salePriced } from '../offers/sales.service.js';
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -82,9 +84,28 @@ function sellable(variant: { inventory: { onHand: number; reserved: number } | n
   return Math.max(0, (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0));
 }
 
+/**
+ * What pricing a page needs: the rates, and the sales in force. Fetched once
+ * per request and handed to every card, so one page cannot show a product at
+ * two prices.
+ */
+interface Pricing {
+  fx: FxTable;
+  sales: LiveSale[];
+  locale: 'ar' | 'en';
+}
+
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sales: SalesService,
+  ) {}
+
+  private async pricing(query: { locale: string }): Promise<Pricing> {
+    const [fx, sales] = await Promise.all([this.fxTable(), this.sales.live()]);
+    return { fx, sales, locale: query.locale === 'en' ? 'en' : 'ar' };
+  }
 
   /**
    * Draft products are reachable only with the preview token, and the
@@ -186,10 +207,10 @@ export class CatalogService {
       },
     });
 
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
 
     return {
-      products: products.map((product) => this.toCard(product, query.currency, fx)),
+      products: products.map((product) => this.toCard(product, query.currency, pricing)),
       total,
       page: query.page,
       perPage: query.perPage,
@@ -235,7 +256,7 @@ export class CatalogService {
       include: this.cardInclude(locale),
     });
 
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
 
     const breadcrumbs: CatalogCollection['breadcrumbs'] = [
       { name: locale === Locale.AR ? 'الرئيسية' : 'Home', href: ROUTES.home },
@@ -298,7 +319,7 @@ export class CatalogService {
         title: translation?.seoTitle ?? null,
         description: translation?.seoDescription ?? null,
       },
-      products: links.map((link) => this.toCard(link.product, query.currency, fx)),
+      products: links.map((link) => this.toCard(link.product, query.currency, pricing)),
       total,
       page: query.page,
       perPage: query.perPage,
@@ -347,7 +368,7 @@ export class CatalogService {
       include: this.cardInclude(locale).product.include,
     });
 
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
 
     // Only brands that have something published. An inactive maker still in
     // the table (this catalog has two with zero products) is a link to an
@@ -389,7 +410,7 @@ export class CatalogService {
         title: translation?.seoTitle ?? null,
         description: translation?.seoDescription ?? null,
       },
-      products: products.map((product) => this.toCard(product, query.currency, fx)),
+      products: products.map((product) => this.toCard(product, query.currency, pricing)),
       total,
       page: query.page,
       perPage: query.perPage,
@@ -410,7 +431,7 @@ export class CatalogService {
   async home(query: CatalogQuery): Promise<Home> {
     const locale = this.localeFor(query);
     const status = this.statusFilter(query);
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
 
     const [categories, brands, productCount, bestSellers, newest, posts] = await Promise.all([
       this.prisma.client.category.findMany({
@@ -489,7 +510,7 @@ export class CatalogService {
         productCount: category.products.length,
         products: category.products
           .slice(0, RAIL_SIZE)
-          .map((link) => this.toCard(link.product, query.currency, fx)),
+          .map((link) => this.toCard(link.product, query.currency, pricing)),
       }))
       .filter((rail) => rail.products.length >= RAIL_MIN_PRODUCTS);
 
@@ -500,8 +521,10 @@ export class CatalogService {
       rails,
       bestSellers: bestSellers
         .slice(0, RAIL_SIZE)
-        .map((product) => this.toCard(product, query.currency, fx)),
-      newest: newest.slice(0, RAIL_SIZE).map((product) => this.toCard(product, query.currency, fx)),
+        .map((product) => this.toCard(product, query.currency, pricing)),
+      newest: newest
+        .slice(0, RAIL_SIZE)
+        .map((product) => this.toCard(product, query.currency, pricing)),
       brands: brands
         .filter((brand) => brand._count.products > 0)
         .map((brand) => ({
@@ -557,10 +580,17 @@ export class CatalogService {
     }
 
     const translation = product.translations[0];
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
+    // Matched on every category the product is linked to, not only the
+    // primary one — a sale on a secondary shelf still prices the product.
+    const sale = saleFor(pricing.sales, {
+      id: product.id,
+      categoryIds: product.categories.map((link) => link.categoryId),
+    });
 
     const variants: CatalogVariant[] = product.variants.map((variant) => {
       const stocked = isStocked(variant);
+      const priced = salePriced(variant, sale);
 
       return {
         id: variant.id,
@@ -573,7 +603,7 @@ export class CatalogService {
         deliverySlaSeconds: variant.deliverySlaSeconds,
         fulfillmentMode: variant.fulfillmentMode,
         requiresActivationEmail: variant.requiresActivationEmail,
-        price: displayPrice(variant.priceUsd, variant.compareAtUsd, query.currency, fx),
+        price: displayPrice(priced.priceUsd, priced.compareAtUsd, query.currency, pricing.fx),
         available: stocked ? sellable(variant) : null,
         inStock: stocked ? sellable(variant) > 0 : true,
         isDefault: variant.isDefault,
@@ -617,7 +647,7 @@ export class CatalogService {
         take: RELATED_SIZE,
         include: this.cardInclude(locale),
       });
-      for (const link of siblings) related.push(this.toCard(link.product, query.currency, fx));
+      for (const link of siblings) related.push(this.toCard(link.product, query.currency, pricing));
     }
 
     const breadcrumbs: CatalogProduct['breadcrumbs'] = [
@@ -704,6 +734,7 @@ export class CatalogService {
       isDraft: product.status !== PublishStatus.PUBLISHED,
       related,
       articles: articles.map(toArticleCard),
+      sale: sale ? saleBadge(sale, pricing.locale) : null,
     };
   }
 
@@ -843,9 +874,9 @@ export class CatalogService {
       include: this.cardInclude(locale).product.include,
     });
 
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
     return new Map(
-      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+      products.map((product) => [product.id, this.toCard(product, query.currency, pricing)]),
     );
   }
 
@@ -871,16 +902,16 @@ export class CatalogService {
     if (productIds.length === 0) return new Map();
 
     const locale = query.locale === 'en' ? Locale.EN : Locale.AR;
-    const [products, fx] = await Promise.all([
+    const [products, pricing] = await Promise.all([
       this.prisma.client.product.findMany({
         where: { id: { in: productIds }, status: PublishStatus.PUBLISHED },
         include: this.cardInclude(locale).product.include,
       }),
-      this.fxTable(),
+      this.pricing(query),
     ]);
 
     return new Map(
-      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+      products.map((product) => [product.id, this.toCard(product, query.currency, pricing)]),
     );
   }
 
@@ -891,6 +922,8 @@ export class CatalogService {
           translations: { where: { locale } },
           brand: { include: { translations: { where: { locale } } } },
           variants: { orderBy: { position: 'asc' as const }, include: { inventory: true } },
+          // For matching seasonal sales scoped by category.
+          categories: { select: { categoryId: true } },
           media: {
             where: { isHero: true },
             take: 1,
@@ -904,9 +937,13 @@ export class CatalogService {
   private toCard(
     product: Prisma.ProductGetPayload<ReturnType<CatalogService['cardInclude']>['product']>,
     currency: string,
-    fx: FxTable,
+    pricing: Pricing,
   ): CatalogCard {
     const translation = product.translations[0];
+    const sale = saleFor(pricing.sales, {
+      id: product.id,
+      categoryIds: product.categories.map((link) => link.categoryId),
+    });
 
     // Buyable means buyable, which for most of this catalog has nothing to do
     // with a shelf: a made-to-order variant is always buyable, and a stocked
@@ -923,8 +960,11 @@ export class CatalogService {
     // bought, so a sold-out product still shows what it costs.
     const buyable = priced.filter((entry) => entry.buyable);
     const pool = buyable.length > 0 ? buyable : priced;
+    // A sale takes the same percent off every variant of the product, so the
+    // cheapest before it is the cheapest after it.
     const cheapest =
       [...pool].sort((a, b) => a.variant.priceUsd.comparedTo(b.variant.priceUsd))[0] ?? priced[0];
+    const entry = cheapest ? salePriced(cheapest.variant, sale) : null;
 
     // The promise the card makes is the fastest one the product can keep.
     const modes = product.variants.map((variant) => variant.fulfillmentMode);
@@ -957,8 +997,8 @@ export class CatalogService {
             height: hero.asset.height,
           }
         : null,
-      price: cheapest
-        ? displayPrice(cheapest.variant.priceUsd, cheapest.variant.compareAtUsd, currency, fx)
+      price: entry
+        ? displayPrice(entry.priceUsd, entry.compareAtUsd, currency, pricing.fx)
         : { amount: '0.00', currency: 'USD', compareAt: null, discountPercent: null },
       inStock: buyable.length > 0,
       available,
@@ -973,6 +1013,7 @@ export class CatalogService {
       salesCount: product.salesCount >= SALES_PROOF_THRESHOLD ? product.salesCount : 0,
       brand: product.brand?.translations[0]?.name ?? product.brand?.name ?? null,
       isDraft: product.status !== PublishStatus.PUBLISHED,
+      sale: sale ? saleBadge(sale, pricing.locale) : null,
     };
   }
 }
