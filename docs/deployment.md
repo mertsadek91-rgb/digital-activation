@@ -180,12 +180,13 @@ replica count — a Redis-backed throttler store is the step before scaling out.
 These run inside the API process and each takes a Postgres advisory lock, so
 more than one replica is safe:
 
-| Job               | Every      | What it does                                                                |
-| ----------------- | ---------- | --------------------------------------------------------------------------- |
-| `stranded-orders` | 5 minutes  | fulfils PAID orders still holding PENDING lines 5+ minutes after payment    |
-| `back-in-stock`   | 10 minutes | emails people waiting on a stocked variant once keys are available          |
-| `expire-drafts`   | hour       | cancels PENDING_PAYMENT drafts older than 14 days with no succeeded payment |
-| `review-invites`  | hour       | day-3 and day-10 review requests, 09:00–20:00 store time                    |
+| Job               | Every      | What it does                                                                       |
+| ----------------- | ---------- | ---------------------------------------------------------------------------------- |
+| `stranded-orders` | 5 minutes  | fulfils PAID orders still holding PENDING lines 5+ minutes after payment           |
+| `back-in-stock`   | 10 minutes | emails people waiting on a stocked variant once keys are available                 |
+| `expire-drafts`   | hour       | cancels PENDING_PAYMENT drafts older than 14 days with no succeeded payment        |
+| `review-invites`  | hour       | day-3 and day-10 review requests, 09:00–20:00 store time                           |
+| `fx-refresh`      | day, 03:00 | writes exchange rates from `FX_RATES_URL`; a move over 20% is held back and logged |
 
 Because of these, **never point a development API at the production
 database**: the sweeps would fulfil real orders and email real customers.

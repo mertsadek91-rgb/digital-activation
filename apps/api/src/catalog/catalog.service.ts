@@ -368,7 +368,7 @@ export class CatalogService {
       logo: brand.logo
         ? {
             url: this.assetUrl(brand.logo.key),
-            alt: brand.logo.alts[0]?.alt ?? (translation?.name ?? brand.name),
+            alt: brand.logo.alts[0]?.alt ?? translation?.name ?? brand.name,
             width: brand.logo.width,
             height: brand.logo.height,
           }
