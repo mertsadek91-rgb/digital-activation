@@ -25,6 +25,7 @@ import {
 
 import { CartService } from '../cart/cart.service.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
+import { customerCouponMessage, customerCouponRefusal } from '../common/coupon-customer.js';
 import { displayPrice, type FxTable } from '../catalog/pricing.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -146,19 +147,21 @@ export class CheckoutService {
     const promotion = fresh.couponCode
       ? await this.prisma.client.promotion.findFirst({
           where: { code: fresh.couponCode, isActive: true },
-          select: { id: true, perCustomerLimit: true, issuedToId: true },
+          select: { id: true, perCustomerLimit: true, issuedToId: true, rules: true },
         })
       : null;
 
-    // A code minted for one customer (renewal and cart-recovery offers) is
-    // theirs. Its usage limit already stops it being used twice; this stops
-    // it being used once by somebody it was forwarded to.
-    if (promotion?.issuedToId && promotion.issuedToId !== customer.id) {
-      throw new BadRequestException(
-        query.locale === 'en'
-          ? 'This code was issued to another customer.'
-          : 'هذا الكود صادر لعميل آخر.',
-      );
+    // Who is paying decides the rest: a code issued to somebody else, a
+    // first-order code on a repeat buyer, a referrer on their own link.
+    if (promotion) {
+      const refusal = await customerCouponRefusal(this.prisma.client, promotion, {
+        customerId: customer.id,
+        email: input.email,
+        excludeOrderId: existing?.id,
+      });
+      if (refusal) {
+        throw new BadRequestException(customerCouponMessage(refusal, query.locale));
+      }
     }
 
     // Refused before payment rather than discovered after it. `markPaid`
@@ -679,12 +682,30 @@ export class CheckoutService {
         id: string;
         usageLimit: number | null;
         perCustomerLimit: number | null;
+        issuedToId: string | null;
+        rules: Prisma.JsonValue;
       } | null = null;
       if (order.promotionId) {
         promotion = await tx.promotion.findUnique({
           where: { id: order.promotionId },
-          select: { id: true, usageLimit: true, perCustomerLimit: true },
+          select: {
+            id: true,
+            usageLimit: true,
+            perCustomerLimit: true,
+            issuedToId: true,
+            rules: true,
+          },
         });
+        const buyerRefusal = promotion
+          ? await customerCouponRefusal(tx, promotion, {
+              customerId: order.customerId,
+              email: order.email,
+              excludeOrderId: order.id,
+            })
+          : null;
+        if (buyerRefusal) {
+          reasons.push(`Coupon refused for this buyer at payment (${buyerRefusal}).`);
+        }
         if (promotion?.perCustomerLimit !== null && promotion?.perCustomerLimit !== undefined) {
           const used = await tx.promotionUsage.count({
             where: {

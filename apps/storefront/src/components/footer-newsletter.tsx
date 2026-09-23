@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
 
+import { SUBSCRIBED_KEY, memory } from '../lib/growth-client';
 import { subscriptionsApi } from '../lib/subscriptions-client';
 
 /**
@@ -30,7 +31,11 @@ export function FooterNewsletter({ locale }: { locale: string }) {
     setStatus('loading');
     const ok = await subscriptionsApi.subscribe({ email, locale: resolveLocale(locale) });
     setStatus(ok ? 'sent' : 'error');
-    if (ok) setEmail('');
+    if (ok) {
+      setEmail('');
+      // The welcome window does not ask a browser that has already asked here.
+      memory.set(SUBSCRIBED_KEY, String(Date.now()));
+    }
   }
 
   return (

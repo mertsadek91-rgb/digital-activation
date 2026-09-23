@@ -14,6 +14,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
 import { ZodPipe } from '../common/zod.pipe.js';
+import { ReferralService } from '../growth/referral.service.js';
+import { REFERRAL_COOKIE } from '../growth/rules.js';
 
 import { CartService } from './cart.service.js';
 
@@ -52,7 +54,10 @@ type CartRequest = FastifyRequest;
 @ApiTags('cart')
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cart: CartService) {}
+  constructor(
+    private readonly cart: CartService,
+    private readonly referrals: ReferralService,
+  ) {}
 
   private setToken(reply: FastifyReply, token: string): void {
     setCartCookie(reply, token);
@@ -86,7 +91,14 @@ export class CartController {
   ): Promise<Cart> {
     const cart = await this.cart.add(this.token(request), body, query);
     this.setToken(reply, cart.token);
-    return cart;
+    // A referred visitor's first item is when the friend code can attach:
+    // there is now a cart to hold it, and nothing else discounting it.
+    const referred = await this.referrals.attachToCart(
+      cart.token,
+      request.cookies?.[REFERRAL_COOKIE],
+      request.ip,
+    );
+    return referred ? this.cart.render(cart.token, query, cart.adjustments) : cart;
   }
 
   @Patch('items/:variantId')

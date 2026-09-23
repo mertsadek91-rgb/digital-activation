@@ -292,10 +292,11 @@ export const publicMarketingSchema = z.object({
       frequencyDays: true,
       headline: true,
       discountPercent: true,
+      discountLicenceNumber: true,
     })
     .nullable(),
   business: businessSettingsSchema.pick({ minSeats: true }).nullable(),
-  referral: referralSettingsSchema.pick({ friendPercent: true }).nullable(),
+  referral: referralSettingsSchema.pick({ friendPercent: true, licenceNumber: true }).nullable(),
   /** Sales running now, with their end date for an honest countdown. */
   activeSales: z.array(
     seasonalSaleSchema.pick({

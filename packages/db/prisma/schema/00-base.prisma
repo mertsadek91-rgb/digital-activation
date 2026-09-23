@@ -267,6 +267,15 @@ enum OrderStatus {
   @@schema("public")
 }
 
+enum ReferralRedemptionStatus {
+  ISSUED /// code minted for the friend's cart, not yet paid
+  PENDING /// friend's order paid; waiting out the refund window
+  REWARDED /// referrer's code minted and sent
+  VOID /// refunded, disputed, cancelled or refused as self-referral
+
+  @@schema("public")
+}
+
 enum PaymentProvider {
   STRIPE
   PAYPAL

@@ -4,6 +4,9 @@ import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { publicMarketing } from '../lib/growth-client';
 
 /**
  * The two things a signed-in customer can look at.
@@ -24,6 +27,12 @@ export function AccountNav({ prefix }: { prefix: string }) {
   const licences = `${prefix}${ROUTES.licenses}`;
   const orders = `${prefix}${ROUTES.accountOrders}`;
   const forYou = `${prefix}${ROUTES.forYou}`;
+  const referral = `${prefix}/account/referral`;
+  // Only while the programme runs: a tab that opens on "not available" is noise.
+  const [referrals, setReferrals] = useState(false);
+  useEffect(() => {
+    void publicMarketing().then((value) => setReferrals(value?.referral != null));
+  }, []);
 
   return (
     <nav className="account-tabs">
@@ -36,6 +45,11 @@ export function AccountNav({ prefix }: { prefix: string }) {
       <Link href={forYou} aria-current={pathname === forYou ? 'page' : undefined}>
         {t('forYou')}
       </Link>
+      {referrals ? (
+        <Link href={referral} aria-current={pathname === referral ? 'page' : undefined}>
+          {t('referral')}
+        </Link>
+      ) : null}
     </nav>
   );
 }

@@ -5518,3 +5518,42 @@ a.as-button.ghost:hover {
   display: flex;
   gap: 8px;
 }
+
+/* Growth screens (business, welcome, referral): the window preview and the
+   row of counts above a table. */
+.growth-preview-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.growth-preview {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.growth-preview p {
+  margin: 0;
+}
+.growth-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0 0 16px;
+}
+.growth-figures div {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.growth-figures dt {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+.growth-figures dd {
+  margin: 4px 0 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}

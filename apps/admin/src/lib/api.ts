@@ -158,7 +158,7 @@ async function refreshSession(): Promise<boolean> {
  * refusal — a role that may not write — and retrying it forever would turn one
  * permission error into a loop.
  */
-async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   /*
    * `content-type: application/json` only when there is JSON to declare.
    *

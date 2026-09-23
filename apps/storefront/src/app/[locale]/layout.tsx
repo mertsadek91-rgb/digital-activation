@@ -11,6 +11,7 @@ import { BRAND, DIRECTION } from '@da/ui';
 import { SUPPORT_EMAIL, SUPPORT_PHONE } from '../../lib/contact';
 import { openGraphDefaults, robotsMeta } from '../../lib/seo';
 
+import { GrowthLayer } from '../../components/growth-layer';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { WhatsAppButton } from '../../components/whatsapp-button';
@@ -123,6 +124,7 @@ export default async function LocaleLayout({
           {children}
           <SiteFooter locale={locale} collections={collections} trust={marketing?.trust ?? null} />
           <WhatsAppButton />
+          <GrowthLayer locale={locale} />
         </NextIntlClientProvider>
       </body>
     </html>

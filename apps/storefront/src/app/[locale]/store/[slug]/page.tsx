@@ -7,6 +7,7 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { BusinessQuote } from '../../../../components/business-quote';
 import { BuyBox } from '../../../../components/buy-box';
 import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
@@ -261,6 +262,15 @@ export default async function ProductPage({ params }: Props) {
               a page where choosing "3 years" leaves the 1-year price on screen
               is worse than one with no picker. */}
           <BuyBox product={product} locale={locale} />
+
+          {marketing?.business ? (
+            <BusinessQuote
+              productSlug={product.slug}
+              productName={product.name}
+              minSeats={marketing.business.minSeats}
+              locale={locale}
+            />
+          ) : null}
 
           {!selected.inStock ? (
             <div className="oos">

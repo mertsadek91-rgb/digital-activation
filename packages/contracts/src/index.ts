@@ -29,3 +29,4 @@ export * from './subscriptions.js';
 export * from './marketing.js';
 export * from './retention.js';
 export * from './marketing-signals.js';
+export * from './growth.js';

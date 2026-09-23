@@ -155,10 +155,14 @@ export class MarketingSettingsService {
             frequencyDays: welcome.frequencyDays,
             headline: welcome.headline,
             discountPercent: welcome.discountPercent,
+            // Shown beside the discount, as the Ministry of Commerce requires.
+            discountLicenceNumber: welcome.discountLicenceNumber,
           }
         : null,
       business: business.enabled ? { minSeats: business.minSeats } : null,
-      referral: referral.enabled ? { friendPercent: referral.friendPercent } : null,
+      referral: referral.enabled
+        ? { friendPercent: referral.friendPercent, licenceNumber: referral.licenceNumber }
+        : null,
       activeSales: seasonal.enabled
         ? seasonal.sales
             .filter((sale) => new Date(sale.startsAt) <= now && new Date(sale.endsAt) > now)
