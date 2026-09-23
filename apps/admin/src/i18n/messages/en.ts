@@ -1212,7 +1212,7 @@ export const en: AdminMessages = {
     renewalsTitle: 'Renewal reminders',
     renewalsBody: 'Messages before a time-limited licence runs out, with a one-click renewal link — and a discount only for customers who agreed to marketing.',
     cartRecoveryTitle: 'Abandoned carts',
-    cartRecoveryBody: 'Up to three messages to people who entered an email and did not pay, with a discount only in the last.',
+    cartRecoveryBody: 'Up to three messages to customers who agreed to marketing, entered an email and did not pay, with a discount only in the last.',
     offersTitle: 'Offers and suggestions',
     offersBody: 'Volume discounts by number of licences, and "goes well with" products after add-to-cart and on the order confirmation.',
     reviewRequestsTitle: 'Review requests',
@@ -1278,7 +1278,7 @@ export const en: AdminMessages = {
     renewedRevenue: 'Renewal value',
 
     cartTitle: 'Abandoned carts',
-    cartLede: 'Messages to people who entered an email at checkout and did not pay, with a link that opens the same cart on any device. Never to anyone who unsubscribed or has since bought. A discount only for customers who agreed to marketing.',
+    cartLede: 'Messages to customers who agreed to marketing, entered an email at checkout and did not pay, with a link that opens the same cart on any device. Never to anyone without marketing consent, anyone who unsubscribed, or anyone who has since bought.',
     stepsTitle: 'Steps',
     stepsHint: 'Up to four, each after the one before. Hours are counted from the cart’s last activity.',
     stepLabel: 'Step {n}',

@@ -23,7 +23,6 @@ import {
   LADDER_STAGES,
   STALE_STEP_HOURS,
   hasMarketingConsent,
-  hasOptedOut,
   hoursBetween,
   inHoldout,
   inQuietHours,
@@ -47,9 +46,11 @@ import { cartRecovery } from './templates.js';
  * What it will not do:
  *  - write to somebody who has since paid — for this cart, or any order from
  *    the same address after the cart went quiet;
- *  - write to an address that unsubscribed;
- *  - offer a discount to anybody without marketing consent. A rung with a
- *    discount sends the plain version to everyone else;
+ *  - write to anybody without marketing consent. A reminder about a cart
+ *    somebody left is marketing under the PDPL, not a service message about
+ *    something they bought, so every rung — with a discount or without —
+ *    goes only to a customer whose opt-in is on record and not withdrawn.
+ *    A guest who never opted in gets nothing;
  *  - write during quiet hours, in the store's timezone;
  *  - invent urgency. Nothing in a cart is held before payment, and the email
  *    says what is in it, not that it is running out.
@@ -122,20 +123,11 @@ export class CartRecoveryService {
         email: { not: null },
         stage: { in: [CartStage.ACTIVE, ...LADDER_STAGES.slice(0, steps.length - 1)] },
         items: { some: {} },
-        // Left out in the query rather than skipped in the loop: a skipped cart
-        // would come back first on every pass and crowd out the rest. Closing
-        // it instead would empty a cart the shopper may still be using.
-        // (Unsubscribing clears the opt-in, so a set opt-in means consent was
-        // given again afterwards.)
-        OR: [
-          { customerId: null },
-          {
-            customer: {
-              deletedAt: null,
-              OR: [{ marketingOptOutAt: null }, { marketingOptInAt: { not: null } }],
-            },
-          },
-        ],
+        // Consent only, and filtered in the query rather than skipped in the
+        // loop: a skipped cart would come back first on every pass and crowd
+        // out the rest. (Unsubscribing clears the opt-in, so a set opt-in
+        // means consent was given — or given again — after any opt-out.)
+        customer: { deletedAt: null, marketingOptInAt: { not: null } },
         lastActivityAt: {
           lte: new Date(now.getTime() - first.afterHours * 3_600_000),
           gte: new Date(now.getTime() - (last.afterHours + STALE_STEP_HOURS) * 3_600_000),
@@ -207,7 +199,11 @@ export class CartRecoveryService {
         }
 
         // The query already excludes these; asked again with the exact rule.
-        if (cart.customer?.deletedAt || hasOptedOut(cart.customer)) continue;
+        // Checked again here, against both timestamps, in case an opt-out
+        // landed after the query read the row.
+        if (!cart.customer || cart.customer.deletedAt || !hasMarketingConsent(cart.customer)) {
+          continue;
+        }
 
         if (inHoldout(FEATURE, cart.id, settings.holdoutPercent)) {
           await this.advance(cart.id, cart.stage, stage, { heldOut: true, promotionId: null });
