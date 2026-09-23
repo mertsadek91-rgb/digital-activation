@@ -8,7 +8,6 @@ import {
   type PublicMarketing,
   marketingSettingKey,
 } from '@da/contracts';
-import type { Prisma } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -88,8 +87,8 @@ export class MarketingSettingsService {
 
     await this.prisma.client.setting.upsert({
       where: { key },
-      update: { value: value as Prisma.InputJsonValue },
-      create: { key, value: value as Prisma.InputJsonValue },
+      update: { value },
+      create: { key, value },
     });
     this.cache.delete(feature);
 
@@ -98,8 +97,8 @@ export class MarketingSettingsService {
       entity: 'Setting',
       entityId: key,
       action: 'marketing.settings-changed',
-      before: before as Prisma.InputJsonValue,
-      after: value as Prisma.InputJsonValue,
+      before,
+      after: value,
       ip: actor.ip,
       userAgent: actor.userAgent,
     });

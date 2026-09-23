@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 
-import { OrderEventActor, OrderStatus, type Prisma } from '@da/db';
+import { type OrderEventActor, OrderStatus, type Prisma } from '@da/db';
 
 import { say } from '../common/panel-locale.js';
 

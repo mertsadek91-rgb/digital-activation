@@ -31,7 +31,12 @@ describe('ReferralExpiryService', () => {
     const now = new Date('2026-09-23T05:00:00Z');
     expect(await service.sweep(now)).toEqual({ expired: 1 });
 
-    const where = client.referralRedemption.findMany.mock.calls[0]?.[0].where;
+    const where = (
+      client.referralRedemption.findMany.mock.calls[0] as
+        | [{ where: { status: string; createdAt: { lte: Date } } }]
+        | undefined
+    )?.[0].where;
+    if (!where) throw new Error('findMany was not called');
     expect(where.status).toBe('ISSUED');
     expect(where.createdAt.lte.toISOString()).toBe('2026-08-24T05:00:00.000Z');
     expect(tx.referralRedemption.updateMany).toHaveBeenCalledWith({

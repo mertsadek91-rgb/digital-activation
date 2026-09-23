@@ -76,7 +76,7 @@ export default function MarketingPage() {
       await api.setMarketingSettings(feature, {
         ...data[feature],
         enabled: !current.enabled,
-      } as MarketingSettings[typeof feature]);
+      });
       await load();
     } catch (caught) {
       setError(messageOf(caught, c('actionFailed')));
