@@ -1,4 +1,4 @@
-import { Prisma, PublishStatus } from '../generated/prisma/client.js';
+import { type Prisma, PublishStatus } from '../generated/prisma/client.js';
 
 /**
  * `Product.minPriceUsd`, kept honest.
