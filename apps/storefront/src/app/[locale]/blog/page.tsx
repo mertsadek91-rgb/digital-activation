@@ -5,6 +5,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
+import { isArabic } from '../../../i18n/locale';
 import { getPosts } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 import { formatArticleDate, readingLabel } from '../../../lib/format';
@@ -30,17 +31,15 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const ar = locale === 'ar';
+  const t = await getTranslations({ locale, namespace: 'blog' });
   const links = alternates(SITE_URL, ROUTES.blog);
 
   return {
-    title: ar ? 'المدونة' : 'Blog',
-    description: ar
-      ? 'مقالات عن التفعيل والتراخيص: كيف تختار النسخة المناسبة، وكيف تفعّلها، وما الفرق بين الإصدارات.'
-      : 'Articles on licensing and activation: choosing the right edition, activating it, and what separates one version from the next.',
+    title: t('title'),
+    description: t('metaDescription'),
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, ROUTES.blog, ar ? 'ar' : 'en'),
+      canonical: canonical(SITE_URL, ROUTES.blog, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
   };
@@ -49,8 +48,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations('blog');
+  const tc = await getTranslations('common');
   const tf = await getTranslations('format');
-  const ar = locale === 'ar';
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
 
   const index = await getPosts({ locale });
@@ -58,9 +59,9 @@ export default async function BlogPage({ params }: Props) {
 
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(prefix || '/', SITE_URL).toString() },
+      { name: tc('home'), url: new URL(prefix || '/', SITE_URL).toString() },
       {
-        name: ar ? 'المدونة' : 'Blog',
+        name: t('title'),
         url: new URL(`${prefix}${ROUTES.blog}`, SITE_URL).toString(),
       },
     ]),
@@ -68,7 +69,7 @@ export default async function BlogPage({ params }: Props) {
     posts.length > 0
       ? jsonld.itemList({
           url: new URL(`${prefix}${ROUTES.blog}`, SITE_URL).toString(),
-          name: ar ? 'المدونة' : 'Blog',
+          name: t('title'),
           items: posts.map((post, index) => ({
             position: index + 1,
             name: post.title,
@@ -83,23 +84,15 @@ export default async function BlogPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
       <header className="blog-head">
-        <h1>{ar ? 'المدونة' : 'Blog'}</h1>
-        <p>
-          {ar
-            ? 'كيف تختار الترخيص المناسب، وكيف تفعّله، وما الفرق بين الإصدارات — مكتوبة للسوق الخليجي.'
-            : 'Choosing a licence, activating it, and what actually separates one edition from the next.'}
-        </p>
+        <h1>{t('title')}</h1>
+        <p>{t('lede')}</p>
       </header>
 
       {posts.length === 0 ? (
         /* Said plainly rather than left blank, and it is said differently in
            each language for a reason: the posts carried over are Arabic, so an
            English visitor is looking at a real gap rather than an outage. */
-        <p className="blog-empty">
-          {ar
-            ? 'لا مقالات منشورة بعد.'
-            : 'Nothing here in English yet — the articles on this store are written in Arabic.'}
-        </p>
+        <p className="blog-empty">{t('empty')}</p>
       ) : (
         <MotionFadeIn>
           <ul className="post-list">
@@ -122,7 +115,7 @@ export default async function BlogPage({ params }: Props) {
                   </p>
                   <div className="post-action">
                     <Link href={`${prefix}${ROUTES.post(post.slug)}`} className="post-read-link">
-                      <span>{ar ? 'قراءة المقال' : 'Read article'}</span>
+                      <span>{t('readArticle')}</span>
                       <span aria-hidden="true">{ar ? '←' : '→'}</span>
                     </Link>
                   </div>

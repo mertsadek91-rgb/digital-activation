@@ -2,7 +2,10 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
+
+import { isArabic } from '../i18n/locale';
 
 export interface SlideItem {
   id: string;
@@ -134,7 +137,8 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setStopped(true);
   }, []);
 
-  const isAr = locale === 'ar';
+  const t = useTranslations('hero');
+  const isAr = isArabic(locale);
   const slide = SLIDES[current] ?? SLIDES[0]!;
 
   const nextSlide = () => {
@@ -191,7 +195,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
       }}
-      aria-label={isAr ? 'عروض المنتجات المميزة' : 'Featured Product Offers'}
+      aria-label={t('region')}
       role="region"
     >
       <div className="hero-slider-card" style={{ background: slide.theme.bgGlow }}>
@@ -249,7 +253,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
                   background: `linear-gradient(135deg, ${slide.theme.accent}, color-mix(in srgb, ${slide.theme.accent} 80%, black))`,
                 }}
               >
-                <span>{isAr ? 'اطلب المفتاح الآن' : 'Get Key Now'}</span>
+                <span>{t('cta')}</span>
                 <span className="cta-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
               </Link>
             </div>
@@ -265,7 +269,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
             type="button"
             className="hero-slider-arrow"
             onClick={prevSlide}
-            aria-label={isAr ? 'العرض السابق' : 'Previous slide'}
+            aria-label={t('previous')}
           >
             {isAr ? '→' : '←'}
           </button>
@@ -275,15 +279,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
               type="button"
               className="hero-slider-arrow hero-slider-pause"
               onClick={() => setStopped(!stopped)}
-              aria-label={
-                stopped
-                  ? isAr
-                    ? 'تشغيل العرض التلقائي'
-                    : 'Play slideshow'
-                  : isAr
-                    ? 'إيقاف العرض التلقائي'
-                    : 'Pause slideshow'
-              }
+              aria-label={stopped ? t('play') : t('pause')}
             >
               <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
             </button>
@@ -299,7 +295,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
                     setDirection(idx > current ? 1 : -1);
                     setCurrent(idx);
                   }}
-                  aria-label={isAr ? `الانتقال للعرض ${idx + 1}` : `Go to slide ${idx + 1}`}
+                  aria-label={t('goTo', { n: String(idx + 1) })}
                   style={idx === current ? { background: slide.theme.accent } : undefined}
                 />
               ))}
@@ -310,7 +306,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
             type="button"
             className="hero-slider-arrow"
             onClick={nextSlide}
-            aria-label={isAr ? 'العرض التالي' : 'Next slide'}
+            aria-label={t('next')}
           >
             {isAr ? '←' : '→'}
           </button>

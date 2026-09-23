@@ -1,6 +1,8 @@
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 
+import { isArabic } from '../i18n/locale';
+
 import { CategoryMark } from './icons';
 
 /**
@@ -42,7 +44,7 @@ export function CategoryRail({
   hrefFor?: (slug: string) => string;
 }) {
   if (categories.length === 0) return null;
-  const prefix = locale === 'en' ? `/${locale}` : '';
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   return (
     <nav className="cat-rail" aria-label={title}>

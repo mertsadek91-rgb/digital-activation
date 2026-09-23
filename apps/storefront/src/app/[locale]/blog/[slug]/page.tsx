@@ -9,6 +9,7 @@ import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { ProductCard } from '../../../../components/product-card';
+import { isArabic } from '../../../../i18n/locale';
 import { getPost } from '../../../../lib/api';
 import { formatArticleDate, readingLabel } from '../../../../lib/format';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: post.seo.description ?? post.summary,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
@@ -70,8 +71,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PostPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations('blog');
+  const tc = await getTranslations('common');
   const tf = await getTranslations('format');
-  const ar = locale === 'ar';
+  const ar = isArabic(locale);
 
   const post = await getPost(slug, { locale });
   // A slug that no longer exists may have been renamed rather than removed, so
@@ -100,9 +103,9 @@ export default async function PostPage({ params }: Props) {
 
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(prefix || '/', SITE_URL).toString() },
+      { name: tc('home'), url: new URL(prefix || '/', SITE_URL).toString() },
       {
-        name: ar ? 'المدونة' : 'Blog',
+        name: t('title'),
         url: new URL(`${prefix}${ROUTES.blog}`, SITE_URL).toString(),
       },
       { name: post.title, url: pageUrl },
@@ -129,10 +132,10 @@ export default async function PostPage({ params }: Props) {
     <main className="shell post">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
-        <Link href={`${prefix}${ROUTES.home}`}>{ar ? 'الرئيسية' : 'Home'}</Link>
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
+        <Link href={`${prefix}${ROUTES.home}`}>{tc('home')}</Link>
         <span aria-hidden="true"> › </span>
-        <Link href={`${prefix}${ROUTES.blog}`}>{ar ? 'المدونة' : 'Blog'}</Link>
+        <Link href={`${prefix}${ROUTES.blog}`}>{t('title')}</Link>
       </nav>
 
       <article className="post-body">
@@ -151,9 +154,7 @@ export default async function PostPage({ params }: Props) {
               likely to be quoted by an answer engine. */}
           {post.summary ? <p className="post-lede">{post.summary}</p> : null}
           {post.isDraft ? (
-            <p className="draft-flag">
-              {ar ? 'مسودّة — مرئية في المعاينة فقط' : 'Draft — visible in preview only'}
-            </p>
+            <p className="draft-flag">{tc('draftPreview')}</p>
           ) : null}
         </header>
 
@@ -169,7 +170,7 @@ export default async function PostPage({ params }: Props) {
           names nothing in the catalog. */}
       {post.products.length > 0 ? (
         <section className="post-products">
-          <h2>{ar ? 'المنتجات في هذا المقال' : 'Products in this article'}</h2>
+          <h2>{t('productsInArticle')}</h2>
           <div className="related-row">
             {post.products.map((card) => (
               <ProductCard key={card.slug} card={card} locale={locale} />
@@ -180,7 +181,7 @@ export default async function PostPage({ params }: Props) {
 
       {post.more.length > 0 ? (
         <section className="post-more">
-          <h2>{ar ? 'اقرأ أيضاً' : 'Read next'}</h2>
+          <h2>{t('readNext')}</h2>
           <ul>
             {post.more.map((other) => (
               <li key={other.slug}>

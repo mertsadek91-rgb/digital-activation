@@ -20,7 +20,6 @@
     "trustSupportBody": "Help with installation and activation, from the same team that sold you the key.",
     "categoriesTitle": "Browse by category",
     "categoriesBody": "Each category shows what is actually in the catalogue.",
-    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}",
     "bestSellersTitle": "Best selling",
     "bestSellersBody": "Ordered by real purchases, not by our pick.",
     "newestTitle": "New arrivals",
@@ -123,7 +122,9 @@
     "encryptedConnection": "Encrypted connection",
     "draft": "Draft",
     "noImage": "No image",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "home": "Home",
+    "draftPreview": "Draft — visible in preview only"
   },
   "buyBox": {
     "addFailed": "Could not add this to your cart.",
@@ -199,7 +200,6 @@
     "salesProof": "{count, plural, one {Sold # time} other {Sold # times}}",
     "whatsappWhenBack": "Hi, when will \"{name}\" be back in stock? {url}",
     "askWhenBack": "Ask us when it is back",
-    "draftPreview": "Draft — visible in preview only",
     "howToActivate": "How to activate",
     "officialDownload": "Official download link",
     "beforeYouBuy": "Before you buy",
@@ -211,5 +211,71 @@
     "getHelp": "Get help",
     "readBeforeBuy": "Read before you buy",
     "related": "You might also like"
+  },
+  "catalog": {
+    "categories": "Categories",
+    "subcategories": "Subcategories",
+    "brands": "Brands",
+    "sort": "Sort",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {last}",
+    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}"
+  },
+  "store": {
+    "metaTitle": "Store — all products",
+    "metaDescription": "Genuine activation keys and licences: Windows, Office, Adobe, security and design software — delivered to your email.",
+    "title": "Store",
+    "lede": "Genuine licences and activation keys, delivered to your email. Most are prepared after payment, so your licence term does not start before you use it.",
+    "empty": "Nothing published yet.",
+    "sortPosition": "Most popular",
+    "sortNewest": "Newest",
+    "sortBestSelling": "Best selling"
+  },
+  "collection": {
+    "empty": "No products here yet."
+  },
+  "brand": {
+    "description": "Every {name} licence we carry, with genuine activation.",
+    "officialSite": "Official site",
+    "empty": "Nothing from this brand yet."
+  },
+  "search": {
+    "metaTitleQuery": "Search results for {q}",
+    "searchStore": "Search the store",
+    "heading": "Search",
+    "unavailable": "Search is unavailable just now. Try again shortly, or browse the store.",
+    "browseStore": "Browse the store",
+    "results": "Search results",
+    "forQuery": "for <strong>{q}</strong>",
+    "hint": "Type a product name in the box at the top of the page — in English or in Arabic.",
+    "resultCount": "{count, plural, one {# result} other {# results}}",
+    "noResults": "Nothing matched. Try a shorter name — \"Office\" rather than \"Office 2021 Pro Plus\".",
+    "askUs": "Ask us for it",
+    "boxPlaceholder": "Search products",
+    "boxSubmit": "Search"
+  },
+  "blog": {
+    "title": "Blog",
+    "metaDescription": "Articles on licensing and activation: choosing the right edition, activating it, and what separates one version from the next.",
+    "lede": "Choosing a licence, activating it, and what actually separates one edition from the next.",
+    "empty": "Nothing here in English yet — the articles on this store are written in Arabic.",
+    "readArticle": "Read article",
+    "productsInArticle": "Products in this article",
+    "readNext": "Read next"
+  },
+  "contentPage": {
+    "untranslated": "This page has not been translated into English yet. What follows is the Arabic version.",
+    "ownVersion": "English version"
+  },
+  "hero": {
+    "region": "Featured Product Offers",
+    "cta": "Get Key Now",
+    "previous": "Previous slide",
+    "next": "Next slide",
+    "play": "Play slideshow",
+    "pause": "Pause slideshow",
+    "goTo": "Go to slide {n}"
   }
 }

@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
-import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
 import { ProductCard } from '../../../../components/product-card';
 import { getBrand } from '../../../../lib/api';
@@ -59,12 +59,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     // a number. The count is on the page, where the grid backs it up.
     description:
       brand.seo.description ??
-      (locale === 'ar'
-        ? `كل ما نوفّره من ${brand.name} بتفعيل أصلي.`
-        : `Every ${brand.name} licence we carry, with genuine activation.`),
+      (await getTranslations({ locale, namespace: 'brand' }))('description', { name: brand.name }),
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
   };
@@ -74,7 +72,10 @@ export default async function BrandPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const page = pageNumber((await searchParams).page);
-  const ar = locale === 'ar';
+  const t = await getTranslations('brand');
+  const tc = await getTranslations('common');
+  const tk = await getTranslations('catalog');
+  const ar = isArabic(locale);
 
   const brand = await getBrand(slug, { locale, page, perPage: PER_PAGE });
   // A renamed brand is a redirect, not a dead end — the same rule products and
@@ -112,7 +113,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
     <main className="shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
         {brand.breadcrumbs.map((crumb, index) => (
           <span key={crumb.href}>
             {index > 0 ? <span aria-hidden="true"> › </span> : null}
@@ -146,11 +147,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
               and a number printed twice on one page is two numbers that can
               fall out of step — the same rule the product page applies to its
               rating. */}
-          <p className="lede">
-            {ar
-              ? `كل ما نوفّره من ${brand.name} بتفعيل أصلي.`
-              : `Every ${brand.name} licence we carry, with genuine activation.`}
-          </p>
+          <p className="lede">{t('description', { name: brand.name })}</p>
           {/* The maker's own site, and the only outbound link on the page.
               `rel` because it is a link we do not vouch for and do not want to
               pass ranking to — this is a shop that sells their licences, not a
@@ -162,7 +159,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
               rel="nofollow noopener noreferrer"
               target="_blank"
             >
-              {ar ? 'الموقع الرسمي' : 'Official site'}
+              {t('officialSite')}
             </a>
           ) : null}
         </div>
@@ -173,7 +170,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
           categories={brand.siblings}
           current={brand.slug}
           locale={locale}
-          title={ar ? 'العلامات' : 'Brands'}
+          title={tk('brands')}
           hrefFor={ROUTES.brand}
         />
 
@@ -184,12 +181,10 @@ export default async function BrandPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">{productCount(brand.total, locale)}</p>
+          <p className="result-count">{tk('productCount', { count: brand.total })}</p>
 
           {brand.products.length === 0 ? (
-            <p className="empty">
-              {ar ? 'لا منتجات من هذه العلامة بعد.' : 'Nothing from this brand yet.'}
-            </p>
+            <p className="empty">{t('empty')}</p>
           ) : (
             <div className="grid">
               {brand.products.map((card) => (
@@ -199,20 +194,18 @@ export default async function BrandPage({ params, searchParams }: Props) {
           )}
 
           {lastPage > 1 ? (
-            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+            <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
                 <Link href={`${prefix}${ROUTES.brand(slug)}?page=${String(page - 1)}`} rel="prev">
-                  {ar ? 'السابق' : 'Previous'}
+                  {tk('previous')}
                 </Link>
               ) : null}
               <span>
-                {ar
-                  ? `صفحة ${String(page)} من ${String(lastPage)}`
-                  : `Page ${String(page)} of ${String(lastPage)}`}
+                {tk('pageOf', { page: String(page), last: String(lastPage) })}
               </span>
               {page < lastPage ? (
                 <Link href={`${prefix}${ROUTES.brand(slug)}?page=${String(page + 1)}`} rel="next">
-                  {ar ? 'التالي' : 'Next'}
+                  {tk('next')}
                 </Link>
               ) : null}
             </nav>

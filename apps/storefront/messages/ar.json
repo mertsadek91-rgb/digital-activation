@@ -20,7 +20,6 @@
     "trustSupportBody": "مساعدة في التثبيت والتفعيل بالعربية، من نفس الفريق الذي باعك المفتاح.",
     "categoriesTitle": "تصفّح بحسب الفئة",
     "categoriesBody": "كل فئة تعرض ما هو متوفّر فعلاً في المخزون.",
-    "productCount": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {{count, number, latn} منتجات} many {{count, number, latn} منتجاً} other {{count, number, latn} منتج}}",
     "bestSellersTitle": "الأكثر مبيعاً",
     "bestSellersBody": "مرتّبة بعدد عمليات الشراء الحقيقية، لا باختيارنا.",
     "newestTitle": "أحدث الإضافات",
@@ -123,7 +122,9 @@
     "encryptedConnection": "اتصال مشفّر",
     "draft": "مسودّة",
     "noImage": "لا صورة",
-    "signOut": "خروج"
+    "signOut": "خروج",
+    "home": "الرئيسية",
+    "draftPreview": "مسودّة — مرئية في المعاينة فقط"
   },
   "buyBox": {
     "addFailed": "تعذّر الإضافة إلى السلة.",
@@ -199,7 +200,6 @@
     "salesProof": "تم بيعه {count, plural, zero {{count, number, latn} مرة} one {مرة واحدة} two {مرتين} few {{count, number, latn} مرات} many {{count, number, latn} مرة} other {{count, number, latn} مرة}}",
     "whatsappWhenBack": "مرحباً، متى يتوفّر «{name}»؟ {url}",
     "askWhenBack": "اسألنا عن موعد التوفّر",
-    "draftPreview": "مسودّة — مرئية في المعاينة فقط",
     "howToActivate": "خطوات التفعيل",
     "officialDownload": "رابط التحميل الرسمي",
     "beforeYouBuy": "قبل الشراء",
@@ -211,5 +211,71 @@
     "getHelp": "اطلب الدعم",
     "readBeforeBuy": "اقرأ قبل أن تشتري",
     "related": "منتجات قد تعجبك"
+  },
+  "catalog": {
+    "categories": "التصنيفات",
+    "subcategories": "التصنيفات الفرعية",
+    "brands": "العلامات",
+    "sort": "الترتيب",
+    "pagination": "الصفحات",
+    "previous": "السابق",
+    "next": "التالي",
+    "pageOf": "صفحة {page} من {last}",
+    "productCount": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {{count, number, latn} منتجات} many {{count, number, latn} منتجاً} other {{count, number, latn} منتج}}"
+  },
+  "store": {
+    "metaTitle": "المتجر — كل المنتجات",
+    "metaDescription": "مفاتيح تفعيل وتراخيص أصلية: ويندوز، أوفيس، أدوبي، برامج الحماية والتصميم — تسليم على بريدك.",
+    "title": "المتجر",
+    "lede": "تراخيص ومفاتيح تفعيل أصلية، تصل على بريدك. أغلبها يُجهَّز بعد الدفع حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.",
+    "empty": "لا منتجات منشورة بعد.",
+    "sortPosition": "الأكثر شيوعاً",
+    "sortNewest": "الأحدث",
+    "sortBestSelling": "الأكثر مبيعاً"
+  },
+  "collection": {
+    "empty": "لا منتجات في هذا التصنيف بعد."
+  },
+  "brand": {
+    "description": "كل ما نوفّره من {name} بتفعيل أصلي.",
+    "officialSite": "الموقع الرسمي",
+    "empty": "لا منتجات من هذه العلامة بعد."
+  },
+  "search": {
+    "metaTitleQuery": "نتائج البحث عن {q}",
+    "searchStore": "ابحث في المتجر",
+    "heading": "البحث",
+    "unavailable": "تعذّر البحث الآن. حاوِل مرّة أخرى بعد قليل، أو تصفّح المتجر.",
+    "browseStore": "تصفّح المتجر",
+    "results": "نتائج البحث",
+    "forQuery": "عن <strong>{q}</strong>",
+    "hint": "اكتب اسم المنتج في مربّع البحث أعلى الصفحة — بالعربية أو بالإنجليزية.",
+    "resultCount": "{count, plural, zero {{count, number, latn} نتيجة} one {نتيجة واحدة} two {نتيجتان} few {{count, number, latn} نتائج} many {{count, number, latn} نتيجة} other {{count, number, latn} نتيجة}}",
+    "noResults": "لا نتائج لهذا البحث. جرّب اسماً أقصر — «أوفيس» بدل «أوفيس 2021 برو بلس».",
+    "askUs": "اسألنا عنه",
+    "boxPlaceholder": "ابحث عن منتج",
+    "boxSubmit": "ابحث"
+  },
+  "blog": {
+    "title": "المدونة",
+    "metaDescription": "مقالات عن التفعيل والتراخيص: كيف تختار النسخة المناسبة، وكيف تفعّلها، وما الفرق بين الإصدارات.",
+    "lede": "كيف تختار الترخيص المناسب، وكيف تفعّله، وما الفرق بين الإصدارات — مكتوبة للسوق الخليجي.",
+    "empty": "لا مقالات منشورة بعد.",
+    "readArticle": "قراءة المقال",
+    "productsInArticle": "المنتجات في هذا المقال",
+    "readNext": "اقرأ أيضاً"
+  },
+  "contentPage": {
+    "untranslated": "لم تُترجَم هذه الصفحة إلى العربية بعد، وما تقرأه أدناه هو النسخة الإنجليزية.",
+    "ownVersion": "النسخة العربية"
+  },
+  "hero": {
+    "region": "عروض المنتجات المميزة",
+    "cta": "اطلب المفتاح الآن",
+    "previous": "العرض السابق",
+    "next": "العرض التالي",
+    "play": "تشغيل العرض التلقائي",
+    "pause": "إيقاف العرض التلقائي",
+    "goTo": "الانتقال للعرض {n}"
   }
 }
