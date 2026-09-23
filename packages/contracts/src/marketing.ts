@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { whatsappSettingsSchema } from './whatsapp.js';
+
 /**
  * Marketing settings, one document per feature.
  *
@@ -242,6 +244,8 @@ export const MARKETING_SCHEMAS = {
   business: businessSettingsSchema,
   welcome: welcomeSettingsSchema,
   referral: referralSettingsSchema,
+  /** A channel rather than a feature: cart recovery and renewals deliver through it. */
+  whatsapp: whatsappSettingsSchema,
 } as const;
 
 export type MarketingFeature = keyof typeof MARKETING_SCHEMAS;
