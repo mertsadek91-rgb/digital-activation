@@ -319,8 +319,12 @@ export default function CheckoutPage() {
               <CardPayment
                 session={stage.session}
                 locale={locale}
-                returnPath={`${prefix}/orders/${stage.checkout.order.number}`}
-                onPaid={() => router.push(`${prefix}/orders/${stage.checkout.order.number}`)}
+                // `?paid=card` tells the order page to wait for the webhook
+                // rather than announce that no payment has arrived.
+                returnPath={`${prefix}/orders/${stage.checkout.order.number}?paid=card`}
+                onPaid={() =>
+                  router.push(`${prefix}/orders/${stage.checkout.order.number}?paid=card`)
+                }
                 onBack={() => setStage({ kind: 'pay', checkout: stage.checkout })}
               />
             </div>

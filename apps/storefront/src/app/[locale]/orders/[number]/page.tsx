@@ -4,10 +4,14 @@ import type { Order } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { cartApi, CartError } from '../../../../lib/cart-client';
 import { formatLineState, formatOrderStatus, formatPrice } from '../../../../lib/format';
+
+/** Ask again every 4s, 15 times: about a minute of "confirming". */
+const POLL_EVERY_MS = 4000;
+const POLL_LIMIT = 15;
 
 /**
  * Order confirmation.
@@ -50,6 +54,44 @@ export default function OrderPage() {
     void load();
   }, [load]);
 
+  /**
+   * Right after a card payment, the order is usually still PENDING_PAYMENT:
+   * Stripe has taken the money, and the webhook that marks the order paid
+   * lands a few seconds later. This page used to say "payment has not arrived
+   * yet" at exactly the moment the customer had just paid — the one sentence
+   * guaranteed to produce a second attempt or a support message.
+   *
+   * So when the checkout sends the shopper here after a card payment
+   * (`?paid=card`, which also survives Stripe's own redirect back), the page
+   * says it is confirming and asks again every few seconds, for about a
+   * minute. After that it falls back to the plain statement, because a
+   * webhook that has not arrived in a minute is worth knowing about.
+   */
+  const [confirming, setConfirming] = useState(false);
+  const polls = useRef(0);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('paid') === 'card' && query.get('redirect_status') !== 'failed') {
+      setConfirming(true);
+    }
+  }, []);
+
+  const pending = order?.status === 'PENDING_PAYMENT';
+
+  useEffect(() => {
+    if (!confirming || !pending) return;
+    const timer = window.setInterval(() => {
+      polls.current += 1;
+      if (polls.current > POLL_LIMIT) {
+        setConfirming(false);
+        return;
+      }
+      void load();
+    }, POLL_EVERY_MS);
+    return () => window.clearInterval(timer);
+  }, [confirming, pending, load]);
+
   if (!order) {
     return (
       <main className="shell">
@@ -75,7 +117,13 @@ export default function OrderPage() {
         {formatOrderStatus(order.status, locale)}
       </p>
 
-      {waiting ? (
+      {waiting && confirming ? (
+        <p className="notice" role="status">
+          {ar
+            ? 'نؤكّد دفعتك… تستغرق عادةً بضع ثوانٍ، ولا حاجة للدفع مرة أخرى.'
+            : 'Confirming your payment… this usually takes a few seconds. There is no need to pay again.'}
+        </p>
+      ) : waiting ? (
         <p className="notice notice-warn">
           {ar
             ? 'لم يصل الدفع بعد. سيبدأ تجهيز طلبك بعد تأكيد الدفع.'
