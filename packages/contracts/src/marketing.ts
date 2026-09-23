@@ -133,9 +133,14 @@ export const trustSettingsSchema = z.object({
 export type TrustSettings = z.infer<typeof trustSettingsSchema>;
 
 export const reviewRequestSettingsSchema = z.object({
-  /** Days after delivery the first request goes; licences are judged once activated. */
-  firstAfterDays: z.number().int().min(1).max(30).default(2),
-  secondAfterDays: z.number().int().min(0).max(60).default(9),
+  /**
+   * Days after delivery the first request goes; licences are judged once
+   * activated. 3 and 10 are what the invite sweep sent before this was a
+   * setting, so an untouched store keeps behaving exactly as it did.
+   */
+  firstAfterDays: z.number().int().min(1).max(30).default(3),
+  /** Days after delivery for the reminder; 0 sends no second request. */
+  secondAfterDays: z.number().int().min(0).max(60).default(10),
 });
 export type ReviewRequestSettings = z.infer<typeof reviewRequestSettingsSchema>;
 
