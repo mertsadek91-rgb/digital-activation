@@ -25,6 +25,7 @@ import { RetentionModule } from './retention/retention.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
 import { VaultModule } from './vault/vault.module.js';
+import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 
 /**
  * Release 1 modules land here as they are built, in this order:
@@ -80,6 +81,7 @@ import { VaultModule } from './vault/vault.module.js';
     RetentionModule,
     MarketingSignalsModule,
     OffersModule,
+    WhatsappModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],
