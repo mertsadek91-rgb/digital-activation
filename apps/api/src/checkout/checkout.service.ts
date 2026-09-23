@@ -311,31 +311,55 @@ export class CheckoutService {
   ): Promise<{ id: string }> {
     const [firstName, ...rest] = (input.name ?? '').trim().split(/\s+/).filter(Boolean);
 
-    return this.prisma.client.customer.upsert({
+    const existing = await this.prisma.client.customer.findUnique({
       where: { email: input.email },
-      // A returning guest keeps whatever they already told us. Overwriting a
-      // filled-in name with a blank because this checkout skipped the field
-      // loses information for no reason.
-      update: {
-        ...(firstName ? { firstName, lastName: rest.join(' ') || null } : {}),
-        ...(input.company ? { company: input.company } : {}),
-        ...(input.vatNumber ? { vatNumber: input.vatNumber } : {}),
-        ...(input.marketingOptIn ? { marketingOptInAt: new Date() } : {}),
-        locale,
-        currency,
-      },
-      create: {
-        email: input.email,
-        firstName: firstName ?? null,
-        lastName: rest.join(' ') || null,
-        company: input.company ?? null,
-        vatNumber: input.vatNumber ?? null,
-        marketingOptInAt: input.marketingOptIn ? new Date() : null,
-        locale,
-        currency,
-      },
-      select: { id: true },
+      select: { id: true, firstName: true, company: true, vatNumber: true },
     });
+
+    if (existing) {
+      // Filled in, never overwritten. The email typed at checkout is not
+      // verified, so anybody can type somebody else's — and before, doing so
+      // replaced that customer's name, company and VAT number with whatever
+      // the stranger entered. Blank fields still get completed; a returning
+      // guest who skipped the name last time loses nothing.
+      await this.prisma.client.customer.update({
+        where: { id: existing.id },
+        data: {
+          ...(firstName && !existing.firstName
+            ? { firstName, lastName: rest.join(' ') || null }
+            : {}),
+          ...(input.company && !existing.company ? { company: input.company } : {}),
+          ...(input.vatNumber && !existing.vatNumber ? { vatNumber: input.vatNumber } : {}),
+        },
+      });
+      return { id: existing.id };
+    }
+
+    try {
+      return await this.prisma.client.customer.create({
+        data: {
+          email: input.email,
+          firstName: firstName ?? null,
+          lastName: rest.join(' ') || null,
+          company: input.company ?? null,
+          vatNumber: input.vatNumber ?? null,
+          marketingOptInAt: input.marketingOptIn ? new Date() : null,
+          locale,
+          currency,
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      // Two tabs checking out with a new address at once: the other one made
+      // the row between the read and here, and it is the same person.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return this.prisma.client.customer.findUniqueOrThrow({
+          where: { email: input.email },
+          select: { id: true },
+        });
+      }
+      throw error;
+    }
   }
 
   // --- cross-sell -----------------------------------------------------------

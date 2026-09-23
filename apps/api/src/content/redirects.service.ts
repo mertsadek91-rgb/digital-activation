@@ -216,6 +216,11 @@ export class RedirectsService {
     } catch {
       return null;
     }
+    // One leading slash, never two. `//evil.example` is a path to this
+    // function and a protocol-relative URL to a browser, so a redirect stored
+    // that way would send visitors off-site; `/\` is read the same by some.
+    // Collapsed after decoding, so `/%2F` cannot smuggle the second one in.
+    pathname = pathname.replace(/^[/\\]+/, '/');
     const trimmed = pathname.replace(/\/+$/, '');
     return (trimmed === '' ? '/' : trimmed).toLowerCase();
   }

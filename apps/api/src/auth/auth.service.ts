@@ -13,6 +13,7 @@ import {
   hashPassword,
   hashToken,
   newRefreshToken,
+  verifyAgainstDecoy,
   verifyPassword,
 } from './crypto.js';
 import { createEnrollment, verifyTotp } from './totp.js';
@@ -111,8 +112,12 @@ export class AuthService {
   ): Promise<{ result: StaffLoginResult; session?: SessionResult }> {
     const staff = await this.prisma.client.staffUser.findUnique({ where: { email } });
 
+    // argon2 runs whether or not the account exists, so the response time
+    // does not reveal which addresses belong to staff.
     const passwordOk =
-      staff !== null && staff.isActive && (await verifyPassword(staff.passwordHash, password));
+      staff !== null
+        ? (await verifyPassword(staff.passwordHash, password)) && staff.isActive
+        : await verifyAgainstDecoy(password);
 
     if (!staff || !passwordOk) {
       await this.audit.record({

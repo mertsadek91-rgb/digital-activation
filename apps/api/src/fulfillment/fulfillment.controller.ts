@@ -52,6 +52,8 @@ export class FulfillmentController {
     };
   }
 
+  // Customer emails and activation addresses on every row.
+  @Roles('ADMIN', 'FULFILLMENT', 'SUPPORT')
   @Get('queue')
   @ApiOperation({ summary: 'Paid lines waiting for a supplier order' })
   async queue(
@@ -165,6 +167,7 @@ export class FulfillmentController {
     });
   }
 
+  @Roles('ADMIN', 'FULFILLMENT', 'CATALOG')
   @Get('vault/stock')
   @ApiOperation({ summary: 'Every variant with what the vault holds. Never plaintext.' })
   stock() {
@@ -177,6 +180,7 @@ export class FulfillmentController {
    * Returns ids and states so the person answering can see whether a key went
    * out and when. Opening one is the separate route below.
    */
+  @Roles('ADMIN', 'FULFILLMENT', 'SUPPORT')
   @Get('orders/:number/keys')
   @ApiOperation({ summary: 'The keys behind one order — ids and states only' })
   async orderKeys(@Param('number') number: string) {
@@ -234,6 +238,7 @@ export class FulfillmentController {
     });
   }
 
+  @Roles('ADMIN', 'FULFILLMENT')
   @Get('vault/keys/:licenseKeyId/history')
   @ApiOperation({ summary: 'Who touched a key and when. Never what it says.' })
   async history(@Param('licenseKeyId') licenseKeyId: string) {

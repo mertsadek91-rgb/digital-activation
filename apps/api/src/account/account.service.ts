@@ -189,11 +189,16 @@ export class AccountService {
     const sessionToken = crypto.randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + CUSTOMER_SESSION_HOURS * 3600 * 1000);
 
+    // Claimed conditionally, before the session exists. Two requests racing
+    // with the same link both passed the `usedAt` check above; only the one
+    // whose update finds it still unused gets a session.
+    const claimed = await this.prisma.client.customerLoginToken.updateMany({
+      where: { id: row.id, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    if (claimed.count !== 1) throw invalid;
+
     await this.prisma.client.$transaction([
-      this.prisma.client.customerLoginToken.update({
-        where: { id: row.id },
-        data: { usedAt: new Date() },
-      }),
       this.prisma.client.customerSession.create({
         data: {
           customerId: row.customerId,

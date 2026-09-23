@@ -33,6 +33,22 @@ export async function verifyPassword(hash: string, plain: string): Promise<boole
   }
 }
 
+let decoy: Promise<string> | undefined;
+
+/**
+ * Spends the time a password check would, for an account that does not exist.
+ *
+ * Skipping argon2 for an unknown email answers in microseconds where a real
+ * account takes ~100ms, and that difference alone says which addresses have
+ * staff accounts. The decoy is hashed once per process and verified against
+ * whatever was typed; the answer is always "no".
+ */
+export async function verifyAgainstDecoy(plain: string): Promise<false> {
+  decoy ??= hashPassword(crypto.randomBytes(32).toString('base64url'));
+  await verifyPassword(await decoy, plain);
+  return false;
+}
+
 /**
  * Refresh tokens are stored as a hash, never in the clear.
  *

@@ -72,8 +72,7 @@ export class ProductContentService {
     if (input.warnings) {
       // An empty list clears the column rather than storing `[]`, so "no
       // warnings" is one state in the database instead of two.
-      data.warnings =
-        input.warnings.length === 0 ? Prisma.DbNull : input.warnings;
+      data.warnings = input.warnings.length === 0 ? Prisma.DbNull : input.warnings;
     }
     if (input.downloadUrl !== undefined) {
       data.downloadUrl = input.downloadUrl === '' ? null : input.downloadUrl;
@@ -147,7 +146,12 @@ function toEditable(body: unknown): ContentBlock[] {
 
     switch (type) {
       case 'richText':
-        out.push({ type: 'richText', html: str(block.html) });
+        // Cleaned on the way into the editor as well as on the way out of it.
+        // The admin renders this HTML live, and bodies written by the WordPress
+        // import or straight into the database never passed the save-time
+        // sanitiser — one `<img onerror>` there runs as a staff member, with
+        // their session, inside the panel that can edit bank details.
+        out.push({ type: 'richText', html: sanitizeRichText(str(block.html)) });
         break;
       case 'heading':
         out.push({

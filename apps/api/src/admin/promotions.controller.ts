@@ -32,6 +32,9 @@ import { PromotionsService } from './promotions.service.js';
 export class PromotionsController {
   constructor(private readonly promotions: PromotionsService) {}
 
+  // Every live code is on this list, and a code is money. MARKETING reads it
+  // because it plans around it; changing one stays ADMIN.
+  @Roles('ADMIN', 'MARKETING')
   @Get()
   @ApiOperation({ summary: 'Coupons with what each has actually done' })
   list(@Query('filter') filter?: string): Promise<AdminPromotionList> {

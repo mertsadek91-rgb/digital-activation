@@ -98,6 +98,18 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Whether a secret is a stand-in rather than a generated value.
+ *
+ * Length is not the test — the example file's placeholder is long enough.
+ * The words people type into placeholders are, and so is how few distinct
+ * characters a hand-typed string has next to 32 random bytes.
+ */
+export function looksLikePlaceholder(secret: string): boolean {
+  if (/change[_-]?me|placeholder|example|replace|your[_-]?secret/i.test(secret)) return true;
+  return new Set(secret).size < 12;
+}
+
 export function validateEnv(raw: Record<string, unknown>): Env {
   // An unset variable in a .env file is written `KEY=`, which dotenv hands over
   // as an empty string — not undefined. `.optional()` only admits undefined, so
@@ -140,6 +152,15 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     }
     if (env.MAIL_TRANSPORT === 'smtp' && !env.SMTP_URL) {
       missing.push('SMTP_URL (required by MAIL_TRANSPORT=smtp)');
+    }
+    // The access secret signs the staff session, and the guard trusts the
+    // role inside it without a database read — so whoever knows it can mint
+    // an OWNER token. The `.env.example` placeholder is 38 characters and
+    // passes the length check, which is exactly how it ends up in production.
+    if (looksLikePlaceholder(env.JWT_ACCESS_SECRET)) {
+      throw new Error(
+        'JWT_ACCESS_SECRET looks like a placeholder. Generate one with `pnpm secrets:generate` — anyone who knows this value can sign in as the owner.',
+      );
     }
     if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');

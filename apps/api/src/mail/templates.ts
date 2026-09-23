@@ -294,7 +294,8 @@ ${button(input.orderUrl, 'Track your order')}`;
       ? [
           ar ? 'ما ستدفع مقابله:' : 'What you are paying for:',
           ...input.lines.map(
-            (line) => `- ${line.productName} (${line.sku} × ${String(line.qty)}) — ${line.lineTotal}`,
+            (line) =>
+              `- ${line.productName} (${line.sku} × ${String(line.qty)}) — ${line.lineTotal}`,
           ),
           '',
         ]
@@ -609,7 +610,6 @@ export function contactToStore(input: {
  */
 export function contactAck(input: {
   locale: 'ar' | 'en';
-  name: string;
   hours: number;
   supportEmail: string;
 }): Rendered {
@@ -617,10 +617,10 @@ export function contactAck(input: {
 
   const body = ar
     ? `<h1 style="margin:0 0 8px;font-size:20px;">وصلتنا رسالتك</h1>
-<p>شكراً ${escape(input.name)}. فريقنا يقرأ الرسائل بالترتيب ويردّ خلال ${String(input.hours)} ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.</p>
+<p>شكراً لك. فريقنا يقرأ الرسائل بالترتيب ويردّ خلال ${String(input.hours)} ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.</p>
 <p style="color:${MUTED};">إن كانت رسالتك عن مفتاح لا يعمل، لا تُعد محاولة التفعيل مراراً قبل أن نردّ — بعض المنتجات تقفل بعد عدّة محاولات خاطئة.</p>`
     : `<h1 style="margin:0 0 8px;font-size:20px;">We have your message</h1>
-<p>Thank you, ${escape(input.name)}. We read messages in order and reply within ${String(input.hours)} hours at the latest, usually well before that.</p>
+<p>Thank you. We read messages in order and reply within ${String(input.hours)} hours at the latest, usually well before that.</p>
 <p style="color:${MUTED};">If this is about a key that will not activate, please do not keep retrying before we reply — some products lock after a few failed attempts.</p>`;
 
   return {

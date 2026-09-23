@@ -45,6 +45,26 @@ async function bootstrap(): Promise<void> {
   // itself lives beside the storage it opens, where it can be tested.
   registerPanelLocale(app.getHttpAdapter().getInstance());
 
+  // Security headers on every response. The API serves JSON, never a page, so
+  // the policy is "nothing": no scripts, no frames, no sniffing a JSON body
+  // into HTML. Swagger's page needs scripts, and it only exists outside
+  // production, so the CSP is production's alone.
+  const production = process.env.NODE_ENV === 'production';
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .addHook('onSend', async (_request, reply, payload) => {
+      reply.header('X-Content-Type-Options', 'nosniff');
+      reply.header('X-Frame-Options', 'DENY');
+      reply.header('Referrer-Policy', 'no-referrer');
+      reply.header('Cross-Origin-Resource-Policy', 'same-site');
+      if (production) {
+        reply.header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'");
+        reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+      }
+      return payload;
+    });
+
   app.enableCors({
     origin: [process.env.STOREFRONT_URL, process.env.ADMIN_URL].filter(Boolean) as string[],
     credentials: true,

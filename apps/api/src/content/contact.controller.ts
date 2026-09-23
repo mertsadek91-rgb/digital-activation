@@ -22,6 +22,9 @@ import { ContactService } from './contact.service.js';
 export class ContactAdminController {
   constructor(private readonly contact: ContactService) {}
 
+  // Names, email addresses and whatever people wrote: support's inbox, not
+  // something every staff role pages through.
+  @Roles('ADMIN', 'SUPPORT')
   @Get()
   @ApiOperation({ summary: 'Messages from the contact form, unanswered first' })
   list(

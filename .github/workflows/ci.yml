@@ -118,7 +118,11 @@ jobs:
 
       - name: Reject legacy backup artefacts
         run: |
-          if git ls-files | grep -Ei '(^Old Website/|\.sql$|\.sql\.gz$|\.tar\.gz$|\.wpress$)'; then
+          # The schema's own SQL — migrations and the role scripts — lives under
+          # packages/db/prisma/ and is meant to be here. Without the exclusion
+          # this step fails on every run, and a check that always fails is one
+          # people learn to ignore.
+          if git ls-files | grep -v '^packages/db/prisma/' | grep -Ei '(^Old Website/|\.sql$|\.sql\.gz$|\.tar\.gz$|\.wpress$)'; then
             echo "::error::Legacy backup artefacts must never be committed. See .gitignore."
             exit 1
           fi

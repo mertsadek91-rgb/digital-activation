@@ -35,7 +35,9 @@ export function readBody(body: unknown): BodyForEditing {
     const record = block as Record<string, unknown>;
 
     if (record.type === 'richText' && typeof record.html === 'string') {
-      html.push(record.html);
+      // Sanitised here too, not only in `writeBody`: the editor renders what
+      // it is given, and imported bodies never went through a save.
+      html.push(sanitizeRichText(record.html));
       continue;
     }
     otherBlocks.push(typeof record.type === 'string' ? record.type : 'unknown');
