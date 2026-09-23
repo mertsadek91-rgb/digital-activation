@@ -276,7 +276,11 @@
     "next": "Next slide",
     "play": "Play slideshow",
     "pause": "Pause slideshow",
-    "goTo": "Go to slide {n}"
+    "goTo": "Go to slide {n}",
+    "from": "from",
+    "save": "Save {percent}%",
+    "goToProduct": "Go to {name}",
+    "goldenWarranty": "Covered by the golden warranty"
   },
   "cart": {
     "title": "Your cart",

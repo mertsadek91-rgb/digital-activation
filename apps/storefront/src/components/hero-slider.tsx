@@ -3,160 +3,19 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
-
-export interface SlideItem {
-  id: string;
-  tagAr: string;
-  tagEn: string;
-  catAr: string;
-  catEn: string;
-  titleAr: string;
-  titleEn: string;
-  descAr: string;
-  descEn: string;
-  href: string;
-  featuresAr: string[];
-  featuresEn: string[];
-  theme: {
-    accent: string;
-    bgGlow: string;
-    badgeBg: string;
-    badgeBorder: string;
-  };
-}
-
-const SLIDES: SlideItem[] = [
-  {
-    id: 'office-2024',
-    tagAr: 'الأكثر طلباً 🔥',
-    tagEn: 'Best Seller 🔥',
-    catAr: 'تطبيقات الأعمال والمكتب',
-    catEn: 'Office & Productivity',
-    titleAr: 'مايكروسوفت أوفيس 2024 برو بلس',
-    titleEn: 'Microsoft Office 2024 Pro Plus',
-    descAr:
-      'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
-    descEn:
-      'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
-    href: '/store',
-    featuresAr: [
-      'تفعيل رسمي عبر موقع مايكروسوفت',
-      'ترخيص أصلي دائم مدى الحياة',
-      'تسليم فوري بعد الدفع مباشرة',
-    ],
-    featuresEn: [
-      'Official setup via Microsoft',
-      'Permanent lifetime license',
-      'Instant delivery after payment',
-    ],
-    theme: {
-      accent: '#EA580C',
-      bgGlow: 'radial-gradient(circle at 80% 20%, rgba(234, 88, 12, 0.16) 0%, transparent 60%)',
-      badgeBg: 'rgba(234, 88, 12, 0.12)',
-      badgeBorder: 'rgba(234, 88, 12, 0.3)',
-    },
-  },
-  {
-    id: 'windows-11-pro',
-    tagAr: 'ترقية فورية ⚡',
-    tagEn: 'Instant Upgrade ⚡',
-    catAr: 'أنظمة التشغيل الأصلية',
-    catEn: 'Operating Systems',
-    titleAr: 'ويندوز 11 بروفيشنال (Windows 11 Pro)',
-    titleEn: 'Windows 11 Professional',
-    descAr:
-      'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
-    descEn:
-      'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
-    href: '/store',
-    featuresAr: [
-      'يدعم الترقية من هوم إلى برو',
-      'تشفير كامل للقرص مع BitLocker',
-      'مربوط بلوحة الأم مدى الحياة',
-    ],
-    featuresEn: [
-      'Upgrade from Home to Pro directly',
-      'Full disk encryption with BitLocker',
-      'Binds to motherboard for lifetime',
-    ],
-    theme: {
-      accent: '#0284C7',
-      bgGlow: 'radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.16) 0%, transparent 60%)',
-      badgeBg: 'rgba(2, 132, 199, 0.12)',
-      badgeBorder: 'rgba(2, 132, 199, 0.3)',
-    },
-  },
-  {
-    id: 'adobe-all-apps',
-    tagAr: 'للمصممين والمحترفين 🎨',
-    tagEn: 'For Creators & Pros 🎨',
-    catAr: 'التصميم والإبداع',
-    catEn: 'Creative Cloud',
-    titleAr: 'باقة أدوبي كرييتف كلاود الشاملة',
-    titleEn: 'Adobe Creative Cloud All Apps',
-    descAr:
-      'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
-    descEn:
-      '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
-    href: '/store',
-    featuresAr: [
-      'تفعيل على حسابك الشخصي في أدوبي',
-      'سعة تخزين سحابية 100 جيجابايت',
-      'يدعم الذكاء الاصطناعي Generative Fill',
-    ],
-    featuresEn: [
-      'Activates on your personal Adobe ID',
-      '100GB Cloud Storage included',
-      'Includes Firefly Generative AI',
-    ],
-    theme: {
-      accent: '#E11D48',
-      bgGlow: 'radial-gradient(circle at 80% 20%, rgba(225, 29, 72, 0.16) 0%, transparent 60%)',
-      badgeBg: 'rgba(225, 29, 72, 0.12)',
-      badgeBorder: 'rgba(225, 29, 72, 0.3)',
-    },
-  },
-  {
-    id: 'kaspersky-security',
-    tagAr: 'حماية متكاملة 🛡️',
-    tagEn: 'Ultimate Security 🛡️',
-    catAr: 'برامج الحماية والأمن',
-    catEn: 'Antivirus & Cybersecurity',
-    titleAr: 'كاسبرسكي توتال سيكيورتي (Kaspersky)',
-    titleEn: 'Kaspersky Total Security',
-    descAr: 'حماية فائقة وشاملة ضد الفيروسات، برامج الفدية، والتصيد المصرفي لراحة بال كاملة.',
-    descEn:
-      'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
-    href: '/store',
-    featuresAr: [
-      'حماية متقدمة للدفع والمعاملات البنكية',
-      'جدار حماية ذكي ضد برامج التجسس',
-      'ضمان ذهبي لاستبدال المفتاح',
-    ],
-    featuresEn: [
-      'Safe Money banking protection',
-      'Smart firewall & ransomware shield',
-      'Golden warranty replacement',
-    ],
-    theme: {
-      accent: '#059669',
-      bgGlow: 'radial-gradient(circle at 80% 20%, rgba(5, 150, 105, 0.16) 0%, transparent 60%)',
-      badgeBg: 'rgba(5, 150, 105, 0.12)',
-      badgeBorder: 'rgba(5, 150, 105, 0.3)',
-    },
-  },
-];
+import type { HeroSlide } from '../lib/hero-slides';
 
 /**
- * The featured-product rotator.
+ * The featured-product slider in the hero.
  *
- * It carried a price, a struck-through "was" price and a "save 60%" badge on
- * every slide, typed into this file — figures no catalog row stood behind and
- * which the product page they linked to did not show. The headlines and the
- * links stay; the numbers are the product pages' to state.
+ * Draws what `loadHeroSlides` read from the catalog and nothing else: no
+ * price, name or claim is written in this file, so the first screen of the
+ * site can no longer quote a price the product page does not honour. The only
+ * text here is the chrome around the data — "from", "save", the buttons —
+ * and it comes from the `hero` messages like the rest of the page.
  *
  * Rotation stops while the pointer is over it, while anything inside it has
  * keyboard focus, and whenever the visitor presses pause — moving content
@@ -164,7 +23,7 @@ const SLIDES: SlideItem[] = [
  * focused link moves the link. It starts paused for anybody who has asked the
  * system for reduced motion.
  */
-export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
+export function HeroSlider({ slides, locale = 'ar' }: { slides: HeroSlide[]; locale?: string }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const [hovered, setHovered] = useState(false);
@@ -178,27 +37,30 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
 
   const t = useTranslations('hero');
   const isAr = isArabic(locale);
-  const slide = SLIDES[current] ?? SLIDES[0]!;
+  const count = slides.length;
+  const slide = slides[current] ?? slides[0];
 
   const nextSlide = () => {
     setDirection(1);
-    setCurrent((prev) => (prev + 1) % SLIDES.length);
+    setCurrent((prev) => (prev + 1) % count);
   };
 
   const prevSlide = () => {
     setDirection(-1);
-    setCurrent((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
+    setCurrent((prev) => (prev - 1 + count) % count);
   };
 
-  // Auto-play interval
+  // Auto-play interval. One slide has nowhere to go.
   useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || count < 2) return;
     const timer = setInterval(() => {
       setDirection(1);
-      setCurrent((prev) => (prev + 1) % SLIDES.length);
+      setCurrent((prev) => (prev + 1) % count);
     }, 5000);
     return () => clearInterval(timer);
-  }, [isPaused, current]);
+  }, [isPaused, current, count]);
+
+  if (!slide) return null;
 
   const slideVariants = {
     enter: (dir: number) => ({
@@ -240,7 +102,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
       <div className="hero-slider-card" style={{ background: slide.theme.bgGlow }}>
         <AnimatePresence custom={direction} mode="wait">
           <motion.div
-            key={slide.id}
+            key={slide.slug}
             custom={direction}
             variants={slideVariants}
             initial="enter"
@@ -248,29 +110,33 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
             exit="exit"
             className="hero-slide-content"
           >
-            {/* Top Badges */}
+            {/* Brand and category, both from the catalog. */}
             <div className="hero-slide-top">
-              <span
-                className="hero-slide-tag"
-                style={{
-                  background: slide.theme.badgeBg,
-                  borderColor: slide.theme.badgeBorder,
-                  color: slide.theme.accent,
-                }}
-              >
-                {isAr ? slide.tagAr : slide.tagEn}
-              </span>
-              <span className="hero-slide-cat">{isAr ? slide.catAr : slide.catEn}</span>
+              {slide.brand ? (
+                <span
+                  className="hero-slide-tag"
+                  style={{
+                    background: slide.theme.badgeBg,
+                    borderColor: slide.theme.badgeBorder,
+                    color: slide.theme.accent,
+                  }}
+                >
+                  {slide.brand}
+                </span>
+              ) : null}
+              {slide.category ? <span className="hero-slide-cat">{slide.category}</span> : null}
             </div>
 
-            {/* Title & Description */}
-            <h2 className="hero-slide-title">{isAr ? slide.titleAr : slide.titleEn}</h2>
-            <p className="hero-slide-desc">{isAr ? slide.descAr : slide.descEn}</p>
+            {/* h2: the page's h1 is the headline beside the slider, so a slide
+                title one level below it keeps the outline unbroken. */}
+            <h2 className="hero-slide-title">
+              <Link href={slide.href}>{slide.name}</Link>
+            </h2>
+            {slide.description ? <p className="hero-slide-desc">{slide.description}</p> : null}
 
-            {/* Checklist Features */}
             <ul className="hero-slide-features">
-              {(isAr ? slide.featuresAr : slide.featuresEn).map((feature, idx) => (
-                <li key={idx}>
+              {slide.features.map((feature) => (
+                <li key={feature}>
                   <span className="feature-bullet" style={{ color: slide.theme.accent }}>
                     ✓
                   </span>
@@ -279,10 +145,26 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
               ))}
             </ul>
 
-            {/* Price & Action Row */}
             <div className="hero-slide-footer">
+              <div className="hero-slide-price-box">
+                <div className="hero-slide-prices">
+                  {slide.priceIsFrom ? <span className="hero-slide-from">{t('from')}</span> : null}
+                  <span className="hero-slide-price">{slide.price}</span>
+                  {slide.oldPrice ? (
+                    <span className="hero-slide-old-price">{slide.oldPrice}</span>
+                  ) : null}
+                </div>
+                {/* Only over a real strike-through. A saving with nothing to
+                    compare against is a number invented for the badge. */}
+                {slide.savePercent !== null ? (
+                  <span className="hero-slide-save">
+                    {t('save', { percent: String(slide.savePercent) })}
+                  </span>
+                ) : null}
+              </div>
+
               <Link
-                href={isAr ? slide.href : `/${locale}${slide.href}`}
+                href={slide.href}
                 className="hero-slide-cta"
                 style={{
                   background: `linear-gradient(135deg, ${slide.theme.accent}, color-mix(in srgb, ${slide.theme.accent} 80%, black))`,
@@ -297,57 +179,60 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation. The first button is "previous" in both languages and
-            the row flips with the page, so in Arabic it sits on the right with
-            a right-pointing arrow — backwards, in a right-to-left reading. It
-            used to call "next" in Arabic while announcing "previous". */}
-        <div className="hero-slider-nav">
-          <button
-            type="button"
-            className="hero-slider-arrow"
-            onClick={prevSlide}
-            aria-label={t('previous')}
-          >
-            {isAr ? '→' : '←'}
-          </button>
-
-          <div className="hero-slider-center">
+        {/* Navigation, only when there is somewhere to go. The first button is
+            "previous" in both languages and the row flips with the page, so
+            in Arabic it sits on the right with a right-pointing arrow. It used
+            to call "next" in Arabic while announcing "previous". */}
+        {count > 1 ? (
+          <div className="hero-slider-nav">
             <button
               type="button"
-              className="hero-slider-arrow hero-slider-pause"
-              onClick={() => setStopped(!stopped)}
-              aria-label={stopped ? t('play') : t('pause')}
+              className="hero-slider-arrow"
+              onClick={prevSlide}
+              aria-label={t('previous')}
             >
-              <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
+              {isAr ? '→' : '←'}
             </button>
 
-            {/* Pagination Indicators */}
-            <div className="hero-slider-dots">
-              {SLIDES.map((s, idx) => (
-                <button
-                  key={s.id}
-                  type="button"
-                  className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setDirection(idx > current ? 1 : -1);
-                    setCurrent(idx);
-                  }}
-                  aria-label={t('goTo', { n: String(idx + 1) })}
-                  style={idx === current ? { background: slide.theme.accent } : undefined}
-                />
-              ))}
-            </div>
-          </div>
+            <div className="hero-slider-center">
+              <button
+                type="button"
+                className="hero-slider-arrow hero-slider-pause"
+                onClick={() => setStopped(!stopped)}
+                aria-label={stopped ? t('play') : t('pause')}
+              >
+                <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
+              </button>
 
-          <button
-            type="button"
-            className="hero-slider-arrow"
-            onClick={nextSlide}
-            aria-label={t('next')}
-          >
-            {isAr ? '←' : '→'}
-          </button>
-        </div>
+              <div className="hero-slider-dots">
+                {slides.map((entry, idx) => (
+                  <button
+                    key={entry.slug}
+                    type="button"
+                    className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setDirection(idx > current ? 1 : -1);
+                      setCurrent(idx);
+                    }}
+                    aria-label={t('goToProduct', { name: entry.name })}
+                    // backgroundColor, not background: the shorthand would
+                    // reset background-clip and paint the whole 24px target.
+                    style={idx === current ? { backgroundColor: slide.theme.accent } : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="hero-slider-arrow"
+              onClick={nextSlide}
+              aria-label={t('next')}
+            >
+              {isAr ? '←' : '→'}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );
