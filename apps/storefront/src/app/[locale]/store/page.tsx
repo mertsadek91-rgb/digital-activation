@@ -94,6 +94,10 @@ export default async function StorePage({ params, searchParams }: Props) {
   const ar = locale === 'ar';
   const prefix = ar ? '' : `/${locale}`;
 
+  // Null only when the API refused the request itself (a page number past the
+  // end, say). An outage throws instead and lands on `error.tsx` — a store
+  // page that answered 404 while the API was down told crawlers the whole
+  // catalogue was gone.
   const store = await getStore({ locale, page, perPage: PER_PAGE, sort });
   if (!store) notFound();
 
