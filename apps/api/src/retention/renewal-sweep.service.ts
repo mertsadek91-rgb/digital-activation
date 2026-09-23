@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
-import type { RenewalSettings } from '@da/contracts';
+import type { RenewalSettings, WhatsappSettings } from '@da/contracts';
 import {
   FulfillmentState,
   Locale,
+  NotificationChannel,
   OrderStatus,
   Prisma,
   PromotionScope,
@@ -16,6 +17,9 @@ import { licenceExpiry, termOf } from '../common/licence-term.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buttonSuffix, chooseDelivery } from '../whatsapp/rules.js';
+import { renewalParams } from '../whatsapp/templates.js';
+import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 
 import { formatDate, storefrontUrl, unsubscribeLinks } from './links.js';
 import {
@@ -40,6 +44,12 @@ import { renewalReminder } from './templates.js';
  * time-limited licence and carries no promotion. A renewal discount, when the
  * store sets one, is added only for customers with marketing consent, as a
  * single-use code bound to them, with the discount licence number beside it.
+ *
+ * A customer who agreed to WhatsApp, when the channel is on and preferred,
+ * gets the reminder there instead of by email — the plain one only, since a
+ * Utility template may not carry a promotion. WhatsApp needs its own opt-in
+ * even for a service message: Meta's policy requires it before a business
+ * writes first, whatever the message is about.
  *
  * Once a day, in the morning, store time. A sweep over the database rather
  * than a job scheduled at delivery, like the review invitations: a day the
@@ -83,6 +93,9 @@ interface DueLine {
     firstName: string | null;
     marketingOptInAt: Date | null;
     marketingOptOutAt: Date | null;
+    whatsappPhone: string | null;
+    whatsappOptInAt: Date | null;
+    whatsappOptOutAt: Date | null;
   } | null;
   locale: 'ar' | 'en';
   expiresAt: Date;
@@ -97,6 +110,7 @@ export class RenewalSweepService {
     private readonly prisma: PrismaService,
     private readonly mail: MailService,
     private readonly settings: MarketingSettingsService,
+    private readonly whatsapp: WhatsappService,
   ) {}
 
   @Cron('0 10 * * *', { name: 'renewal-reminders', timeZone: storeTimeZone() })
@@ -110,7 +124,7 @@ export class RenewalSweepService {
     if (!lock?.locked) return { sent: 0, heldOut: 0 };
 
     try {
-      return await this.run(settings, new Date());
+      return await this.run(settings, await this.settings.get('whatsapp'), new Date());
     } finally {
       await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
     }
@@ -118,6 +132,7 @@ export class RenewalSweepService {
 
   private async run(
     settings: RenewalSettings,
+    whatsapp: WhatsappSettings,
     now: Date,
   ): Promise<{ sent: number; heldOut: number }> {
     const due = await this.findDue(settings, now);
@@ -156,7 +171,7 @@ export class RenewalSweepService {
           continue;
         }
 
-        if (await this.send(lines, settings, now)) sent += 1;
+        if (await this.send(lines, settings, whatsapp, now)) sent += 1;
       } catch (error) {
         // One line that cannot be emailed must not stop the pass. The order
         // number is safe to log; the address is not.
@@ -234,6 +249,9 @@ export class RenewalSweepService {
                   firstName: true,
                   marketingOptInAt: true,
                   marketingOptOutAt: true,
+                  whatsappPhone: true,
+                  whatsappOptInAt: true,
+                  whatsappOptOutAt: true,
                   deletedAt: true,
                 },
               },
@@ -334,7 +352,12 @@ export class RenewalSweepService {
   /** Writes the reminder rows. The unique index makes a second writer a no-op. */
   private async claim(
     lines: DueLine[],
-    data: { heldOut: boolean; sentAt?: Date; promotionId?: string | null },
+    data: {
+      heldOut: boolean;
+      sentAt?: Date;
+      promotionId?: string | null;
+      channel?: NotificationChannel;
+    },
   ): Promise<void> {
     await this.prisma.client.renewalReminder.createMany({
       data: lines.map((line) => ({
@@ -349,14 +372,35 @@ export class RenewalSweepService {
         heldOut: data.heldOut,
         sentAt: data.sentAt ?? null,
         promotionId: data.promotionId ?? null,
+        channel: data.channel ?? NotificationChannel.EMAIL,
       })),
       skipDuplicates: true,
     });
   }
 
-  private async send(lines: DueLine[], settings: RenewalSettings, now: Date): Promise<boolean> {
+  private async send(
+    lines: DueLine[],
+    settings: RenewalSettings,
+    whatsapp: WhatsappSettings,
+    now: Date,
+  ): Promise<boolean> {
     const first = lines[0];
     if (!first) return false;
+
+    const route = chooseDelivery({
+      whatsappEnabled: whatsapp.enabled,
+      preferWhatsapp: whatsapp.preferWhatsapp,
+      configured: this.whatsapp.configured,
+      templateName: whatsapp.renewal.templateName,
+      customer: first.customer,
+      // A service message: email is always allowed. The holdout was decided
+      // by the caller, before the channel, so it is the same on both.
+      emailAllowed: true,
+      heldOut: false,
+    });
+    if (route === 'whatsapp' && (await this.sendWhatsapp(lines, whatsapp))) return true;
+    // Either the route was email, or WhatsApp refused the message outright —
+    // in which case the reminder has not reached anybody and the email goes.
 
     const consent = hasMarketingConsent(first.customer);
     const offer =
@@ -418,6 +462,47 @@ export class RenewalSweepService {
     }
 
     await this.claim(lines, { heldOut: false, sentAt: new Date(), promotionId: offer?.id ?? null });
+    return true;
+  }
+
+  /** The plain reminder as the approved Utility template, recorded like the email. */
+  private async sendWhatsapp(lines: DueLine[], whatsapp: WhatsappSettings): Promise<boolean> {
+    const first = lines[0];
+    const phone = first?.customer?.whatsappPhone;
+    if (!first || !phone) return false;
+
+    const renew = storefrontUrl('/cart', first.locale);
+    renew.searchParams.set('add', first.variantId);
+    if (lines.length > 1) renew.searchParams.set('qty', String(lines.length));
+    const template = whatsapp.renewal;
+
+    const result = await this.whatsapp.sendTemplate({
+      to: phone,
+      template: template.templateName,
+      language: first.locale === 'ar' ? template.languageAr : template.languageEn,
+      bodyParams: renewalParams({
+        locale: first.locale,
+        firstName: first.customer?.firstName ?? null,
+        productName: first.productName,
+        expiresOn: formatDate(first.expiresAt, first.locale, storeTimeZone()),
+        offsetDays: first.offsetDays,
+      }),
+      buttonUrlSuffix: buttonSuffix(renew),
+      log: {
+        template: 'renewal.reminder',
+        locale: first.locale,
+        customerId: first.customerId,
+        payload: { orderNumber: first.orderNumber, offsetDays: first.offsetDays, withCode: false },
+      },
+    });
+    if (!result.ok) return false;
+
+    await this.claim(lines, {
+      heldOut: false,
+      sentAt: new Date(),
+      promotionId: null,
+      channel: NotificationChannel.WHATSAPP,
+    });
     return true;
   }
 

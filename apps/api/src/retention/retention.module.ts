@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { CartModule } from '../cart/cart.module.js';
 import { MailModule } from '../mail/mail.module.js';
 import { MarketingModule } from '../marketing/marketing.module.js';
+import { WhatsappModule } from '../whatsapp/whatsapp.module.js';
 
 import { CartRecoveryService } from './cart-recovery.service.js';
 import { RenewalSweepService } from './renewal-sweep.service.js';
@@ -19,7 +20,7 @@ import { RetentionStatsService } from './retention-stats.service.js';
  * in `markPaid` that marks an emailed cart RECOVERED instead of CLOSED.
  */
 @Module({
-  imports: [AuthModule, CartModule, MailModule, MarketingModule],
+  imports: [AuthModule, CartModule, MailModule, MarketingModule, WhatsappModule],
   controllers: [RetentionStatsController, RetentionPublicController],
   providers: [RenewalSweepService, CartRecoveryService, RetentionStatsService],
 })

@@ -344,10 +344,21 @@ export class CheckoutService {
 
     const existing = await this.prisma.client.customer.findUnique({
       where: { email: input.email },
-      select: { id: true, firstName: true, company: true, vatNumber: true },
+      select: { id: true, firstName: true, company: true, vatNumber: true, whatsappPhone: true },
     });
 
     if (existing) {
+      // The WhatsApp number follows the same rule: filled in when blank,
+      // never replaced from an unverified checkout. Consent may be *added* —
+      // ticking the box is an opt-in whoever's form it is — but only for the
+      // number on record, so a stranger typing this email cannot opt a number
+      // of their own choosing into this customer's messages. And never
+      // cleared here: withdrawing is what STOP is for.
+      const whatsappPhone = existing.whatsappPhone ?? input.whatsappPhone ?? null;
+      const consentAdded =
+        input.whatsappOptIn &&
+        input.whatsappPhone !== undefined &&
+        whatsappPhone === input.whatsappPhone;
       // Filled in, never overwritten. The email typed at checkout is not
       // verified, so anybody can type somebody else's — and before, doing so
       // replaced that customer's name, company and VAT number with whatever
@@ -361,6 +372,10 @@ export class CheckoutService {
             : {}),
           ...(input.company && !existing.company ? { company: input.company } : {}),
           ...(input.vatNumber && !existing.vatNumber ? { vatNumber: input.vatNumber } : {}),
+          ...(input.whatsappPhone && !existing.whatsappPhone
+            ? { whatsappPhone: input.whatsappPhone }
+            : {}),
+          ...(consentAdded ? { whatsappOptInAt: new Date() } : {}),
         },
       });
       return { id: existing.id };
@@ -375,6 +390,8 @@ export class CheckoutService {
           company: input.company ?? null,
           vatNumber: input.vatNumber ?? null,
           marketingOptInAt: input.marketingOptIn ? new Date() : null,
+          whatsappPhone: input.whatsappPhone ?? null,
+          whatsappOptInAt: input.whatsappOptIn && input.whatsappPhone ? new Date() : null,
           locale,
           currency,
         },

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
-import type { CartRecoverySettings } from '@da/contracts';
+import type { CartRecoverySettings, WhatsappSettings } from '@da/contracts';
 import {
   CartStage,
   Locale,
@@ -17,6 +17,9 @@ import { readLink, signLink } from '../common/signed-link.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { buttonSuffix, chooseDelivery } from '../whatsapp/rules.js';
+import { cartRecoveryParams } from '../whatsapp/templates.js';
+import { WhatsappService } from '../whatsapp/whatsapp.service.js';
 
 import { formatDateTime, storefrontUrl, unsubscribeLinks } from './links.js';
 import {
@@ -51,6 +54,10 @@ import { cartRecovery } from './templates.js';
  *    something they bought, so every rung — with a discount or without —
  *    goes only to a customer whose opt-in is on record and not withdrawn.
  *    A guest who never opted in gets nothing;
+ *  - write on both channels. When WhatsApp is on and preferred and the
+ *    customer ticked the WhatsApp box, a rung goes there *instead of* the
+ *    email; consent is per channel, so WhatsApp consent alone is enough for
+ *    WhatsApp and email consent alone for email;
  *  - write during quiet hours, in the store's timezone;
  *  - invent urgency. Nothing in a cart is held before payment, and the email
  *    says what is in it, not that it is running out.
@@ -67,6 +74,33 @@ const LINK_DAYS = 30;
 const LOCK_KEY = 761_205_042;
 
 const FEATURE = 'cartRecovery';
+
+type RecoveryCart = Prisma.CartGetPayload<{
+  include: {
+    customer: {
+      select: {
+        id: true;
+        firstName: true;
+        marketingOptInAt: true;
+        marketingOptOutAt: true;
+        whatsappPhone: true;
+        whatsappOptInAt: true;
+        whatsappOptOutAt: true;
+        deletedAt: true;
+      };
+    };
+    items: {
+      include: {
+        variant: {
+          select: {
+            productId: true;
+            product: { select: { slug: true; translations: true } };
+          };
+        };
+      };
+    };
+  };
+}>;
 
 /** Statuses that mean an order was paid for. */
 const PAID_STATUSES = [
@@ -86,6 +120,7 @@ export class CartRecoveryService {
     private readonly mail: MailService,
     private readonly cart: CartService,
     private readonly settings: MarketingSettingsService,
+    private readonly whatsapp: WhatsappService,
   ) {}
 
   @Cron(CronExpression.EVERY_10_MINUTES, { name: 'cart-recovery' })
@@ -103,7 +138,7 @@ export class CartRecoveryService {
     if (!lock?.locked) return none;
 
     try {
-      return await this.run(settings, now);
+      return await this.run(settings, await this.settings.get('whatsapp'), now);
     } finally {
       await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
     }
@@ -111,12 +146,32 @@ export class CartRecoveryService {
 
   private async run(
     settings: CartRecoverySettings,
+    whatsapp: WhatsappSettings,
     now: Date,
   ): Promise<{ sent: number; heldOut: number; closed: number }> {
     const steps = orderedSteps(settings.steps);
     const first = steps[0];
     const last = steps[steps.length - 1];
     if (!first || !last) return { sent: 0, heldOut: 0, closed: 0 };
+
+    // Whether a WhatsApp-only customer could be reached this pass. Only then
+    // are they read at all — otherwise they would be skipped in the loop on
+    // every pass and crowd out carts that can be sent.
+    const whatsappLive =
+      whatsapp.enabled &&
+      whatsapp.preferWhatsapp &&
+      this.whatsapp.configured &&
+      whatsapp.cartRecovery.templateName !== '';
+    const channelFor = (cart: RecoveryCart, heldOut: boolean) =>
+      chooseDelivery({
+        whatsappEnabled: whatsapp.enabled,
+        preferWhatsapp: whatsapp.preferWhatsapp,
+        configured: this.whatsapp.configured,
+        templateName: whatsapp.cartRecovery.templateName,
+        customer: cart.customer,
+        emailAllowed: cart.customer !== null && hasMarketingConsent(cart.customer),
+        heldOut,
+      });
 
     const carts = await this.prisma.client.cart.findMany({
       where: {
@@ -127,7 +182,15 @@ export class CartRecoveryService {
         // loop: a skipped cart would come back first on every pass and crowd
         // out the rest. (Unsubscribing clears the opt-in, so a set opt-in
         // means consent was given — or given again — after any opt-out.)
-        customer: { deletedAt: null, marketingOptInAt: { not: null } },
+        customer: {
+          deletedAt: null,
+          OR: [
+            { marketingOptInAt: { not: null } },
+            ...(whatsappLive
+              ? [{ whatsappOptInAt: { not: null }, whatsappPhone: { not: null } }]
+              : []),
+          ],
+        },
         lastActivityAt: {
           lte: new Date(now.getTime() - first.afterHours * 3_600_000),
           gte: new Date(now.getTime() - (last.afterHours + STALE_STEP_HOURS) * 3_600_000),
@@ -137,7 +200,16 @@ export class CartRecoveryService {
       take: PER_PASS,
       include: {
         customer: {
-          select: { id: true, marketingOptInAt: true, marketingOptOutAt: true, deletedAt: true },
+          select: {
+            id: true,
+            firstName: true,
+            marketingOptInAt: true,
+            marketingOptOutAt: true,
+            whatsappPhone: true,
+            whatsappOptInAt: true,
+            whatsappOptOutAt: true,
+            deletedAt: true,
+          },
         },
         items: {
           orderBy: { createdAt: 'asc' },
@@ -199,31 +271,46 @@ export class CartRecoveryService {
         }
 
         // The query already excludes these; asked again with the exact rule.
-        // Checked again here, against both timestamps, in case an opt-out
-        // landed after the query read the row.
-        if (!cart.customer || cart.customer.deletedAt || !hasMarketingConsent(cart.customer)) {
-          continue;
-        }
+        // Checked again here, against both timestamps and per channel, in
+        // case an opt-out (or a STOP) landed after the query read the row.
+        if (!cart.customer || cart.customer.deletedAt) continue;
+        const route = channelFor(cart, false);
+        if (route === 'none') continue;
 
-        if (inHoldout(FEATURE, cart.id, settings.holdoutPercent)) {
-          await this.advance(cart.id, cart.stage, stage, { heldOut: true, promotionId: null });
+        // Same holdout whichever channel the rung would have gone on: the
+        // question it answers is whether reminding works, not which app.
+        if (channelFor(cart, inHoldout(FEATURE, cart.id, settings.holdoutPercent)) === 'held-out') {
+          await this.advance(cart.id, cart.stage, stage, {
+            heldOut: true,
+            promotionId: null,
+            channel:
+              route === 'whatsapp' ? NotificationChannel.WHATSAPP : NotificationChannel.EMAIL,
+          });
           heldOut += 1;
           this.logger.log(`Cart ${cart.id} held out of recovery step ${String(step + 1)}.`);
           continue;
         }
 
+        // Only consented customers get this far (on the channel the code
+        // travels on), which is what a code needs.
         const offer =
-          config.discountPercent > 0 && cart.customer && hasMarketingConsent(cart.customer)
+          config.discountPercent > 0
             ? await this.mint(cart, config.discountPercent, settings, now)
             : null;
+        const offered = offer ? { ...offer, percent: config.discountPercent } : null;
 
-        const ok = await this.send(
-          cart,
-          email,
-          step,
-          offer ? { ...offer, percent: config.discountPercent } : null,
-          settings,
-        );
+        let channel: NotificationChannel = NotificationChannel.EMAIL;
+        let ok = false;
+        if (route === 'whatsapp') {
+          ok = await this.sendWhatsapp(cart, step, offered, settings, whatsapp);
+          if (ok) channel = NotificationChannel.WHATSAPP;
+        }
+        // Email when that was the route, or when WhatsApp refused the message
+        // outright and email consent exists: the rung was not delivered, so
+        // this is a fallback, not a second message.
+        if (!ok && hasMarketingConsent(cart.customer)) {
+          ok = await this.send(cart, email, step, offered, settings);
+        }
         if (!ok) {
           if (offer) {
             await this.prisma.client.promotion.update({
@@ -237,6 +324,7 @@ export class CartRecoveryService {
         await this.advance(cart.id, cart.stage, stage, {
           heldOut: false,
           promotionId: offer?.id ?? null,
+          channel,
         });
         sent += 1;
       } catch (error) {
@@ -264,7 +352,7 @@ export class CartRecoveryService {
     cartId: string,
     from: CartStage,
     to: CartStage,
-    event: { heldOut: boolean; promotionId: string | null },
+    event: { heldOut: boolean; promotionId: string | null; channel: NotificationChannel },
   ): Promise<void> {
     await this.prisma.client.$transaction(async (tx) => {
       const moved = await tx.cart.updateMany({
@@ -276,7 +364,7 @@ export class CartRecoveryService {
         data: {
           cartId,
           stage: to,
-          channel: NotificationChannel.EMAIL,
+          channel: event.channel,
           heldOut: event.heldOut,
           promotionId: event.promotionId,
         },
@@ -319,29 +407,12 @@ export class CartRecoveryService {
     return promotion.code ? { id: promotion.id, code: promotion.code, endsAt } : null;
   }
 
-  private async send(
-    cart: Prisma.CartGetPayload<{
-      include: {
-        items: {
-          include: {
-            variant: {
-              select: {
-                productId: true;
-                product: { select: { slug: true; translations: true } };
-              };
-            };
-          };
-        };
-      };
-    }>,
-    email: string,
-    step: number,
-    offer: { code: string; endsAt: Date; percent: number } | null,
-    settings: CartRecoverySettings,
-  ): Promise<boolean> {
-    const locale = cart.locale === Locale.EN ? 'en' : 'ar';
+  /** The cart's lines and total in its own currency and language. */
+  private async summarise(
+    cart: RecoveryCart,
+    locale: 'ar' | 'en',
+  ): Promise<{ lines: { productName: string; qty: number; lineTotal: string }[]; total: string }> {
     const currency = cart.currency;
-
     const lines = await Promise.all(
       cart.items.map(async (item) => {
         const name =
@@ -356,13 +427,69 @@ export class CartRecoveryService {
       (sum, item) => sum.plus(item.unitPriceUsd.times(item.qty)),
       new Prisma.Decimal(0),
     );
-    const total = money(await this.cart.convertUsd(subtotal, currency), locale);
+    return { lines, total: money(await this.cart.convertUsd(subtotal, currency), locale) };
+  }
 
+  /** The signed link that puts this cart back in whichever browser opens it. */
+  private restoreUrl(cartId: string, locale: 'ar' | 'en'): URL {
     const restore = storefrontUrl('/cart', locale);
     restore.searchParams.set(
       'restore',
-      signLink('cart-restore', cart.id, new Date(Date.now() + LINK_DAYS * 86_400_000)),
+      signLink('cart-restore', cartId, new Date(Date.now() + LINK_DAYS * 86_400_000)),
     );
+    return restore;
+  }
+
+  /**
+   * The rung as the approved WhatsApp template. The restore link is the URL
+   * button, and it carries any code: opening it puts the discount on the cart.
+   */
+  private async sendWhatsapp(
+    cart: RecoveryCart,
+    step: number,
+    offer: { code: string; endsAt: Date; percent: number } | null,
+    settings: CartRecoverySettings,
+    whatsapp: WhatsappSettings,
+  ): Promise<boolean> {
+    const phone = cart.customer?.whatsappPhone;
+    if (!phone) return false;
+    const locale = cart.locale === Locale.EN ? 'en' : 'ar';
+    const { lines, total } = await this.summarise(cart, locale);
+    const template = whatsapp.cartRecovery;
+    const result = await this.whatsapp.sendTemplate({
+      to: phone,
+      template: template.templateName,
+      language: locale === 'ar' ? template.languageAr : template.languageEn,
+      bodyParams: cartRecoveryParams({
+        locale,
+        firstName: cart.customer?.firstName ?? null,
+        productNames: lines.map((line) => line.productName),
+        total,
+        offer: offer
+          ? { percent: offer.percent, licenceNumber: settings.discountLicenceNumber }
+          : null,
+      }),
+      buttonUrlSuffix: buttonSuffix(this.restoreUrl(cart.id, locale)),
+      log: {
+        template: `cart.recovery.${String(step + 1)}`,
+        locale,
+        customerId: cart.customerId,
+        payload: { cartId: cart.id, step: step + 1, withCode: offer !== null },
+      },
+    });
+    return result.ok;
+  }
+
+  private async send(
+    cart: RecoveryCart,
+    email: string,
+    step: number,
+    offer: { code: string; endsAt: Date; percent: number } | null,
+    settings: CartRecoverySettings,
+  ): Promise<boolean> {
+    const locale = cart.locale === Locale.EN ? 'en' : 'ar';
+    const { lines, total } = await this.summarise(cart, locale);
+    const restore = this.restoreUrl(cart.id, locale);
     const unsubscribe = unsubscribeLinks(email, locale);
 
     const result = await this.mail.send({
