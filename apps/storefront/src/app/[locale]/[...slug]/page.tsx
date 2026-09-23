@@ -7,7 +7,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../components/blocks';
 import { getPage } from '../../../lib/api';
 import { goneOrRedirect } from '../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../lib/seo';
+import { notFoundMetadata, pageTitle, robotsMeta } from '../../../lib/seo';
 
 /**
  * Editorial pages: the warranty, the policies, whatever is written next.
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const served = page.locale === 'en' ? 'en' : 'ar';
 
   return {
-    title: page.seo.title ?? page.title,
+    title: pageTitle(page.seo.title ?? page.title),
     description: page.seo.description,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {

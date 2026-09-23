@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { buildGraph, jsonld } from '@da/seo';
+import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { BRAND } from '@da/ui';
 
 import { CategoryMark, StepMark } from '../../components/icons';
@@ -47,8 +47,18 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'home' });
 
   return {
-    title: `${t('heroHeadline')} | ${locale === 'ar' ? BRAND.nameAr : BRAND.nameEn}`,
+    // Absolute: this one already ends in the brand, and the layout's template
+    // would add it a second time.
+    title: { absolute: `${t('heroHeadline')} | ${locale === 'ar' ? BRAND.nameAr : BRAND.nameEn}` },
     description: t('heroBody'),
+    // The home page's own canonical and hreflang, which used to be declared by
+    // the layout and so, wrongly, by every other page too.
+    alternates: {
+      canonical: canonical(SITE_URL, ROUTES.home, locale === 'en' ? 'en' : 'ar'),
+      languages: Object.fromEntries(
+        alternates(SITE_URL, ROUTES.home).map((link) => [link.hrefLang, link.href]),
+      ),
+    },
   };
 }
 
@@ -75,18 +85,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // that row has something in it: an ItemList of zero items is a claim about
   // nothing.
   const rail = home && home.bestSellers.length > 0 ? home.bestSellers : null;
+  //
+  // The Organization and WebSite nodes are emitted by the layout, on every
+  // page, so they are not repeated here.
   const graph = buildGraph([
-    jsonld.organization({
-      name: locale === 'ar' ? BRAND.nameAr : BRAND.nameEn,
-      url: SITE_URL,
-      logoUrl: `${SITE_URL}/logo.svg`,
-      sameAs: [],
-    }),
-    jsonld.website({
-      url: SITE_URL,
-      name: locale === 'ar' ? BRAND.nameAr : BRAND.nameEn,
-      locale,
-    }),
     jsonld.faqPage(faq),
     rail
       ? jsonld.itemList({

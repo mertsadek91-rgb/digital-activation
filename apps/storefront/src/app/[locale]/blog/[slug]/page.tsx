@@ -12,7 +12,12 @@ import { ProductCard } from '../../../../components/product-card';
 import { getPost } from '../../../../lib/api';
 import { formatArticleDate, readingLabel } from '../../../../lib/format';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import {
+  notFoundMetadata,
+  openGraphDefaults,
+  pageTitle,
+  robotsMeta,
+} from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -35,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const links = alternatesIn(SITE_URL, path, post.locales ?? [post.locale]);
 
   return {
-    title: post.seo.title ?? post.title,
+    title: pageTitle(post.seo.title ?? post.title),
     description: post.seo.description ?? post.summary,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
@@ -43,6 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
+      ...openGraphDefaults(locale),
       title: post.seo.title ?? post.title,
       description: post.seo.description ?? post.summary ?? undefined,
       type: 'article',

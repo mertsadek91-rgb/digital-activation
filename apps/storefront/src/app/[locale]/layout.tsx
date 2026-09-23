@@ -4,10 +4,11 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-import { alternates } from '@da/seo';
+import { buildGraph, jsonld } from '@da/seo';
+import { BRAND, DIRECTION } from '@da/ui';
 
-import { robotsMeta } from '../../lib/seo';
-import { DIRECTION } from '@da/ui';
+import { SUPPORT_EMAIL, SUPPORT_PHONE } from '../../lib/contact';
+import { openGraphDefaults, robotsMeta } from '../../lib/seo';
 
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
@@ -29,21 +30,27 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const links = alternates(SITE_URL, '/');
+  const ar = locale === 'ar';
+  const brand = ar ? BRAND.nameAr : BRAND.nameEn;
 
   return {
     metadataBase: new URL(SITE_URL),
+    // Every page names itself and the brand follows, so a tab, a share card
+    // and a result all read "<page> | <store>" without each page spelling it.
+    title: { default: brand, template: `%s | ${brand}` },
     // Derived, not configured: noindex on anything that is not the production
     // apex. While the rebuild sits on new.digital-activation.com and the legacy
     // site holds the apex, letting both into the index would set them competing
     // over the same content.
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
-    // Reciprocal hreflang on every page, including x-default -> Arabic.
-    // The legacy site emitted none at all while English demand went unanswered.
-    alternates: {
-      canonical: links.find((link) => link.hrefLang === locale)?.href,
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
-    },
+    // No canonical or hreflang here. Set on the layout they were inherited by
+    // every page that did not override them — the cart, the account, a 404 —
+    // each of which then declared itself a duplicate of the home page. Each
+    // page states its own, and a page that states none has none.
+    //
+    // Share-card defaults for the pages that set no card of their own.
+    openGraph: openGraphDefaults(locale),
+    twitter: { card: 'summary_large_image' },
   };
 }
 
@@ -65,9 +72,28 @@ export default async function LocaleLayout({
   // disagree about which categories exist.
   const collections = (await getCollections({ locale, revalidate: 900 })) ?? [];
 
+  // The store itself, on every page rather than only the home page. A product
+  // names its seller as `#organization`, and that reference resolved to
+  // nothing on the 68 product pages that are where it matters. A separate
+  // script from the page's own graph: it holds no Product, ItemList or
+  // Article, so the one-per-page rule `buildGraph` enforces is untouched.
+  const brand = locale === 'ar' ? BRAND.nameAr : BRAND.nameEn;
+  const siteGraph = buildGraph([
+    jsonld.organization({
+      name: brand,
+      url: SITE_URL,
+      logoUrl: new URL('/brand/logo.webp', SITE_URL).toString(),
+      sameAs: [],
+      email: SUPPORT_EMAIL,
+      phone: SUPPORT_PHONE,
+    }),
+    jsonld.website({ url: SITE_URL, name: brand, locale }),
+  ]);
+
   return (
     <html lang={locale} dir={DIRECTION[locale]}>
       <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: siteGraph }} />
         <NextIntlClientProvider>
           <SiteHeader locale={locale} collections={collections} />
           {children}

@@ -16,7 +16,12 @@ import { Reviews } from '../../../../components/reviews';
 import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import {
+  notFoundMetadata,
+  openGraphDefaults,
+  pageTitle,
+  robotsMeta,
+} from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 /** Digits only: `wa.me` takes no groups. The same number the footer prints. */
@@ -35,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const links = alternates(SITE_URL, path);
 
   return {
-    title: product.seo.title ?? product.name,
+    title: pageTitle(product.seo.title ?? product.name),
     description: product.seo.description ?? product.shortDesc,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
@@ -43,10 +48,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
+      ...openGraphDefaults(locale),
       title: product.seo.title ?? product.name,
       description: product.seo.description ?? product.shortDesc ?? undefined,
-      images: product.images.slice(0, 1).map((image) => ({ url: image.url, alt: image.alt })),
-      type: 'website',
+      // The product's own picture when it has one; the brand mark otherwise.
+      ...(product.images[0]
+        ? { images: [{ url: product.images[0].url, alt: product.images[0].alt }] }
+        : {}),
     },
   };
 }
