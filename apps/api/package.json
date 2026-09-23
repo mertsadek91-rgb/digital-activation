@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "test:int": "vitest run --config vitest.int.config.ts",
     "openapi": "tsc -p tsconfig.build.json && node dist/common/openapi-cli.js openapi.json",
     "clean": "rimraf dist .turbo"
   },
