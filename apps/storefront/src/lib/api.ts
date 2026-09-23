@@ -63,6 +63,51 @@ interface FetchOptions {
   sort?: string;
   /** What was searched for. Only the search endpoint reads it. */
   q?: string;
+  /** Send the visitor's address along; see `visitorHeaders`. Uncached calls only. */
+  forVisitor?: boolean;
+}
+
+/**
+ * Who this server-side call is on behalf of, for the API's rate limits.
+ *
+ * Every page is rendered here, so to the API every shopper arrives from this
+ * server's address. With INTERNAL_API_KEY set (the same value on both
+ * services) the visitor's address goes along with the key, and the API counts
+ * that address instead; without the key it would be believed from nobody.
+ *
+ * Only for calls that are not cached. A cached response is shared between
+ * visitors, and reading the request's headers makes the page render per
+ * request, so this is for the calls that are per visitor anyway.
+ */
+async function visitorHeaders(): Promise<Record<string, string>> {
+  const key = process.env.INTERNAL_API_KEY;
+  if (!key) return {};
+  try {
+    const { headers } = await import('next/headers');
+    const ip = visitorIp(await headers());
+    return ip ? { 'x-da-internal': key, 'x-da-client-ip': ip } : {};
+  } catch {
+    // Outside a request (a build, a sitemap route) there is no visitor.
+    return {};
+  }
+}
+
+/**
+ * The visitor's address, read the way the API reads its own: TRUST_PROXY_HOPS
+ * entries from the right of X-Forwarded-For. The left end is whatever the
+ * client wrote, so taking the first entry would let a visitor pick the
+ * address the limit counts.
+ */
+function visitorIp(incoming: Headers): string | null {
+  const hops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+  const trusted = Number.isFinite(hops) && hops > 0 ? hops : 1;
+  const chain = (incoming.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  const candidate = chain[chain.length - trusted] ?? incoming.get('x-real-ip') ?? null;
+  // The API checks it properly; this only keeps obvious junk off the wire.
+  return candidate && /^[0-9A-Fa-f:.]{2,45}$/.test(candidate) ? candidate : null;
 }
 
 /**
@@ -142,7 +187,10 @@ async function request<T>(
     const currency = options.currency ?? (await serverCurrency());
     response = await fetch(buildUrl(pathname, { ...options, currency }), {
       next: { revalidate: options.revalidate ?? 300 },
-      headers: { accept: 'application/json' },
+      headers: {
+        accept: 'application/json',
+        ...(options.forVisitor ? await visitorHeaders() : {}),
+      },
     });
   } catch {
     // A page that cannot reach the API should render its own error, not a
@@ -186,7 +234,11 @@ export function getStore(options: FetchOptions): Promise<CatalogStore | null> {
 export function searchProducts(
   options: FetchOptions & { q: string },
 ): Promise<SearchResults | null> {
-  return request('/catalog/search', { ...options, revalidate: 0 }, searchResultsSchema);
+  return request(
+    '/catalog/search',
+    { ...options, revalidate: 0, forVisitor: true },
+    searchResultsSchema,
+  );
 }
 
 export function getCollections(options: FetchOptions): Promise<CollectionSummary[] | null> {
@@ -236,12 +288,18 @@ export function getRedirect(pathname: string): Promise<RedirectTarget | null> {
  * failure to record one is not worth a second error.
  */
 export function reportNotFound(pathname: string, referer?: string): void {
-  void fetch(new URL('/v1/content/not-found', API_URL), {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ path: pathname, ...(referer ? { referer } : {}) }),
-    cache: 'no-store',
-  }).catch(() => undefined);
+  // Started during the render, so the request's headers are still in scope
+  // for it even though the page does not wait for the result.
+  void visitorHeaders()
+    .then((visitor) =>
+      fetch(new URL('/v1/content/not-found', API_URL), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', ...visitor },
+        body: JSON.stringify({ path: pathname, ...(referer ? { referer } : {}) }),
+        cache: 'no-store',
+      }),
+    )
+    .catch(() => undefined);
 }
 
 export function getPage(slug: string, options: FetchOptions): Promise<ContentPage | null> {

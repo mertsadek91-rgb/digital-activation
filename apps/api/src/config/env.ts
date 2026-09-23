@@ -16,6 +16,13 @@ const envSchema = z.object({
   DATABASE_URL_VAULT: z.string().min(1),
 
   REDIS_URL: z.string().min(1),
+  /**
+   * Shared with the storefront's server, which sends it with the visitor's
+   * address so the routes it calls per visitor can be limited per visitor.
+   * Optional: unset, those routes are simply not limited. Whoever holds it can
+   * choose the address a limit counts, so it is a secret like any other.
+   */
+  INTERNAL_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
   MEILI_HOST: z.string().url(),
   MEILI_MASTER_KEY: z.string().min(1),
 
