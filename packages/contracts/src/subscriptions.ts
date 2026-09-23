@@ -14,6 +14,11 @@ export type StockAlertRequest = z.infer<typeof stockAlertSchema>;
 export const newsletterSubscribeSchema = z.object({
   email: emailSchema,
   locale: z.enum(['ar', 'en']).default('ar'),
+  /**
+   * Where the address was typed. The welcome window's confirmation is the one
+   * that may mint a code, so it signs a different token.
+   */
+  source: z.enum(['footer', 'welcome']).default('footer'),
 });
 export type NewsletterSubscribe = z.infer<typeof newsletterSubscribeSchema>;
 
