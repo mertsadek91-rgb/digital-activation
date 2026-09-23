@@ -1,0 +1,8 @@
+# Findings reviewed and accepted, one fingerprint per line.
+#
+# A throwaway JWT_ACCESS_SECRET a unit test set before it signed a link. It
+# never signed anything outside the test and matches no environment; the tests
+# now generate a random value instead. Listed by fingerprint rather than by
+# path, so a real secret committed to the same file would still be caught.
+0926bb831e99e7d6c022f9d1a5320b899828f9a9:apps/api/src/retention/rules.test.ts:generic-api-key:203
+74a76fddc63b93542fc3a651debc446997a2e5ce:apps/api/src/subscriptions/subscriptions.test.ts:generic-api-key:11

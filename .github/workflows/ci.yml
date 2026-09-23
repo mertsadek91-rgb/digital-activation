@@ -83,6 +83,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Before the seed, which imports the generated client.
+      - run: pnpm db:generate
 
       - name: Apply migrations
         run: pnpm --filter @da/db migrate:deploy
@@ -106,7 +108,6 @@ jobs:
       # The suite creates its own uniquely named catalogue and never calls
       # Stripe or a mail server. Owner connection for both clients: the role
       # split is not what these tests are about (see global-setup.ts).
-      - run: pnpm db:generate
       - name: Build the API's workspace dependencies
         run: pnpm turbo run build --filter=@da/api^...
       - name: Integration tests
@@ -127,7 +128,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
-      - run: pnpm --filter @da/storefront build
+      # Through turbo, so the workspace packages the storefront imports
+      # (@da/ui, @da/seo, @da/contracts, @da/i18n) are built first; a bare
+      # `next build` finds no dist for them.
+      - run: pnpm turbo run build --filter=@da/storefront
 
       # The legacy store shipped 104 stylesheets, 93 scripts and 226 requests,
       # and finished loading in 17.4 seconds. This job is why that cannot come

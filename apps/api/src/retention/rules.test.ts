@@ -1,3 +1,5 @@
+import { randomBytes } from 'node:crypto';
+
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { CartStage } from '@da/db';
@@ -198,7 +200,9 @@ describe('consent', () => {
 
 describe('codes and signed links', () => {
   beforeAll(() => {
-    process.env.JWT_ACCESS_SECRET = 'test-secret-with-plenty-of-distinct-characters-0123';
+    // Random per run: a literal here reads as a leaked key to the secret
+    // scanner, and nothing in the test depends on its value.
+    process.env.JWT_ACCESS_SECRET = randomBytes(32).toString('base64url');
   });
 
   it('mints codes the promotion schema accepts', () => {
