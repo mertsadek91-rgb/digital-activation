@@ -14,6 +14,9 @@ import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18
 import type {
   MarketingFeature,
   MarketingSettings,
+  WhatsappStatus,
+  WhatsappTestResult,
+  WhatsappPurpose,
   ReviewRequestStats,
   SocialProofPreview,
   AdminArticle,
@@ -94,6 +97,12 @@ function readerLanguage(): string {
   return toAdminLocale(value === undefined ? undefined : decodeURIComponent(value));
 }
 
+/** What the test form sends; the API normalises the number. */
+export interface WhatsappTestInput {
+  to: string;
+  purpose: WhatsappPurpose;
+  locale: 'ar' | 'en';
+}
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -534,6 +543,16 @@ export const api = {
 
   /** Last 30 days of the cart ladder: per step, recovered orders, holdout comparison. */
   cartRecoveryStats: () => request<CartRecoveryStats>('/admin/marketing/stats/cartRecovery'),
+
+  /** Which WhatsApp credentials are set (yes/no only), the webhook URL, and 30 days of sends. */
+  whatsappStatus: () => request<WhatsappStatus>('/admin/marketing/whatsapp/status'),
+
+  /** Sends the saved template to one number with sample values. ADMIN only; audited. */
+  whatsappTest: (body: WhatsappTestInput) =>
+    request<WhatsappTestResult>('/admin/marketing/whatsapp/test', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   /** Which products would show a purchase notice now, under the saved settings. */
   socialProofPreview: () => request<SocialProofPreview>('/admin/marketing/social-proof/preview'),
 
