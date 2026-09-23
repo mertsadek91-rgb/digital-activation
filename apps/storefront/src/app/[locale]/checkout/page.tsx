@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
 import { CardPayment } from '../../../components/card-payment';
+import { CountrySelect } from '../../../components/country-select';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
 import { ProductTrust } from '../../../components/product-trust';
 import { cartApi, CartError } from '../../../lib/cart-client';
@@ -219,6 +220,18 @@ export default function CheckoutPage() {
     <main className="shell checkout-page">
       <h1>{ar ? 'إتمام الشراء' : 'Checkout'}</h1>
 
+      {/* Two steps, said out loud. A form that turns into payment buttons with
+          no signal between them reads as "did that work?" — the moment a
+          shopper reloads and loses the page. */}
+      <ol className="checkout-steps" aria-label={ar ? 'خطوات الشراء' : 'Checkout steps'}>
+        <li aria-current={stage.kind === 'details' ? 'step' : undefined}>
+          <span>1</span> {ar ? 'بياناتك' : 'Your details'}
+        </li>
+        <li aria-current={stage.kind !== 'details' ? 'step' : undefined}>
+          <span>2</span> {ar ? 'الدفع' : 'Payment'}
+        </li>
+      </ol>
+
       <div className="checkout-layout">
         <div className="checkout-main">
           {stage.kind === 'details' ? (
@@ -272,15 +285,7 @@ export default function CheckoutPage() {
 
               <label>
                 {ar ? 'الدولة (اختياري)' : 'Country (optional)'}
-                <input
-                  type="text"
-                  value={country}
-                  onChange={(event) => setCountry(event.target.value)}
-                  maxLength={2}
-                  placeholder={ar ? 'AE' : 'AE'}
-                  autoComplete="country"
-                  dir="ltr"
-                />
+                <CountrySelect locale={locale} value={country} onChange={setCountry} />
               </label>
 
               <label className="check">
@@ -412,6 +417,25 @@ export default function CheckoutPage() {
                   ))}
                 </div>
               )}
+
+              {/* The policies, where the decision is made. The refund policy was
+                  published and linked from almost nowhere; the moment before
+                  paying for a key that cannot be returned is where it belongs. */}
+              <p className="meta checkout-terms">
+                {ar ? (
+                  <>
+                    بالمتابعة إلى الدفع فأنت توافق على{' '}
+                    <Link href={`${prefix}/terms`}>شروط الخدمة</Link> و
+                    <Link href={`${prefix}/refunds`}>سياسة الاسترجاع</Link>.
+                  </>
+                ) : (
+                  <>
+                    By continuing to payment you agree to the{' '}
+                    <Link href={`${prefix}/terms`}>Terms of Service</Link> and the{' '}
+                    <Link href={`${prefix}/refunds`}>Refund Policy</Link>.
+                  </>
+                )}
+              </p>
 
               <button type="button" className="linky" onClick={() => setStage({ kind: 'details' })}>
                 {ar ? 'تعديل بياناتي' : 'Edit my details'}
