@@ -611,5 +611,30 @@
     "title": "Your order",
     "loadFailed": "Could not load the order.",
     "heading": "Order <ltr>{number}</ltr>"
+  },
+  "errors": {
+    "title": "Something went wrong on our side",
+    "body": "The page exists, but it could not be loaded just now. Try again — and if it keeps happening, write to us; your order is not lost.",
+    "retry": "Try again",
+    "contact": "Write to us",
+    "reference": "Reference for support: <code>{digest}</code>"
+  },
+  "notFound": {
+    "title": "This page is not here any more",
+    "body": "Its address may have changed when the store was rebuilt, or the link may have been copied short. The product itself is most likely still here.",
+    "browseStore": "Browse the store",
+    "home": "Home",
+    "didYouMean": "Did you mean?",
+    "kind": {
+      "product": "Product",
+      "collection": "Category",
+      "page": "Page"
+    },
+    "noneOfThese": "None of these? <contact>write to us</contact>."
+  },
+  "seo": {
+    "notFoundTitle": "Page not found",
+    "notFoundDescription": "The link you opened no longer points to a page in this store.",
+    "page": "Page {page}"
   }
 }

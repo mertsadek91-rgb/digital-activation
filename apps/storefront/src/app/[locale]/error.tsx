@@ -1,6 +1,9 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
+
+import { isArabic } from '../../i18n/locale';
 
 /**
  * What a visitor sees when something on this side actually broke.
@@ -18,8 +21,9 @@ import { useEffect } from 'react';
  * which is safe to print and is the one string that lets somebody match what
  * the visitor saw against a line in the log.
  *
- * A client component by necessity — an error boundary has to be — so it reads
- * the language from the document rather than from a param it cannot receive.
+ * A client component by necessity — an error boundary has to be — so it takes
+ * the language from the locale layout's intl provider, which wraps it, rather
+ * than from a param it cannot receive.
  */
 export default function StoreError({
   error,
@@ -36,32 +40,31 @@ export default function StoreError({
     console.error(error);
   }, [error]);
 
-  const ar = typeof document === 'undefined' || document.documentElement.lang !== 'en';
+  const t = useTranslations('errors');
+  const ar = isArabic(useLocale());
 
   return (
     <main className="shell missing">
       <header className="page-head">
-        <h1>{ar ? 'حدث خطأ عندنا' : 'Something went wrong on our side'}</h1>
-        <p className="lede">
-          {ar
-            ? 'الصفحة موجودة، لكن تحميلها تعذّر الآن. حاوِل مرّة أخرى — وإن تكرّر، راسِلنا ولن يضيع طلبك.'
-            : 'The page exists, but it could not be loaded just now. Try again — and if it keeps happening, write to us; your order is not lost.'}
-        </p>
+        <h1>{t('title')}</h1>
+        <p className="lede">{t('body')}</p>
       </header>
 
       <p className="missing-actions">
         <button type="button" className="btn btn-primary" onClick={reset}>
-          {ar ? 'حاوِل مرّة أخرى' : 'Try again'}
+          {t('retry')}
         </button>
         <a className="btn btn-ghost" href={ar ? '/contact' : '/en/contact'}>
-          {ar ? 'راسِلنا' : 'Write to us'}
+          {t('contact')}
         </a>
       </p>
 
       {error.digest ? (
         <p className="missing-hint">
-          {ar ? 'رقم الخطأ للدعم: ' : 'Reference for support: '}
-          <code dir="ltr">{error.digest}</code>
+          {t.rich('reference', {
+            digest: error.digest,
+            code: (chunks) => <code dir="ltr">{chunks}</code>,
+          })}
         </p>
       ) : null}
     </main>

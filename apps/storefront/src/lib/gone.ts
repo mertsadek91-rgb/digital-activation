@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 
+import { isArabic } from '../i18n/locale';
+
 import { getRedirect, reportNotFound } from './api';
 
 /**
@@ -35,7 +37,7 @@ export async function goneOrRedirect(pathname: string, locale: string): Promise<
 
   // The locale travels with the visitor. Somebody who followed an old link from
   // an English result should not be dropped into Arabic.
-  const prefix = locale === 'ar' ? '' : `/${locale}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
   const destination = `${prefix}${target.to}`;
 
   if (target.code === 301 || target.code === 308) permanentRedirect(destination);
