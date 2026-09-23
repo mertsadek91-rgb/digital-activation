@@ -6,6 +6,7 @@ import {
   Locale,
   OrderEventActor,
   OrderStatus,
+  PaymentState,
   type Prisma,
   RiskLevel,
 } from '@da/db';
@@ -13,6 +14,7 @@ import {
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
 import { recordOrderTransition } from '../checkout/order-status.js';
+import { CSV_BOM, csvRow } from '../common/csv.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -475,6 +477,114 @@ export class OrdersService {
       },
     });
     return { id: note.id };
+  }
+
+  /**
+   * Orders as CSV, for the accountant and for Excel.
+   *
+   * Batched on the id cursor so a year of orders never sits in memory whole.
+   * What is in it is what a set of books needs — number, dates, status, who,
+   * where, the money in both currencies, the coupon, the lines by SKU — and
+   * what is not is deliberate: no licence key, no vault id, no IP, no note.
+   * A spreadsheet is copied, mailed and left on laptops; nothing in this one
+   * activates anything.
+   *
+   * `status` takes the list's filter keys (`paid`, `in-review`…) or a raw
+   * status name, so the button can pass whatever the screen is showing.
+   */
+  async *exportCsv(input: {
+    from: Date | null;
+    to: Date | null;
+    status?: string;
+  }): AsyncGenerator<string> {
+    yield CSV_BOM;
+    yield csvRow([
+      'number',
+      'placed_at',
+      'paid_at',
+      'status',
+      'email',
+      'country',
+      'currency',
+      'subtotal_usd',
+      'discount_usd',
+      'total_usd',
+      'charged_amount',
+      'charged_currency',
+      'coupon',
+      'items',
+    ]);
+
+    const status =
+      input.status && (Object.values(OrderStatus) as string[]).includes(input.status)
+        ? { status: input.status as OrderStatus }
+        : this.statusFilter(input.status);
+    const placed =
+      input.from || input.to
+        ? {
+            placedAt: {
+              ...(input.from ? { gte: input.from } : {}),
+              ...(input.to ? { lte: input.to } : {}),
+            },
+          }
+        : {};
+
+    let cursor: string | undefined;
+    for (;;) {
+      const batch = await this.prisma.client.order.findMany({
+        where: { AND: [status, placed] },
+        orderBy: { id: 'asc' },
+        take: 500,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        select: {
+          id: true,
+          number: true,
+          placedAt: true,
+          paidAt: true,
+          status: true,
+          email: true,
+          billingCountry: true,
+          currency: true,
+          subtotalUsd: true,
+          discountUsd: true,
+          totalUsd: true,
+          couponCode: true,
+          items: { select: { skuSnapshot: true, qty: true } },
+          payments: {
+            // A refunded payment was still charged; the status column says
+            // it went back.
+            where: { state: { in: [PaymentState.SUCCEEDED, PaymentState.REFUNDED] } },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+            select: { amountCharged: true, chargedCurrency: true },
+          },
+        },
+      });
+      if (batch.length === 0) return;
+      let chunk = '';
+      for (const order of batch) {
+        const payment = order.payments[0];
+        chunk += csvRow([
+          order.number,
+          order.placedAt,
+          order.paidAt,
+          order.status,
+          order.email,
+          order.billingCountry,
+          order.currency,
+          order.subtotalUsd.toFixed(2),
+          order.discountUsd.toFixed(2),
+          order.totalUsd.toFixed(2),
+          payment?.amountCharged.toString() ?? null,
+          payment?.chargedCurrency ?? null,
+          order.couponCode,
+          order.items.map((item) => `${item.skuSnapshot} x ${String(item.qty)}`).join('; '),
+        ]);
+      }
+      yield chunk;
+      cursor = batch[batch.length - 1]?.id;
+      if (batch.length < 500) return;
+    }
   }
 
   private statusFilter(status?: string): Prisma.OrderWhereInput {

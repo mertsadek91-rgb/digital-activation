@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Readable } from 'node:stream';
+
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -11,7 +24,10 @@ import {
 } from '@da/contracts';
 import type { z } from 'zod';
 
+import { AuditService } from '../auth/audit.service.js';
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { exportBound } from '../common/csv.js';
+import { say } from '../common/panel-locale.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { OrdersService } from './orders.service.js';
@@ -32,7 +48,10 @@ import { OrdersService } from './orders.service.js';
 @Controller('admin/orders')
 @UseGuards(StaffGuard)
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get()
@@ -48,6 +67,50 @@ export class OrdersController {
       q: q?.trim() || undefined,
       limit: Math.min(200, Math.max(1, Number.parseInt(limit ?? '50', 10) || 50)),
       page: Math.max(1, Number.parseInt(page ?? '1', 10) || 1),
+    });
+  }
+
+  /**
+   * Orders as CSV. OWNER and ADMIN: it is every buyer's email and spend in
+   * one portable file, so it is throttled and every download is audited with
+   * the filter that produced it. Never carries a licence key. Declared before
+   * `:number` so the literal path is never read as an order number.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN')
+  @Get('export.csv')
+  @ApiOperation({ summary: 'Orders as CSV (UTF-8 with BOM for Excel); from, to, status' })
+  async exportCsv(
+    @Req() request: StaffRequest,
+    @Query('from') fromText?: string,
+    @Query('to') toText?: string,
+    @Query('status') status?: string,
+  ): Promise<StreamableFile> {
+    const from = exportBound(fromText, 'from');
+    const to = exportBound(toText, 'to');
+    if (from === undefined || to === undefined) {
+      throw new BadRequestException(
+        say('التاريخ غير صالح. استخدم YYYY-MM-DD.', 'That date does not parse. Use YYYY-MM-DD.'),
+      );
+    }
+    const filter = status && status !== 'all' ? status : undefined;
+    await this.audit.record({
+      actorId: request.staff?.sub,
+      entity: 'Order',
+      entityId: 'export',
+      action: 'orders.exported',
+      after: {
+        from: from?.toISOString() ?? null,
+        to: to?.toISOString() ?? null,
+        status: filter ?? null,
+      },
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new StreamableFile(Readable.from(this.orders.exportCsv({ from, to, status: filter })), {
+      type: 'text/csv; charset=utf-8',
+      disposition: `attachment; filename="orders-${stamp}.csv"`,
     });
   }
 

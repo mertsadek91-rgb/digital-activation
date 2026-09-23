@@ -5557,3 +5557,18 @@ a.as-button.ghost:hover {
   font-size: 1.3rem;
   font-weight: 700;
 }
+
+/* Customer detail: label and value side by side, so a column of facts reads
+   as a table without being one. */
+.customer-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+.customer-facts dt {
+  color: var(--color-ink-muted);
+}
+.customer-facts dd {
+  margin: 0;
+}

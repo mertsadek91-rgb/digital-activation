@@ -68,6 +68,8 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -174,6 +176,46 @@ export default function OrdersPage() {
           </button>
         </form>
       </div>
+
+      {/* The export, for the people the API lets have it. It follows the
+          status tab that is open, so the file is the list on screen over a
+          date range rather than a second set of filters to get right. */}
+      {canConfirm ? (
+        <form
+          className="lookup-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void act(t('exportCsv'), () =>
+              api.exportOrders({
+                from: exportFrom,
+                to: exportTo,
+                status: filter === 'all' ? undefined : filter,
+              }),
+            );
+          }}
+        >
+          <label>
+            {t('exportFrom')}{' '}
+            <input
+              type="date"
+              value={exportFrom}
+              onChange={(event) => setExportFrom(event.target.value)}
+            />
+          </label>
+          <label>
+            {t('exportTo')}{' '}
+            <input
+              type="date"
+              value={exportTo}
+              onChange={(event) => setExportTo(event.target.value)}
+            />
+          </label>
+          <button type="submit" className="ghost">
+            {t('exportCsv')}
+          </button>
+          <small className="meta">{t('exportHint')}</small>
+        </form>
+      ) : null}
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}

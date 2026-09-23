@@ -21,11 +21,14 @@ import type {
   AdminBrand,
   AdminBrandList,
   AdminCategoryList,
+  AdminCustomerDetail,
+  AdminCustomerList,
   AdminDashboard,
   AdminOrderDetail,
   AdminOrderList,
   AdminPage,
   AdminPageList,
+  AdminPageVersionList,
   AdminProductList,
   AdminProductRow,
   AdminPromotion,
@@ -202,6 +205,52 @@ export async function request<T>(path: string, init?: RequestInit, retried = fal
   return payload as T;
 }
 
+/**
+ * Saves a file the API streams, under the name the API gives it.
+ *
+ * Through fetch rather than a plain link, because the session is a cookie
+ * the browser only sends with `credentials: 'include'` from this origin, and
+ * because a 401 needs the same one refresh as any other call — a link would
+ * download the error page as `orders.csv`.
+ */
+export async function download(path: string, retried = false): Promise<void> {
+  const response = await fetch(`${API}/v1${path}`, {
+    credentials: 'include',
+    headers: { 'accept-language': readerLanguage() },
+  });
+  if (response.status === 401 && !retried && (await refreshSession())) {
+    return download(path, true);
+  }
+  if (!response.ok) {
+    const record = ((await response.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+    throw new ApiError(
+      typeof record.message === 'string'
+        ? record.message
+        : `Request failed (${String(response.status)})`,
+      response.status,
+    );
+  }
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'export.csv';
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function query(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
+}
+
 export const api = {
   /**
    * The front page's numbers, in one call.
@@ -332,6 +381,17 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
+
+  /** Saved states of a page, newest first, both locales. */
+  pageVersions: (slug: string) =>
+    request<AdminPageVersionList>(`/admin/content/pages/${encodeURIComponent(slug)}/versions`),
+
+  /** Saves an old state as the newest version. Status and URL are untouched. */
+  restorePageVersion: (slug: string, versionId: string) =>
+    request<AdminPage>(
+      `/admin/content/pages/${encodeURIComponent(slug)}/versions/${encodeURIComponent(versionId)}/restore`,
+      { method: 'POST' },
+    ),
 
   contentArticles: () => request<AdminArticleList>('/admin/content/articles'),
 
@@ -504,6 +564,24 @@ export const api = {
     const suffix = search.toString();
     return request<AdminOrderList>(`/admin/orders${suffix ? `?${suffix}` : ''}`);
   },
+
+  /** Orders as CSV. `status` is the list's filter key; dates are YYYY-MM-DD. */
+  exportOrders: (params: { from?: string; to?: string; status?: string }) =>
+    download(`/admin/orders/export.csv${query(params)}`),
+
+  // --- customers ---------------------------------------------------------------
+
+  customers: (q?: string, page = 1) =>
+    request<AdminCustomerList>(`/admin/customers${query({ q, page: page > 1 ? page : undefined })}`),
+
+  customer: (id: string) =>
+    request<AdminCustomerDetail>(`/admin/customers/${encodeURIComponent(id)}`),
+
+  /** Every customer, with consent columns; `optedInOnly` for a mailing list. */
+  exportCustomers: (params: { q?: string; optedInOnly?: boolean }) =>
+    download(
+      `/admin/customers/export.csv${query({ q: params.q, consent: params.optedInOnly ? 'opted-in' : undefined })}`,
+    ),
 
   /**
    * Confirms money that arrived outside the store.

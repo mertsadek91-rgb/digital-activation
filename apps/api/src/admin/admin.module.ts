@@ -15,6 +15,8 @@ import { ContentAdminController } from './content-admin.controller.js';
 import { ContentArticlesService } from './content-articles.service.js';
 import { ContentBrandsService } from './content-brands.service.js';
 import { ContentPagesService } from './content-pages.service.js';
+import { CustomersController } from './customers.controller.js';
+import { CustomersService } from './customers.service.js';
 import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import { LaunchController } from './launch.controller.js';
@@ -38,6 +40,7 @@ import { TaxonomyService } from './taxonomy.service.js';
     TaxonomyController,
     ContentAdminController,
     OrdersController,
+    CustomersController,
     ReviewsAdminController,
     PromotionsController,
     LaunchController,
@@ -52,6 +55,7 @@ import { TaxonomyService } from './taxonomy.service.js';
     ContentArticlesService,
     ContentBrandsService,
     OrdersService,
+    CustomersService,
     PromotionsService,
     LaunchService,
     DashboardService,
