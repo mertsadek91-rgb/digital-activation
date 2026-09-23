@@ -100,6 +100,43 @@ export async function consumeHolds(
 }
 
 /**
+ * Moves each product's `salesCount` by what this order sold.
+ *
+ * The count behind "sold N times", the best-seller rail and the default sort
+ * was written once by the WordPress import and never again, so every sale
+ * since was invisible to all three. It is counted when the money arrives
+ * (`+1`) and given back when the order is refunded in full (`-1`); a refunded
+ * licence was not sold. Guarded on the way down so a count cannot go
+ * negative through a refund of an order the import never counted.
+ */
+export async function countSale(tx: Tx, orderId: string, direction: 1 | -1): Promise<void> {
+  const lines = await tx.orderItem.findMany({
+    where: { orderId },
+    select: { qty: true, variant: { select: { productId: true } } },
+  });
+
+  const perProduct = new Map<string, number>();
+  for (const line of lines) {
+    const id = line.variant.productId;
+    perProduct.set(id, (perProduct.get(id) ?? 0) + line.qty);
+  }
+
+  for (const [productId, qty] of perProduct) {
+    if (direction === 1) {
+      await tx.product.update({
+        where: { id: productId },
+        data: { salesCount: { increment: qty } },
+      });
+    } else {
+      await tx.product.updateMany({
+        where: { id: productId, salesCount: { gte: qty } },
+        data: { salesCount: { decrement: qty } },
+      });
+    }
+  }
+}
+
+/**
  * Records the sale of stock that was paid for without a live hold.
  *
  * A hold expires after its window; a shopper who pays after that still bought

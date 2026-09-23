@@ -29,7 +29,13 @@ import { displayPrice, type FxTable } from '../catalog/pricing.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { chargeMatches, orderCharge } from './charge.js';
-import { consumeHolds, lockOrderNumbers, nextOrderNumber, sellUnheld } from './orders.js';
+import {
+  consumeHolds,
+  countSale,
+  lockOrderNumbers,
+  nextOrderNumber,
+  sellUnheld,
+} from './orders.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { StripeService } from './stripe.service.js';
 
@@ -739,6 +745,9 @@ export class CheckoutService {
 
       const consumed = await consumeHolds(tx, { cartId: order.cartId, orderId: order.id });
       await sellUnheld(tx, { orderId: order.id, held: consumed.byVariant });
+      // Counted on the transition only, which the compare-and-set above makes
+      // exactly once per order.
+      await countSale(tx, order.id, 1);
 
       if (order.cartId) {
         await tx.cart.update({
@@ -843,12 +852,23 @@ export class CheckoutService {
           data: { state: PaymentState.REFUNDED },
         });
       }
-      await tx.order.update({
-        where: { id: payment.orderId },
-        data: {
-          status: input.fullyRefunded ? OrderStatus.REFUNDED : OrderStatus.PARTIALLY_REFUNDED,
-        },
-      });
+      // Conditional, so the sale is given back once however many refund
+      // events arrive for the same order.
+      const becameRefunded = input.fullyRefunded
+        ? (
+            await tx.order.updateMany({
+              where: { id: payment.orderId, NOT: { status: OrderStatus.REFUNDED } },
+              data: { status: OrderStatus.REFUNDED },
+            })
+          ).count === 1
+        : false;
+      if (!input.fullyRefunded) {
+        await tx.order.update({
+          where: { id: payment.orderId },
+          data: { status: OrderStatus.PARTIALLY_REFUNDED },
+        });
+      }
+      if (becameRefunded) await countSale(tx, payment.orderId, -1);
       await tx.orderNote.create({
         data: {
           orderId: payment.orderId,
@@ -923,24 +943,25 @@ export class CheckoutService {
       return { status: order.status, via: 'stripe' };
     }
 
-    await this.prisma.client.$transaction([
-      this.prisma.client.refund.create({
+    await this.prisma.client.$transaction(async (tx) => {
+      await tx.refund.create({
         data: {
           paymentId: payment.id,
           amountUsd: payment.amountUsd,
           reason: input.reason,
           createdById: input.staffId || null,
         },
-      }),
-      this.prisma.client.payment.update({
+      });
+      await tx.payment.update({
         where: { id: payment.id },
         data: { state: PaymentState.REFUNDED },
-      }),
-      this.prisma.client.order.update({
+      });
+      await tx.order.update({
         where: { id: order.id },
         data: { status: OrderStatus.REFUNDED },
-      }),
-    ]);
+      });
+      await countSale(tx, order.id, -1);
+    });
     return { status: OrderStatus.REFUNDED, via: 'recorded' };
   }
 

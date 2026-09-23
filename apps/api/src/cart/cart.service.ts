@@ -194,7 +194,56 @@ export class CartService {
     const adjustments: Cart['adjustments'] =
       granted < wanted ? [{ sku: variant.sku, requestedQty: wanted, grantedQty: granted }] : [];
 
+    await this.applyEarnedBundle(cart.id);
+
     return this.render(cart.token, query, adjustments);
+  }
+
+  /**
+   * Attaches a bundle the cart has just completed, when no coupon is on it.
+   *
+   * The checkout offers "add this and save N%" from BUNDLE_DISCOUNT promotions
+   * and shows the bundle price — and then charged full price, because the
+   * discount only applied if the shopper also typed the promotion's code,
+   * which the offer never showed them. Completing the bundle is now enough:
+   * whichever way the last item arrived, the cart takes the best bundle it
+   * qualifies for.
+   *
+   * A coupon the shopper chose is never replaced; one discount per cart is
+   * the rule everywhere else, and swapping theirs for ours would be a
+   * surprise even when ours is larger.
+   */
+  private async applyEarnedBundle(cartId: string): Promise<void> {
+    const cart = await this.prisma.client.cart.findUnique({
+      where: { id: cartId },
+      include: { items: true },
+    });
+    if (!cart || cart.couponCode || cart.items.length < 2) return;
+
+    const variantIds = cart.items.map((item) => item.variantId);
+    const subtotalUsd = cart.items.reduce(
+      (total, item) => total.plus(item.unitPriceUsd.times(item.qty)),
+      new Prisma.Decimal(0),
+    );
+
+    const bundles = await this.prisma.client.promotion.findMany({
+      where: { type: PromotionType.BUNDLE_DISCOUNT, isActive: true, code: { not: null } },
+      orderBy: { value: 'desc' },
+    });
+
+    const earned = bundles.find((bundle) => {
+      const rules = this.rulesOf(bundle.rules);
+      const required = rules.requiresAllVariantIds ?? [];
+      return (
+        required.length >= 2 && couponRefusal(bundle, rules, { subtotalUsd, variantIds }) === null
+      );
+    });
+    if (!earned?.code) return;
+
+    await this.prisma.client.cart.updateMany({
+      where: { id: cart.id, couponCode: null },
+      data: { couponCode: earned.code },
+    });
   }
 
   async setQty(token: string, variantId: string, qty: number, query: CartQuery): Promise<Cart> {
@@ -472,7 +521,20 @@ export class CartService {
     }
 
     // Which lines the coupon may touch. An empty rule set means all of them.
+    // A bundle discounts the bundle. Without this, a BUNDLE_DISCOUNT carrying
+    // only `requiresAllVariantIds` took its percentage off every line in the
+    // cart — completing a two-item bundle beside a third, unrelated licence
+    // discounted all three.
+    const bundleOnly =
+      promotion.type === PromotionType.BUNDLE_DISCOUNT &&
+      !(rules.variantIds && rules.variantIds.length > 0) &&
+      !(rules.productIds && rules.productIds.length > 0) &&
+      (rules.requiresAllVariantIds?.length ?? 0) > 0
+        ? new Set(rules.requiresAllVariantIds)
+        : null;
+
     const eligible = cart.items.filter((item) => {
+      if (bundleOnly && !bundleOnly.has(item.variantId)) return false;
       if (rules.excludeProductIds?.includes(item.variant.productId)) return false;
       if (rules.variantIds && rules.variantIds.length > 0) {
         return rules.variantIds.includes(item.variantId);
