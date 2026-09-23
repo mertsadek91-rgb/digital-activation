@@ -83,7 +83,7 @@ export default function ContentBrandsPage() {
                   </td>
                   <td>
                     <span className="slug" dir="ltr">
-                      {row.path}
+                      {row.path.slice(1)}
                     </span>
                   </td>
                   <td className="num">{row.productCount}</td>

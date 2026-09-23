@@ -131,7 +131,7 @@ export default function ContentBrandEditor() {
           <h1>{brand ? brand.ar.name || brand.name : id}</h1>
           {brand ? (
             <span className="slug" dir="ltr">
-              {brand.path}
+              {brand.path.slice(1)}
             </span>
           ) : null}
           {brand ? (

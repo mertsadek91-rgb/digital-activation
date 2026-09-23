@@ -92,7 +92,7 @@ export default function ContentBlogPage() {
                   </td>
                   <td>
                     <span className="slug" dir="ltr">
-                      {row.path}
+                      {row.path.slice(1)}
                     </span>
                   </td>
                   <td>{row.author ?? <span className="meta">{t('noAuthor')}</span>}</td>

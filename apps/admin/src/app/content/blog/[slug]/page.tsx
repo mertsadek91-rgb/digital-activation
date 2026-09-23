@@ -191,7 +191,7 @@ export default function ContentPostEditor() {
         <div className="edit-title">
           <h1>{post ? post.ar.title || post.en.title : slug}</h1>
           <span className="slug" dir="ltr">
-            {post?.path ?? slug}
+            {post ? post.path.slice(1) : slug}
           </span>
         </div>
         <div className="edit-actions">
