@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import {
   type ContentBlock,
@@ -6,6 +6,7 @@ import {
   type ProductWarning,
   READINESS_RULES,
   type SetProductContent,
+  blockDocumentSchema,
   countBodyWords,
 } from '@da/contracts';
 import { Locale, Prisma } from '@da/db';
@@ -67,7 +68,25 @@ export class ProductContentService {
     const data: Prisma.ProductTranslationUpdateInput = {};
 
     if (input.blocks) {
-      data.body = toStored(input.blocks) as Prisma.InputJsonValue;
+      const stored = toStored(input.blocks);
+      // The same check the content screens make. The storefront parses the
+      // body all-or-nothing, so one block the loose editor schema let through
+      // — an answer too short, stored with its text stripped — rendered the
+      // whole description as nothing, after a save that said it worked.
+      const bad = stored.findIndex((block) => !blockDocumentSchema.safeParse([block]).success);
+      if (bad >= 0) {
+        const type =
+          typeof (stored[bad] as { type?: unknown } | null)?.type === 'string'
+            ? String((stored[bad] as { type: string }).type)
+            : 'unknown';
+        throw new BadRequestException(
+          say(
+            `الكتلة رقم ${String(bad + 1)} (${type}) غير مكتملة. أكملها أو احذفها ثم احفظ.`,
+            `Block ${String(bad + 1)} (${type}) is incomplete. Finish or remove it, then save.`,
+          ),
+        );
+      }
+      data.body = stored as Prisma.InputJsonValue;
     }
     if (input.warnings) {
       // An empty list clears the column rather than storing `[]`, so "no
