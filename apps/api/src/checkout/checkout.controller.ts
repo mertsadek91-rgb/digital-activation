@@ -24,6 +24,10 @@ import {
   cartQuerySchema,
   checkoutStartSchema,
   startPaymentSchema,
+  offeredPaymentSchema,
+  checkoutSchema,
+  orderSchema,
+  paymentSessionSchema,
 } from '@da/contracts';
 import { PaymentProvider } from '@da/db';
 import type { FastifyRequest } from 'fastify';
@@ -31,6 +35,7 @@ import type Stripe from 'stripe';
 import { z } from 'zod';
 
 import { orderLink, verifyOrderAccessKey } from '../common/order-link.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { AccountService } from '../account/account.service.js';
 
@@ -64,6 +69,7 @@ export class CheckoutController {
    * shop cannot take is a promise made to somebody about to type a card number.
    */
   @Get('payment-methods')
+  @ZodResponse(offeredPaymentSchema)
   @ApiOperation({ summary: 'Payment providers the shop can currently take' })
   async offeredPayment(): Promise<OfferedPayment> {
     return { providers: await this.paymentSettings.offeredProviders() };
@@ -71,6 +77,7 @@ export class CheckoutController {
 
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('checkout')
+  @ZodResponse(checkoutSchema)
   @ApiOperation({ summary: 'Capture the email and draft the order' })
   async start(
     @Body(new ZodPipe(checkoutStartSchema)) body: CheckoutStart,
@@ -95,6 +102,7 @@ export class CheckoutController {
    * page with the licence on it answered 404 from anywhere else.
    */
   @Get('orders/:number')
+  @ZodResponse(orderSchema)
   @ApiOperation({ summary: 'One order, for the cart, customer or emailed link that owns it' })
   async order(
     @Param('number') number: string,
@@ -121,6 +129,7 @@ export class CheckoutController {
    */
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('orders/:number/pay')
+  @ZodResponse(paymentSessionSchema)
   @ApiOperation({ summary: 'Start a payment for an order' })
   async pay(
     @Param('number') number: string,

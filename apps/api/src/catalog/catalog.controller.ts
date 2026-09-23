@@ -12,8 +12,17 @@ import {
   type SitemapFeed,
   catalogQuerySchema,
   searchQuerySchema,
+  offeredCurrenciesSchema,
+  homeSchema,
+  catalogStoreSchema,
+  searchResultsSchema,
+  sitemapFeedSchema,
+  catalogCollectionSchema,
+  catalogBrandSchema,
+  catalogProductWithRelatedSchema,
 } from '@da/contracts';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { CatalogService } from './catalog.service.js';
@@ -33,18 +42,21 @@ export class CatalogController {
    * a day.
    */
   @Get('currencies')
+  @ZodResponse(offeredCurrenciesSchema)
   @ApiOperation({ summary: 'Currencies the store can show prices in' })
   currencies(): Promise<OfferedCurrencies> {
     return this.catalog.offeredCurrencies();
   }
 
   @Get('home')
+  @ZodResponse(homeSchema)
   @ApiOperation({ summary: 'Everything the home page renders, in one response' })
   home(@Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery): Promise<Home> {
     return this.catalog.home(query);
   }
 
   @Get('store')
+  @ZodResponse(catalogStoreSchema)
   @ApiOperation({ summary: 'Every published product, paginated, with the collections' })
   store(@Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery): Promise<CatalogStore> {
     return this.catalog.store(query);
@@ -69,6 +81,7 @@ export class CatalogController {
    */
   @SkipThrottle()
   @Get('search')
+  @ZodResponse(searchResultsSchema)
   @ApiOperation({ summary: 'Products matching a query, best first' })
   search(
     @Query('q') q = '',
@@ -78,6 +91,7 @@ export class CatalogController {
   }
 
   @Get('sitemap')
+  @ZodResponse(sitemapFeedSchema)
   @ApiOperation({ summary: 'Published paths with their lastmod, for the sitemap' })
   sitemap(): Promise<SitemapFeed> {
     return this.catalog.sitemap();
@@ -90,6 +104,7 @@ export class CatalogController {
   }
 
   @Get('collections/:slug')
+  @ZodResponse(catalogCollectionSchema)
   @ApiOperation({ summary: 'One collection with a page of product cards' })
   collection(
     @Param('slug') slug: string,
@@ -99,12 +114,14 @@ export class CatalogController {
   }
 
   @Get('brands/:slug')
+  @ZodResponse(catalogBrandSchema)
   @ApiOperation({ summary: 'One brand with a page of product cards' })
   brand(@Param('slug') slug: string, @Query(new ZodPipe(catalogQuerySchema)) query: CatalogQuery) {
     return this.catalog.brand(slug, query);
   }
 
   @Get('products/:slug')
+  @ZodResponse(catalogProductWithRelatedSchema)
   @ApiOperation({ summary: 'One product with all its variants and prices' })
   product(
     @Param('slug') slug: string,

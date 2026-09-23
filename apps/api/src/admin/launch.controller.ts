@@ -1,8 +1,9 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import type { LaunchReadiness } from '@da/contracts';
+import { type LaunchReadiness, launchReadinessSchema } from '@da/contracts';
 
+import { ZodResponse } from '../common/openapi.js';
 import { StaffGuard } from '../auth/staff.guard.js';
 
 import { LaunchService } from './launch.service.js';
@@ -23,6 +24,7 @@ export class LaunchController {
   constructor(private readonly launch: LaunchService) {}
 
   @Get()
+  @ZodResponse(launchReadinessSchema)
   @ApiOperation({ summary: 'What stands between this store and its first order' })
   readiness(): Promise<LaunchReadiness> {
     return this.launch.readiness();

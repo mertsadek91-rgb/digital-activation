@@ -6,9 +6,13 @@ import {
   type SocialProof,
   type SocialProofPreview,
   socialProofQuerySchema,
+  socialProofSchema,
+  socialProofPreviewSchema,
+  reviewRequestStatsSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { MarketingSignalsService } from './marketing-signals.service.js';
@@ -27,6 +31,7 @@ export class SocialProofController {
   constructor(private readonly signals: MarketingSignalsService) {}
 
   @Get('social-proof')
+  @ZodResponse(socialProofSchema)
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   // The same five minutes the server caches for; a browser moving between
   // variants of one product does not need to ask again.
@@ -48,12 +53,14 @@ export class MarketingSignalsAdminController {
   constructor(private readonly signals: MarketingSignalsService) {}
 
   @Get('social-proof/preview')
+  @ZodResponse(socialProofPreviewSchema)
   @ApiOperation({ summary: 'Which products would show a purchase notice now' })
   preview(): Promise<SocialProofPreview> {
     return this.signals.socialProofPreview();
   }
 
   @Get('review-requests/stats')
+  @ZodResponse(reviewRequestStatsSchema)
   @ApiOperation({ summary: 'Review invitations sent in the last 30 days' })
   reviewStats(): Promise<ReviewRequestStats> {
     return this.signals.reviewRequestStats(30);

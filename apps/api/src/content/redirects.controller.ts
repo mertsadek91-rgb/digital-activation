@@ -11,10 +11,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { type RedirectsView, createRedirectSchema, updateRedirectSchema } from '@da/contracts';
+import {
+  type RedirectsView,
+  createRedirectSchema,
+  updateRedirectSchema,
+  redirectsViewSchema,
+} from '@da/contracts';
 import type { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { RedirectsService } from './redirects.service.js';
@@ -33,6 +39,7 @@ export class RedirectsController {
   constructor(private readonly redirects: RedirectsService) {}
 
   @Get()
+  @ZodResponse(redirectsViewSchema)
   @ApiOperation({ summary: 'The redirect map and the unanswered 404s' })
   view(@Query('limit') limit?: string): Promise<RedirectsView> {
     return this.redirects.view(

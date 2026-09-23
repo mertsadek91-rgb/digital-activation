@@ -18,9 +18,16 @@ import {
   setArticleSchema,
   setBrandSchema,
   setPageSchema,
+  adminPageListSchema,
+  adminPageSchema,
+  adminArticleListSchema,
+  adminArticleSchema,
+  adminBrandListSchema,
+  adminBrandSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { ContentArticlesService } from './content-articles.service.js';
@@ -53,12 +60,14 @@ export class ContentAdminController {
   // --- pages ------------------------------------------------------------------
 
   @Get('pages')
+  @ZodResponse(adminPageListSchema)
   @ApiOperation({ summary: 'Every editorial page, grouped by URL, with its locales' })
   listPages(): Promise<AdminPageList> {
     return this.pages.list();
   }
 
   @Post('pages')
+  @ZodResponse(adminPageSchema)
   @ApiOperation({ summary: 'Create a page as a draft in one locale' })
   createPage(
     @Body(new ZodPipe(createPageSchema)) body: CreatePage,
@@ -68,12 +77,14 @@ export class ContentAdminController {
   }
 
   @Get('pages/:slug')
+  @ZodResponse(adminPageSchema)
   @ApiOperation({ summary: 'One page, both locales, blocks and SEO' })
   getPage(@Param('slug') slug: string): Promise<AdminPage> {
     return this.pages.get(slug);
   }
 
   @Patch('pages/:slug')
+  @ZodResponse(adminPageSchema)
   @ApiOperation({ summary: 'Edit one locale, the template or the URL; snapshots a PageVersion' })
   updatePage(
     @Param('slug') slug: string,
@@ -86,12 +97,14 @@ export class ContentAdminController {
   // --- blog -------------------------------------------------------------------
 
   @Get('articles')
+  @ZodResponse(adminArticleListSchema)
   @ApiOperation({ summary: 'Every blog post, grouped by URL, with its locales' })
   listArticles(): Promise<AdminArticleList> {
     return this.articles.list();
   }
 
   @Post('articles')
+  @ZodResponse(adminArticleSchema)
   @ApiOperation({ summary: 'Create a blog post as a draft in one locale' })
   createArticle(
     @Body(new ZodPipe(createArticleSchema)) body: CreateArticle,
@@ -101,12 +114,14 @@ export class ContentAdminController {
   }
 
   @Get('articles/:slug')
+  @ZodResponse(adminArticleSchema)
   @ApiOperation({ summary: 'One post, both locales, with the authors to choose from' })
   getArticle(@Param('slug') slug: string): Promise<AdminArticle> {
     return this.articles.get(slug);
   }
 
   @Patch('articles/:slug')
+  @ZodResponse(adminArticleSchema)
   @ApiOperation({ summary: 'Edit one locale of a post, or its URL' })
   updateArticle(
     @Param('slug') slug: string,
@@ -119,18 +134,21 @@ export class ContentAdminController {
   // --- brands -----------------------------------------------------------------
 
   @Get('brands')
+  @ZodResponse(adminBrandListSchema)
   @ApiOperation({ summary: 'Every brand, with its published product count' })
   listBrands(): Promise<AdminBrandList> {
     return this.brands.list();
   }
 
   @Get('brands/:id')
+  @ZodResponse(adminBrandSchema)
   @ApiOperation({ summary: 'One brand hub, both locales' })
   getBrand(@Param('id') id: string): Promise<AdminBrand> {
     return this.brands.get(id);
   }
 
   @Patch('brands/:id')
+  @ZodResponse(adminBrandSchema)
   @ApiOperation({ summary: 'Edit a brand hub’s copy and SEO, or its URL' })
   updateBrand(
     @Param('id') id: string,

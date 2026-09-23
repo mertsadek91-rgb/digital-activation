@@ -1,9 +1,10 @@
 import fastifyCookie from '@fastify/cookie';
 import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module.js';
+import { buildOpenApiDocument } from './common/openapi.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 import { PrismaErrorFilter } from './common/prisma-error.filter.js';
 
@@ -91,14 +92,10 @@ async function bootstrap(): Promise<void> {
   // in-flight request finishes — instead of the process being cut mid-write.
   app.enableShutdownHooks();
 
+  // The same document `pnpm --filter @da/api openapi` writes to a file, built
+  // from the zod schemas the routes validate with (see common/openapi.ts).
   if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('Digital Activation API')
-      .setDescription('Storefront and admin API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, config));
+    SwaggerModule.setup('docs', app, buildOpenApiDocument(app));
   }
 
   const port = Number(process.env.API_PORT ?? 4000);

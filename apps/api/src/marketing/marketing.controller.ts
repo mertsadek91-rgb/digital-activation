@@ -5,9 +5,11 @@ import {
   type MarketingSettings,
   type PublicMarketing,
   marketingFeatureSchema,
+  publicMarketingSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { MarketingSettingsService } from './marketing-settings.service.js';
@@ -53,6 +55,7 @@ export class MarketingPublicController {
   constructor(private readonly settings: MarketingSettingsService) {}
 
   @Get('public')
+  @ZodResponse(publicMarketingSchema)
   @ApiOperation({ summary: 'Storefront-visible marketing configuration' })
   view(): Promise<PublicMarketing> {
     return this.settings.publicView();

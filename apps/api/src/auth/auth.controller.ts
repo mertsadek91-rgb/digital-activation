@@ -8,9 +8,12 @@ import {
   type StaffMe,
   staffLoginSchema,
   stepUpSchema,
+  staffLoginResultSchema,
+  staffMeSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { AuthService, type SessionResult } from './auth.service.js';
@@ -60,6 +63,7 @@ export class AuthController {
   // for a password or TOTP guessing run.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('login')
+  @ZodResponse(staffLoginResultSchema)
   @ApiOperation({ summary: 'Password, then TOTP. Sets httpOnly session cookies.' })
   async login(
     @Body(new ZodPipe(staffLoginSchema)) body: z.infer<typeof staffLoginSchema>,
@@ -117,6 +121,7 @@ export class AuthController {
   @UseGuards(StaffGuard)
   @StalePasswordOk()
   @Get('me')
+  @ZodResponse(staffMeSchema)
   me(@Req() request: StaffRequest): Promise<StaffMe> {
     return this.auth.me(request.staff?.sub ?? '');
   }

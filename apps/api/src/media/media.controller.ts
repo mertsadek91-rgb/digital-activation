@@ -9,9 +9,11 @@ import {
   patchImageSchema,
   reorderImagesSchema,
   uploadImageSchema,
+  productImagesSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { MediaService } from './media.service.js';
@@ -32,6 +34,7 @@ export class MediaController {
   constructor(private readonly media: MediaService) {}
 
   @Get('products/:slug/images')
+  @ZodResponse(productImagesSchema)
   @ApiOperation({ summary: "A product's images, in display order" })
   list(@Param('slug') slug: string): Promise<ProductImages> {
     return this.media.list(slug);
@@ -45,6 +48,7 @@ export class MediaController {
    * into its own state would be wrong about the rest.
    */
   @Post('products/:slug/images')
+  @ZodResponse(productImagesSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Upload an image and attach it to the product' })
   upload(
@@ -56,6 +60,7 @@ export class MediaController {
   }
 
   @Patch('images/:id')
+  @ZodResponse(productImagesSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Set the hero, the order, the variant or the alt text' })
   patch(
@@ -67,6 +72,7 @@ export class MediaController {
   }
 
   @Patch('products/:slug/images/order')
+  @ZodResponse(productImagesSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Reorder a product’s images in one write' })
   reorder(
@@ -82,6 +88,7 @@ export class MediaController {
    * service for why an orphaned object is the cheaper mistake.
    */
   @Delete('images/:id')
+  @ZodResponse(productImagesSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Remove an image from the product' })
   remove(@Param('id') id: string, @Req() request: StaffRequest): Promise<ProductImages> {

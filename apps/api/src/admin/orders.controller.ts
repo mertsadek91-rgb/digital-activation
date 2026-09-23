@@ -8,10 +8,13 @@ import {
   confirmPaymentSchema,
   refundOrderSchema,
   releaseHoldSchema,
+  adminOrderListSchema,
+  adminOrderDetailSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { OrdersService } from './orders.service.js';
@@ -36,6 +39,7 @@ export class OrdersController {
 
   @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get()
+  @ZodResponse(adminOrderListSchema)
   @ApiOperation({ summary: 'Orders, newest first' })
   list(
     @Query('status') status?: string,
@@ -53,6 +57,7 @@ export class OrdersController {
 
   @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get(':number')
+  @ZodResponse(adminOrderDetailSchema)
   @ApiOperation({ summary: 'One order with its lines, payments and notes' })
   detail(@Param('number') number: string): Promise<AdminOrderDetail> {
     return this.orders.detail(number);

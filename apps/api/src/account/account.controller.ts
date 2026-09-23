@@ -28,9 +28,20 @@ import {
   exchangeLoginTokenSchema,
   requestLoginLinkSchema,
   submitReviewSchema,
+  loginLinkResultSchema,
+  exchangeResultSchema,
+  customerMeSchema,
+  licenceListSchema,
+  customerSecretsSchema,
+  resendResultSchema,
+  forYouSchema,
+  accountOrderListSchema,
+  reviewableListSchema,
+  ownReviewSchema,
 } from '@da/contracts';
 import { z } from 'zod';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 
@@ -83,6 +94,7 @@ export class AccountController {
    */
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('link')
+  @ZodResponse(loginLinkResultSchema)
   @ApiOperation({ summary: 'Email a single-use sign-in link' })
   async requestLink(
     @Body(new ZodPipe(requestLoginLinkSchema)) body: z.infer<typeof requestLoginLinkSchema>,
@@ -100,6 +112,7 @@ export class AccountController {
 
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('session')
+  @ZodResponse(exchangeResultSchema)
   @ApiOperation({ summary: 'Trade a link for a session cookie' })
   async exchange(
     @Body(new ZodPipe(exchangeLoginTokenSchema)) body: z.infer<typeof exchangeLoginTokenSchema>,
@@ -137,12 +150,14 @@ export class AccountController {
   }
 
   @Get('me')
+  @ZodResponse(customerMeSchema)
   @ApiOperation({ summary: 'Who this session belongs to' })
   async me(@Req() request: FastifyRequest): Promise<CustomerMe> {
     return (await this.require(request)).me;
   }
 
   @Get('licences')
+  @ZodResponse(licenceListSchema)
   @ApiOperation({ summary: "The customer's own licences. Never a secret." })
   async licences(@Req() request: FastifyRequest): Promise<LicenceList> {
     const session = await this.require(request);
@@ -158,6 +173,7 @@ export class AccountController {
    */
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('licences/:orderItemId/reveal')
+  @ZodResponse(customerSecretsSchema)
   @ApiOperation({ summary: 'Show one line’s licences to the person who bought them' })
   async reveal(@Param('orderItemId') orderItemId: string, @Req() request: FastifyRequest) {
     const session = await this.require(request);
@@ -176,6 +192,7 @@ export class AccountController {
    */
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('licences/:orderItemId/resend')
+  @ZodResponse(resendResultSchema)
   @ApiOperation({ summary: 'Re-send the licence email for one line' })
   async resend(
     @Param('orderItemId') orderItemId: string,
@@ -207,6 +224,7 @@ export class AccountController {
    * the person who made it.
    */
   @Get('for-you')
+  @ZodResponse(forYouSchema)
   @ApiOperation({ summary: 'Renewals due and products from brands already bought' })
   async forYou(
     @Req() request: FastifyRequest,
@@ -217,6 +235,7 @@ export class AccountController {
   }
 
   @Get('orders')
+  @ZodResponse(accountOrderListSchema)
   @ApiOperation({ summary: "The customer's own orders. Never a licence." })
   async orders(@Req() request: FastifyRequest): Promise<AccountOrderList> {
     const session = await this.require(request);
@@ -233,6 +252,7 @@ export class AccountController {
    * rows on the store this replaces.
    */
   @Get('reviews')
+  @ZodResponse(reviewableListSchema)
   @ApiOperation({ summary: 'Delivered lines this customer may review' })
   async reviewable(@Req() request: FastifyRequest): Promise<ReviewableList> {
     const session = await this.require(request);
@@ -248,6 +268,7 @@ export class AccountController {
    */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('reviews/:orderItemId')
+  @ZodResponse(ownReviewSchema)
   @ApiOperation({ summary: 'Review a delivered line. Starts unpublished.' })
   async submitReview(
     @Param('orderItemId') orderItemId: string,
@@ -265,6 +286,7 @@ export class AccountController {
   /** Fixing what you wrote, while it is still waiting to be read. */
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Patch('reviews/:orderItemId')
+  @ZodResponse(ownReviewSchema)
   @ApiOperation({ summary: 'Edit your own review while it is still pending' })
   async editReview(
     @Param('orderItemId') orderItemId: string,

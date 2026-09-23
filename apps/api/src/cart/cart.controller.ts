@@ -9,10 +9,12 @@ import {
   applyCouponSchema,
   cartQuerySchema,
   updateCartLineSchema,
+  cartSchema,
 } from '@da/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { ReferralService } from '../growth/referral.service.js';
 import { REFERRAL_COOKIE } from '../growth/rules.js';
@@ -68,6 +70,7 @@ export class CartController {
   }
 
   @Get()
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'The current cart, creating an empty one if needed' })
   async get(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
@@ -82,6 +85,7 @@ export class CartController {
   // A shopper clicks add a handful of times; a script clicks it thousands.
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post('items')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Add a variant, taking a timed stock reservation' })
   async add(
     @Body(new ZodPipe(addToCartSchema)) body: AddToCart,
@@ -102,6 +106,7 @@ export class CartController {
   }
 
   @Patch('items/:variantId')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Set a line quantity; zero removes the line' })
   async setQty(
     @Param('variantId') variantId: string,
@@ -117,6 +122,7 @@ export class CartController {
   }
 
   @Delete()
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Empty the cart and release its reservations' })
   async clear(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
@@ -133,6 +139,7 @@ export class CartController {
   // whatever discount codes exist.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('coupon')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Apply a coupon, or return why it was refused' })
   async applyCoupon(
     @Body(new ZodPipe(applyCouponSchema)) body: z.infer<typeof applyCouponSchema>,
@@ -146,6 +153,7 @@ export class CartController {
   }
 
   @Delete('coupon')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Detach the coupon' })
   async removeCoupon(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
