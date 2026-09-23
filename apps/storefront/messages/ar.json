@@ -294,7 +294,13 @@
     "activationEmailNote": "سنطلب بريد التفعيل عند الدفع",
     "priceChanged": "السعر الحالي <bdi>{price}</bdi> — سعرك محفوظ كما أضفته.",
     "quantity": "الكمية",
-    "removeLine": "إزالة"
+    "removeLine": "إزالة",
+    "restored": "هذه سلّتك كما تركتها.",
+    "restoredWithCode": "هذه سلّتك كما تركتها، والخصم مطبّق.",
+    "restoreExpired": "انتهت صلاحية رابط السلّة أو اكتمل طلبها. هذه سلّتك الحالية.",
+    "restoreFailed": "تعذّر فتح السلّة من الرابط.",
+    "addedFromLink": "أُضيف المنتج إلى سلّتك.",
+    "addFromLinkFailed": "تعذّرت إضافة المنتج من الرابط."
   },
   "checkout": {
     "title": "إتمام الشراء",

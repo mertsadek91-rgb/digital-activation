@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ProductTrust } from '../../../components/product-trust';
 import { isArabic } from '../../../i18n/locale';
@@ -39,6 +39,12 @@ export default function CartPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [code, setCode] = useState('');
 
+  const [linkNote, setLinkNote] = useState<string | null>(null);
+  // Guards the one-time link handling below against the effect running twice
+  // (React's development double-invoke, or a locale change): a renewal link
+  // opened once must add its licence once.
+  const linkHandled = useRef(false);
+
   const load = useCallback(async () => {
     try {
       setCart(await cartApi.get({ locale }));
@@ -47,9 +53,65 @@ export default function CartPage() {
     }
   }, [locale, t]);
 
+  /*
+   * Two links arrive here from email.
+   *
+   *   ?restore=<token>  the abandoned-cart email: re-attach that cart to this
+   *                     browser, with its recovery code if one was offered.
+   *   ?add=<variant>    the renewal reminder: put the same licence in the cart
+   *                     (&qty= for a multi-seat order), one click to checkout.
+   *
+   * Read from `window.location` inside the effect rather than through
+   * `useSearchParams`, which would need a Suspense boundary around a page
+   * that renders nothing useful on the server anyway. The parameters are
+   * dropped from the address once read, so a reload or a shared URL does not
+   * add the licence a second time or carry the restore token around.
+   */
   useEffect(() => {
-    void load();
-  }, [load]);
+    // A second run must not start a plain load beside the restore: a GET with
+    // the old cookie landing after it would put the old cart back.
+    if (linkHandled.current) return;
+    linkHandled.current = true;
+
+    const query = new URLSearchParams(window.location.search);
+    const restore = query.get('restore');
+    const add = query.get('add');
+    const asked = Number.parseInt(query.get('qty') ?? '1', 10) || 1;
+    const qty = Math.min(MAX_LINE_QTY, Math.max(1, asked));
+    if (restore || add) window.history.replaceState(null, '', window.location.pathname);
+
+    void (async () => {
+      try {
+        if (restore) {
+          const result = await cartApi.restore(restore, { locale });
+          setCart(result.cart);
+          setLinkNote(
+            result.restored
+              ? result.cart.coupon
+                ? t('restoredWithCode')
+                : t('restored')
+              : t('restoreExpired'),
+          );
+          return;
+        }
+        if (add) {
+          setCart(await cartApi.add(add, qty, { locale }));
+          setLinkNote(t('addedFromLink'));
+          return;
+        }
+        await load();
+      } catch (caught) {
+        setError(
+          caught instanceof CartError
+            ? caught.message
+            : restore
+              ? t('restoreFailed')
+              : t('addFromLinkFailed'),
+        );
+        await load();
+      }
+    })();
+  }, [load, locale, t]);
 
   async function act(key: string, run: () => Promise<Cart>): Promise<void> {
     setBusy(key);
@@ -79,6 +141,12 @@ export default function CartPage() {
     return (
       <main className="shell">
         <h1>{t('title')}</h1>
+        {linkNote ? <p className="notice">{linkNote}</p> : null}
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
         <p className="notice">{t('empty')}</p>
         <Link href={`${prefix}${ROUTES.store}`} className="btn btn-primary">
           {t('browseStore')}
@@ -90,6 +158,8 @@ export default function CartPage() {
   return (
     <main className="shell cart-page">
       <h1>{t('title')}</h1>
+
+      {linkNote ? <p className="notice">{linkNote}</p> : null}
 
       {/* Stated, not silently applied. A cart that trims a line without saying
           so sends the shopper to checkout expecting something else. */}
