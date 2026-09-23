@@ -445,6 +445,9 @@ export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
 
 export const adminOrderListSchema = z.object({
   rows: z.array(adminOrderRowSchema),
+  /** 1-based. The list used to stop at the newest fifty, with no way past. */
+  page: z.number().int().min(1),
+  hasMore: z.boolean(),
   counts: z.object({
     all: z.number().int().min(0),
     awaitingPayment: z.number().int().min(0),

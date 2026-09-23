@@ -44,7 +44,12 @@ export class OrdersService {
     items: { select: { id: true, fulfillmentState: true } },
   } satisfies Prisma.OrderInclude;
 
-  async list(input: { status?: string; q?: string; limit: number }): Promise<AdminOrderList> {
+  async list(input: {
+    status?: string;
+    q?: string;
+    limit: number;
+    page: number;
+  }): Promise<AdminOrderList> {
     const status = this.statusFilter(input.status);
     const search: Prisma.OrderWhereInput = input.q
       ? {
@@ -59,13 +64,18 @@ export class OrdersService {
       where: { AND: [status, search] },
       // Newest first: an order list is read from the top, and the thing that
       // just happened is the thing somebody is looking for.
-      orderBy: { placedAt: 'desc' },
-      take: input.limit,
+      orderBy: [{ placedAt: 'desc' }, { id: 'desc' }],
+      skip: (input.page - 1) * input.limit,
+      // One more than a page, so "is there a next page" costs no count query.
+      take: input.limit + 1,
       include: this.include,
     });
+    const hasMore = orders.length > input.limit;
 
     return {
-      rows: orders.map((order) => this.toRow(order)),
+      rows: orders.slice(0, input.limit).map((order) => this.toRow(order)),
+      page: input.page,
+      hasMore,
       counts: {
         all: await this.prisma.client.order.count(),
         awaitingPayment: await this.prisma.client.order.count({

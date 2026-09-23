@@ -41,11 +41,13 @@ export class OrdersController {
     @Query('status') status?: string,
     @Query('q') q?: string,
     @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ): Promise<AdminOrderList> {
     return this.orders.list({
       status,
       q: q?.trim() || undefined,
       limit: Math.min(200, Math.max(1, Number.parseInt(limit ?? '50', 10) || 50)),
+      page: Math.max(1, Number.parseInt(page ?? '1', 10) || 1),
     });
   }
 

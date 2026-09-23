@@ -427,6 +427,10 @@ export const en: AdminMessages = {
     doneNoteAdded: 'Note added to {number}',
     doneHoldReleased: 'Hold released on {number}',
     doneRefunded: 'Refund started on {number}',
+    pagerLabel: 'Pages of orders',
+    pagePrev: '← Newer',
+    pageNext: 'Older →',
+    pageNumber: 'Page {page}',
   },
 
   products: {
@@ -1127,7 +1131,8 @@ export const en: AdminMessages = {
     fieldPublishedAt: 'Publication date',
     fieldWebsite: 'Official website',
     slugHint: 'Lowercase latin letters, digits and hyphens only, e.g. refund-policy.',
-    slugRedirectNote: 'Changing the URL writes a 301 from the old address automatically, for both languages.',
+    slugRedirectNote:
+      'Changing the URL writes a 301 from the old address automatically, for both languages.',
     slugLocked: 'This page’s URL is fixed: a dedicated storefront route reads it by name.',
     renameConfirm: 'Move {from} to {to}? A 301 will be written from the old URL.',
     createsDraft: 'Created as a draft. Add the content, then publish it from the editor.',
@@ -1140,25 +1145,31 @@ export const en: AdminMessages = {
     unsaved: 'Unsaved changes',
     savedNote: 'Saved.',
     discardConfirm: 'This language has unsaved changes. Discard them and switch?',
-    localeMissingNote: 'Not written in this language yet, so the page shows the other one in its place. Saving creates it.',
+    localeMissingNote:
+      'Not written in this language yet, so the page shows the other one in its place. Saving creates it.',
     versionNote: 'Version {version} — every save keeps a full copy.',
     pagesTitle: 'Pages',
-    pagesLede: 'The store’s editorial pages: policies, the warranty, contact. One URL per page, in two languages.',
+    pagesLede:
+      'The store’s editorial pages: policies, the warranty, contact. One URL per page, in two languages.',
     newPage: 'New page',
     newPageHeading: 'Add a page',
     backToPages: 'All pages',
     blogTitle: 'Blog',
-    blogLede: 'A post does not fall back to the other language: its English URL is a 404 until it is written in English.',
+    blogLede:
+      'A post does not fall back to the other language: its English URL is a 404 until it is written in English.',
     newPost: 'New post',
     newPostHeading: 'Add a post',
     backToBlog: 'All posts',
     noAuthor: 'No author',
-    summaryHint: 'Shown on the post’s card, and used as the search description when the SEO description is empty.',
+    summaryHint:
+      'Shown on the post’s card, and used as the search description when the SEO description is empty.',
     publishedAtHint: 'Leave empty to stamp the date of the first publish.',
     readingMinutes: '{minutes} min read — worked out from the content on save.',
-    postLocaleMissingNote: 'This post is not written in this language yet, and its URL answers 404. Saving creates it.',
+    postLocaleMissingNote:
+      'This post is not written in this language yet, and its URL answers 404. Saving creates it.',
     brandsTitle: 'Brands',
-    brandsLede: 'The /brands pages. A brand with no title and description of its own shows only its name in a search result.',
+    brandsLede:
+      'The /brands pages. A brand with no title and description of its own shows only its name in a search result.',
     brandProducts: '{count} published products',
     seoWritten: 'written',
     seoMissing: 'missing',
@@ -1166,7 +1177,8 @@ export const en: AdminMessages = {
     inactive: 'Hidden',
     activeHint: 'A hidden brand drops out of lists; its page stays at its URL.',
     backToBrands: 'All brands',
-    brandLocaleMissingNote: 'No copy in this language yet; the page shows the untranslated name. Saving creates it.',
+    brandLocaleMissingNote:
+      'No copy in this language yet; the page shows the untranslated name. Saving creates it.',
     introHeading: 'Brand page introduction',
     introLede: 'Shown above the brand’s products. Leave it empty if there is nothing worth saying.',
   },

@@ -432,6 +432,10 @@ export const ar = {
     doneNoteAdded: 'أُضيفت ملاحظة على {number}',
     doneHoldReleased: 'رُفع الإيقاف عن {number}',
     doneRefunded: 'بدأ استرداد {number}',
+    pagerLabel: 'صفحات الطلبات',
+    pagePrev: 'الأحدث →',
+    pageNext: '← الأقدم',
+    pageNumber: 'صفحة {page}',
   },
 
   products: {
@@ -1117,7 +1121,8 @@ export const ar = {
     fieldPublishedAt: 'تاريخ النشر',
     fieldWebsite: 'الموقع الرسمي',
     slugHint: 'حروف لاتينية صغيرة وأرقام وشرطات فقط، مثل refund-policy.',
-    slugRedirectNote: 'تغيير الرابط يكتب توجيهاً 301 من العنوان القديم تلقائياً، ويغيّر اللغتين معاً.',
+    slugRedirectNote:
+      'تغيير الرابط يكتب توجيهاً 301 من العنوان القديم تلقائياً، ويغيّر اللغتين معاً.',
     slugLocked: 'رابط هذه الصفحة ثابت: صفحة مخصّصة في المتجر تقرؤها بهذا الاسم.',
     renameConfirm: 'نقل {from} إلى {to}؟ سيُكتب توجيه 301 من الرابط القديم.',
     createsDraft: 'تُنشأ مسودة. أضف المحتوى ثم انشرها من صفحة التحرير.',

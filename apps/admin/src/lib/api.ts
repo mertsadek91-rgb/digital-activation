@@ -490,10 +490,11 @@ export const api = {
 
   // --- orders ------------------------------------------------------------------
 
-  orders: (status?: string, q?: string) => {
+  orders: (status?: string, q?: string, page = 1) => {
     const search = new URLSearchParams();
     if (status) search.set('status', status);
     if (q) search.set('q', q);
+    if (page > 1) search.set('page', String(page));
     const suffix = search.toString();
     return request<AdminOrderList>(`/admin/orders${suffix ? `?${suffix}` : ''}`);
   },

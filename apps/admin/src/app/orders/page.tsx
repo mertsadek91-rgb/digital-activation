@@ -53,12 +53,15 @@ export default function OrdersPage() {
   const [data, setData] = useState<AdminOrderList | null>(null);
   const [filter, setFilter] = useState('awaiting-payment');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      setData(await api.orders(filter === 'all' ? undefined : filter, query.trim() || undefined));
+      setData(
+        await api.orders(filter === 'all' ? undefined : filter, query.trim() || undefined, page),
+      );
       setError(null);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
@@ -67,7 +70,7 @@ export default function OrdersPage() {
       }
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [filter, query, router, t]);
+  }, [filter, query, page, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -129,7 +132,10 @@ export default function OrdersPage() {
               key={entry.key}
               type="button"
               className={`tab${filter === entry.key ? ' is-active' : ''}`}
-              onClick={() => setFilter(entry.key)}
+              onClick={() => {
+                setFilter(entry.key);
+                setPage(1);
+              }}
             >
               {t(entry.label)}
             </button>
@@ -140,7 +146,8 @@ export default function OrdersPage() {
           className="lookup-form"
           onSubmit={(event) => {
             event.preventDefault();
-            void load();
+            if (page !== 1) setPage(1);
+            else void load();
           }}
         >
           <input
@@ -215,6 +222,27 @@ export default function OrdersPage() {
             </tbody>
           </table>
         </div>
+      ) : null}
+      {data && (data.page > 1 || data.hasMore) ? (
+        <nav className="pager" aria-label={t('pagerLabel')}>
+          <button
+            type="button"
+            className="ghost"
+            disabled={data.page <= 1}
+            onClick={() => setPage(data.page - 1)}
+          >
+            {t('pagePrev')}
+          </button>
+          <span>{t('pageNumber', { page: data.page })}</span>
+          <button
+            type="button"
+            className="ghost"
+            disabled={!data.hasMore}
+            onClick={() => setPage(data.page + 1)}
+          >
+            {t('pageNext')}
+          </button>
+        </nav>
       ) : null}
     </Nav>
   );
