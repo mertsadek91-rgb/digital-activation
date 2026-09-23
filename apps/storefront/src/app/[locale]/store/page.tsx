@@ -11,7 +11,7 @@ import { MotionFadeIn } from '../../../components/motion-wrapper';
 import { CategoryRail } from '../../../components/category-rail';
 import { ProductCard } from '../../../components/product-card';
 import { getStore } from '../../../lib/api';
-import { robotsMeta } from '../../../lib/seo';
+import { pageSuffix, paginatedUrl, robotsMeta } from '../../../lib/seo';
 
 /**
  * /store — everything on sale.
@@ -61,20 +61,25 @@ function sortFor(value: string | string[] | undefined): Sort {
   return SORTS.includes(raw as Sort) ? (raw as Sort) : 'position';
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params;
+  const page = pageNumber((await searchParams).page);
   const ar = locale === 'ar';
   const links = alternates(SITE_URL, ROUTES.store);
 
+  // Page N canonicalises to itself; the sort does not survive into the
+  // canonical, because a re-ordering of the same products is not a new page.
   return {
-    title: ar ? 'المتجر — كل المنتجات' : 'Store — all products',
+    title: `${ar ? 'المتجر — كل المنتجات' : 'Store — all products'}${pageSuffix(page, locale)}`,
     description: ar
       ? 'مفاتيح تفعيل وتراخيص أصلية: ويندوز، أوفيس، أدوبي، برامج الحماية والتصميم — تسليم على بريدك.'
       : 'Genuine activation keys and licences: Windows, Office, Adobe, security and design software — delivered to your email.',
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, ROUTES.store, ar ? 'ar' : 'en'),
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
+      canonical: paginatedUrl(canonical(SITE_URL, ROUTES.store, ar ? 'ar' : 'en'), page),
+      languages: Object.fromEntries(
+        links.map((link) => [link.hrefLang, paginatedUrl(link.href, page)]),
+      ),
     },
   };
 }
@@ -106,7 +111,7 @@ export default async function StorePage({ params, searchParams }: Props) {
       },
     ]),
     jsonld.itemList({
-      url: new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(),
+      url: paginatedUrl(new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(), page),
       name: ar ? 'المتجر' : 'Store',
       items: store.products.map((card, index) => ({
         url: new URL(`${prefix}${ROUTES.product(card.slug)}`, SITE_URL).toString(),

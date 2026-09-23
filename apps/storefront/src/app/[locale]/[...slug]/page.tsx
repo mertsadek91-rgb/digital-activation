@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
-import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
+import type { AppLocale } from '@da/contracts';
+import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
 import { getPage } from '../../../lib/api';
@@ -46,6 +47,24 @@ function slugFor(segments: string[]): string | null {
   return segments.length === 1 ? (segments[0] ?? null) : null;
 }
 
+/**
+ * The languages this page has actually been written in.
+ *
+ * The API falls back to whichever row exists, and says which one it served.
+ * So a page served in the other language is known to exist in that one only;
+ * a page served in the language asked for exists in the other as well only if
+ * asking for that one does not fall back too. That second question is the same
+ * cached request the other locale's visitors make, not a new one.
+ *
+ * Declaring both unconditionally paired `/en/privacy` with `/privacy` as
+ * translations of each other while both served the same Arabic text.
+ */
+async function writtenIn(slug: string, served: AppLocale): Promise<AppLocale[]> {
+  const other: AppLocale = served === 'ar' ? 'en' : 'ar';
+  const counterpart = await getPage(slug, { locale: other });
+  return counterpart?.locale === other ? ['ar', 'en'] : [served];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const key = slugFor(slug);
@@ -53,9 +72,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return notFoundMetadata(locale);
 
   const path = `/${page.slug}`;
-  const links = alternates(SITE_URL, path);
   // The locale the body is in, which is not always the one that was asked for.
   const served = page.locale === 'en' ? 'en' : 'ar';
+  const links = alternatesIn(SITE_URL, path, await writtenIn(page.slug, served));
 
   return {
     title: pageTitle(page.seo.title ?? page.title),

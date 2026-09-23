@@ -1816,7 +1816,12 @@ h1 {
   display: flex;
   flex-direction: column;
   transform: translateX(105%);
-  transition: transform 300ms var(--ease-out);
+  /* `visibility` rides along so the closed panel is not painted at the edge
+     on a wide phone, and switches only once the slide-out has finished. */
+  visibility: hidden;
+  transition:
+    transform 300ms var(--ease-out),
+    visibility 300ms var(--ease-out);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1828,10 +1833,13 @@ h1 {
 }
 .drawer-panel.is-open {
   transform: translateX(0) !important;
+  visibility: visible;
 }
-.drawer-panel.motion-controlled {
-  transform: none !important;
-  transition: none !important;
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel,
+  .drawer-overlay {
+    transition: none;
+  }
 }
 
 .drawer-head {
