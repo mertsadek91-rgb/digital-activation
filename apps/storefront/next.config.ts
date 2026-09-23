@@ -11,6 +11,34 @@ loadEnv({ path: path.join(import.meta.dirname, '..', '..', '.env'), quiet: true 
 import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+/**
+ * What the shop's pages may load and talk to.
+ *
+ * The one third party is Stripe: its script, its card frames and the API the
+ * card form calls. `connect-src` names the API and Stripe and nothing else, so
+ * a script that got in could not post a card form or a session anywhere of its
+ * choosing. Scripts keep 'unsafe-inline' because Next hydrates with inline
+ * scripts; nonces are the next step. JSON-LD is `application/ld+json`, which a
+ * CSP does not treat as script.
+ */
+function contentSecurityPolicy(): string {
+  const api = new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').origin;
+  const dev = process.env.NODE_ENV !== 'production';
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline' https://js.stripe.com${dev ? " 'unsafe-eval'" : ''}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data:",
+    `connect-src 'self' ${api} https://api.stripe.com${dev ? ' ws:' : ''}`,
+    'frame-src https://js.stripe.com https://hooks.stripe.com https://*.stripe.com',
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
+
 const config: NextConfig = {
   reactStrictMode: true,
   // Everything the browser downloads is accounted for. The performance budget
@@ -77,6 +105,10 @@ const config: NextConfig = {
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // No framing, anywhere. The account page reveals licence keys with a
+          // click, and a page that can be framed can have that click stolen.
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Content-Security-Policy', value: contentSecurityPolicy() },
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload',

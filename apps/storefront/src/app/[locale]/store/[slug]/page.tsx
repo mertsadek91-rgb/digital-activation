@@ -13,6 +13,7 @@ import { ProductCard } from '../../../../components/product-card';
 import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
 import { Reviews } from '../../../../components/reviews';
+import { StockAlert } from '../../../../components/stock-alert';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
 import { getProduct, getProductReviews } from '../../../../lib/api';
@@ -244,11 +245,10 @@ export default async function ProductPage({ params }: Props) {
           {!selected.inStock ? (
             <div className="oos">
               {/* The legacy store greeted its highest-traffic product page with
-                  "غير متوفر" and offered nothing else. A waiting list would turn
-                  that visit into a queued buyer, but there is no endpoint to
-                  hold one yet — the "Notify me" button that stood here took the
-                  click and did nothing. Until there is, the honest version is a
-                  person: a WhatsApp message that already says which product. */}
+                  "غير متوفر" and offered nothing else. Now the visit becomes a
+                  queued buyer — one email when keys arrive — with a person on
+                  WhatsApp beside it for anyone who would rather ask. */}
+              <StockAlert variantId={selected.id} locale={locale} />
               <a
                 className="notify"
                 href={whatsappLink(

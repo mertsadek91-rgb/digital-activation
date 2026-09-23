@@ -35,11 +35,15 @@ export default function OrderPage() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      setOrder(await cartApi.order(number, { locale }));
+      // The key from an emailed link, if this page was opened from one.
+      const key = new URLSearchParams(window.location.search).get('key');
+      setOrder(await cartApi.order(number, { locale, key }));
     } catch (caught) {
+      if (caught instanceof CartError && caught.status === 404) setNotFound(true);
       setError(
         caught instanceof CartError
           ? caught.message
@@ -96,7 +100,20 @@ export default function OrderPage() {
     return (
       <main className="shell">
         <h1>{ar ? 'طلبك' : 'Your order'}</h1>
-        <p className="notice">{error ?? '…'}</p>
+        <p className="notice" role={error ? 'alert' : undefined}>
+          {error ?? '…'}
+        </p>
+        {notFound ? (
+          // Most often not a missing order but a different device: the page
+          // opens for the browser that placed it, a signed-in customer, or
+          // the link in the order email. Say which door is open.
+          <p className="meta">
+            {ar
+              ? 'إن كان هذا طلبك، افتحه من الرابط في بريد الطلب، أو سجّل الدخول إلى حسابك بالبريد الذي طلبت به.'
+              : 'If this is your order, open it from the link in your order email, or sign in to your account with the email you ordered with.'}{' '}
+            <Link href={`${prefix}/account`}>{ar ? 'حسابي' : 'My account'}</Link>
+          </p>
+        ) : null}
         <Link href={`${prefix}${ROUTES.store}`} className="btn btn-ghost">
           {ar ? 'المتجر' : 'The store'}
         </Link>

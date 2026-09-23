@@ -1018,6 +1018,34 @@ h1 {
   flex-direction: column;
   gap: 8px;
 }
+.oos-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.oos-label {
+  font-weight: 700;
+}
+.oos-row {
+  display: flex;
+  gap: 8px;
+}
+.oos-row input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 48px;
+  padding-inline: var(--spacing-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font: inherit;
+}
+.oos-row .btn {
+  min-block-size: 48px;
+  white-space: nowrap;
+}
+.oos-done {
+  font-weight: 700;
+}
 
 /* --- prose ----------------------------------------------------------------- */
 

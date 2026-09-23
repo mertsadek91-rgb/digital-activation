@@ -156,8 +156,16 @@ export const cartApi = {
       body: JSON.stringify(body),
     }),
 
-  order: (number: string, options: Options): Promise<Order> =>
-    request(`/orders/${encodeURIComponent(number)}`, orderSchema, { ...options }),
+  /**
+   * `key` is the signed one the order emails carry. With it the page opens on
+   * any device; without it the API wants this browser's cart or a signed-in
+   * customer.
+   */
+  order: (number: string, options: Options & { key?: string | null }): Promise<Order> => {
+    const { key, ...rest } = options;
+    const query = key ? `?key=${encodeURIComponent(key)}` : '';
+    return request(`/orders/${encodeURIComponent(number)}${query}`, orderSchema, rest);
+  },
 
   pay: (
     number: string,

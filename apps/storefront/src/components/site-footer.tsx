@@ -16,6 +16,7 @@ import {
 } from './icons';
 import { PaymentsBar } from './product-trust';
 import { BrandLogo } from './brand-logo';
+import { FooterNewsletter } from './footer-newsletter';
 
 const WHATSAPP_DIAL = '966534255367';
 const WHATSAPP_SHOWN = '+966 53 425 5367';
@@ -422,13 +423,14 @@ export function SiteFooter({
         </div>
       </div>
 
-      {/* The newsletter strip that stood here is gone until it can be real.
-          It took an address, waited 600ms and announced "Subscribed
-          successfully! Check your inbox for your welcome offer" — and sent
-          the address nowhere, because there is no subscription endpoint. A
-          shopper promised a coupon that never arrives writes to support about
-          it. It returns when the API has somewhere to put the address (its
-          styles are still in footer.css). */}
+      {/* The newsletter, double opt-in: the form sends a confirmation email
+          and says so. The strip that stood here before announced a coupon
+          and stored nothing. */}
+      <div className="footer-newsletter-section">
+        <div className="footer-newsletter-container">
+          <FooterNewsletter locale={locale} />
+        </div>
+      </div>
 
       {/* The payment bar, on every page of the site.
           It listed mada, Apple Pay, Visa, Mastercard, stc pay and bank transfer
