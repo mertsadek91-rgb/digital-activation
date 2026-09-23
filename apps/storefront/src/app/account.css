@@ -293,7 +293,10 @@
   border-radius: var(--radius-xl);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
 }
 .order-history-card:hover {
   border-color: color-mix(in srgb, var(--color-brand) 30%, var(--color-border));
@@ -430,7 +433,9 @@
 
 /* --- chosen for you ------------------------------------------------------- */
 
-.for-you-section { margin-block: var(--space-5, 32px); }
+.for-you-section {
+  margin-block: var(--space-5, 32px);
+}
 .for-you-section h2 {
   margin: 0 0 var(--space-3, 16px);
   font-size: 1.25rem;
@@ -462,7 +467,10 @@
   border-radius: 12px;
   background: #fff;
 }
-.renewal-row.is-lapsed { border-inline-start-color: #b4231d; background: #fdf6f5; }
+.renewal-row.is-lapsed {
+  border-inline-start-color: #b4231d;
+  background: #fdf6f5;
+}
 
 .renewal-when {
   display: grid;
@@ -470,7 +478,11 @@
   gap: 2px;
   text-align: center;
 }
-.renewal-when strong { font-size: 0.8rem; color: #6b7472; font-weight: 600; }
+.renewal-when strong {
+  font-size: 0.8rem;
+  color: #6b7472;
+  font-weight: 600;
+}
 .renewal-days {
   font-size: 2.1rem;
   line-height: 1;
@@ -478,11 +490,19 @@
   font-variant-numeric: tabular-nums;
   color: #a07c1a;
 }
-.renewal-row.is-lapsed .renewal-days { color: #b4231d; }
-.renewal-what { min-inline-size: 0; }
+.renewal-row.is-lapsed .renewal-days {
+  color: #b4231d;
+}
+.renewal-what {
+  min-inline-size: 0;
+}
 
 /* The reason, under the tile it explains. Without it the grid is an advert. */
-.for-you-tile { display: grid; gap: 6px; align-content: start; }
+.for-you-tile {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
 .for-you-reason {
   margin: 0;
   font-size: 0.85rem;
@@ -491,6 +511,11 @@
 }
 
 @media (max-width: 560px) {
-  .renewal-row { grid-template-columns: 1fr; }
-  .renewal-when { justify-items: start; text-align: start; }
+  .renewal-row {
+    grid-template-columns: 1fr;
+  }
+  .renewal-when {
+    justify-items: start;
+    text-align: start;
+  }
 }

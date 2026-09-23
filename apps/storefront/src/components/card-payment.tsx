@@ -177,9 +177,7 @@ export function CardPayment({
   if (phase === 'unavailable') {
     return (
       <div className="card-pay">
-        <p className="notice">
-          {t('unavailable')}
-        </p>
+        <p className="notice">{t('unavailable')}</p>
         <button type="button" className="btn btn-ghost btn-wide" onClick={onBack}>
           {t('anotherMethod')}
         </button>
@@ -192,11 +190,7 @@ export function CardPayment({
   }
 
   if (phase === 'processing') {
-    return (
-      <p className="notice">
-        {t('processing')}
-      </p>
-    );
+    return <p className="notice">{t('processing')}</p>;
   }
 
   return (
@@ -205,15 +199,9 @@ export function CardPayment({
           the inputs, which live in an iframe this code cannot reach into. */}
       <div ref={mount} className="card-pay-element" />
 
-      {phase === 'loading' ? (
-        <p className="hold-note">{t('loading')}</p>
-      ) : null}
+      {phase === 'loading' ? <p className="hold-note">{t('loading')}</p> : null}
 
-      {phase === 'action' ? (
-        <p className="notice">
-          {t('action')}
-        </p>
-      ) : null}
+      {phase === 'action' ? <p className="notice">{t('action')}</p> : null}
 
       {message ? <p className="error">{message}</p> : null}
 

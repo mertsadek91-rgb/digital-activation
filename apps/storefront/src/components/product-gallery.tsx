@@ -50,11 +50,7 @@ export function ProductGallery({
       </div>
 
       {images.length > 1 ? (
-        <div
-          className="gallery-thumbs"
-          role="group"
-          aria-label={t('moreImages')}
-        >
+        <div className="gallery-thumbs" role="group" aria-label={t('moreImages')}>
           {images.map((img, idx) => (
             <button
               key={img.url}

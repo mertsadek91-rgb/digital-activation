@@ -136,9 +136,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
               {tk('previous')}
             </Link>
           ) : null}
-          <span>
-            {tk('pageOf', { page: String(page), last: String(lastPage) })}
-          </span>
+          <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
           {page < lastPage ? (
             <Link href={href(page + 1)} rel="next">
               {tk('next')}

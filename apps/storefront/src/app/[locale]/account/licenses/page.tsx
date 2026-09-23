@@ -116,14 +116,10 @@ export default function LicensesPage() {
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="account-sent">{note}</p> : null}
 
-      {list && list.rows.length === 0 ? (
-        <p className="notice">{tl('none')}</p>
-      ) : null}
+      {list && list.rows.length === 0 ? <p className="notice">{tl('none')}</p> : null}
 
       {list && list.waiting > 0 ? (
-        <p className="notice notice-warn">
-          {tl('waiting', { count: list.waiting })}
-        </p>
+        <p className="notice notice-warn">{tl('waiting', { count: list.waiting })}</p>
       ) : null}
 
       <ul className="licence-list">
@@ -219,9 +215,7 @@ function LicenceCard({
       {/* A deadline is not a secret, and it is the one thing that stops being
           fixable once it passes. */}
       {row.expiresAt ? (
-        <p className="licence-deadline">
-          {tl('deadline', { date: row.expiresAt.slice(0, 10) })}
-        </p>
+        <p className="licence-deadline">{tl('deadline', { date: row.expiresAt.slice(0, 10) })}</p>
       ) : null}
 
       {row.hasSecret ? (

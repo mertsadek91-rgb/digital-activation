@@ -20,16 +20,15 @@ type Leaves<T, P extends string = ''> = {
   [K in keyof T & string]: T[K] extends string ? `${P}${K}` : Leaves<T[K], `${P}${K}.`>;
 }[keyof T & string];
 
-type Parity =
-  [Exclude<Leaves<typeof ar>, Leaves<typeof en>>, Exclude<Leaves<typeof en>, Leaves<typeof ar>>] extends [
-    never,
-    never,
-  ]
-    ? true
-    : {
-        missingInEn: Exclude<Leaves<typeof ar>, Leaves<typeof en>>;
-        missingInAr: Exclude<Leaves<typeof en>, Leaves<typeof ar>>;
-      };
+type Parity = [
+  Exclude<Leaves<typeof ar>, Leaves<typeof en>>,
+  Exclude<Leaves<typeof en>, Leaves<typeof ar>>,
+] extends [never, never]
+  ? true
+  : {
+      missingInEn: Exclude<Leaves<typeof ar>, Leaves<typeof en>>;
+      missingInAr: Exclude<Leaves<typeof en>, Leaves<typeof ar>>;
+    };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- a compile-time assertion
 const parity: Parity = true;

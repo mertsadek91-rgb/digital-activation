@@ -15,12 +15,7 @@ import { useState } from 'react';
  * the transfer lands nowhere. Money sent to a wrong account is not refundable
  * by us, so the copy button is the point rather than a convenience.
  */
-export function PaymentInstructionsPanel({
-  instructions,
-}: {
-  instructions: PaymentInstructions;
-}) {
-
+export function PaymentInstructionsPanel({ instructions }: { instructions: PaymentInstructions }) {
   return (
     <div className="pay-instructions">
       {instructions.headline ? <p className="lede">{instructions.headline}</p> : null}

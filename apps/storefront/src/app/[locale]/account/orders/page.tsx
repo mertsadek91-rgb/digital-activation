@@ -100,11 +100,7 @@ export default function OrdersPage() {
 
       {error ? <p className="error">{error}</p> : null}
 
-      {list && list.rows.length === 0 ? (
-        <p className="notice">
-          {t('noOrders')}
-        </p>
-      ) : null}
+      {list && list.rows.length === 0 ? <p className="notice">{t('noOrders')}</p> : null}
 
       <ul className="order-history">
         {(list?.rows ?? []).map((order) => (
@@ -115,13 +111,7 @@ export default function OrdersPage() {
   );
 }
 
-function OrderCard({
-  order,
-  prefix,
-}: {
-  order: AccountOrder;
-  prefix: string;
-}) {
+function OrderCard({ order, prefix }: { order: AccountOrder; prefix: string }) {
   const t = useTranslations('account');
   const tc = useTranslations('common');
   const tf = useTranslations('format');

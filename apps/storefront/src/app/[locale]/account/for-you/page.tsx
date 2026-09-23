@@ -79,9 +79,7 @@ export default function ForYouPage() {
       {error ? <p className="error">{error}</p> : null}
       {!data ? <p className="meta">…</p> : null}
 
-      {data && data.purchases === 0 ? (
-        <p className="notice">{tf('nothing')}</p>
-      ) : null}
+      {data && data.purchases === 0 ? <p className="notice">{tf('nothing')}</p> : null}
 
       {data && data.renewals.length > 0 ? (
         <section className="for-you-section">
@@ -153,4 +151,3 @@ function RenewalRow({ renewal, locale }: { renewal: Renewal; locale: string }) {
     </li>
   );
 }
-

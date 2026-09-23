@@ -145,9 +145,7 @@ export default async function GoldenWarrantyPage({ params }: Props) {
       <section className="warranty-section warranty-contact">
         <div className="shell">
           <h2>{t('questionTitle')}</h2>
-          <p>
-            {t('questionBody')}
-          </p>
+          <p>{t('questionBody')}</p>
           <div className="warranty-contact-actions">
             <a
               className="btn btn-accent"

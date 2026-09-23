@@ -141,13 +141,9 @@ export function SiteFooter({
             >
               <BrandLogo locale={locale} width={148} />
             </Link>
-            <p className="footer-brand-sub">
-              {t('brandSub')}
-            </p>
+            <p className="footer-brand-sub">{t('brandSub')}</p>
 
-            <p className="footer-brand-bio">
-              {t('brandBio')}
-            </p>
+            <p className="footer-brand-bio">{t('brandBio')}</p>
 
             <div className="footer-trust-badges">
               <span className="trust-pill">🇸🇦 {t('verifiedStore')}</span>
@@ -320,10 +316,7 @@ export function SiteFooter({
           </nav>
 
           {/* Col 4: Guarantees & Policies */}
-          <nav
-            className="footer-nav-column"
-            aria-label={t('policies')}
-          >
+          <nav className="footer-nav-column" aria-label={t('policies')}>
             <h2 className="footer-col-title">{t('policies')}</h2>
             <ul className="footer-nav-list">
               {POLICY_PAGES.map((page) => (
@@ -345,9 +338,7 @@ export function SiteFooter({
           {/* Col 5: Customer Service Hub */}
           <div className="footer-support-column">
             <div className="support-col-header">
-              <h2 className="footer-col-title">
-                {t('support')}
-              </h2>
+              <h2 className="footer-col-title">{t('support')}</h2>
               <span className="support-status-chip">
                 <span className="status-ping" aria-hidden="true" />
                 {t('online')}
@@ -366,9 +357,7 @@ export function SiteFooter({
                   <WhatsAppIcon size={20} />
                 </div>
                 <div className="footer-contact-card-body">
-                  <span className="footer-contact-card-label">
-                    {t('directWhatsapp')}
-                  </span>
+                  <span className="footer-contact-card-label">{t('directWhatsapp')}</span>
                   <span className="footer-contact-card-val" dir="ltr">
                     {WHATSAPP_SHOWN}
                   </span>
@@ -381,9 +370,7 @@ export function SiteFooter({
                   <MailIcon />
                 </div>
                 <div className="footer-contact-card-body">
-                  <span className="footer-contact-card-label">
-                    {t('supportEmail')}
-                  </span>
+                  <span className="footer-contact-card-label">{t('supportEmail')}</span>
                   <span className="footer-contact-card-val" dir="ltr">
                     {SUPPORT_EMAIL}
                   </span>
@@ -402,9 +389,7 @@ export function SiteFooter({
                 </span>
                 <div className="remote-text">
                   <strong>{t('remoteTitle')}</strong>
-                  <span>
-                    {t('remoteBody')}
-                  </span>
+                  <span>{t('remoteBody')}</span>
                 </div>
               </div>
             </div>
@@ -445,9 +430,7 @@ export function SiteFooter({
             <RegistrationDetails trust={trust} className="footer-registration" />
           ) : null}
 
-          <p className="footer-made-note">
-            {t('madeNote')}
-          </p>
+          <p className="footer-made-note">{t('madeNote')}</p>
 
           <div className="footer-lang-switcher">
             <Link

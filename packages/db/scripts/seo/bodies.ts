@@ -131,7 +131,9 @@ async function main(): Promise<void> {
       const words = countWords(bodyText(blocks));
       if (words < BODY_MIN_WORDS) {
         short += 1;
-        console.log(`  !! ${product.slug} (${lang}) — only ${String(words)} words, gate wants ${String(BODY_MIN_WORDS)}`);
+        console.log(
+          `  !! ${product.slug} (${lang}) — only ${String(words)} words, gate wants ${String(BODY_MIN_WORDS)}`,
+        );
         continue;
       }
 

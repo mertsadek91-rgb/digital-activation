@@ -436,8 +436,7 @@ export const en: AdminMessages = {
 
     historyHeading: '🕓 Status history',
     historyPlaced: 'Order placed',
-    historyNotRecorded:
-      'This order predates status tracking; only its current status is known.',
+    historyNotRecorded: 'This order predates status tracking; only its current status is known.',
     actorSystem: 'System',
     actorProvider: 'Payment provider',
     actorStaff: 'Staff',

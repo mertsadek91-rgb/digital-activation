@@ -361,7 +361,8 @@ export class DashboardService {
       totalUsd: order.totalUsd.toFixed(2),
       placedAt: order.placedAt.toISOString(),
       waitingLines: order.items.filter(
-        (item) => item.fulfillmentState === 'MANUAL_QUEUE' || item.fulfillmentState === 'AUTO_ASSIGNED',
+        (item) =>
+          item.fulfillmentState === 'MANUAL_QUEUE' || item.fulfillmentState === 'AUTO_ASSIGNED',
       ).length,
     }));
   }

@@ -13,12 +13,7 @@ import { isArabic } from '../../../../i18n/locale';
 import { getPost } from '../../../../lib/api';
 import { formatArticleDate, readingLabel } from '../../../../lib/format';
 import { goneOrRedirect } from '../../../../lib/gone';
-import {
-  notFoundMetadata,
-  openGraphDefaults,
-  pageTitle,
-  robotsMeta,
-} from '../../../../lib/seo';
+import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -145,17 +140,13 @@ export default async function PostPage({ params }: Props) {
             {post.publishedAt ? (
               <time dateTime={post.publishedAt}>{formatArticleDate(post.publishedAt, locale)}</time>
             ) : null}
-            {post.readingMinutes > 0 ? (
-              <span>{readingLabel(post.readingMinutes, tf)}</span>
-            ) : null}
+            {post.readingMinutes > 0 ? <span>{readingLabel(post.readingMinutes, tf)}</span> : null}
           </p>
           {/* Rendered as the opening paragraph rather than hidden in a meta
               tag: it is the answer-first summary, and it is the passage most
               likely to be quoted by an answer engine. */}
           {post.summary ? <p className="post-lede">{post.summary}</p> : null}
-          {post.isDraft ? (
-            <p className="draft-flag">{tc('draftPreview')}</p>
-          ) : null}
+          {post.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
         </header>
 
         <div className="prose">

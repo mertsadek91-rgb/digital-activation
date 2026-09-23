@@ -1,4 +1,8 @@
-import { type ArgumentsHost, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  type ArgumentsHost,
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import type { HttpAdapterHost } from '@nestjs/core';
 import { describe, expect, it, vi } from 'vitest';
 

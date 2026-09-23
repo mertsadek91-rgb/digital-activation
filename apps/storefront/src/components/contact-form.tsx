@@ -61,20 +61,12 @@ export function ContactForm({ locale }: { locale: string }) {
       if (!response.ok) {
         const payload: unknown = await response.json().catch(() => null);
         const record = (payload ?? {}) as Record<string, unknown>;
-        throw new Error(
-          typeof record.message === 'string'
-            ? record.message
-            : t('sendFailedRetry'),
-        );
+        throw new Error(typeof record.message === 'string' ? record.message : t('sendFailedRetry'));
       }
 
       setSent(true);
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : t('sendFailed'),
-      );
+      setError(caught instanceof Error ? caught.message : t('sendFailed'));
     } finally {
       setBusy(false);
     }
@@ -83,9 +75,7 @@ export function ContactForm({ locale }: { locale: string }) {
   if (sent) {
     return (
       <div className="contact-card contact-form-card">
-        <p className="account-sent">
-          {t('sent', { hours: String(CONTACT_REPLY_HOURS) })}
-        </p>
+        <p className="account-sent">{t('sent', { hours: String(CONTACT_REPLY_HOURS) })}</p>
         <button type="button" className="btn btn-ghost" onClick={() => setSent(false)}>
           {t('sendAnother')}
         </button>
@@ -102,9 +92,7 @@ export function ContactForm({ locale }: { locale: string }) {
     >
       <div className="contact-card-header">
         <h2>{t('title')}</h2>
-        <p>
-          {t('intro')}
-        </p>
+        <p>{t('intro')}</p>
       </div>
 
       <label className="account-field">
@@ -177,9 +165,7 @@ export function ContactForm({ locale }: { locale: string }) {
           rows={6}
           required
           minLength={10}
-          placeholder={
-            t('messagePlaceholder')
-          }
+          placeholder={t('messagePlaceholder')}
         />
       </label>
 
@@ -207,12 +193,10 @@ export function ContactForm({ locale }: { locale: string }) {
         style={{ minBlockSize: '48px', fontSize: 'var(--text-base)' }}
         disabled={busy || name.trim().length < 2 || message.trim().length < 10}
       >
-        {busy ? (t('sending')) : t('submit')}
+        {busy ? t('sending') : t('submit')}
       </button>
 
-      <p className="account-hint">
-        {t('hint', { hours: String(CONTACT_REPLY_HOURS) })}
-      </p>
+      <p className="account-hint">{t('hint', { hours: String(CONTACT_REPLY_HOURS) })}</p>
     </form>
   );
 }

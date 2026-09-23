@@ -66,10 +66,7 @@ export function NotFoundPage() {
     void (async () => {
       try {
         const response = await fetch(
-          new URL(
-            `/v1/content/suggest?path=${encodeURIComponent(pathname)}&locale=${locale}`,
-            API,
-          ),
+          new URL(`/v1/content/suggest?path=${encodeURIComponent(pathname)}&locale=${locale}`, API),
           { cache: 'no-store' },
         );
         if (!response.ok) throw new Error('no suggestions');

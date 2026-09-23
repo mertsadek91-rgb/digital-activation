@@ -160,10 +160,7 @@ export function PaymentMarks() {
   if (marks === null || marks.length === 0) return null;
 
   return (
-    <div
-      className="payment-badges-row"
-      aria-label={t('acceptedMethods')}
-    >
+    <div className="payment-badges-row" aria-label={t('acceptedMethods')}>
       {marks.includes('visa') ? (
         <div className="pay-badge pay-visa" title="Visa">
           <VisaIcon />

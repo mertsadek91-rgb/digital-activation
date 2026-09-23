@@ -22,13 +22,7 @@ import type { Formatters } from './formatters';
  * follows the reading direction of the page, which is where the ordering
  * actually matters to a screen reader.
  */
-export function RevenueChart({
-  points,
-  format,
-}: {
-  points: DashboardPoint[];
-  format: Formatters;
-}) {
+export function RevenueChart({ points, format }: { points: DashboardPoint[]; format: Formatters }) {
   const t = useT('dashboard');
   const [hovered, setHovered] = useState<number | null>(null);
   const [tabular, setTabular] = useState(false);
@@ -201,11 +195,7 @@ export function RevenueChart({
                 // edge a centred tooltip hangs off the card.
                 insetInlineStart: `${String((x(hovered ?? 0) / W) * 100)}%`,
                 transform: `translateX(${
-                  (hovered ?? 0) > points.length - 5
-                    ? '-90%'
-                    : (hovered ?? 0) < 4
-                      ? '-10%'
-                      : '-50%'
+                  (hovered ?? 0) > points.length - 5 ? '-90%' : (hovered ?? 0) < 4 ? '-10%' : '-50%'
                 })`,
               }}
             >

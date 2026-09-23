@@ -33,8 +33,7 @@ describe('ReferralExpiryService', () => {
 
     const where = (
       client.referralRedemption.findMany.mock.calls[0] as
-        | [{ where: { status: string; createdAt: { lte: Date } } }]
-        | undefined
+        [{ where: { status: string; createdAt: { lte: Date } } }] | undefined
     )?.[0].where;
     if (!where) throw new Error('findMany was not called');
     expect(where.status).toBe('ISSUED');

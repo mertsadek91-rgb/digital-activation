@@ -16,7 +16,14 @@ const SECRET_FIELDS = ['password', 'token', 'accessToken', 'refreshToken', 'secr
  * or magic-link code arrives in a body or a query, while `err.code` is
  * P2002 or ECONNREFUSED — the most useful word in the whole error.
  */
-const CODE_PATHS = ['code', 'body.code', 'params.code', 'query.code', 'data.code', 'req.query.code'];
+const CODE_PATHS = [
+  'code',
+  'body.code',
+  'params.code',
+  'query.code',
+  'data.code',
+  'req.query.code',
+];
 
 const HEADER_PATHS = [
   'req.headers.authorization',
@@ -80,7 +87,8 @@ function maskRecord(value: unknown, depth: number): unknown {
   for (const [name, inner] of Object.entries(value)) {
     // req/res/err have their own serializers and carry raw Node objects that
     // must not be walked.
-    out[name] = name === 'req' || name === 'res' || name === 'err' ? inner : maskRecord(inner, depth - 1);
+    out[name] =
+      name === 'req' || name === 'res' || name === 'err' ? inner : maskRecord(inner, depth - 1);
   }
   return out;
 }
@@ -159,7 +167,12 @@ export function loggerParams(): Params {
         },
       },
       ...(pretty
-        ? { transport: { target: 'pino-pretty', options: { singleLine: true, translateTime: 'SYS:HH:MM:ss' } } }
+        ? {
+            transport: {
+              target: 'pino-pretty',
+              options: { singleLine: true, translateTime: 'SYS:HH:MM:ss' },
+            },
+          }
         : {}),
     },
   };

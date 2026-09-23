@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { RedisThrottlerStorage, THROTTLE_SCRIPT, type ThrottleRedis } from './redis-throttler.storage.js';
+import {
+  RedisThrottlerStorage,
+  THROTTLE_SCRIPT,
+  type ThrottleRedis,
+} from './redis-throttler.storage.js';
 
 /**
  * A Redis that runs THROTTLE_SCRIPT's logic against a map and a fake clock.
@@ -81,8 +85,18 @@ describe('RedisThrottlerStorage', () => {
     redis.now = 15_000;
     const second = await storage.increment('k', 60_000, 3, 60_000, 'default');
 
-    expect(first).toEqual({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 });
-    expect(second).toEqual({ totalHits: 2, timeToExpire: 45, isBlocked: false, timeToBlockExpire: 0 });
+    expect(first).toEqual({
+      totalHits: 1,
+      timeToExpire: 60,
+      isBlocked: false,
+      timeToBlockExpire: 0,
+    });
+    expect(second).toEqual({
+      totalHits: 2,
+      timeToExpire: 45,
+      isBlocked: false,
+      timeToBlockExpire: 0,
+    });
     // Both keys share one hash tag, and the throttler's name is in it.
     expect(redis.calls[0]).toEqual([
       2,

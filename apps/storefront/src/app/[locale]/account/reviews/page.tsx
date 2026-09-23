@@ -89,14 +89,10 @@ export default function AccountReviewsPage() {
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="account-sent">{note}</p> : null}
 
-      {list && list.rows.length === 0 ? (
-        <p className="notice">{tr('none')}</p>
-      ) : null}
+      {list && list.rows.length === 0 ? <p className="notice">{tr('none')}</p> : null}
 
       {list && list.awaiting > 0 ? (
-        <p className="notice">
-          {tr('awaiting', { count: list.awaiting })}
-        </p>
+        <p className="notice">{tr('awaiting', { count: list.awaiting })}</p>
       ) : null}
 
       <ul className="licence-list">
@@ -254,9 +250,7 @@ function ReviewCard({
           {/* Said before the button, not after it. Somebody who expects their
               words on the page immediately and does not see them there assumes
               the form failed and writes the same review again. */}
-          <p className="account-hint">
-            {tr('hint')}
-          </p>
+          <p className="account-hint">{tr('hint')}</p>
 
           <div className="licence-actions">
             <button
@@ -275,14 +269,10 @@ function ReviewCard({
         <div className="licence-actions">
           {existing === null || existing.editable ? (
             <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-              {existing === null
-                ? tr('write')
-                : tr('edit')}
+              {existing === null ? tr('write') : tr('edit')}
             </button>
           ) : (
-            <p className="account-hint">
-              {tr('moderated')}
-            </p>
+            <p className="account-hint">{tr('moderated')}</p>
           )}
         </div>
       )}

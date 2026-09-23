@@ -172,10 +172,7 @@ export class ForYouService {
         brands.set(product.brand.id, product.brand.translations[0]?.name ?? product.brand.name);
       }
       for (const link of product.categories) {
-        categories.set(
-          link.category.id,
-          link.category.translations[0]?.name ?? link.category.slug,
-        );
+        categories.set(link.category.id, link.category.translations[0]?.name ?? link.category.slug);
       }
     }
 

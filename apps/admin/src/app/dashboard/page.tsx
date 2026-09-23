@@ -85,9 +85,16 @@ export default function DashboardPage() {
         <p className="who">{t('subtitle')}</p>
         <div className="dash-head-actions">
           {data ? (
-            <span className="dash-stamp">{t('updatedAt', { time: format.time(data.generatedAt) })}</span>
+            <span className="dash-stamp">
+              {t('updatedAt', { time: format.time(data.generatedAt) })}
+            </span>
           ) : null}
-          <button type="button" className="ghost btn-sm" disabled={busy} onClick={() => void load()}>
+          <button
+            type="button"
+            className="ghost btn-sm"
+            disabled={busy}
+            onClick={() => void load()}
+          >
             {busy ? c('busy') : t('refresh')}
           </button>
         </div>
@@ -157,11 +164,15 @@ export default function DashboardPage() {
                       <div className="dash-top-rank">#{index + 1}</div>
                       <div className="dash-top-info">
                         <span className="dash-top-name">{row.name}</span>
-                        <span className="dash-top-sku" dir="ltr">{row.sku}</span>
+                        <span className="dash-top-sku" dir="ltr">
+                          {row.sku}
+                        </span>
                       </div>
                       <div className="dash-top-metrics">
                         <span className="dash-top-revenue">{format.money(row.revenueUsd)}</span>
-                        <span className="dash-top-qty">{format.whole(row.qty)} {t('colQty')}</span>
+                        <span className="dash-top-qty">
+                          {format.whole(row.qty)} {t('colQty')}
+                        </span>
                       </div>
                     </li>
                   ))}
@@ -192,7 +203,9 @@ export default function DashboardPage() {
                     >
                       <div className="dash-recent-row-top">
                         <div className="dash-recent-id-status">
-                          <span className="dash-recent-number" dir="ltr">{order.number}</span>
+                          <span className="dash-recent-number" dir="ltr">
+                            {order.number}
+                          </span>
                           <span className={`pill ${STATUS_PILL[order.status]}`}>
                             {t(STATUS_LABEL[order.status])}
                           </span>
@@ -200,14 +213,18 @@ export default function DashboardPage() {
                         <span className="dash-recent-amount">{format.money(order.totalUsd)}</span>
                       </div>
                       <div className="dash-recent-row-bottom">
-                        <span className="dash-recent-email" dir="ltr">{order.email}</span>
+                        <span className="dash-recent-email" dir="ltr">
+                          {order.email}
+                        </span>
                         <div className="dash-recent-meta">
                           {order.waitingLines > 0 ? (
                             <span className="warn dash-waiting">
                               {t.tp('waitingLines', order.waitingLines)}
                             </span>
                           ) : null}
-                          <span className="dash-recent-date">{format.dateTime(order.placedAt)}</span>
+                          <span className="dash-recent-date">
+                            {format.dateTime(order.placedAt)}
+                          </span>
                         </div>
                       </div>
                     </li>

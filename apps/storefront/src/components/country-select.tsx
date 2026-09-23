@@ -85,10 +85,7 @@ export function CountrySelect({
   const names = useMemo(() => new Intl.DisplayNames([lang], { type: 'region' }), [lang]);
   const label = (code: string) => names.of(code) ?? code;
   const rest = useMemo(
-    () =>
-      [...REST].sort((a, b) =>
-        (names.of(a) ?? a).localeCompare(names.of(b) ?? b, lang),
-      ),
+    () => [...REST].sort((a, b) => (names.of(a) ?? a).localeCompare(names.of(b) ?? b, lang)),
     [names, lang],
   );
 

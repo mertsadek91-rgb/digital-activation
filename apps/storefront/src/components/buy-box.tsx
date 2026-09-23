@@ -277,9 +277,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                 />
                 <span className="variant-label">{variantLabel(variant, tf)}</span>
                 <span className="variant-price">{formatPrice(variant.price)}</span>
-                {!variant.inStock ? (
-                  <span className="variant-out">{t('soldOut')}</span>
-                ) : null}
+                {!variant.inStock ? <span className="variant-out">{t('soldOut')}</span> : null}
               </label>
             ))}
           </div>
@@ -350,9 +348,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
               className="added"
             >
               <span>{t('added')}</span>{' '}
-              <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
-                {t('viewCart')}
-              </a>
+              <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>{t('viewCart')}</a>
             </motion.div>
           )}
         </AnimatePresence>

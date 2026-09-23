@@ -267,9 +267,7 @@ export function SiteHeader({
 
         <nav className="site-nav">
           <Link href={`${prefix}${ROUTES.store}`}>{t('store')}</Link>
-          <Link href={`${prefix}${ROUTES.goldenWarranty}`}>
-            {tc('goldenWarranty')}
-          </Link>
+          <Link href={`${prefix}${ROUTES.goldenWarranty}`}>{tc('goldenWarranty')}</Link>
           <Link href={`${prefix}${ROUTES.contact}`}>{t('contact')}</Link>
         </nav>
 
@@ -277,11 +275,7 @@ export function SiteHeader({
           <SearchBox locale={locale} />
         </div>
 
-        <Link
-          href={`${prefix}${ROUTES.cart}`}
-          className="cart-link"
-          aria-label={t('cart')}
-        >
+        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link" aria-label={t('cart')}>
           <CartIcon />
           <span className="cart-label">{t('cart')}</span>
           {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}

@@ -35,10 +35,7 @@ export function NewsletterTokenPage({ mode }: { mode: 'confirm' | 'unsubscribe' 
 
   const text = {
     working: t('working'),
-    done:
-      mode === 'confirm'
-        ? t('confirmed')
-        : t('unsubscribed'),
+    done: mode === 'confirm' ? t('confirmed') : t('unsubscribed'),
     failed: t('invalidLink'),
   }[state];
 

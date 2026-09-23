@@ -124,7 +124,11 @@ export class MediaService {
     });
   }
 
-  async upload(slug: string, input: UploadImage, actorId: string | undefined): Promise<ProductImages> {
+  async upload(
+    slug: string,
+    input: UploadImage,
+    actorId: string | undefined,
+  ): Promise<ProductImages> {
     const product = await this.prisma.client.product.findUnique({
       where: { slug },
       select: { id: true, media: { select: { id: true, position: true } } },
@@ -251,7 +255,11 @@ export class MediaService {
     return this.list(slug);
   }
 
-  async patch(mediaId: string, input: PatchImage, actorId: string | undefined): Promise<ProductImages> {
+  async patch(
+    mediaId: string,
+    input: PatchImage,
+    actorId: string | undefined,
+  ): Promise<ProductImages> {
     const media = await this.prisma.client.productMedia.findUnique({
       where: { id: mediaId },
       select: { id: true, productId: true, product: { select: { slug: true } } },
@@ -324,7 +332,10 @@ export class MediaService {
     const unknown = ids.filter((id) => !owned.has(id));
     if (unknown.length > 0) {
       throw new BadRequestException(
-        say('الترتيب يذكر صوراً ليست على هذا المنتج.', 'The order names images not on this product.'),
+        say(
+          'الترتيب يذكر صوراً ليست على هذا المنتج.',
+          'The order names images not on this product.',
+        ),
       );
     }
 

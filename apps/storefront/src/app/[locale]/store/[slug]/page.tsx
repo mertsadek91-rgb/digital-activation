@@ -307,9 +307,7 @@ export default async function ProductPage({ params }: Props) {
             />
           ) : null}
 
-          {product.isDraft ? (
-            <p className="draft-flag">{tc('draftPreview')}</p>
-          ) : null}
+          {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
         </div>
       </div>
 

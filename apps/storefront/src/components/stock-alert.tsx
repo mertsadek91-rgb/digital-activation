@@ -22,7 +22,11 @@ export function StockAlert({ variantId, locale }: { variantId: string; locale: s
   async function submit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     setStatus('loading');
-    const ok = await subscriptionsApi.stockAlert({ email, variantId, locale: resolveLocale(locale) });
+    const ok = await subscriptionsApi.stockAlert({
+      email,
+      variantId,
+      locale: resolveLocale(locale),
+    });
     setStatus(ok ? 'done' : 'error');
   }
 

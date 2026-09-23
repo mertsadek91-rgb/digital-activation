@@ -348,9 +348,7 @@ function ProductRow({ row }: { row: AdminProductRow }) {
         {row.imageCount === 0 || row.activationSteps.ar === 0 ? (
           <span className="row-gaps">
             {row.imageCount === 0 ? <span className="warn">{t('gapNoImages')}</span> : null}
-            {row.activationSteps.ar === 0 ? (
-              <span className="warn">{t('gapNoSteps')}</span>
-            ) : null}
+            {row.activationSteps.ar === 0 ? <span className="warn">{t('gapNoSteps')}</span> : null}
           </span>
         ) : null}
       </td>

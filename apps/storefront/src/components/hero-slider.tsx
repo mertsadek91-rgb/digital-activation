@@ -37,11 +37,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Office & Productivity',
     titleAr: 'مايكروسوفت أوفيس 2024 برو بلس',
     titleEn: 'Microsoft Office 2024 Pro Plus',
-    descAr: 'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
-    descEn: 'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
+    descAr:
+      'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
+    descEn:
+      'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
     href: '/store',
-    featuresAr: ['تفعيل رسمي عبر موقع مايكروسوفت', 'ترخيص أصلي دائم مدى الحياة', 'تسليم فوري بعد الدفع مباشرة'],
-    featuresEn: ['Official setup via Microsoft', 'Permanent lifetime license', 'Instant delivery after payment'],
+    featuresAr: [
+      'تفعيل رسمي عبر موقع مايكروسوفت',
+      'ترخيص أصلي دائم مدى الحياة',
+      'تسليم فوري بعد الدفع مباشرة',
+    ],
+    featuresEn: [
+      'Official setup via Microsoft',
+      'Permanent lifetime license',
+      'Instant delivery after payment',
+    ],
     theme: {
       accent: '#EA580C',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(234, 88, 12, 0.16) 0%, transparent 60%)',
@@ -57,11 +67,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Operating Systems',
     titleAr: 'ويندوز 11 بروفيشنال (Windows 11 Pro)',
     titleEn: 'Windows 11 Professional',
-    descAr: 'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
-    descEn: 'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
+    descAr:
+      'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
+    descEn:
+      'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
     href: '/store',
-    featuresAr: ['يدعم الترقية من هوم إلى برو', 'تشفير كامل للقرص مع BitLocker', 'مربوط بلوحة الأم مدى الحياة'],
-    featuresEn: ['Upgrade from Home to Pro directly', 'Full disk encryption with BitLocker', 'Binds to motherboard for lifetime'],
+    featuresAr: [
+      'يدعم الترقية من هوم إلى برو',
+      'تشفير كامل للقرص مع BitLocker',
+      'مربوط بلوحة الأم مدى الحياة',
+    ],
+    featuresEn: [
+      'Upgrade from Home to Pro directly',
+      'Full disk encryption with BitLocker',
+      'Binds to motherboard for lifetime',
+    ],
     theme: {
       accent: '#0284C7',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.16) 0%, transparent 60%)',
@@ -77,11 +97,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Creative Cloud',
     titleAr: 'باقة أدوبي كرييتف كلاود الشاملة',
     titleEn: 'Adobe Creative Cloud All Apps',
-    descAr: 'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
-    descEn: '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
+    descAr:
+      'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
+    descEn:
+      '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
     href: '/store',
-    featuresAr: ['تفعيل على حسابك الشخصي في أدوبي', 'سعة تخزين سحابية 100 جيجابايت', 'يدعم الذكاء الاصطناعي Generative Fill'],
-    featuresEn: ['Activates on your personal Adobe ID', '100GB Cloud Storage included', 'Includes Firefly Generative AI'],
+    featuresAr: [
+      'تفعيل على حسابك الشخصي في أدوبي',
+      'سعة تخزين سحابية 100 جيجابايت',
+      'يدعم الذكاء الاصطناعي Generative Fill',
+    ],
+    featuresEn: [
+      'Activates on your personal Adobe ID',
+      '100GB Cloud Storage included',
+      'Includes Firefly Generative AI',
+    ],
     theme: {
       accent: '#E11D48',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(225, 29, 72, 0.16) 0%, transparent 60%)',
@@ -98,10 +128,19 @@ const SLIDES: SlideItem[] = [
     titleAr: 'كاسبرسكي توتال سيكيورتي (Kaspersky)',
     titleEn: 'Kaspersky Total Security',
     descAr: 'حماية فائقة وشاملة ضد الفيروسات، برامج الفدية، والتصيد المصرفي لراحة بال كاملة.',
-    descEn: 'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
+    descEn:
+      'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
     href: '/store',
-    featuresAr: ['حماية متقدمة للدفع والمعاملات البنكية', 'جدار حماية ذكي ضد برامج التجسس', 'ضمان ذهبي لاستبدال المفتاح'],
-    featuresEn: ['Safe Money banking protection', 'Smart firewall & ransomware shield', 'Golden warranty replacement'],
+    featuresAr: [
+      'حماية متقدمة للدفع والمعاملات البنكية',
+      'جدار حماية ذكي ضد برامج التجسس',
+      'ضمان ذهبي لاستبدال المفتاح',
+    ],
+    featuresEn: [
+      'Safe Money banking protection',
+      'Smart firewall & ransomware shield',
+      'Golden warranty replacement',
+    ],
     theme: {
       accent: '#059669',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(5, 150, 105, 0.16) 0%, transparent 60%)',
@@ -163,7 +202,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
 
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? (isAr ? -40 : 40) : (isAr ? 40 : -40),
+      x: dir > 0 ? (isAr ? -40 : 40) : isAr ? 40 : -40,
       opacity: 0,
       scale: 0.98,
     }),
@@ -177,7 +216,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
       },
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? (isAr ? 40 : -40) : (isAr ? -40 : 40),
+      x: dir > 0 ? (isAr ? 40 : -40) : isAr ? -40 : 40,
       opacity: 0,
       scale: 0.98,
       transition: { duration: 0.2 },
@@ -221,24 +260,20 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
               >
                 {isAr ? slide.tagAr : slide.tagEn}
               </span>
-              <span className="hero-slide-cat">
-                {isAr ? slide.catAr : slide.catEn}
-              </span>
+              <span className="hero-slide-cat">{isAr ? slide.catAr : slide.catEn}</span>
             </div>
 
             {/* Title & Description */}
-            <h3 className="hero-slide-title">
-              {isAr ? slide.titleAr : slide.titleEn}
-            </h3>
-            <p className="hero-slide-desc">
-              {isAr ? slide.descAr : slide.descEn}
-            </p>
+            <h3 className="hero-slide-title">{isAr ? slide.titleAr : slide.titleEn}</h3>
+            <p className="hero-slide-desc">{isAr ? slide.descAr : slide.descEn}</p>
 
             {/* Checklist Features */}
             <ul className="hero-slide-features">
               {(isAr ? slide.featuresAr : slide.featuresEn).map((feature, idx) => (
                 <li key={idx}>
-                  <span className="feature-bullet" style={{ color: slide.theme.accent }}>✓</span>
+                  <span className="feature-bullet" style={{ color: slide.theme.accent }}>
+                    ✓
+                  </span>
                   <span>{feature}</span>
                 </li>
               ))}
@@ -254,7 +289,9 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
                 }}
               >
                 <span>{t('cta')}</span>
-                <span className="cta-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                <span className="cta-arrow" aria-hidden="true">
+                  {isAr ? '←' : '→'}
+                </span>
               </Link>
             </div>
           </motion.div>

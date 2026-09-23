@@ -9,11 +9,7 @@ type ThrottlerStorageRecord = Awaited<ReturnType<ThrottlerStorage['increment']>>
 /** The slice of an ioredis client this store uses, so a test can stand in for it. */
 export interface ThrottleRedis {
   readonly status: string;
-  eval(
-    script: string,
-    numberOfKeys: number,
-    ...args: (string | number)[]
-  ): Promise<unknown>;
+  eval(script: string, numberOfKeys: number, ...args: (string | number)[]): Promise<unknown>;
 }
 
 /**

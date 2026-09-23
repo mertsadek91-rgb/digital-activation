@@ -129,11 +129,7 @@ export function ContentForm({
 
       <BlockDocumentEditor blocks={blocks} canWrite={canWrite} onChange={setBlocks} />
 
-      <Warnings
-        warnings={warnings}
-        canWrite={canWrite}
-        onChange={setWarnings}
-      />
+      <Warnings warnings={warnings} canWrite={canWrite} onChange={setWarnings} />
 
       <label className="download-field">
         <span>{t('downloadUrl')}</span>
@@ -204,7 +200,10 @@ function Warnings({
                 onChange(
                   warnings.map((existing, at) =>
                     at === index
-                      ? { ...existing, severity: event.target.value === 'critical' ? 'critical' : 'note' }
+                      ? {
+                          ...existing,
+                          severity: event.target.value === 'critical' ? 'critical' : 'note',
+                        }
                       : existing,
                   ),
                 )

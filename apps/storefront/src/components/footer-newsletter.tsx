@@ -44,18 +44,14 @@ export function FooterNewsletter({ locale }: { locale: string }) {
         <div className="newsletter-headline">
           <h3>{t('title')}</h3>
         </div>
-        <p>
-          {t('body')}
-        </p>
+        <p>{t('body')}</p>
       </div>
 
       <div className="newsletter-form-wrap">
         {status === 'sent' ? (
           <div className="newsletter-success" role="status">
             <span className="success-icon">✓</span>
-            <span>
-              {t('sent')}
-            </span>
+            <span>{t('sent')}</span>
           </div>
         ) : (
           <form className="newsletter-form" onSubmit={(event) => void submit(event)} noValidate>

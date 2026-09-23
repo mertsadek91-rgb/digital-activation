@@ -101,9 +101,7 @@ export async function put(
     }),
   );
 
-  const head = await store.client.send(
-    new HeadObjectCommand({ Bucket: store.bucket, Key: key }),
-  );
+  const head = await store.client.send(new HeadObjectCommand({ Bucket: store.bucket, Key: key }));
   if (head.ContentLength !== bytes.byteLength) {
     throw new Error(
       `${key} came back as ${String(head.ContentLength ?? 0)} bytes, expected ${String(bytes.byteLength)}.`,

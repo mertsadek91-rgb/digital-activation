@@ -108,19 +108,13 @@ export default async function ContactPage({ params }: Props) {
             <span>{t('badge')}</span>
           </span>
 
-          <h1 id="contact-heading">
-            {t('heading')}
-          </h1>
+          <h1 id="contact-heading">{t('heading')}</h1>
 
-          <p className="contact-hero-lede">
-            {t('lede')}
-          </p>
+          <p className="contact-hero-lede">{t('lede')}</p>
 
           <span className="contact-sla-badge">
             <span>⏱️</span>
-            <span>
-              {t('sla')}
-            </span>
+            <span>{t('sla')}</span>
           </span>
         </MotionFadeIn>
       </section>
@@ -206,9 +200,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       🔑
                     </span>
-                    <span>
-                      {t('shortcutLicences')}
-                    </span>
+                    <span>{t('shortcutLicences')}</span>
                   </Link>
                 </li>
                 <li>
@@ -216,9 +208,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       🛡️
                     </span>
-                    <span>
-                      {t('shortcutWarranty')}
-                    </span>
+                    <span>{t('shortcutWarranty')}</span>
                   </Link>
                 </li>
                 <li>
@@ -226,9 +216,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       📦
                     </span>
-                    <span>
-                      {t('shortcutOrders')}
-                    </span>
+                    <span>{t('shortcutOrders')}</span>
                   </Link>
                 </li>
                 <li>
@@ -236,9 +224,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       🛍️
                     </span>
-                    <span>
-                      {t('shortcutStore')}
-                    </span>
+                    <span>{t('shortcutStore')}</span>
                   </Link>
                 </li>
               </ul>
@@ -251,12 +237,8 @@ export default async function ContactPage({ params }: Props) {
       <section className="contact-faq-section" aria-labelledby="faq-heading">
         <MotionFadeIn>
           <header className="contact-faq-head">
-            <h2 id="faq-heading">
-              {t('faqTitle')}
-            </h2>
-            <p>
-              {t('faqBody')}
-            </p>
+            <h2 id="faq-heading">{t('faqTitle')}</h2>
+            <p>{t('faqBody')}</p>
           </header>
 
           <div className="contact-faq-list">
