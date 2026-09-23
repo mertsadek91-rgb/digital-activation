@@ -33,6 +33,22 @@ export async function verifyPassword(hash: string, plain: string): Promise<boole
   }
 }
 
+let decoy: Promise<string> | undefined;
+
+/**
+ * Spends the time a password check would, for an account that does not exist.
+ *
+ * Skipping argon2 for an unknown email answers in microseconds where a real
+ * account takes ~100ms, and that difference alone says which addresses have
+ * staff accounts. The decoy is hashed once per process and verified against
+ * whatever was typed; the answer is always "no".
+ */
+export async function verifyAgainstDecoy(plain: string): Promise<false> {
+  decoy ??= hashPassword(crypto.randomBytes(32).toString('base64url'));
+  await verifyPassword(await decoy, plain);
+  return false;
+}
+
 /**
  * Refresh tokens are stored as a hash, never in the clear.
  *
@@ -47,35 +63,4 @@ export function newRefreshToken(): { token: string; hash: string } {
 
 export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-/**
- * Encrypts a TOTP secret at the application layer before it is stored.
- *
- * The row is useless on its own: an attacker with the database still cannot
- * generate codes. Uses the same local KEK the licence vault uses in
- * development; production supplies it from KMS.
- */
-export function encryptSecret(plaintext: string, keyBase64: string): Uint8Array<ArrayBuffer> {
-  const key = Buffer.from(keyBase64, 'base64');
-  if (key.length !== 32) throw new Error('KEK must decode to exactly 32 bytes');
-
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-  // iv | authTag | ciphertext, so one column holds everything needed.
-  return Uint8Array.from(Buffer.concat([iv, cipher.getAuthTag(), ciphertext]));
-}
-
-export function decryptSecret(payload: Uint8Array, keyBase64: string): string {
-  const key = Buffer.from(keyBase64, 'base64');
-  if (key.length !== 32) throw new Error('KEK must decode to exactly 32 bytes');
-
-  const iv = payload.subarray(0, 12);
-  const authTag = payload.subarray(12, 28);
-  const ciphertext = payload.subarray(28);
-
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(authTag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
 }

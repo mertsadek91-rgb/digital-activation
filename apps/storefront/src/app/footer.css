@@ -51,7 +51,11 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background 200ms ease;
 }
 
 .footer-promise-card:hover {
@@ -265,7 +269,12 @@
   color: var(--color-ink-body);
   text-decoration: none;
   box-shadow: var(--shadow-xs);
-  transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .social-btn:hover {
@@ -292,7 +301,14 @@
 }
 
 .social-btn.is-instagram:hover {
-  background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285aeb 90%);
+  background: radial-gradient(
+    circle at 30% 107%,
+    #fdf497 0%,
+    #fdf497 5%,
+    #fd5949 45%,
+    #d6249f 60%,
+    #285aeb 90%
+  );
   color: #ffffff;
   border-color: transparent;
 }
@@ -341,7 +357,9 @@
   color: var(--color-ink-body);
   text-decoration: none;
   font-size: var(--text-sm);
-  transition: color 140ms ease, transform 140ms ease;
+  transition:
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 .footer-nav-list a:hover {
@@ -398,8 +416,10 @@
   gap: 6px;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #059669;
-  background: #ecfdf5;
+  /* The success tokens rather than a brighter green: #059669 on #ecfdf5 is
+     3.57:1, and this is 12px bold text. */
+  color: var(--color-success);
+  background: var(--color-success-soft);
   border: 1px solid #a7f3d0;
   padding: 3px 8px;
   border-radius: var(--radius-pill);
@@ -415,9 +435,18 @@
 }
 
 @keyframes pulsePing {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-  70% { transform: scale(1); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .footer-contact-cards {
@@ -436,7 +465,10 @@
   border: 1px solid var(--color-border);
   text-decoration: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .footer-contact-card:hover {
@@ -618,7 +650,9 @@
   background: #ffffff;
   color: var(--color-ink);
   outline: none;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .newsletter-input:focus {
@@ -642,7 +676,10 @@
   color: #ffffff;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(20, 133, 118, 0.25);
-  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    background 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .newsletter-submit:hover:not(:disabled) {
@@ -759,7 +796,9 @@
   background: #ffffff;
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: transform 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease;
 }
 
 .payment-icon-chip:hover {
@@ -835,7 +874,10 @@
   font-weight: 700;
   text-decoration: none;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
 }
 
 .footer-lang-btn:hover {

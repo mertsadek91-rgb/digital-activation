@@ -11,7 +11,10 @@ import type { ZodType } from 'zod';
  */
 @Injectable()
 export class ZodPipe<T> implements PipeTransform<unknown, T> {
-  constructor(private readonly schema: ZodType<T>) {}
+  // Public so the OpenAPI document can read the shape a route accepts off the
+  // pipe that enforces it (see openapi.ts) — the spec and the validation are
+  // then the same object, not two descriptions that drift apart.
+  constructor(readonly schema: ZodType<T>) {}
 
   transform(value: unknown): T {
     const result = this.schema.safeParse(value);

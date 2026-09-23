@@ -4,9 +4,11 @@ import {
   type PaymentSettings,
   type PaymentSettingsView,
   paymentSettingsSchema,
+  paymentSettingsViewSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { PaymentSettingsService } from './payment-settings.service.js';
@@ -28,6 +30,7 @@ export class PaymentSettingsController {
   constructor(private readonly settings: PaymentSettingsService) {}
 
   @Get()
+  @ZodResponse(paymentSettingsViewSchema)
   @ApiOperation({ summary: 'Manual payment details, and which methods they offer' })
   view(): Promise<PaymentSettingsView> {
     return this.settings.view();
@@ -42,6 +45,7 @@ export class PaymentSettingsController {
    * money to a closed one.
    */
   @Put()
+  @ZodResponse(paymentSettingsViewSchema)
   @ApiOperation({ summary: 'Replace the manual payment details' })
   save(
     @Body(new ZodPipe(paymentSettingsSchema)) body: PaymentSettings,

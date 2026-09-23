@@ -91,6 +91,18 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO da_vault;
 ALTER DEFAULT PRIVILEGES FOR ROLE :"owner_role" IN SCHEMA public
   GRANT SELECT ON TABLES TO da_vault;
 
+-- --- append-only ledgers ----------------------------------------------------
+--
+-- The same revokes as the development script (01-roles.sql), which this file
+-- was missing: without them production's app role could rewrite or delete the
+-- audit log and the stock ledger, the two tables whose whole value is that
+-- nobody can. Re-run this file after a migration that recreates one of them,
+-- or the default privileges above hand the grants back.
+REVOKE UPDATE, DELETE ON public."AuditLog"       FROM da_app;
+REVOKE UPDATE, DELETE ON public."StockMovement"  FROM da_app;
+REVOKE UPDATE, DELETE ON public."KeyImportBatch" FROM da_app;
+REVOKE UPDATE ON vault."KeyAccessLog" FROM da_vault;
+
 -- --- report -----------------------------------------------------------------
 
 SELECT

@@ -1,6 +1,7 @@
 'use client';
 
 import type { PaymentDetail, PaymentInstructions } from '@da/contracts';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 /**
@@ -14,22 +15,14 @@ import { useState } from 'react';
  * the transfer lands nowhere. Money sent to a wrong account is not refundable
  * by us, so the copy button is the point rather than a convenience.
  */
-export function PaymentInstructionsPanel({
-  instructions,
-  locale,
-}: {
-  instructions: PaymentInstructions;
-  locale: string;
-}) {
-  const ar = locale === 'ar';
-
+export function PaymentInstructionsPanel({ instructions }: { instructions: PaymentInstructions }) {
   return (
     <div className="pay-instructions">
       {instructions.headline ? <p className="lede">{instructions.headline}</p> : null}
 
       <dl className="pay-details">
         {instructions.fields.map((field) => (
-          <DetailRow key={`${field.label}:${field.value}`} field={field} ar={ar} />
+          <DetailRow key={`${field.label}:${field.value}`} field={field} />
         ))}
       </dl>
 
@@ -38,7 +31,8 @@ export function PaymentInstructionsPanel({
   );
 }
 
-function DetailRow({ field, ar }: { field: PaymentDetail; ar: boolean }) {
+function DetailRow({ field }: { field: PaymentDetail }) {
+  const t = useTranslations('paymentInstructions');
   const [copied, setCopied] = useState(false);
 
   async function copy(): Promise<void> {
@@ -63,7 +57,7 @@ function DetailRow({ field, ar }: { field: PaymentDetail; ar: boolean }) {
         </span>
         {field.copyable ? (
           <button type="button" className="btn btn-ghost btn-copy" onClick={() => void copy()}>
-            {copied ? (ar ? 'تم النسخ' : 'Copied') : ar ? 'انسخ' : 'Copy'}
+            {copied ? t('copied') : t('copy')}
           </button>
         ) : null}
       </dd>

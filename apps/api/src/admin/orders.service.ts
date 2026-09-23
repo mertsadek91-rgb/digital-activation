@@ -1,10 +1,20 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type { AdminOrderDetail, AdminOrderList, AdminOrderRow } from '@da/contracts';
-import { FulfillmentState, Locale, OrderStatus, type Prisma } from '@da/db';
+import {
+  FulfillmentState,
+  Locale,
+  OrderEventActor,
+  OrderStatus,
+  PaymentState,
+  type Prisma,
+  RiskLevel,
+} from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
+import { recordOrderTransition } from '../checkout/order-status.js';
+import { CSV_BOM, csvRow } from '../common/csv.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -44,7 +54,12 @@ export class OrdersService {
     items: { select: { id: true, fulfillmentState: true } },
   } satisfies Prisma.OrderInclude;
 
-  async list(input: { status?: string; q?: string; limit: number }): Promise<AdminOrderList> {
+  async list(input: {
+    status?: string;
+    q?: string;
+    limit: number;
+    page: number;
+  }): Promise<AdminOrderList> {
     const status = this.statusFilter(input.status);
     const search: Prisma.OrderWhereInput = input.q
       ? {
@@ -59,13 +74,18 @@ export class OrdersService {
       where: { AND: [status, search] },
       // Newest first: an order list is read from the top, and the thing that
       // just happened is the thing somebody is looking for.
-      orderBy: { placedAt: 'desc' },
-      take: input.limit,
+      orderBy: [{ placedAt: 'desc' }, { id: 'desc' }],
+      skip: (input.page - 1) * input.limit,
+      // One more than a page, so "is there a next page" costs no count query.
+      take: input.limit + 1,
       include: this.include,
     });
+    const hasMore = orders.length > input.limit;
 
     return {
-      rows: orders.map((order) => this.toRow(order)),
+      rows: orders.slice(0, input.limit).map((order) => this.toRow(order)),
+      page: input.page,
+      hasMore,
       counts: {
         all: await this.prisma.client.order.count(),
         awaitingPayment: await this.prisma.client.order.count({
@@ -88,6 +108,7 @@ export class OrdersService {
         ...this.include,
         items: true,
         notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
+        statusEvents: { orderBy: { createdAt: 'asc' } },
       },
     });
     if (!order)
@@ -95,8 +116,38 @@ export class OrdersService {
         say(`لا يوجد طلب بالرقم ${number}`, `No order numbered ${number}`),
       );
 
+    // Staff are named rather than shown as ids. The event carries no foreign
+    // key (so deleting an account does not rewrite history), hence the lookup.
+    const staffIds = [
+      ...new Set(
+        order.statusEvents
+          .filter((event) => event.actorType === OrderEventActor.STAFF && event.actorId)
+          .map((event) => event.actorId as string),
+      ),
+    ];
+    const staff =
+      staffIds.length > 0
+        ? await this.prisma.client.staffUser.findMany({
+            where: { id: { in: staffIds } },
+            select: { id: true, name: true },
+          })
+        : [];
+    const staffName = new Map(staff.map((member) => [member.id, member.name]));
+
     return {
       ...this.toRow(order),
+      history: order.statusEvents.map((event) => ({
+        id: event.id,
+        from: event.from,
+        to: event.to,
+        actorType: event.actorType,
+        actor:
+          event.actorType === OrderEventActor.STAFF
+            ? (staffName.get(event.actorId ?? '') ?? event.actorId)
+            : event.actorId,
+        reason: event.reason,
+        createdAt: event.createdAt.toISOString(),
+      })),
       activationEmail: order.activationEmail,
       couponCode: order.couponCode,
       locale: order.locale === Locale.EN ? 'en' : 'ar',
@@ -256,6 +307,7 @@ export class OrdersService {
       // is a discrepancy nobody finds until the books are closed.
       amountCharged: order.totalUsd.toFixed(2),
       chargedCurrency: 'USD',
+      actor: { type: OrderEventActor.STAFF, id: input.staffId },
     });
 
     if (!applied.alreadyApplied) {
@@ -273,6 +325,125 @@ export class OrdersService {
     });
 
     return { status: applied.status, alreadyApplied: applied.alreadyApplied };
+  }
+
+  /**
+   * Lifts a hold and lets fulfilment run.
+   *
+   * Two kinds of hold, one action. An order in PAYMENT_REVIEW has been paid
+   * and was stopped by a rule — a risk verdict, an amount that did not match,
+   * a coupon that ran out. An order already PAID can still be blocked by its
+   * risk level, which is what an open card dispute does. Either way the money
+   * is in and the key is not out, and a person has looked and decided.
+   *
+   * The risk level comes down to MEDIUM rather than LOW, so the order still
+   * reads as one that was reviewed. The status change is conditional, so two
+   * people clicking at once release it once.
+   */
+  async releaseHold(input: {
+    number: string;
+    reason: string;
+    staffId: string;
+    context: { ip?: string | undefined; userAgent?: string | undefined };
+  }): Promise<{ status: string }> {
+    const order = await this.prisma.client.order.findUnique({
+      where: { number: input.number },
+      select: { id: true, status: true, riskLevel: true },
+    });
+    if (!order)
+      throw new NotFoundException(
+        say(`لا يوجد طلب بالرقم ${input.number}`, `No order numbered ${input.number}`),
+      );
+
+    const inReview = order.status === OrderStatus.PAYMENT_REVIEW;
+    const blocked =
+      (order.status === OrderStatus.PAID || order.status === OrderStatus.FULFILLING) &&
+      (order.riskLevel === RiskLevel.HIGH || order.riskLevel === RiskLevel.BLOCKED);
+    if (!inReview && !blocked) {
+      throw new BadRequestException(
+        say(
+          `هذا الطلب في حالة ${order.status} وليس موقوفاً، فلا يوجد ما يُرفع.`,
+          `This order is ${order.status} and not on hold, so there is nothing to release.`,
+        ),
+      );
+    }
+
+    // The compare-and-set covers the risk level as well as the status, which
+    // `transitionOrder`'s does not, so it stays here and the history row is
+    // written beside it in the same transaction.
+    const moved = await this.prisma.client.$transaction(async (tx) => {
+      const result = await tx.order.updateMany({
+        where: { id: order.id, status: order.status, riskLevel: order.riskLevel },
+        data: {
+          riskLevel: RiskLevel.MEDIUM,
+          ...(inReview ? { status: OrderStatus.PAID } : {}),
+        },
+      });
+      if (result.count === 1 && inReview) {
+        await recordOrderTransition(tx, {
+          orderId: order.id,
+          from: order.status,
+          to: OrderStatus.PAID,
+          actor: { type: OrderEventActor.STAFF, id: input.staffId },
+          reason: `Hold released: ${input.reason}`,
+        });
+      }
+      return result;
+    });
+    if (moved.count !== 1) {
+      throw new BadRequestException(
+        say('تغيّر هذا الطلب للتو. حدّث الصفحة.', 'This order just changed. Refresh the page.'),
+      );
+    }
+
+    await this.prisma.client.orderNote.create({
+      data: {
+        orderId: order.id,
+        body: `Hold released: ${input.reason}`,
+        isCustomerVisible: false,
+        authorId: input.staffId,
+      },
+    });
+    await this.audit.record({
+      actorId: input.staffId,
+      entity: 'Order',
+      entityId: input.number,
+      action: 'order.hold-released',
+      before: { status: order.status, riskLevel: order.riskLevel },
+      after: {
+        status: inReview ? OrderStatus.PAID : order.status,
+        riskLevel: RiskLevel.MEDIUM,
+      },
+      ip: input.context.ip,
+      userAgent: input.context.userAgent,
+    });
+
+    if (inReview) await this.fulfillment.onOrderPaid(input.number);
+
+    const after = await this.prisma.client.order.findUniqueOrThrow({
+      where: { id: order.id },
+      select: { status: true },
+    });
+    return { status: after.status };
+  }
+
+  async refund(input: {
+    number: string;
+    reason: string;
+    staffId: string;
+    context: { ip?: string | undefined; userAgent?: string | undefined };
+  }): Promise<{ status: string; via: 'stripe' | 'recorded' }> {
+    const result = await this.checkout.refundOrder(input);
+    await this.audit.record({
+      actorId: input.staffId,
+      entity: 'Order',
+      entityId: input.number,
+      action: 'order.refunded',
+      after: { via: result.via, status: result.status },
+      ip: input.context.ip,
+      userAgent: input.context.userAgent,
+    });
+    return result;
   }
 
   /**
@@ -306,6 +477,114 @@ export class OrdersService {
       },
     });
     return { id: note.id };
+  }
+
+  /**
+   * Orders as CSV, for the accountant and for Excel.
+   *
+   * Batched on the id cursor so a year of orders never sits in memory whole.
+   * What is in it is what a set of books needs — number, dates, status, who,
+   * where, the money in both currencies, the coupon, the lines by SKU — and
+   * what is not is deliberate: no licence key, no vault id, no IP, no note.
+   * A spreadsheet is copied, mailed and left on laptops; nothing in this one
+   * activates anything.
+   *
+   * `status` takes the list's filter keys (`paid`, `in-review`…) or a raw
+   * status name, so the button can pass whatever the screen is showing.
+   */
+  async *exportCsv(input: {
+    from: Date | null;
+    to: Date | null;
+    status?: string;
+  }): AsyncGenerator<string> {
+    yield CSV_BOM;
+    yield csvRow([
+      'number',
+      'placed_at',
+      'paid_at',
+      'status',
+      'email',
+      'country',
+      'currency',
+      'subtotal_usd',
+      'discount_usd',
+      'total_usd',
+      'charged_amount',
+      'charged_currency',
+      'coupon',
+      'items',
+    ]);
+
+    const status =
+      input.status && (Object.values(OrderStatus) as string[]).includes(input.status)
+        ? { status: input.status as OrderStatus }
+        : this.statusFilter(input.status);
+    const placed =
+      input.from || input.to
+        ? {
+            placedAt: {
+              ...(input.from ? { gte: input.from } : {}),
+              ...(input.to ? { lte: input.to } : {}),
+            },
+          }
+        : {};
+
+    let cursor: string | undefined;
+    for (;;) {
+      const batch = await this.prisma.client.order.findMany({
+        where: { AND: [status, placed] },
+        orderBy: { id: 'asc' },
+        take: 500,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        select: {
+          id: true,
+          number: true,
+          placedAt: true,
+          paidAt: true,
+          status: true,
+          email: true,
+          billingCountry: true,
+          currency: true,
+          subtotalUsd: true,
+          discountUsd: true,
+          totalUsd: true,
+          couponCode: true,
+          items: { select: { skuSnapshot: true, qty: true } },
+          payments: {
+            // A refunded payment was still charged; the status column says
+            // it went back.
+            where: { state: { in: [PaymentState.SUCCEEDED, PaymentState.REFUNDED] } },
+            orderBy: { createdAt: 'asc' },
+            take: 1,
+            select: { amountCharged: true, chargedCurrency: true },
+          },
+        },
+      });
+      if (batch.length === 0) return;
+      let chunk = '';
+      for (const order of batch) {
+        const payment = order.payments[0];
+        chunk += csvRow([
+          order.number,
+          order.placedAt,
+          order.paidAt,
+          order.status,
+          order.email,
+          order.billingCountry,
+          order.currency,
+          order.subtotalUsd.toFixed(2),
+          order.discountUsd.toFixed(2),
+          order.totalUsd.toFixed(2),
+          payment?.amountCharged.toString() ?? null,
+          payment?.chargedCurrency ?? null,
+          order.couponCode,
+          order.items.map((item) => `${item.skuSnapshot} x ${String(item.qty)}`).join('; '),
+        ]);
+      }
+      yield chunk;
+      cursor = batch[batch.length - 1]?.id;
+      if (batch.length < 500) return;
+    }
   }
 
   private statusFilter(status?: string): Prisma.OrderWhereInput {
@@ -349,7 +628,10 @@ export class OrdersService {
         provider: payment.provider,
         state: payment.state,
         reference: payment.providerRef,
-        amount: payment.amountCharged.toFixed(2),
+        // Three places for the currencies counted in thousandths.
+        amount: payment.amountCharged.toFixed(
+          ['BHD', 'JOD', 'KWD', 'OMR', 'TND'].includes(payment.chargedCurrency) ? 3 : 2,
+        ),
         currency: payment.chargedCurrency,
         createdAt: payment.createdAt.toISOString(),
       })),

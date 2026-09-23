@@ -10,9 +10,12 @@ import {
   createCategorySchema,
   createProductLinkSchema,
   setCategorySchema,
+  adminCategoryListSchema,
+  productLinksSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { TaxonomyService } from './taxonomy.service.js';
@@ -31,12 +34,14 @@ export class TaxonomyController {
   constructor(private readonly taxonomy: TaxonomyService) {}
 
   @Get('categories')
+  @ZodResponse(adminCategoryListSchema)
   @ApiOperation({ summary: 'Every section, with how many published products it holds' })
   categories(): Promise<AdminCategoryList> {
     return this.taxonomy.categories();
   }
 
   @Post('categories')
+  @ZodResponse(adminCategoryListSchema)
   @Roles('OWNER', 'ADMIN')
   @ApiOperation({ summary: 'Create a section' })
   create(
@@ -47,6 +52,7 @@ export class TaxonomyController {
   }
 
   @Patch('categories/:id')
+  @ZodResponse(adminCategoryListSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Rename, move or reorder a section; a slug change writes its 301' })
   update(
@@ -58,12 +64,14 @@ export class TaxonomyController {
   }
 
   @Get('products/:slug/links')
+  @ZodResponse(productLinksSchema)
   @ApiOperation({ summary: 'Products this one is linked to' })
   links(@Param('slug') slug: string): Promise<ProductLinks> {
     return this.taxonomy.links(slug);
   }
 
   @Post('products/:slug/links')
+  @ZodResponse(productLinksSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Link another product to this one' })
   addLink(
@@ -75,6 +83,7 @@ export class TaxonomyController {
   }
 
   @Delete('links/:id')
+  @ZodResponse(productLinksSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Remove a link' })
   removeLink(@Param('id') id: string, @Req() request: StaffRequest): Promise<ProductLinks> {

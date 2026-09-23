@@ -234,7 +234,9 @@ export class PaymentSettingsService {
    */
   private wordless(method: ManualPaymentSetting): string | null {
     const labels = new Set(
-      method.fields.flatMap((field) => [field.label.ar.trim(), field.label.en.trim()]).filter(Boolean),
+      method.fields
+        .flatMap((field) => [field.label.ar.trim(), field.label.en.trim()])
+        .filter(Boolean),
     );
     const isProse = (text: I18nString): boolean => {
       const value = (text.ar.trim() || text.en.trim()).trim();

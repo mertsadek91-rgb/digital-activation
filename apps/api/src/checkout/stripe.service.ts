@@ -32,7 +32,10 @@ export class StripeService {
     if (!key) {
       throw new ServiceUnavailableException('الدفع بالبطاقة غير مهيّأ بعد. أضف STRIPE_SECRET_KEY.');
     }
-    this.client = new Stripe(key);
+    // Bounded, and retried by the SDK itself on network errors with the same
+    // idempotency key — so a blip costs a retry, not a stuck checkout or a
+    // webhook that outlives Stripe's patience.
+    this.client = new Stripe(key, { timeout: 15_000, maxNetworkRetries: 2 });
     return this.client;
   }
 
@@ -84,14 +87,74 @@ export class StripeService {
         metadata: { orderNumber: input.orderNumber },
         automatic_payment_methods: { enabled: true },
       },
-      // Same order, same intent, however many times the page is refreshed.
-      { idempotencyKey: `order:${input.orderNumber}` },
+      // Same order and same amount, same intent, however many times the page
+      // is refreshed. The amount is part of the key because the order is a
+      // draft until it is paid: a shopper who goes back and changes the cart
+      // needs a new intent at the new price, and reusing the key with a
+      // different amount is an error from Stripe rather than a charge.
+      {
+        idempotencyKey: `order:${input.orderNumber}:${String(input.amountMinor)}:${input.currency.toUpperCase()}`,
+      },
     );
 
     if (!intent.client_secret) {
       throw new BadRequestException('Stripe did not return a client secret.');
     }
     return { clientSecret: intent.client_secret, id: intent.id };
+  }
+
+  /**
+   * Cancels an intent that no longer matches its order.
+   *
+   * Best effort by design. An intent that has already succeeded or been
+   * cancelled refuses, and that is fine: the webhook compares what was taken
+   * against the order in any case, so a stale intent that slips through lands
+   * in review rather than releasing a key.
+   */
+  async cancelIntent(id: string): Promise<boolean> {
+    try {
+      await this.stripe().paymentIntents.cancel(id);
+      return true;
+    } catch (error) {
+      this.logger.warn(
+        `Could not cancel PaymentIntent ${id}: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Refunds a succeeded intent in full.
+   *
+   * Keyed on the intent, so a double click refunds once. The order itself is
+   * moved by the `charge.refunded` webhook this triggers — one path for a
+   * refund made here and one made in Stripe's dashboard.
+   */
+  async refundIntent(intentId: string, orderNumber: string): Promise<string> {
+    const refund = await this.stripe().refunds.create(
+      {
+        payment_intent: intentId,
+        reason: 'requested_by_customer',
+        metadata: { orderNumber },
+      },
+      { idempotencyKey: `refund:${intentId}` },
+    );
+    return refund.id;
+  }
+
+  /**
+   * Radar's risk level for the charge behind an intent.
+   *
+   * The webhook's intent carries only the charge id, so the charge is fetched.
+   * A failure here throws, and the webhook answers non-2xx so Stripe retries:
+   * releasing a key without the fraud verdict is the one outcome to avoid.
+   */
+  async riskLevelOf(intent: Stripe.PaymentIntent): Promise<string | null> {
+    const charge = intent.latest_charge;
+    if (!charge) return null;
+    const resolved =
+      typeof charge === 'string' ? await this.stripe().charges.retrieve(charge) : charge;
+    return resolved.outcome?.risk_level ?? null;
   }
 
   /**

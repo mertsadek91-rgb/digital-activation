@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { CONTACT_REPLY_HOURS, ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
@@ -8,6 +8,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { ContactForm } from '../../../components/contact-form';
 import { MailIcon, TelegramIcon, WhatsAppIcon } from '../../../components/icons';
 import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { isArabic } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 
@@ -20,28 +21,20 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const ar = locale === 'ar';
+  const t = await getTranslations({ locale, namespace: 'contact' });
   const page = await getPage('contact', { locale });
   const links = alternates(SITE_URL, ROUTES.contact);
 
-  const title =
-    page?.seo.title ??
-    (ar
-      ? 'تواصل معنا — الدعم الفني وخدمة العملاء | متجر التفعيل الرقمي'
-      : 'Contact Us — Technical Support & Customer Service | Digital Activation');
+  const title = page?.seo.title ?? t('metaTitle');
 
-  const description =
-    page?.seo.description ??
-    (ar
-      ? 'راسلنا عبر النموذج أو تواصل مباشرة عبر واتساب أو تيليجرام أو البريد الإلكتروني. نردّ خلال ساعتين بحد أقصى 24 ساعة.'
-      : 'Reach us through the form, or message directly on WhatsApp, Telegram or email. We reply within 2 hours, 24 hours at the latest.');
+  const description = page?.seo.description ?? t('metaDescription');
 
   return {
     title,
     description,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, ROUTES.contact, ar ? 'ar' : 'en'),
+      canonical: canonical(SITE_URL, ROUTES.contact, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
@@ -56,33 +49,22 @@ export default async function ContactPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const t = await getTranslations('contact');
+  const tc = await getTranslations('common');
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   const faqs = [
     {
-      q: ar
-        ? 'المفتاح لا يعمل أو يظهر خطأ — ما هو أسرع إجراء؟'
-        : 'My key is not working or shows an error — what is the fastest step?',
-      a: ar
-        ? 'اختر «مشكلة تفعيل» في النموذج أعلاه أو راسلنا مباشرة عبر واتساب مع ذكر رقم طلبك. وننصح بعدم تكرار محاولة إدخال المفتاح مرات عديدة حتى يتم فحصه وتزويدك بالحل المناسب أو استبداله فوراً.'
-        : 'Select "Activation problem" in the form above or message us directly on WhatsApp with your order number. We advise not repeating incorrect attempts repeatedly until our team verifies it and gives you the exact fix or immediate replacement.',
+      q: t('faq1Q'),
+      a: t('faq1A'),
     },
     {
-      q: ar
-        ? 'أين أجد مفتاح الترخيص بعد الشراء؟'
-        : 'Where do I find my licence key after purchasing?',
-      a: ar
-        ? 'يصلك المفتاح والتعليمات مباشرة على بريدك الإلكتروني فور إتمام الطلب، كما يمكنك في أي وقت الاطلاع عليه في صفحة «تراخيصي» داخل حسابك عبر تسجيل الدخول برابط البريد.'
-        : 'Your key and instructions arrive immediately in your email upon order completion. You can also view it anytime on your "My licences" page by logging in with a magic link.',
+      q: t('faq2Q'),
+      a: t('faq2A'),
     },
     {
-      q: ar
-        ? 'هل تبيعون للشركات والمؤسسات مع فواتير معتمدة؟'
-        : 'Do you sell to businesses with certified tax invoices?',
-      a: ar
-        ? 'نعم بكل تأكيد. اختر «مبيعات الشركات» في النموذج مع تحديد المنتج والكمية المطلوبة، وسيقوم فريق مبيعات الأعمال بالرد عليك بعرض سعر مخصص وفاتورة رسمية.'
-        : 'Yes, absolutely. Choose "Business sales" in the form specifying the product and quantities needed, and our B2B team will reply with a tailored quotation and official invoice.',
+      q: t('faq3Q'),
+      a: t('faq3A'),
     },
     {
       /**
@@ -94,28 +76,20 @@ export default async function ContactPage({ params }: Props) {
        * condition is the difference between a support offer and an open-ended
        * promise of free desktop support for anything.
        */
-      q: ar
-        ? 'هل يمكن لفريق الدعم مساعدتي عن بُعد بالتحكم بجهازي؟'
-        : 'Can your support team help me remotely on my PC?',
-      a: ar
-        ? 'إن كانت المشكلة تقنية في جهازك وتمنع التفعيل، يمكن لفريق الدعم مساعدتك عبر التحكّم عن بُعد ببرنامج مثل AnyDesk، دون رسوم.'
-        : 'If a technical problem on your own machine is preventing activation, our team can help you over a remote session using a tool such as AnyDesk, at no charge.',
+      q: t('faq4Q'),
+      a: t('faq4A'),
     },
     {
-      q: ar
-        ? 'كم يستغرق الرد على الرسائل والاستفسارات؟'
-        : 'How long does customer support take to reply?',
-      a: ar
-        ? `نردّ على رسائل النموذج والبريد خلال ${String(CONTACT_REPLY_HOURS)} ساعة كحدّ أقصى، وعادةً أسرع من ذلك. واتساب أسرع قناة للوصول إلينا.`
-        : `We reply to form and email messages within ${String(CONTACT_REPLY_HOURS)} hours at the latest, usually sooner. WhatsApp is the fastest way to reach us.`,
+      q: t('faq5Q'),
+      a: t('faq5A', { hours: String(CONTACT_REPLY_HOURS) }),
     },
   ];
 
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(`${prefix}/`, SITE_URL).toString() },
+      { name: tc('home'), url: new URL(`${prefix}/`, SITE_URL).toString() },
       {
-        name: ar ? 'تواصل معنا' : 'Contact us',
+        name: t('breadcrumb'),
         url: new URL(`${prefix}${ROUTES.contact}`, SITE_URL).toString(),
       },
     ]),
@@ -131,26 +105,16 @@ export default async function ContactPage({ params }: Props) {
         <MotionFadeIn>
           <span className="contact-badge">
             <span>💬</span>
-            <span>{ar ? 'خدمة العملاء والدعم الفني المباشر' : 'Customer Support & Live Help'}</span>
+            <span>{t('badge')}</span>
           </span>
 
-          <h1 id="contact-heading">
-            {ar ? 'تواصل معنا — نحن هنا لمساعدتك' : 'Contact Us — We Are Here to Help'}
-          </h1>
+          <h1 id="contact-heading">{t('heading')}</h1>
 
-          <p className="contact-hero-lede">
-            {ar
-              ? 'لديك استفسار قبل الشراء، أو تحتاج مساعدة في تفعيل ترخيصك، أو ترغب في عروض خاصة للشركات؟ تواصل معنا وسنكون سعداء بخدمتك.'
-              : 'Have a pre-purchase question, need help activating your licence, or looking for business quotes? Message us and we will be delighted to assist you.'}
-          </p>
+          <p className="contact-hero-lede">{t('lede')}</p>
 
           <span className="contact-sla-badge">
             <span>⏱️</span>
-            <span>
-              {ar
-                ? 'متوسط سرعة الرد: أقل من ساعتين (حد أقصى 24 ساعة)'
-                : 'Average reply time: Under 2 hours (24h max)'}
-            </span>
+            <span>{t('sla')}</span>
           </span>
         </MotionFadeIn>
       </section>
@@ -159,19 +123,19 @@ export default async function ContactPage({ params }: Props) {
       <div className="contact-grid-layout">
         {/* Column 1: Contact Form */}
         <div className="contact-form-container">
-          <MotionFadeIn delay={0.05}>
+          <MotionFadeIn>
             <ContactForm locale={locale} />
           </MotionFadeIn>
         </div>
 
         {/* Column 2: Direct Support Channels & Shortcuts */}
         <aside className="contact-sidebar">
-          <MotionFadeIn delay={0.1}>
+          <MotionFadeIn>
             {/* Direct Channels Box */}
             <div className="contact-channels-box">
               <span className="channels-box-title">
                 <span>⚡</span>
-                <span>{ar ? 'قنوات التواصل المباشرة' : 'Direct Contact Channels'}</span>
+                <span>{t('channelsTitle')}</span>
               </span>
 
               {/* WhatsApp Card */}
@@ -186,11 +150,11 @@ export default async function ContactPage({ params }: Props) {
                     <WhatsAppIcon size={24} />
                   </div>
                   <div className="channel-info">
-                    <strong>{ar ? 'واتساب الدعم الفني' : 'WhatsApp Support'}</strong>
+                    <strong>{t('whatsappTitle')}</strong>
                     <span dir="ltr">+966 53 425 5367</span>
                   </div>
                 </div>
-                <span className="channel-action-badge">{ar ? 'محادثة فورية' : 'Chat Now'}</span>
+                <span className="channel-action-badge">{t('whatsappAction')}</span>
               </a>
 
               {/* Email Card */}
@@ -200,11 +164,11 @@ export default async function ContactPage({ params }: Props) {
                     <MailIcon />
                   </div>
                   <div className="channel-info">
-                    <strong>{ar ? 'البريد الإلكتروني' : 'Email Address'}</strong>
+                    <strong>{t('emailTitle')}</strong>
                     <span dir="ltr">help@digital-activation.com</span>
                   </div>
                 </div>
-                <span className="channel-action-badge">{ar ? 'إرسال بريد' : 'Send Email'}</span>
+                <span className="channel-action-badge">{t('emailAction')}</span>
               </a>
 
               {/* Telegram Card */}
@@ -219,26 +183,24 @@ export default async function ContactPage({ params }: Props) {
                     <TelegramIcon size={22} />
                   </div>
                   <div className="channel-info">
-                    <strong>{ar ? 'تيليجرام' : 'Telegram Channel'}</strong>
+                    <strong>{t('telegramTitle')}</strong>
                     <span dir="ltr">@digitalactivations</span>
                   </div>
                 </div>
-                <span className="channel-action-badge">{ar ? 'مراسلة' : 'Message'}</span>
+                <span className="channel-action-badge">{t('telegramAction')}</span>
               </a>
             </div>
 
             {/* Self-Service Shortcuts Box */}
             <div className="self-service-box">
-              <h3>{ar ? 'روابط سريعة تفيدك قبل المراسلة' : 'Quick Self-Service Shortcuts'}</h3>
+              <h3>{t('shortcutsTitle')}</h3>
               <ul className="self-service-list">
                 <li>
                   <Link href={`${prefix}${ROUTES.licenses}`} className="self-service-link">
                     <span className="shortcut-icon" aria-hidden="true">
                       🔑
                     </span>
-                    <span>
-                      {ar ? 'أين أجد مفتاحي؟ (صفحة تراخيصي)' : 'Where is my key? (My licences)'}
-                    </span>
+                    <span>{t('shortcutLicences')}</span>
                   </Link>
                 </li>
                 <li>
@@ -246,9 +208,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       🛡️
                     </span>
-                    <span>
-                      {ar ? 'شروط واستبدال الضمان الذهبي' : 'Golden Warranty & Replacement Terms'}
-                    </span>
+                    <span>{t('shortcutWarranty')}</span>
                   </Link>
                 </li>
                 <li>
@@ -256,9 +216,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       📦
                     </span>
-                    <span>
-                      {ar ? 'متابعة سجل طلباتك وفواتيرك' : 'Track your orders & invoices'}
-                    </span>
+                    <span>{t('shortcutOrders')}</span>
                   </Link>
                 </li>
                 <li>
@@ -266,9 +224,7 @@ export default async function ContactPage({ params }: Props) {
                     <span className="shortcut-icon" aria-hidden="true">
                       🛍️
                     </span>
-                    <span>
-                      {ar ? 'تصفح جميع برامج وتراخيص المتجر' : 'Browse all store software & keys'}
-                    </span>
+                    <span>{t('shortcutStore')}</span>
                   </Link>
                 </li>
               </ul>
@@ -281,14 +237,8 @@ export default async function ContactPage({ params }: Props) {
       <section className="contact-faq-section" aria-labelledby="faq-heading">
         <MotionFadeIn>
           <header className="contact-faq-head">
-            <h2 id="faq-heading">
-              {ar ? 'أسئلة شائعة حول الدعم والتواصل' : 'Frequently Asked Questions'}
-            </h2>
-            <p>
-              {ar
-                ? 'إليك إجابات سريعة على الاستفسارات الأكثر شيوعاً التي تردنا من عملائنا.'
-                : 'Quick answers to the most common questions our customers ask.'}
-            </p>
+            <h2 id="faq-heading">{t('faqTitle')}</h2>
+            <p>{t('faqBody')}</p>
           </header>
 
           <div className="contact-faq-list">

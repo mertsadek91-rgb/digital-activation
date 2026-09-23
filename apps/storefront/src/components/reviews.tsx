@@ -1,4 +1,7 @@
 import type { ProductReviews, PublicReview } from '@da/contracts';
+import { useTranslations } from 'next-intl';
+
+import { isArabic } from '../i18n/locale';
 
 /**
  * What buyers said, on the product page.
@@ -14,59 +17,49 @@ import type { ProductReviews, PublicReview } from '@da/contracts';
  * better answer than five hollow stars, and it is the honest explanation of
  * why a store that has been trading for years shows none.
  */
-export function Reviews({ reviews, locale }: { reviews: ProductReviews; locale: string }) {
-  const ar = locale === 'ar';
+export function Reviews({ reviews }: { reviews: ProductReviews }) {
+  const t = useTranslations('reviews');
   const { aggregate, rows } = reviews;
 
   return (
     <section className="prose reviews" id="reviews">
-      <h2>{ar ? 'آراء المشترين' : 'What buyers say'}</h2>
+      <h2>{t('title')}</h2>
 
       {aggregate.count > 0 ? (
         <div className="review-summary">
           <p className="review-average">
             <strong>{aggregate.average}</strong>
-            <Stars rating={Math.round(Number(aggregate.average))} locale={locale} />
+            <Stars rating={Math.round(Number(aggregate.average))} />
           </p>
-          <p className="review-count">
-            {ar
-              ? `${String(aggregate.count)} تقييماً من مشترين فعليين`
-              : `${String(aggregate.count)} ${aggregate.count === 1 ? 'review' : 'reviews'} from verified purchases`}
-          </p>
+          <p className="review-count">{t('count', { count: aggregate.count })}</p>
         </div>
       ) : (
-        <p className="review-empty">
-          {ar
-            ? 'لا تقييمات بعد. لا ننشر إلا تقييمات من اشتروا المنتج فعلاً، ولا نشتري تقييماً بخصم.'
-            : 'No reviews yet. We publish reviews only from people who actually bought the product, and we never trade a discount for one.'}
-        </p>
+        <p className="review-empty">{t('empty')}</p>
       )}
 
       {rows.length > 0 ? (
         <ul className="review-list">
           {rows.map((review) => (
-            <ReviewItem key={review.id} review={review} locale={locale} />
+            <ReviewItem key={review.id} review={review} />
           ))}
         </ul>
       ) : null}
 
       {reviews.total > rows.length ? (
         <p className="review-more">
-          {ar
-            ? `تُعرض ${String(rows.length)} من ${String(reviews.total)} تقييماً.`
-            : `Showing ${String(rows.length)} of ${String(reviews.total)} reviews.`}
+          {t('showing', { shown: String(rows.length), total: reviews.total })}
         </p>
       ) : null}
     </section>
   );
 }
 
-function ReviewItem({ review, locale }: { review: PublicReview; locale: string }) {
-  const ar = locale === 'ar';
+function ReviewItem({ review }: { review: PublicReview }) {
+  const t = useTranslations('reviews');
 
   return (
     <li className="review">
-      <Stars rating={review.rating} locale={locale} />
+      <Stars rating={review.rating} />
       {review.title ? (
         <p className="review-title" dir="auto">
           {review.title}
@@ -76,19 +69,19 @@ function ReviewItem({ review, locale }: { review: PublicReview; locale: string }
       {/* `dir` from the review's own locale, not the page's: an English review
           on the Arabic page is still an English paragraph, and inheriting rtl
           puts its full stop on the wrong side. */}
-      <p className="review-body" dir={review.locale === 'en' ? 'ltr' : 'rtl'}>
+      <p className="review-body" dir={isArabic(review.locale) ? 'rtl' : 'ltr'}>
         {review.body}
       </p>
 
       <p className="review-meta">
-        <span>{review.authorName ?? (ar ? 'مشترٍ مُوثَّق' : 'Verified buyer')}</span>
-        <span className="review-verified">{ar ? 'شراء موثّق' : 'Verified purchase'}</span>
+        <span>{review.authorName ?? t('verifiedBuyer')}</span>
+        <span className="review-verified">{t('verifiedPurchase')}</span>
         <time dateTime={review.createdAt}>{review.createdAt.slice(0, 10)}</time>
       </p>
 
       {review.storeReply ? (
         <div className="review-reply">
-          <p className="review-reply-who">{ar ? 'ردّ المتجر' : 'Reply from the store'}</p>
+          <p className="review-reply-who">{t('storeReply')}</p>
           <p dir="auto">{review.storeReply}</p>
         </div>
       ) : null}
@@ -102,9 +95,10 @@ function ReviewItem({ review, locale }: { review: PublicReview; locale: string }
  * The stars are `aria-hidden` and the number beside them is the accessible
  * name, because "★★★★☆" read aloud is five identical symbols.
  */
-function Stars({ rating, locale }: { rating: number; locale: string }) {
+function Stars({ rating }: { rating: number }) {
+  const t = useTranslations('reviews');
   const full = Math.max(1, Math.min(5, rating));
-  const label = locale === 'ar' ? `${String(full)} من 5` : `${String(full)} out of 5`;
+  const label = t('stars', { rating: String(full) });
 
   return (
     <span className="stars" role="img" aria-label={label}>

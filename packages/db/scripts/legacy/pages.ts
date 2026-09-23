@@ -290,7 +290,9 @@ async function main(): Promise<void> {
         data: { title: page.title, blocks },
       });
       created += 1;
-      console.log(`  redid ${page.slug} (${page.locale}) — ${String(blocks.length)} blocks, still a draft`);
+      console.log(
+        `  redid ${page.slug} (${page.locale}) — ${String(blocks.length)} blocks, still a draft`,
+      );
       continue;
     }
 

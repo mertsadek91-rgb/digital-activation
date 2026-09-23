@@ -25,5 +25,9 @@ export default defineConfig({
   },
   datasource: {
     url: env('DATABASE_URL_MIGRATE'),
+    // Only `migrate diff --from-migrations` (the CI drift check) and
+    // `migrate dev` use it. Read directly rather than through `env()`, which
+    // throws when unset and would break every other command without it.
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
 });

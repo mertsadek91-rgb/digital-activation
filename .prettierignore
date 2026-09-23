@@ -11,3 +11,5 @@ dist/
 .turbo/
 pnpm-lock.yaml
 docs/plan.html
+# Vendored agent skills: third-party files, kept as their authors wrote them.
+.agents/

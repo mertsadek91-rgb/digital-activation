@@ -30,7 +30,9 @@
   --color-danger: #d93a12;
   --color-danger-soft: #fdeae4;
   --color-warning: #b8860b;
-  --color-success: #147d5f;
+  /* #147d5f was 4.32:1 on --color-success-soft, the background it is shown on
+     (the added-to-cart note, the support chip); this clears 4.5:1 there. */
+  --color-success: #127658;
   --color-success-soft: #e0f0ea;
 
   /* --- surfaces ---------------------------------------------------------- */
@@ -43,7 +45,10 @@
   /* --- text -------------------------------------------------------------- */
   --color-ink: #1c2422;
   --color-ink-body: #4a4a4a; /* was #777777 — failed contrast */
-  --color-ink-muted: #6b7472;
+  /* #6b7472 measured 4.17–4.45:1 on the tinted surfaces (Lighthouse, CI):
+     under the 4.5:1 small text needs. This is the lightest shade of the same
+     grey that clears every surface token. */
+  --color-ink-muted: #606967;
   --color-ink-inverse: #ffffff;
 
   /* --- type -------------------------------------------------------------- */

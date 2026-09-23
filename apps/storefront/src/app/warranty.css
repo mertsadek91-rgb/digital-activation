@@ -94,7 +94,9 @@
   font-weight: 600;
   color: var(--color-ink);
   box-shadow: var(--shadow-xs);
-  transition: transform 160ms ease, border-color 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease;
 }
 
 .warranty-chip:hover {
@@ -538,7 +540,9 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-xs);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .warranty-faq-item[open] {
@@ -571,12 +575,7 @@
 
 /* --- CTA Banner --- */
 .warranty-cta-banner {
-  background:
-    linear-gradient(
-      135deg,
-      var(--color-brand-ink) 0%,
-      var(--color-brand) 100%
-    );
+  background: linear-gradient(135deg, var(--color-brand-ink) 0%, var(--color-brand) 100%);
   color: #ffffff;
   border-radius: var(--radius-xl);
   padding: clamp(var(--spacing-3), 5vw, var(--spacing-4));

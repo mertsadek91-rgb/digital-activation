@@ -1,17 +1,30 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
-import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { MotionFadeIn } from '../../../components/motion-wrapper';
 import { CategoryRail } from '../../../components/category-rail';
+import {
+  ListingChips,
+  ListingFilterPanel,
+  ListingNoResults,
+  ListingSorts,
+} from '../../../components/listing-filters';
 import { ProductCard } from '../../../components/product-card';
+import { isArabic } from '../../../i18n/locale';
 import { getStore } from '../../../lib/api';
-import { robotsMeta } from '../../../lib/seo';
+import {
+  apiFilters,
+  isFiltered,
+  listingHref,
+  listingSeo,
+  parseListing,
+} from '../../../lib/listing';
+import { pageSuffix, paginatedUrl } from '../../../lib/seo';
 
 /**
  * /store — everything on sale.
@@ -20,94 +33,79 @@ import { robotsMeta } from '../../../lib/seo';
  * so the most prominent link on every page of the site was a 404. It is also
  * the only page a visitor can use before they know a single category name,
  * which is why the collections are listed on it rather than hidden behind a
- * menu: this catalog has no brand pages and no search yet, so collections are
- * the entire navigation.
+ * menu.
  *
- * Sorting offers the three orders that are real. Price is not among them: a
- * product's price is the cheapest of its variants, and ordering a page of 24 in
- * memory would sort that page rather than the catalog — which looks like a
- * price sort and is not one.
+ * Sorting offers the orders that are real, price among them now that the API
+ * sorts on each product's cheapest published variant across the whole
+ * catalogue rather than within one page. Filters narrow the same list; every
+ * state is a URL (see `lib/listing`), and the filtered ones are `noindex`.
  */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
-
-const SORTS = ['position', 'newest', 'best-selling'] as const;
-type Sort = (typeof SORTS)[number];
-
-const SORT_LABELS: Record<Sort, { ar: string; en: string }> = {
-  // The default order is sales-first, so it is labelled for what it is rather
-  // than as "default" — a sort called "default" tells a shopper nothing.
-  position: { ar: 'الأكثر شيوعاً', en: 'Most popular' },
-  newest: { ar: 'الأحدث', en: 'Newest' },
-  'best-selling': { ar: 'الأكثر مبيعاً', en: 'Best selling' },
-};
 
 interface Props {
   params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function pageNumber(value: string | string[] | undefined): number {
-  const parsed = Number.parseInt(first(value) ?? '1', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
-
-function sortFor(value: string | string[] | undefined): Sort {
-  const raw = first(value);
-  return SORTS.includes(raw as Sort) ? (raw as Sort) : 'position';
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const ar = locale === 'ar';
-  const links = alternates(SITE_URL, ROUTES.store);
+  const state = parseListing(await searchParams);
+  const t = await getTranslations({ locale, namespace: 'store' });
 
   return {
-    title: ar ? 'المتجر — كل المنتجات' : 'Store — all products',
-    description: ar
-      ? 'مفاتيح تفعيل وتراخيص أصلية: ويندوز، أوفيس، أدوبي، برامج الحماية والتصميم — تسليم على بريدك.'
-      : 'Genuine activation keys and licences: Windows, Office, Adobe, security and design software — delivered to your email.',
-    robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
-    alternates: {
-      canonical: canonical(SITE_URL, ROUTES.store, ar ? 'ar' : 'en'),
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
-    },
+    title: `${t('metaTitle')}${pageSuffix(state.page, locale)}`,
+    description: t('metaDescription'),
+    ...listingSeo(state, {
+      canonical: canonical(SITE_URL, ROUTES.store, isArabic(locale) ? 'ar' : 'en'),
+      languages: alternates(SITE_URL, ROUTES.store),
+    }),
   };
 }
 
 export default async function StorePage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations('store');
+  const tc = await getTranslations('common');
+  const tk = await getTranslations('catalog');
 
-  const search = await searchParams;
-  const page = pageNumber(search.page);
-  const sort = sortFor(search.sort);
-  const ar = locale === 'ar';
+  const state = parseListing(await searchParams);
+  const { page, sort } = state;
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
+  const path = `${prefix}${ROUTES.store}`;
 
-  const store = await getStore({ locale, page, perPage: PER_PAGE, sort });
+  // Null only when the API refused the request itself (a page number past the
+  // end, say). An outage throws instead and lands on `error.tsx` — a store
+  // page that answered 404 while the API was down told crawlers the whole
+  // catalogue was gone.
+  const store = await getStore({
+    locale,
+    page,
+    perPage: PER_PAGE,
+    sort,
+    filters: apiFilters(state.filters),
+  });
   if (!store) notFound();
 
   const lastPage = Math.max(1, Math.ceil(store.total / store.perPage));
+  const filtered = isFiltered(state.filters);
 
   // One ItemList for the grid, and breadcrumbs that start at the home page.
   // `buildGraph` throws on a second ItemList, which is what kept the legacy
   // product pages out of rich results entirely.
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(`${prefix}/`, SITE_URL).toString() },
+      { name: tc('home'), url: new URL(`${prefix}/`, SITE_URL).toString() },
       {
-        name: ar ? 'المتجر' : 'Store',
-        url: new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(),
+        name: t('title'),
+        url: new URL(path, SITE_URL).toString(),
       },
     ]),
     jsonld.itemList({
-      url: new URL(`${prefix}${ROUTES.store}`, SITE_URL).toString(),
-      name: ar ? 'المتجر' : 'Store',
+      url: paginatedUrl(new URL(path, SITE_URL).toString(), page),
+      name: t('title'),
       items: store.products.map((card, index) => ({
         url: new URL(`${prefix}${ROUTES.product(card.slug)}`, SITE_URL).toString(),
         name: card.name,
@@ -116,61 +114,47 @@ export default async function StorePage({ params, searchParams }: Props) {
     }),
   ]);
 
-  /** Keeps the other parameter when one of them changes. */
-  const href = (next: { page?: number; sort?: Sort }): string => {
-    const query = new URLSearchParams();
-    const nextSort = next.sort ?? sort;
-    const nextPage = next.page ?? page;
-    if (nextSort !== 'position') query.set('sort', nextSort);
-    if (nextPage > 1) query.set('page', String(nextPage));
-    const suffix = query.toString();
-    return `${prefix}${ROUTES.store}${suffix ? `?${suffix}` : ''}`;
-  };
-
   return (
     <main className="shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
       <header className="page-head">
-        <h1>{ar ? 'المتجر' : 'Store'}</h1>
-        <p className="lede">
-          {ar
-            ? 'تراخيص ومفاتيح تفعيل أصلية، تصل على بريدك. أغلبها يُجهَّز بعد الدفع حتى لا تبدأ مدّة ترخيصك قبل أن تستخدمه.'
-            : 'Genuine licences and activation keys, delivered to your email. Most are prepared after payment, so your licence term does not start before you use it.'}
-        </p>
+        <h1>{t('title')}</h1>
+        <p className="lede">{t('lede')}</p>
       </header>
 
       {/* The rail replaces the horizontal strip that was here. Same links, same
-          counts; a column at desktop width and the strip again below it. */}
+          counts; a column at desktop width and the strip again below it. The
+          filters sit under it on desktop and behind a button on a phone. */}
       <div className="catalog-layout">
-        <CategoryRail
-          categories={store.collections}
-          locale={locale}
-          title={ar ? 'التصنيفات' : 'Categories'}
-        />
+        <aside className="catalog-side">
+          <CategoryRail categories={store.collections} locale={locale} title={tk('categories')} />
+          {store.facets ? (
+            <ListingFilterPanel
+              facets={store.facets}
+              state={state}
+              path={path}
+              total={store.total}
+            />
+          ) : null}
+        </aside>
 
         <div className="catalog-main">
           <div className="store-bar">
-            <p className="result-count">{productCount(store.total, locale)}</p>
-
-            {/* Links, not a <select>: the page is server-rendered, each sort is a
-            real URL a crawler can follow, and nothing here needs JavaScript. */}
-            <nav className="sorts" aria-label={ar ? 'الترتيب' : 'Sort'}>
-              {(['position', 'newest'] as const).map((option) => (
-                <Link
-                  key={option}
-                  href={href({ sort: option, page: 1 })}
-                  className={option === sort ? 'is-active' : undefined}
-                  aria-current={option === sort ? 'true' : undefined}
-                >
-                  {ar ? SORT_LABELS[option].ar : SORT_LABELS[option].en}
-                </Link>
-              ))}
-            </nav>
+            <p className="result-count" role="status">
+              {tk('productCount', { count: store.total })}
+            </p>
+            <ListingSorts state={state} path={path} positionLabel={t('sortPosition')} />
           </div>
 
+          <ListingChips facets={store.facets} state={state} path={path} />
+
           {store.products.length === 0 ? (
-            <p className="empty">{ar ? 'لا منتجات منشورة بعد.' : 'Nothing published yet.'}</p>
+            filtered ? (
+              <ListingNoResults state={state} path={path} />
+            ) : (
+              <p className="empty">{t('empty')}</p>
+            )
           ) : (
             <MotionFadeIn>
               <div className="grid">
@@ -182,20 +166,16 @@ export default async function StorePage({ params, searchParams }: Props) {
           )}
 
           {lastPage > 1 ? (
-            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+            <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
-                <Link href={href({ page: page - 1 })} rel="prev">
-                  {ar ? 'السابق' : 'Previous'}
+                <Link href={listingHref(path, state, { page: page - 1 })} rel="prev">
+                  {tk('previous')}
                 </Link>
               ) : null}
-              <span>
-                {ar
-                  ? `صفحة ${String(page)} من ${String(lastPage)}`
-                  : `Page ${String(page)} of ${String(lastPage)}`}
-              </span>
+              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
               {page < lastPage ? (
-                <Link href={href({ page: page + 1 })} rel="next">
-                  {ar ? 'التالي' : 'Next'}
+                <Link href={listingHref(path, state, { page: page + 1 })} rel="next">
+                  {tk('next')}
                 </Link>
               ) : null}
             </nav>

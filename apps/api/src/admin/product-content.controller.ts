@@ -5,11 +5,13 @@ import {
   type ProductContent,
   type SetProductContent,
   setProductContentSchema,
+  productContentSchema,
 } from '@da/contracts';
 import { Locale } from '@da/db';
 import { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { ProductContentService } from './product-content.service.js';
@@ -31,6 +33,7 @@ export class ProductContentController {
   constructor(private readonly content: ProductContentService) {}
 
   @Get('products/:slug/content')
+  @ZodResponse(productContentSchema)
   @ApiOperation({ summary: 'The description as blocks, with its word count' })
   get(
     @Param('slug') slug: string,
@@ -40,6 +43,7 @@ export class ProductContentController {
   }
 
   @Patch('products/:slug/content')
+  @ZodResponse(productContentSchema)
   @Roles('ADMIN', 'CATALOG')
   @ApiOperation({ summary: 'Write the description, warnings or download link' })
   set(

@@ -10,7 +10,7 @@ import type {
   SetVariantTerms,
   VariantTerms,
 } from '@da/contracts';
-import { Locale, Prisma, PublishStatus } from '@da/db';
+import { Locale, Prisma, PublishStatus, refreshProductPrice } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { say } from '../common/panel-locale.js';
@@ -49,10 +49,7 @@ export class CatalogEditService {
    * wants a title, a meta description, a hero image and 120 words; a product
    * born published is born broken in public.
    */
-  async createProduct(
-    input: CreateProduct,
-    actorId: string | undefined,
-  ): Promise<CreatedProduct> {
+  async createProduct(input: CreateProduct, actorId: string | undefined): Promise<CreatedProduct> {
     const sku = normaliseSku(input.variant.sku);
     const [slugTaken, skuTaken] = await Promise.all([
       this.prisma.client.product.count({ where: { slug: input.slug } }),
@@ -73,7 +70,9 @@ export class CatalogEditService {
         where: { id: { in: input.categoryIds } },
       });
       if (found !== new Set(input.categoryIds).size) {
-        throw new BadRequestException(say('قسم غير موجود.', 'One of those categories does not exist.'));
+        throw new BadRequestException(
+          say('قسم غير موجود.', 'One of those categories does not exist.'),
+        );
       }
     }
 
@@ -122,6 +121,11 @@ export class CatalogEditService {
         },
       });
 
+      // A draft variant has no sellable price, so this writes null today. It
+      // is called anyway: the rule is that every variant write refreshes the
+      // column, and a rule with an exception is one somebody copies wrongly.
+      await refreshProductPrice(tx, created.id);
+
       return created;
     });
 
@@ -156,24 +160,28 @@ export class CatalogEditService {
       );
     }
 
-    const variant = await this.prisma.client.variant.create({
-      data: {
-        productId: product.id,
-        sku,
-        priceUsd: new Prisma.Decimal(input.priceUsd),
-        licensePeriodUnit: input.licensePeriodUnit,
-        licensePeriodValue:
-          input.licensePeriodUnit === 'LIFETIME' ? null : (input.licensePeriodValue ?? 1),
-        deviceCount: input.deviceCount,
-        platform: input.platform,
-        activationMethod: input.activationMethod,
-        fulfillmentMode: input.fulfillmentMode,
-        // Never the default: the product already has one, and silently moving
-        // which variant a page opens on is not what "add" means.
-        isDefault: false,
-        position: product.variants.reduce((high, row) => Math.max(high, row.position), -1) + 1,
-        status: PublishStatus.DRAFT,
-      },
+    const variant = await this.prisma.client.$transaction(async (tx) => {
+      const created = await tx.variant.create({
+        data: {
+          productId: product.id,
+          sku,
+          priceUsd: new Prisma.Decimal(input.priceUsd),
+          licensePeriodUnit: input.licensePeriodUnit,
+          licensePeriodValue:
+            input.licensePeriodUnit === 'LIFETIME' ? null : (input.licensePeriodValue ?? 1),
+          deviceCount: input.deviceCount,
+          platform: input.platform,
+          activationMethod: input.activationMethod,
+          fulfillmentMode: input.fulfillmentMode,
+          // Never the default: the product already has one, and silently moving
+          // which variant a page opens on is not what "add" means.
+          isDefault: false,
+          position: product.variants.reduce((high, row) => Math.max(high, row.position), -1) + 1,
+          status: PublishStatus.DRAFT,
+        },
+      });
+      await refreshProductPrice(tx, product.id);
+      return created;
     });
 
     await this.audit.record({
@@ -201,9 +209,16 @@ export class CatalogEditService {
     if (!product) throw new NotFoundException(say('لا يوجد منتج بهذا الرابط.', 'No such product.'));
 
     const [brands, categories] = await Promise.all([
-      this.prisma.client.brand.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+      this.prisma.client.brand.findMany({
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
       this.prisma.client.category.findMany({
-        select: { id: true, slug: true, translations: { where: { locale: Locale.AR }, select: { name: true } } },
+        select: {
+          id: true,
+          slug: true,
+          translations: { where: { locale: Locale.AR }, select: { name: true } },
+        },
         orderBy: { slug: 'asc' },
       }),
     ]);
@@ -254,7 +269,9 @@ export class CatalogEditService {
         where: { id: { in: input.categoryIds } },
       });
       if (found !== new Set(input.categoryIds).size) {
-        throw new BadRequestException(say('قسم غير موجود.', 'One of those categories does not exist.'));
+        throw new BadRequestException(
+          say('قسم غير موجود.', 'One of those categories does not exist.'),
+        );
       }
     }
     if (input.brandId) {
@@ -385,32 +402,30 @@ export class CatalogEditService {
 
     return {
       productSlug: slug,
-      variants: product.variants.map(
-        (variant): VariantTerms => ({
-          id: variant.id,
-          sku: variant.sku,
-          status: variant.status,
-          isDefault: variant.isDefault,
-          position: variant.position,
-          // `toFixed(2)` rather than `toString()`: the panel shows these in an
-          // input somebody edits, and "9.9" invites a reader to wonder whether
-          // the cents were lost.
-          priceUsd: variant.priceUsd.toFixed(2),
-          compareAtUsd: variant.compareAtUsd?.toFixed(2) ?? null,
-          costUsd: variant.costUsd?.toFixed(2) ?? null,
-          licensePeriodValue: variant.licensePeriodValue,
-          licensePeriodUnit: variant.licensePeriodUnit,
-          deviceCount: variant.deviceCount,
-          platform: variant.platform,
-          activationMethod: variant.activationMethod,
-          fulfillmentMode: variant.fulfillmentMode,
-          deliverySlaSeconds: variant.deliverySlaSeconds,
-          requiresActivationEmail: variant.requiresActivationEmail,
-          warrantyDays: variant.warrantyDays,
-          onHand: variant.inventory?.onHand ?? 0,
-          orderCount: variant._count.orderItems,
-        }),
-      ),
+      variants: product.variants.map((variant): VariantTerms => ({
+        id: variant.id,
+        sku: variant.sku,
+        status: variant.status,
+        isDefault: variant.isDefault,
+        position: variant.position,
+        // `toFixed(2)` rather than `toString()`: the panel shows these in an
+        // input somebody edits, and "9.9" invites a reader to wonder whether
+        // the cents were lost.
+        priceUsd: variant.priceUsd.toFixed(2),
+        compareAtUsd: variant.compareAtUsd?.toFixed(2) ?? null,
+        costUsd: variant.costUsd?.toFixed(2) ?? null,
+        licensePeriodValue: variant.licensePeriodValue,
+        licensePeriodUnit: variant.licensePeriodUnit,
+        deviceCount: variant.deviceCount,
+        platform: variant.platform,
+        activationMethod: variant.activationMethod,
+        fulfillmentMode: variant.fulfillmentMode,
+        deliverySlaSeconds: variant.deliverySlaSeconds,
+        requiresActivationEmail: variant.requiresActivationEmail,
+        warrantyDays: variant.warrantyDays,
+        onHand: variant.inventory?.onHand ?? 0,
+        orderCount: variant._count.orderItems,
+      })),
     };
   }
 
@@ -423,7 +438,8 @@ export class CatalogEditService {
       where: { sku },
       include: { product: { select: { id: true, slug: true } } },
     });
-    if (!variant) throw new NotFoundException(say('لا يوجد متغيّر بهذا الرمز.', 'No such variant.'));
+    if (!variant)
+      throw new NotFoundException(say('لا يوجد متغيّر بهذا الرمز.', 'No such variant.'));
 
     /*
      * The strike-through has to be a real one.
@@ -457,7 +473,9 @@ export class CatalogEditService {
      */
     const nextUnit = input.licensePeriodUnit ?? variant.licensePeriodUnit;
     let nextValue =
-      input.licensePeriodValue === undefined ? variant.licensePeriodValue : input.licensePeriodValue;
+      input.licensePeriodValue === undefined
+        ? variant.licensePeriodValue
+        : input.licensePeriodValue;
     if (nextUnit === 'LIFETIME') nextValue = null;
     else if (nextValue === null) nextValue = 1;
 
@@ -519,6 +537,11 @@ export class CatalogEditService {
           ...(input.isDefault === undefined ? {} : { isDefault: input.isDefault }),
         },
       });
+
+      // Price and status both move the product's entry price, and so its
+      // place in a price sort. Same transaction, so a reader never sees the
+      // new variant price beside the old minimum.
+      await refreshProductPrice(tx, variant.product.id);
     });
 
     await this.audit.record({

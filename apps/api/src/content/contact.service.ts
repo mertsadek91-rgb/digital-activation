@@ -214,9 +214,12 @@ export class ContactService {
       template: 'contact.ack',
       locale: input.locale,
       customerId: customer?.id,
+      // No name in it. The address is unverified, so whatever was typed into
+      // the name field would arrive in a stranger's inbox under the store's
+      // domain — the shape of a spam or phishing relay. The acknowledgement
+      // says only what the store wrote.
       rendered: contactAck({
         locale: input.locale,
-        name: input.name,
         hours: CONTACT_REPLY_HOURS,
         supportEmail: this.mail.supportEmail,
       }),

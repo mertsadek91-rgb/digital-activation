@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { type ContactList, setContactStatusSchema } from '@da/contracts';
+import { type ContactList, setContactStatusSchema, contactListSchema } from '@da/contracts';
 import type { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { ContactService } from './contact.service.js';
@@ -22,7 +23,11 @@ import { ContactService } from './contact.service.js';
 export class ContactAdminController {
   constructor(private readonly contact: ContactService) {}
 
+  // Names, email addresses and whatever people wrote: support's inbox, not
+  // something every staff role pages through.
+  @Roles('ADMIN', 'SUPPORT')
   @Get()
+  @ZodResponse(contactListSchema)
   @ApiOperation({ summary: 'Messages from the contact form, unanswered first' })
   list(
     @Query('includeHandled') includeHandled?: string,

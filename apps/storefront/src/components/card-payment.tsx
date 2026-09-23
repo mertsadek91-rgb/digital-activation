@@ -8,7 +8,10 @@ import {
   type StripeError,
   type StripePaymentElement,
 } from '@stripe/stripe-js';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+
+import { resolveLocale } from '../i18n/locale';
 
 /**
  * The card step.
@@ -60,7 +63,8 @@ export function CardPayment({
   onPaid: () => void;
   onBack: () => void;
 }) {
-  const ar = locale === 'ar';
+  const t = useTranslations('cardPayment');
+  const stripeLocale = resolveLocale(locale);
   const mount = useRef<HTMLDivElement | null>(null);
   const [stripe, setStripe] = useState<Stripe | null>(null);
   const [elements, setElements] = useState<StripeElements | null>(null);
@@ -95,7 +99,7 @@ export function CardPayment({
         clientSecret,
         // Stripe renders its own RTL inside the iframe from this, which the
         // page's own direction cannot reach.
-        locale: ar ? 'ar' : 'en',
+        locale: stripeLocale,
       });
       element = created.create('payment');
 
@@ -112,7 +116,7 @@ export function CardPayment({
       cancelled = true;
       element?.destroy();
     };
-  }, [ar, clientSecret, publishableKey]);
+  }, [stripeLocale, clientSecret, publishableKey]);
 
   async function confirm(): Promise<void> {
     if (!stripe || !elements) return;
@@ -124,7 +128,7 @@ export function CardPayment({
     const submitted = await elements.submit();
     if (submitted.error) {
       setPhase('ready');
-      setMessage(readable(submitted.error, ar));
+      setMessage(readable(submitted.error, t('failed')));
       return;
     }
 
@@ -145,7 +149,7 @@ export function CardPayment({
 
     if (result.error) {
       setPhase('ready');
-      setMessage(readable(result.error, ar));
+      setMessage(readable(result.error, t('failed')));
       return;
     }
 
@@ -167,40 +171,26 @@ export function CardPayment({
     // requires_payment_method, and anything Stripe adds later: the card did not
     // work and another one is the answer, so the form stays where it is.
     setPhase('ready');
-    setMessage(
-      ar
-        ? 'لم تُقبل البطاقة. جرّب بطاقة أخرى أو طريقة دفع أخرى.'
-        : 'That card was not accepted. Try another card or another method.',
-    );
+    setMessage(t('declined'));
   }
 
   if (phase === 'unavailable') {
     return (
       <div className="card-pay">
-        <p className="notice">
-          {ar
-            ? 'الدفع بالبطاقة غير متاح الآن. اختر طريقة دفع أخرى، أو راسلنا وسنُكمل طلبك.'
-            : 'Card payment is unavailable right now. Choose another method, or write to us and we will finish your order.'}
-        </p>
+        <p className="notice">{t('unavailable')}</p>
         <button type="button" className="btn btn-ghost btn-wide" onClick={onBack}>
-          {ar ? 'طريقة دفع أخرى' : 'Another payment method'}
+          {t('anotherMethod')}
         </button>
       </div>
     );
   }
 
   if (phase === 'paid') {
-    return <p className="added">{ar ? 'تم الدفع. جارٍ فتح طلبك…' : 'Paid. Opening your order…'}</p>;
+    return <p className="added">{t('paid')}</p>;
   }
 
   if (phase === 'processing') {
-    return (
-      <p className="notice">
-        {ar
-          ? 'استلم البنك الدفعة وهي قيد التسوية. سنرسل المفتاح إلى بريدك فور تأكيدها — لا حاجة لدفع مرّة أخرى.'
-          : 'Your bank has taken the payment and is settling it. We will email your key as soon as it confirms — do not pay again.'}
-      </p>
-    );
+    return <p className="notice">{t('processing')}</p>;
   }
 
   return (
@@ -209,17 +199,9 @@ export function CardPayment({
           the inputs, which live in an iframe this code cannot reach into. */}
       <div ref={mount} className="card-pay-element" />
 
-      {phase === 'loading' ? (
-        <p className="hold-note">{ar ? 'جارٍ تحميل نموذج البطاقة…' : 'Loading the card form…'}</p>
-      ) : null}
+      {phase === 'loading' ? <p className="hold-note">{t('loading')}</p> : null}
 
-      {phase === 'action' ? (
-        <p className="notice">
-          {ar
-            ? 'بنكك يطلب خطوة تحقّق إضافية لم تكتمل. أعد المحاولة وأكمل رسالة البنك.'
-            : 'Your bank asked for an extra verification step that was not completed. Try again and finish the step your bank shows.'}
-        </p>
-      ) : null}
+      {phase === 'action' ? <p className="notice">{t('action')}</p> : null}
 
       {message ? <p className="error">{message}</p> : null}
 
@@ -229,11 +211,11 @@ export function CardPayment({
         disabled={phase !== 'ready'}
         onClick={() => void confirm()}
       >
-        {phase === 'confirming' ? (ar ? 'جارٍ الدفع…' : 'Paying…') : ar ? 'ادفع الآن' : 'Pay now'}
+        {phase === 'confirming' ? t('paying') : t('payNow')}
       </button>
 
       <button type="button" className="linky" onClick={onBack} disabled={phase === 'confirming'}>
-        {ar ? 'طريقة دفع أخرى' : 'Another payment method'}
+        {t('anotherMethod')}
       </button>
     </div>
   );
@@ -247,10 +229,8 @@ export function CardPayment({
  * error, a rate limit or a misconfiguration on our side, and repeating "No such
  * payment_intent" to a customer tells them nothing they can do anything about.
  */
-function readable(error: StripeError, ar: boolean): string {
+function readable(error: StripeError, fallback: string): string {
   const actionable = error.type === 'card_error' || error.type === 'validation_error';
   if (actionable && error.message) return error.message;
-  return ar
-    ? 'تعذّر إتمام الدفع. لم يُخصم أي مبلغ. جرّب مرّة أخرى أو اختر طريقة دفع أخرى.'
-    : 'The payment could not be completed. Nothing was charged. Try again, or choose another method.';
+  return fallback;
 }

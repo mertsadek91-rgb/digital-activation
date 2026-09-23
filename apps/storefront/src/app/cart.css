@@ -161,6 +161,46 @@
   }
 }
 
+/* Details → Payment, so the change of screen reads as progress. */
+.checkout-steps {
+  display: flex;
+  gap: var(--spacing-2);
+  list-style: none;
+  margin: 0 0 var(--spacing-2);
+  padding: 0;
+  color: var(--color-ink-muted);
+  font-weight: 700;
+}
+.checkout-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checkout-steps span {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  font-size: 0.875rem;
+}
+.checkout-steps li[aria-current='step'] {
+  color: var(--color-brand-ink);
+}
+.checkout-steps li[aria-current='step'] span {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: #fff;
+}
+.checkout-terms {
+  margin-block-start: var(--spacing-1);
+}
+.checkout-form select {
+  min-block-size: 44px;
+  font: inherit;
+}
+
 .cart-lines,
 .order-lines,
 .summary-lines {
@@ -387,7 +427,9 @@
   border-radius: var(--radius-md);
   background: var(--color-bg);
   color: var(--color-ink);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 .checkout-form input[type='email']:focus,
 .checkout-form input[type='text']:focus {
@@ -433,7 +475,9 @@
   font-weight: 700;
   font-size: var(--text-base);
   box-shadow: var(--shadow-sm);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 .pay-methods button:hover {
   transform: translateY(-2px);

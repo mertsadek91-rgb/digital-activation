@@ -3,11 +3,15 @@ import {
   type CatalogBrand,
   type CatalogCard,
   type CatalogCollection,
+  type CatalogFacets,
+  catalogFiltersFrom,
+  hasCatalogFilters,
   type CatalogProduct,
   type CatalogProductWithRelated,
   type CatalogQuery,
   type CatalogVariant,
   type Home,
+  type OfferedCurrencies,
   type HomeRail,
   blockDocumentSchema,
   faqItemsSchema,
@@ -23,9 +27,13 @@ import {
 import { ArticleKind, FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
 import { toArticleCard } from '../common/article-card.js';
+import type { LiveSale } from '../offers/offer-rules.js';
+import { SalesService, saleBadge, saleFor, salePriced } from '../offers/sales.service.js';
 import { sanitizeBlocks } from '../common/rich-text.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+import { facetCounts, matchProducts, toFacetProduct } from './facets.js';
+import { cardOrder, productOrder } from './ordering.js';
 import { displayPrice, type FxTable } from './pricing.js';
 
 /**
@@ -81,9 +89,28 @@ function sellable(variant: { inventory: { onHand: number; reserved: number } | n
   return Math.max(0, (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0));
 }
 
+/**
+ * What pricing a page needs: the rates, and the sales in force. Fetched once
+ * per request and handed to every card, so one page cannot show a product at
+ * two prices.
+ */
+interface Pricing {
+  fx: FxTable;
+  sales: LiveSale[];
+  locale: 'ar' | 'en';
+}
+
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sales: SalesService,
+  ) {}
+
+  private async pricing(query: { locale: string }): Promise<Pricing> {
+    const [fx, sales] = await Promise.all([this.fxTable(), this.sales.live()]);
+    return { fx, sales, locale: query.locale === 'en' ? 'en' : 'ar' };
+  }
 
   /**
    * Draft products are reachable only with the preview token, and the
@@ -160,18 +187,23 @@ export class CatalogService {
    * Sorted by the same `cardOrder` the collection pages use, so "newest" means
    * the same thing everywhere — a store whose sorts disagree with its category
    * sorts is a store where a product appears to move when it has not.
+   *
+   * Filters and facets are shared with the collection and brand pages through
+   * `listing`; the category rail's counts below stay unfiltered, because the
+   * rail is navigation to other pages, not a facet of this one.
    */
   async store(query: CatalogQuery): Promise<CatalogStore> {
     const locale = this.localeFor(query);
     const status = this.statusFilter(query);
+    const pricing = await this.pricing(query);
 
-    const total = await this.prisma.client.product.count({ where: status });
+    const found = await this.listing(status, query, pricing, { brands: true });
     const products = await this.prisma.client.product.findMany({
-      where: status,
-      orderBy: this.productOrder(query),
+      where: found.filtered ? { ...status, id: { in: found.ids } } : status,
+      orderBy: productOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
 
     // Only the categories that actually hold something published: an empty
@@ -185,13 +217,12 @@ export class CatalogService {
       },
     });
 
-    const fx = await this.fxTable();
-
     return {
-      products: products.map((product) => this.toCard(product, query.currency, fx)),
-      total,
+      products: products.map((product) => this.toCard(product, query.currency, pricing)),
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
       collections: categories.map((category) => ({
         slug: category.slug,
         name: category.translations[0]?.name ?? category.slug,
@@ -222,19 +253,25 @@ export class CatalogService {
     if (!category) throw new NotFoundException(`No collection with slug "${slug}"`);
 
     const translation = category.translations[0];
-    const total = await this.prisma.client.productCategory.count({
-      where: { categoryId: category.id, product: status },
-    });
+    const pricing = await this.pricing(query);
 
+    const found = await this.listing(
+      { ...status, categories: { some: { categoryId: category.id } } },
+      query,
+      pricing,
+      { brands: true },
+    );
     const links = await this.prisma.client.productCategory.findMany({
-      where: { categoryId: category.id, product: status },
-      orderBy: this.cardOrder(query),
+      where: {
+        categoryId: category.id,
+        product: status,
+        ...(found.filtered ? { productId: { in: found.ids } } : {}),
+      },
+      orderBy: cardOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale),
+      include: this.cardInclude(locale, this.drafts(query)),
     });
-
-    const fx = await this.fxTable();
 
     const breadcrumbs: CatalogCollection['breadcrumbs'] = [
       { name: locale === Locale.AR ? 'الرئيسية' : 'Home', href: ROUTES.home },
@@ -297,10 +334,11 @@ export class CatalogService {
         title: translation?.seoTitle ?? null,
         description: translation?.seoDescription ?? null,
       },
-      products: links.map((link) => this.toCard(link.product, query.currency, fx)),
-      total,
+      products: links.map((link) => this.toCard(link.product, query.currency, pricing)),
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
     };
   }
 
@@ -336,17 +374,17 @@ export class CatalogService {
 
     const translation = brand.translations[0];
     const where = { brandId: brand.id, ...status };
+    const pricing = await this.pricing(query);
 
-    const total = await this.prisma.client.product.count({ where });
+    // No brand facet on a brand's own page: it would be one box, ticked.
+    const found = await this.listing(where, query, pricing, { brands: false });
     const products = await this.prisma.client.product.findMany({
-      where,
-      orderBy: this.productOrder(query),
+      where: found.filtered ? { ...where, id: { in: found.ids } } : where,
+      orderBy: productOrder(query.sort),
       skip: (query.page - 1) * query.perPage,
       take: query.perPage,
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
-
-    const fx = await this.fxTable();
 
     // Only brands that have something published. An inactive maker still in
     // the table (this catalog has two with zero products) is a link to an
@@ -368,7 +406,7 @@ export class CatalogService {
       logo: brand.logo
         ? {
             url: this.assetUrl(brand.logo.key),
-            alt: brand.logo.alts[0]?.alt ?? (translation?.name ?? brand.name),
+            alt: brand.logo.alts[0]?.alt ?? translation?.name ?? brand.name,
             width: brand.logo.width,
             height: brand.logo.height,
           }
@@ -388,10 +426,11 @@ export class CatalogService {
         title: translation?.seoTitle ?? null,
         description: translation?.seoDescription ?? null,
       },
-      products: products.map((product) => this.toCard(product, query.currency, fx)),
-      total,
+      products: products.map((product) => this.toCard(product, query.currency, pricing)),
+      total: found.total,
       page: query.page,
       perPage: query.perPage,
+      facets: found.facets,
     };
   }
 
@@ -409,7 +448,7 @@ export class CatalogService {
   async home(query: CatalogQuery): Promise<Home> {
     const locale = this.localeFor(query);
     const status = this.statusFilter(query);
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
 
     const [categories, brands, productCount, bestSellers, newest, posts] = await Promise.all([
       this.prisma.client.category.findMany({
@@ -421,7 +460,7 @@ export class CatalogService {
           products: {
             where: { product: status },
             orderBy: [{ position: 'asc' }],
-            include: this.cardInclude(locale),
+            include: this.cardInclude(locale, this.drafts(query)),
           },
         },
       }),
@@ -437,14 +476,14 @@ export class CatalogService {
         where: { ...status, salesCount: { gte: SALES_PROOF_THRESHOLD } },
         orderBy: { salesCount: 'desc' },
         take: RAIL_SIZE * 2,
-        include: this.cardInclude(locale).product.include,
+        include: this.cardInclude(locale, this.drafts(query)).product.include,
       }),
       this.prisma.client.product.findMany({
         where: status,
         // A draft has no publishedAt, so preview falls back to creation order.
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         take: RAIL_SIZE * 2,
-        include: this.cardInclude(locale).product.include,
+        include: this.cardInclude(locale, this.drafts(query)).product.include,
       }),
       /**
        * The newest posts, published only.
@@ -488,7 +527,7 @@ export class CatalogService {
         productCount: category.products.length,
         products: category.products
           .slice(0, RAIL_SIZE)
-          .map((link) => this.toCard(link.product, query.currency, fx)),
+          .map((link) => this.toCard(link.product, query.currency, pricing)),
       }))
       .filter((rail) => rail.products.length >= RAIL_MIN_PRODUCTS);
 
@@ -499,8 +538,10 @@ export class CatalogService {
       rails,
       bestSellers: bestSellers
         .slice(0, RAIL_SIZE)
-        .map((product) => this.toCard(product, query.currency, fx)),
-      newest: newest.slice(0, RAIL_SIZE).map((product) => this.toCard(product, query.currency, fx)),
+        .map((product) => this.toCard(product, query.currency, pricing)),
+      newest: newest
+        .slice(0, RAIL_SIZE)
+        .map((product) => this.toCard(product, query.currency, pricing)),
       brands: brands
         .filter((brand) => brand._count.products > 0)
         .map((brand) => ({
@@ -556,10 +597,17 @@ export class CatalogService {
     }
 
     const translation = product.translations[0];
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
+    // Matched on every category the product is linked to, not only the
+    // primary one — a sale on a secondary shelf still prices the product.
+    const sale = saleFor(pricing.sales, {
+      id: product.id,
+      categoryIds: product.categories.map((link) => link.categoryId),
+    });
 
     const variants: CatalogVariant[] = product.variants.map((variant) => {
       const stocked = isStocked(variant);
+      const priced = salePriced(variant, sale);
 
       return {
         id: variant.id,
@@ -572,7 +620,7 @@ export class CatalogService {
         deliverySlaSeconds: variant.deliverySlaSeconds,
         fulfillmentMode: variant.fulfillmentMode,
         requiresActivationEmail: variant.requiresActivationEmail,
-        price: displayPrice(variant.priceUsd, variant.compareAtUsd, query.currency, fx),
+        price: displayPrice(priced.priceUsd, priced.compareAtUsd, query.currency, pricing.fx),
         available: stocked ? sellable(variant) : null,
         inStock: stocked ? sellable(variant) > 0 : true,
         isDefault: variant.isDefault,
@@ -614,9 +662,9 @@ export class CatalogService {
         },
         orderBy: { position: 'asc' },
         take: RELATED_SIZE,
-        include: this.cardInclude(locale),
+        include: this.cardInclude(locale, this.drafts(query)),
       });
-      for (const link of siblings) related.push(this.toCard(link.product, query.currency, fx));
+      for (const link of siblings) related.push(this.toCard(link.product, query.currency, pricing));
     }
 
     const breadcrumbs: CatalogProduct['breadcrumbs'] = [
@@ -703,6 +751,7 @@ export class CatalogService {
       isDraft: product.status !== PublishStatus.PUBLISHED,
       related,
       articles: articles.map(toArticleCard),
+      sale: sale ? saleBadge(sale, pricing.locale) : null,
     };
   }
 
@@ -778,40 +827,110 @@ export class CatalogService {
     };
   }
 
+  async offeredCurrencies(): Promise<OfferedCurrencies> {
+    const rows = await this.prisma.client.currency.findMany({
+      where: { isActive: true, OR: [{ code: 'USD' }, { rates: { some: {} } }] },
+      orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+      select: { code: true, symbol: true, decimals: true },
+    });
+    const usd = rows.find((row) => row.code === 'USD') ?? { code: 'USD', symbol: '$', decimals: 2 };
+    return { currencies: [usd, ...rows.filter((row) => row.code !== 'USD')] };
+  }
+
   private assetUrl(key: string): string {
     const base = process.env.S3_PUBLIC_BASE_URL;
     return base ? new URL(key, base).toString() : `/media/${key}`;
   }
 
-  /**
-   * The same sorts as `cardOrder`, expressed over Product rows.
-   *
-   * Price is missing from both on purpose: a product's price is the cheapest of
-   * its variants, which Postgres cannot order by without a join and an
-   * aggregate. Sorting a page of 24 in memory would order that page and not the
-   * catalog, which is worse than not offering it — so the storefront offers the
-   * three sorts that are real.
-   */
-  private productOrder(query: CatalogQuery): Prisma.ProductOrderByWithRelationInput[] {
-    switch (query.sort) {
-      case 'newest':
-        return [{ publishedAt: 'desc' }, { slug: 'asc' }];
-      case 'best-selling':
-        return [{ salesCount: 'desc' }, { slug: 'asc' }];
-      default:
-        return [{ salesCount: 'desc' }, { slug: 'asc' }];
-    }
+  /** True on a preview host, where drafts — and draft variants — are shown. */
+  private drafts(query: CatalogQuery): boolean {
+    return this.statusFilter(query).status === undefined;
   }
 
-  private cardOrder(query: CatalogQuery): Prisma.ProductCategoryOrderByWithRelationInput[] {
-    switch (query.sort) {
-      case 'newest':
-        return [{ product: { publishedAt: 'desc' } }, { position: 'asc' }];
-      case 'best-selling':
-        return [{ product: { salesCount: 'desc' } }, { position: 'asc' }];
-      default:
-        return [{ position: 'asc' }];
-    }
+  /**
+   * One listing's filtered ids, filtered total and facet counts.
+   *
+   * Loads every product in `scope` with the variant columns a filter reads and
+   * does the rest in memory — see `facets.ts` for why that is the right trade
+   * at this catalogue's size and where it stops being one. The page itself is
+   * then fetched and ordered in SQL, restricted to these ids, so pagination and
+   * price sorting run over the whole filtered set rather than over one page.
+   *
+   * Variants are the published ones (all of them on a preview host), the same
+   * set the product page offers: a filter that matched a product through a
+   * draft variant would send the shopper to a page without the thing they
+   * filtered for.
+   */
+  private async listing(
+    scope: Prisma.ProductWhereInput,
+    query: CatalogQuery,
+    pricing: Pricing,
+    options: { brands: boolean },
+  ): Promise<{ filtered: boolean; ids: string[]; total: number; facets: CatalogFacets }> {
+    const filters = catalogFiltersFrom(query);
+    const locale = this.localeFor(query);
+    const rows = await this.prisma.client.product.findMany({
+      where: scope,
+      select: {
+        id: true,
+        categories: { select: { categoryId: true } },
+        brand: {
+          select: {
+            slug: true,
+            name: true,
+            translations: { where: { locale }, select: { name: true } },
+          },
+        },
+        variants: {
+          where: { status: this.drafts(query) ? undefined : PublishStatus.PUBLISHED },
+          select: {
+            platform: true,
+            licensePeriodUnit: true,
+            deviceCount: true,
+            priceUsd: true,
+            compareAtUsd: true,
+            fulfillmentMode: true,
+            inventory: { select: { onHand: true, reserved: true } },
+          },
+        },
+      },
+    });
+
+    const products = rows.map((row) =>
+      toFacetProduct(
+        row,
+        saleFor(pricing.sales, {
+          id: row.id,
+          categoryIds: row.categories.map((link) => link.categoryId),
+        }),
+      ),
+    );
+    const matched = matchProducts(products, filters);
+
+    return {
+      filtered: hasCatalogFilters(filters),
+      ids: matched.map((product) => product.id),
+      total: matched.length,
+      facets: facetCounts(products, filters, { currency: query.currency, fx: pricing.fx }, options),
+    };
+  }
+
+  /**
+   * Which of these products pass the query's filters.
+   *
+   * For search, which ranks its own ids and then only needs them narrowed.
+   * Same rules as a listing, so a filter means the same thing in the search
+   * box as it does on the store page.
+   */
+  async matchingIds(ids: string[], query: CatalogQuery): Promise<Set<string>> {
+    if (ids.length === 0) return new Set();
+    const found = await this.listing(
+      { id: { in: ids }, ...this.statusFilter(query) },
+      query,
+      await this.pricing(query),
+      { brands: false },
+    );
+    return new Set(found.ids);
   }
 
   /**
@@ -829,12 +948,12 @@ export class CatalogService {
     const locale = this.localeFor(query);
     const products = await this.prisma.client.product.findMany({
       where: { id: { in: ids }, ...this.statusFilter(query) },
-      include: this.cardInclude(locale).product.include,
+      include: this.cardInclude(locale, this.drafts(query)).product.include,
     });
 
-    const fx = await this.fxTable();
+    const pricing = await this.pricing(query);
     return new Map(
-      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+      products.map((product) => [product.id, this.toCard(product, query.currency, pricing)]),
     );
   }
 
@@ -860,26 +979,42 @@ export class CatalogService {
     if (productIds.length === 0) return new Map();
 
     const locale = query.locale === 'en' ? Locale.EN : Locale.AR;
-    const [products, fx] = await Promise.all([
+    const [products, pricing] = await Promise.all([
       this.prisma.client.product.findMany({
         where: { id: { in: productIds }, status: PublishStatus.PUBLISHED },
         include: this.cardInclude(locale).product.include,
       }),
-      this.fxTable(),
+      this.pricing(query),
     ]);
 
     return new Map(
-      products.map((product) => [product.id, this.toCard(product, query.currency, fx)]),
+      products.map((product) => [product.id, this.toCard(product, query.currency, pricing)]),
     );
   }
 
-  private cardInclude(locale: Locale) {
+  /**
+   * What a card is drawn from.
+   *
+   * Published variants only, unless this is a preview host. The card used to
+   * read every variant, so a draft variant priced lower than the rest set the
+   * card's "from" price — a price the product page, which has always filtered
+   * to published, would not sell — and now that listings sort by the cheapest
+   * *published* variant, reading drafts here would draw a price-sorted grid
+   * out of order.
+   */
+  private cardInclude(locale: Locale, drafts = false) {
     return {
       product: {
         include: {
           translations: { where: { locale } },
           brand: { include: { translations: { where: { locale } } } },
-          variants: { orderBy: { position: 'asc' as const }, include: { inventory: true } },
+          variants: {
+            where: { status: drafts ? undefined : PublishStatus.PUBLISHED },
+            orderBy: { position: 'asc' as const },
+            include: { inventory: true },
+          },
+          // For matching seasonal sales scoped by category.
+          categories: { select: { categoryId: true } },
           media: {
             where: { isHero: true },
             take: 1,
@@ -893,9 +1028,13 @@ export class CatalogService {
   private toCard(
     product: Prisma.ProductGetPayload<ReturnType<CatalogService['cardInclude']>['product']>,
     currency: string,
-    fx: FxTable,
+    pricing: Pricing,
   ): CatalogCard {
     const translation = product.translations[0];
+    const sale = saleFor(pricing.sales, {
+      id: product.id,
+      categoryIds: product.categories.map((link) => link.categoryId),
+    });
 
     // Buyable means buyable, which for most of this catalog has nothing to do
     // with a shelf: a made-to-order variant is always buyable, and a stocked
@@ -912,8 +1051,11 @@ export class CatalogService {
     // bought, so a sold-out product still shows what it costs.
     const buyable = priced.filter((entry) => entry.buyable);
     const pool = buyable.length > 0 ? buyable : priced;
+    // A sale takes the same percent off every variant of the product, so the
+    // cheapest before it is the cheapest after it.
     const cheapest =
       [...pool].sort((a, b) => a.variant.priceUsd.comparedTo(b.variant.priceUsd))[0] ?? priced[0];
+    const entry = cheapest ? salePriced(cheapest.variant, sale) : null;
 
     // The promise the card makes is the fastest one the product can keep.
     const modes = product.variants.map((variant) => variant.fulfillmentMode);
@@ -946,8 +1088,8 @@ export class CatalogService {
             height: hero.asset.height,
           }
         : null,
-      price: cheapest
-        ? displayPrice(cheapest.variant.priceUsd, cheapest.variant.compareAtUsd, currency, fx)
+      price: entry
+        ? displayPrice(entry.priceUsd, entry.compareAtUsd, currency, pricing.fx)
         : { amount: '0.00', currency: 'USD', compareAt: null, discountPercent: null },
       inStock: buyable.length > 0,
       available,
@@ -962,6 +1104,7 @@ export class CatalogService {
       salesCount: product.salesCount >= SALES_PROOF_THRESHOLD ? product.salesCount : 0,
       brand: product.brand?.translations[0]?.name ?? product.brand?.name ?? null,
       isDraft: product.status !== PublishStatus.PUBLISHED,
+      sale: sale ? saleBadge(sale, pricing.locale) : null,
     };
   }
 }

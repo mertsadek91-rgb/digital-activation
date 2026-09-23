@@ -13,11 +13,16 @@ import {
   setInventorySchema,
   setProductCopySchema,
   setStatusSchema,
+  adminProductListSchema,
+  adminProductRowSchema,
+  readinessSchema,
+  productCopySchema,
 } from '@da/contracts';
 import { Locale } from '@da/db';
 import { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { AdminService } from './admin.service.js';
@@ -35,6 +40,7 @@ export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
   @Get('products')
+  @ZodResponse(adminProductListSchema)
   @ApiOperation({ summary: 'Product list with publish readiness and stock' })
   products(
     @Query(new ZodPipe(adminProductQuerySchema)) query: AdminProductQuery,
@@ -43,12 +49,14 @@ export class AdminController {
   }
 
   @Get('products/:slug')
+  @ZodResponse(adminProductRowSchema)
   @ApiOperation({ summary: 'One product, in the shape the list uses' })
   product(@Param('slug') slug: string, @Query('locale') locale = 'ar'): Promise<AdminProductRow> {
     return this.admin.row(slug, locale);
   }
 
   @Get('products/:slug/readiness')
+  @ZodResponse(readinessSchema)
   @ApiOperation({ summary: 'Why a product can or cannot be published' })
   readiness(@Param('slug') slug: string, @Query('locale') locale = 'ar'): Promise<Readiness> {
     return this.admin.readiness(slug, locale);
@@ -116,6 +124,7 @@ export class AdminController {
    */
   @Roles('OWNER', 'ADMIN', 'CATALOG')
   @Get('products/:slug/copy')
+  @ZodResponse(productCopySchema)
   @ApiOperation({ summary: 'SEO title, meta description and body for one locale' })
   productCopy(@Param('slug') slug: string, @Query('locale') locale = 'ar'): Promise<ProductCopy> {
     return this.admin.productCopy(slug, locale);
@@ -123,6 +132,7 @@ export class AdminController {
 
   @Roles('OWNER', 'ADMIN', 'CATALOG')
   @Patch('products/:slug/copy')
+  @ZodResponse(productCopySchema)
   @ApiOperation({ summary: 'Write the copy the gate refuses on, and re-assess' })
   setProductCopy(
     @Param('slug') slug: string,

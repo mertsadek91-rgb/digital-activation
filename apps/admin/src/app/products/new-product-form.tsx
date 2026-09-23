@@ -87,7 +87,11 @@ export function NewProductForm({
   }, []);
 
   const effectiveSlug = slugTouched ? slug : suggestSlug(nameEn);
-  const ready = nameAr.trim().length >= 2 && effectiveSlug.length >= 2 && sku.trim().length >= 3 && priceUsd.trim() !== '';
+  const ready =
+    nameAr.trim().length >= 2 &&
+    effectiveSlug.length >= 2 &&
+    sku.trim().length >= 3 &&
+    priceUsd.trim() !== '';
 
   async function create(): Promise<void> {
     setSaving(true);
@@ -177,7 +181,11 @@ export function NewProductForm({
 
         <label>
           <span>{t('brand')}</span>
-          <select id="new-brand" value={brandId} onChange={(event) => setBrandId(event.target.value)}>
+          <select
+            id="new-brand"
+            value={brandId}
+            onChange={(event) => setBrandId(event.target.value)}
+          >
             <option value="">{t('noBrand')}</option>
             {(lists?.brands ?? []).map((brand) => (
               <option key={brand.id} value={brand.id}>

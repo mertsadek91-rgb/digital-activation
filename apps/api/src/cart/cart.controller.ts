@@ -9,17 +9,42 @@ import {
   applyCouponSchema,
   cartQuerySchema,
   updateCartLineSchema,
+  cartSchema,
 } from '@da/contracts';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { z } from 'zod';
 
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
+import { ReferralService } from '../growth/referral.service.js';
+import { REFERRAL_COOKIE } from '../growth/rules.js';
 
 import { CartService } from './cart.service.js';
 
-const CART_COOKIE = 'da_cart';
+export const CART_COOKIE = 'da_cart';
 /** The cart outlives the browser session; the reservation inside it does not. */
 const CART_COOKIE_MAX_AGE = 30 * 24 * 3600;
+
+/**
+ * The cart token lives in an httpOnly cookie.
+ *
+ * It is a bearer token for somebody's cart: whoever holds it can read the
+ * lines, the email once checkout captures one, and change the contents. Out
+ * of JavaScript's reach costs nothing here — no client code needs to read it
+ * — and SameSite=strict keeps another site from driving the cart.
+ *
+ * Exported for the recovery link, which re-attaches a cart to a new browser
+ * and must set the cookie exactly the way every cart route does.
+ */
+export function setCartCookie(reply: FastifyReply, token: string): void {
+  void reply.setCookie(CART_COOKIE, token, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: CART_COOKIE_MAX_AGE,
+  });
+}
 
 /**
  * `@fastify/cookie` declares `cookies` on FastifyRequest already, so redeclaring
@@ -31,24 +56,13 @@ type CartRequest = FastifyRequest;
 @ApiTags('cart')
 @Controller('cart')
 export class CartController {
-  constructor(private readonly cart: CartService) {}
+  constructor(
+    private readonly cart: CartService,
+    private readonly referrals: ReferralService,
+  ) {}
 
-  /**
-   * The cart token lives in an httpOnly cookie.
-   *
-   * It is a bearer token for somebody's cart: whoever holds it can read the
-   * lines, the email once checkout captures one, and change the contents. Out
-   * of JavaScript's reach costs nothing here — no client code needs to read it
-   * — and SameSite=strict keeps another site from driving the cart.
-   */
   private setToken(reply: FastifyReply, token: string): void {
-    void reply.setCookie(CART_COOKIE, token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: CART_COOKIE_MAX_AGE,
-    });
+    setCartCookie(reply, token);
   }
 
   private token(request: CartRequest): string | undefined {
@@ -56,6 +70,7 @@ export class CartController {
   }
 
   @Get()
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'The current cart, creating an empty one if needed' })
   async get(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
@@ -70,6 +85,7 @@ export class CartController {
   // A shopper clicks add a handful of times; a script clicks it thousands.
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post('items')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Add a variant, taking a timed stock reservation' })
   async add(
     @Body(new ZodPipe(addToCartSchema)) body: AddToCart,
@@ -79,10 +95,18 @@ export class CartController {
   ): Promise<Cart> {
     const cart = await this.cart.add(this.token(request), body, query);
     this.setToken(reply, cart.token);
-    return cart;
+    // A referred visitor's first item is when the friend code can attach:
+    // there is now a cart to hold it, and nothing else discounting it.
+    const referred = await this.referrals.attachToCart(
+      cart.token,
+      request.cookies?.[REFERRAL_COOKIE],
+      request.ip,
+    );
+    return referred ? this.cart.render(cart.token, query, cart.adjustments) : cart;
   }
 
   @Patch('items/:variantId')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Set a line quantity; zero removes the line' })
   async setQty(
     @Param('variantId') variantId: string,
@@ -98,6 +122,7 @@ export class CartController {
   }
 
   @Delete()
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Empty the cart and release its reservations' })
   async clear(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,
@@ -114,6 +139,7 @@ export class CartController {
   // whatever discount codes exist.
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Post('coupon')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Apply a coupon, or return why it was refused' })
   async applyCoupon(
     @Body(new ZodPipe(applyCouponSchema)) body: z.infer<typeof applyCouponSchema>,
@@ -127,6 +153,7 @@ export class CartController {
   }
 
   @Delete('coupon')
+  @ZodResponse(cartSchema)
   @ApiOperation({ summary: 'Detach the coupon' })
   async removeCoupon(
     @Query(new ZodPipe(cartQuerySchema)) query: CartQuery,

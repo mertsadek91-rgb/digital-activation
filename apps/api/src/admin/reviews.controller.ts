@@ -6,10 +6,12 @@ import {
   adminReviewQuerySchema,
   moderateReviewSchema,
   replyToReviewSchema,
+  adminReviewListSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { ReviewsService } from '../reviews/reviews.service.js';
 
@@ -33,6 +35,7 @@ export class ReviewsAdminController {
   constructor(private readonly reviews: ReviewsService) {}
 
   @Get()
+  @ZodResponse(adminReviewListSchema)
   @ApiOperation({ summary: 'Reviews by status, oldest first while pending' })
   list(
     @Query(new ZodPipe(adminReviewQuerySchema)) query: AdminReviewQuery,

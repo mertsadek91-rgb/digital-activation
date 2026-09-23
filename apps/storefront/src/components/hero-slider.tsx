@@ -2,7 +2,10 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
+
+import { isArabic } from '../i18n/locale';
 
 export interface SlideItem {
   id: string;
@@ -14,9 +17,6 @@ export interface SlideItem {
   titleEn: string;
   descAr: string;
   descEn: string;
-  price: string;
-  oldPrice: string;
-  savePercent: string;
   href: string;
   featuresAr: string[];
   featuresEn: string[];
@@ -37,14 +37,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Office & Productivity',
     titleAr: 'مايكروسوفت أوفيس 2024 برو بلس',
     titleEn: 'Microsoft Office 2024 Pro Plus',
-    descAr: 'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
-    descEn: 'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
-    price: '$19.99',
-    oldPrice: '$49.99',
-    savePercent: '60%',
+    descAr:
+      'ترخيص أصلي مدى الحياة لجهاز واحد، يضم Word, Excel, PowerPoint والتطبيقات الاحترافية بالكامل.',
+    descEn:
+      'Genuine lifetime license for 1 PC. Includes Word, Excel, PowerPoint and full desktop suite.',
     href: '/store',
-    featuresAr: ['تفعيل رسمي عبر موقع مايكروسوفت', 'ترخيص أصلي دائم مدى الحياة', 'تسليم فوري بعد الدفع مباشرة'],
-    featuresEn: ['Official setup via Microsoft', 'Permanent lifetime license', 'Instant delivery after payment'],
+    featuresAr: [
+      'تفعيل رسمي عبر موقع مايكروسوفت',
+      'ترخيص أصلي دائم مدى الحياة',
+      'تسليم فوري بعد الدفع مباشرة',
+    ],
+    featuresEn: [
+      'Official setup via Microsoft',
+      'Permanent lifetime license',
+      'Instant delivery after payment',
+    ],
     theme: {
       accent: '#EA580C',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(234, 88, 12, 0.16) 0%, transparent 60%)',
@@ -60,14 +67,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Operating Systems',
     titleAr: 'ويندوز 11 بروفيشنال (Windows 11 Pro)',
     titleEn: 'Windows 11 Professional',
-    descAr: 'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
-    descEn: 'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
-    price: '$14.99',
-    oldPrice: '$39.99',
-    savePercent: '62%',
+    descAr:
+      'مفتاح رقمي أصلي لتنشيط نظام ويندوز 11 برو مع دعم كامل لمزايا التشفير والأمان المتقدمة.',
+    descEn:
+      'Original digital key for Windows 11 Pro with BitLocker, Hyper-V and remote desktop security.',
     href: '/store',
-    featuresAr: ['يدعم الترقية من هوم إلى برو', 'تشفير كامل للقرص مع BitLocker', 'مربوط بلوحة الأم مدى الحياة'],
-    featuresEn: ['Upgrade from Home to Pro directly', 'Full disk encryption with BitLocker', 'Binds to motherboard for lifetime'],
+    featuresAr: [
+      'يدعم الترقية من هوم إلى برو',
+      'تشفير كامل للقرص مع BitLocker',
+      'مربوط بلوحة الأم مدى الحياة',
+    ],
+    featuresEn: [
+      'Upgrade from Home to Pro directly',
+      'Full disk encryption with BitLocker',
+      'Binds to motherboard for lifetime',
+    ],
     theme: {
       accent: '#0284C7',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(2, 132, 199, 0.16) 0%, transparent 60%)',
@@ -83,14 +97,21 @@ const SLIDES: SlideItem[] = [
     catEn: 'Creative Cloud',
     titleAr: 'باقة أدوبي كرييتف كلاود الشاملة',
     titleEn: 'Adobe Creative Cloud All Apps',
-    descAr: 'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
-    descEn: '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
-    price: '$89.99',
-    oldPrice: '$199.99',
-    savePercent: '55%',
+    descAr:
+      'اشتراك سنوي كامل يتيح لك استخدام فوتوشوب، إليستريتور، بريمير، و20+ برنامج تصميم باشتراك رسمي.',
+    descEn:
+      '1-Year subscription giving access to Photoshop, Illustrator, Premiere Pro and 20+ apps.',
     href: '/store',
-    featuresAr: ['تفعيل على حسابك الشخصي في أدوبي', 'سعة تخزين سحابية 100 جيجابايت', 'يدعم الذكاء الاصطناعي Generative Fill'],
-    featuresEn: ['Activates on your personal Adobe ID', '100GB Cloud Storage included', 'Includes Firefly Generative AI'],
+    featuresAr: [
+      'تفعيل على حسابك الشخصي في أدوبي',
+      'سعة تخزين سحابية 100 جيجابايت',
+      'يدعم الذكاء الاصطناعي Generative Fill',
+    ],
+    featuresEn: [
+      'Activates on your personal Adobe ID',
+      '100GB Cloud Storage included',
+      'Includes Firefly Generative AI',
+    ],
     theme: {
       accent: '#E11D48',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(225, 29, 72, 0.16) 0%, transparent 60%)',
@@ -107,13 +128,19 @@ const SLIDES: SlideItem[] = [
     titleAr: 'كاسبرسكي توتال سيكيورتي (Kaspersky)',
     titleEn: 'Kaspersky Total Security',
     descAr: 'حماية فائقة وشاملة ضد الفيروسات، برامج الفدية، والتصيد المصرفي لراحة بال كاملة.',
-    descEn: 'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
-    price: '$12.99',
-    oldPrice: '$29.99',
-    savePercent: '56%',
+    descEn:
+      'Maximum multi-device defense against viruses, ransomware, phishing, and financial fraud.',
     href: '/store',
-    featuresAr: ['حماية متقدمة للدفع والمعاملات البنكية', 'جدار حماية ذكي ضد برامج التجسس', 'ضمان ذهبي لاستبدال المفتاح'],
-    featuresEn: ['Safe Money banking protection', 'Smart firewall & ransomware shield', 'Golden warranty replacement'],
+    featuresAr: [
+      'حماية متقدمة للدفع والمعاملات البنكية',
+      'جدار حماية ذكي ضد برامج التجسس',
+      'ضمان ذهبي لاستبدال المفتاح',
+    ],
+    featuresEn: [
+      'Safe Money banking protection',
+      'Smart firewall & ransomware shield',
+      'Golden warranty replacement',
+    ],
     theme: {
       accent: '#059669',
       bgGlow: 'radial-gradient(circle at 80% 20%, rgba(5, 150, 105, 0.16) 0%, transparent 60%)',
@@ -123,12 +150,34 @@ const SLIDES: SlideItem[] = [
   },
 ];
 
+/**
+ * The featured-product rotator.
+ *
+ * It carried a price, a struck-through "was" price and a "save 60%" badge on
+ * every slide, typed into this file — figures no catalog row stood behind and
+ * which the product page they linked to did not show. The headlines and the
+ * links stay; the numbers are the product pages' to state.
+ *
+ * Rotation stops while the pointer is over it, while anything inside it has
+ * keyboard focus, and whenever the visitor presses pause — moving content
+ * that cannot be stopped fails WCAG 2.2.2, and a slide that changes under a
+ * focused link moves the link. It starts paused for anybody who has asked the
+ * system for reduced motion.
+ */
 export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isPaused, setIsPaused] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [stopped, setStopped] = useState(false);
+  const isPaused = hovered || focused || stopped;
 
-  const isAr = locale === 'ar';
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setStopped(true);
+  }, []);
+
+  const t = useTranslations('hero');
+  const isAr = isArabic(locale);
   const slide = SLIDES[current] ?? SLIDES[0]!;
 
   const nextSlide = () => {
@@ -153,7 +202,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
 
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? (isAr ? -40 : 40) : (isAr ? 40 : -40),
+      x: dir > 0 ? (isAr ? -40 : 40) : isAr ? 40 : -40,
       opacity: 0,
       scale: 0.98,
     }),
@@ -167,7 +216,7 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
       },
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? (isAr ? 40 : -40) : (isAr ? -40 : 40),
+      x: dir > 0 ? (isAr ? 40 : -40) : isAr ? -40 : 40,
       opacity: 0,
       scale: 0.98,
       transition: { duration: 0.2 },
@@ -177,9 +226,15 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
   return (
     <div
       className="hero-slider-wrap"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      aria-label={isAr ? 'عروض المنتجات المميزة' : 'Featured Product Offers'}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      // React's focus events bubble, so these are focus-within: they fire for
+      // any control inside. Leaving to another control inside is not leaving.
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      }}
+      aria-label={t('region')}
       role="region"
     >
       <div className="hero-slider-card" style={{ background: slide.theme.bgGlow }}>
@@ -205,24 +260,20 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
               >
                 {isAr ? slide.tagAr : slide.tagEn}
               </span>
-              <span className="hero-slide-cat">
-                {isAr ? slide.catAr : slide.catEn}
-              </span>
+              <span className="hero-slide-cat">{isAr ? slide.catAr : slide.catEn}</span>
             </div>
 
             {/* Title & Description */}
-            <h3 className="hero-slide-title">
-              {isAr ? slide.titleAr : slide.titleEn}
-            </h3>
-            <p className="hero-slide-desc">
-              {isAr ? slide.descAr : slide.descEn}
-            </p>
+            <h2 className="hero-slide-title">{isAr ? slide.titleAr : slide.titleEn}</h2>
+            <p className="hero-slide-desc">{isAr ? slide.descAr : slide.descEn}</p>
 
             {/* Checklist Features */}
             <ul className="hero-slide-features">
               {(isAr ? slide.featuresAr : slide.featuresEn).map((feature, idx) => (
                 <li key={idx}>
-                  <span className="feature-bullet" style={{ color: slide.theme.accent }}>✓</span>
+                  <span className="feature-bullet" style={{ color: slide.theme.accent }}>
+                    ✓
+                  </span>
                   <span>{feature}</span>
                 </li>
               ))}
@@ -230,16 +281,6 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
 
             {/* Price & Action Row */}
             <div className="hero-slide-footer">
-              <div className="hero-slide-price-box">
-                <div className="hero-slide-prices">
-                  <span className="hero-slide-price">{slide.price}</span>
-                  <span className="hero-slide-old-price">{slide.oldPrice}</span>
-                </div>
-                <span className="hero-slide-save">
-                  {isAr ? `وفر ${slide.savePercent}` : `Save ${slide.savePercent}`}
-                </span>
-              </div>
-
               <Link
                 href={isAr ? slide.href : `/${locale}${slide.href}`}
                 className="hero-slide-cta"
@@ -247,46 +288,62 @@ export function HeroSlider({ locale = 'ar' }: { locale?: string }) {
                   background: `linear-gradient(135deg, ${slide.theme.accent}, color-mix(in srgb, ${slide.theme.accent} 80%, black))`,
                 }}
               >
-                <span>{isAr ? 'اطلب المفتاح الآن' : 'Get Key Now'}</span>
-                <span className="cta-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                <span>{t('cta')}</span>
+                <span className="cta-arrow" aria-hidden="true">
+                  {isAr ? '←' : '→'}
+                </span>
               </Link>
             </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Navigation Arrows */}
+        {/* Navigation. The first button is "previous" in both languages and
+            the row flips with the page, so in Arabic it sits on the right with
+            a right-pointing arrow — backwards, in a right-to-left reading. It
+            used to call "next" in Arabic while announcing "previous". */}
         <div className="hero-slider-nav">
           <button
             type="button"
             className="hero-slider-arrow"
-            onClick={isAr ? nextSlide : prevSlide}
-            aria-label={isAr ? 'العرض السابق' : 'Previous slide'}
+            onClick={prevSlide}
+            aria-label={t('previous')}
           >
             {isAr ? '→' : '←'}
           </button>
-          
-          {/* Pagination Indicators */}
-          <div className="hero-slider-dots">
-            {SLIDES.map((s, idx) => (
-              <button
-                key={s.id}
-                type="button"
-                className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
-                onClick={() => {
-                  setDirection(idx > current ? 1 : -1);
-                  setCurrent(idx);
-                }}
-                aria-label={isAr ? `الانتقال للعرض ${idx + 1}` : `Go to slide ${idx + 1}`}
-                style={idx === current ? { background: slide.theme.accent } : undefined}
-              />
-            ))}
+
+          <div className="hero-slider-center">
+            <button
+              type="button"
+              className="hero-slider-arrow hero-slider-pause"
+              onClick={() => setStopped(!stopped)}
+              aria-label={stopped ? t('play') : t('pause')}
+            >
+              <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
+            </button>
+
+            {/* Pagination Indicators */}
+            <div className="hero-slider-dots">
+              {SLIDES.map((s, idx) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setDirection(idx > current ? 1 : -1);
+                    setCurrent(idx);
+                  }}
+                  aria-label={t('goTo', { n: String(idx + 1) })}
+                  style={idx === current ? { background: slide.theme.accent } : undefined}
+                />
+              ))}
+            </div>
           </div>
 
           <button
             type="button"
             className="hero-slider-arrow"
-            onClick={isAr ? prevSlide : nextSlide}
-            aria-label={isAr ? 'العرض التالي' : 'Next slide'}
+            onClick={nextSlide}
+            aria-label={t('next')}
           >
             {isAr ? '←' : '→'}
           </button>

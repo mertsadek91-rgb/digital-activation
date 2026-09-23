@@ -3,8 +3,10 @@
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
+import { isArabic } from '../i18n/locale';
 import { cartApi, CartError } from '../lib/cart-client';
 import {
   formatActivation,
@@ -12,6 +14,7 @@ import {
   formatDevices,
   formatFulfillment,
   formatLicensePeriod,
+  formatPlatform,
   formatPrice,
   variantLabel,
 } from '../lib/format';
@@ -38,7 +41,10 @@ import { MinusIcon, PlusIcon, SpecMark, type SpecKind } from './icons';
  * makes up on every load.
  */
 export function BuyBox({ product, locale }: { product: CatalogProduct; locale: string }) {
-  const ar = locale === 'ar';
+  const ar = isArabic(locale);
+  const t = useTranslations('buyBox');
+  const tc = useTranslations('common');
+  const tf = useTranslations('format');
 
   const [selectedId, setSelectedId] = useState(product.selectedVariantId);
   const [qty, setQty] = useState(1);
@@ -116,7 +122,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
       await cartApi.add(selected.id, qty, { locale, currency: selected.price.currency });
       setAdded(true);
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر الإضافة إلى السلة.');
+      setError(caught instanceof CartError ? caught.message : t('addFailed'));
     } finally {
       setBusy(false);
     }
@@ -135,55 +141,53 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
   const specs: { kind: SpecKind; label: string; value: string }[] = [
     {
       kind: 'term',
-      label: ar ? 'مدّة الترخيص' : 'Licence term',
-      value: formatLicensePeriod(selected, locale),
+      label: t('specTerm'),
+      value: formatLicensePeriod(selected, tf),
     },
     {
       kind: 'devices',
-      label: ar ? 'عدد الأجهزة' : 'Devices',
-      value: formatDevices(selected.deviceCount, locale),
+      label: t('specDevices'),
+      value: formatDevices(selected.deviceCount, tf),
     },
     {
       kind: 'activation',
-      label: ar ? 'نوع التفعيل' : 'Activation',
-      value: formatActivation(selected.activationMethod, locale),
+      label: t('specActivation'),
+      value: formatActivation(selected.activationMethod, tf),
     },
     {
       kind: 'delivery',
-      label: ar ? 'التسليم' : 'Delivery',
-      value: formatDelivery(selected.deliverySlaSeconds, locale, selected.fulfillmentMode),
+      label: t('specDelivery'),
+      value: formatDelivery(selected.deliverySlaSeconds, tf, selected.fulfillmentMode),
     },
     {
       kind: 'supply',
-      label: ar ? 'طريقة التوريد' : 'How it is supplied',
-      value: formatFulfillment(selected.fulfillmentMode, locale, selected.inStock),
+      label: t('specSupply'),
+      value: formatFulfillment(selected.fulfillmentMode, tf, selected.inStock),
     },
     {
       kind: 'platform',
-      label: ar ? 'المنصّة' : 'Platform',
-      value: selected.platform.replace('_', ' ').toLowerCase(),
+      label: t('specPlatform'),
+      value: formatPlatform(selected.platform, tf),
     },
   ];
 
   if (selected.requiresActivationEmail) {
     specs.push({
       kind: 'email',
-      label: ar ? 'مطلوب منك' : 'We will need',
-      value: ar
-        ? 'بريدك الذي يُفعَّل عليه الترخيص — نطلبه عند الدفع'
-        : 'The email to activate on — asked at checkout',
+      label: t('specEmail'),
+      value: t('specEmailValue'),
     });
   }
   if (product.hasGoldenWarranty) {
     specs.push({
       kind: 'warranty',
-      label: ar ? 'الضمان' : 'Warranty',
-      value: ar ? 'الضمان الذهبي' : 'Golden Warranty',
+      label: t('specWarranty'),
+      value: tc('goldenWarranty'),
     });
   }
 
   const stepper = (
-    <div className="stepper" role="group" aria-label={ar ? 'الكمية' : 'Quantity'}>
+    <div className="stepper" role="group" aria-label={t('quantity')}>
       <button
         type="button"
         onClick={() => {
@@ -191,7 +195,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
           setAdded(false);
         }}
         disabled={qty <= 1}
-        aria-label={ar ? 'إنقاص الكمية' : 'Decrease quantity'}
+        aria-label={t('decrease')}
       >
         <MinusIcon />
       </button>
@@ -206,7 +210,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
           setAdded(false);
         }}
         disabled={qty >= Math.max(1, maxQty)}
-        aria-label={ar ? 'زيادة الكمية' : 'Increase quantity'}
+        aria-label={t('increase')}
       >
         <PlusIcon />
       </button>
@@ -228,9 +232,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
               </s>
               {selected.price.discountPercent ? (
                 <span className="badge badge-accent">
-                  {ar
-                    ? `خصم ${String(selected.price.discountPercent)}%`
-                    : `${String(selected.price.discountPercent)}% off`}
+                  {t('discountOff', { percent: String(selected.price.discountPercent) })}
                 </span>
               ) : null}
             </>
@@ -245,14 +247,14 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
             href={ar ? ROUTES.goldenWarranty : `/${locale}${ROUTES.goldenWarranty}`}
           >
             <SpecMark kind="warranty" />
-            <span>{ar ? 'برنامج الضمان الذهبي' : 'Golden Warranty'}</span>
+            <span>{t('warrantyProgram')}</span>
           </a>
         ) : null}
       </div>
 
       {product.variants.length > 1 ? (
         <fieldset className="variants">
-          <legend>{ar ? 'اختر الترخيص' : 'Choose your licence'}</legend>
+          <legend>{t('chooseLicence')}</legend>
           <div className="variant-list">
             {product.variants.map((variant) => (
               <label
@@ -273,11 +275,9 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                     setAdded(false);
                   }}
                 />
-                <span className="variant-label">{variantLabel(variant, locale)}</span>
+                <span className="variant-label">{variantLabel(variant, tf)}</span>
                 <span className="variant-price">{formatPrice(variant.price)}</span>
-                {!variant.inStock ? (
-                  <span className="variant-out">{ar ? 'نافد' : 'Sold out'}</span>
-                ) : null}
+                {!variant.inStock ? <span className="variant-out">{t('soldOut')}</span> : null}
               </label>
             ))}
           </div>
@@ -298,9 +298,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
 
       {lowStock ? (
         <p className="stock stock-low">
-          {ar
-            ? `بقي ${String(selected.available ?? 0)} فقط`
-            : `Only ${String(selected.available ?? 0)} left`}
+          {t('onlyLeft', { count: String(selected.available ?? 0) })}
         </p>
       ) : null}
 
@@ -317,36 +315,44 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
               onClick={() => void add()}
               disabled={busy}
             >
-              {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
+              {busy ? '…' : tc('addToCart')}
             </button>
             <p className="buy-total">
-              <span>{ar ? 'الإجمالي' : 'Total'}</span>
+              <span>{tc('total')}</span>
               <strong>{total}</strong>
             </p>
           </div>
         ) : (
-          <p className="stock stock-out">{ar ? 'غير متوفر حالياً' : 'Not available right now'}</p>
+          <p className="stock stock-out">{t('unavailable')}</p>
         )}
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <AnimatePresence>
-        {added && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -6 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-            className="added"
-          >
-            <span>{ar ? '✓ أُضيف إلى السلة بنجاح.' : '✓ Added to your cart.'}</span>{' '}
-            <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
-              {ar ? 'إتمام الشراء ←' : 'Go to checkout →'}
-            </a>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* A live region that is always in the document, so the confirmation
+          is announced when it appears — a region inserted together with its
+          text is often not read at all. The link says where it goes: it
+          opens the cart, and it was labelled "Go to checkout". */}
+      <div role="status">
+        <AnimatePresence>
+          {added && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -6 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+              className="added"
+            >
+              <span>{t('added')}</span>{' '}
+              <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>{t('viewCart')}</a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* The same controls, following the page down with Framer Motion slide-up */}
       <AnimatePresence>
@@ -368,7 +374,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                 onClick={() => void add()}
                 disabled={busy}
               >
-                {busy ? '…' : ar ? 'إضافة إلى السلة' : 'Add to cart'}
+                {busy ? '…' : tc('addToCart')}
               </button>
             </div>
           </motion.div>

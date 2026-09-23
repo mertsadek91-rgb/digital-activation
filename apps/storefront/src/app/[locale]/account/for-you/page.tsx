@@ -1,12 +1,14 @@
 'use client';
 
-import type { CustomerMe, ForYou, ForYouItem, Renewal } from '@da/contracts';
+import type { CustomerMe, ForYou, Renewal } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { AccountNav } from '../../../../components/account-nav';
 import { ProductCard } from '../../../../components/product-card';
+import { isArabic, resolveLocale } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
 /**
@@ -30,9 +32,10 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
 export default function ForYouPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
-  const locale = params.locale ?? 'ar';
-  const ar = locale === 'ar';
-  const prefix = ar ? '' : `/${locale}`;
+  const locale = resolveLocale(params.locale);
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
+  const t = useTranslations('account');
+  const tf = useTranslations('forYou');
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [data, setData] = useState<ForYou | null>(null);
@@ -40,7 +43,7 @@ export default function ForYouPage() {
 
   const load = useCallback(async () => {
     try {
-      setData(await accountApi.forYou(ar ? 'ar' : 'en'));
+      setData(await accountApi.forYou(locale));
     } catch (caught) {
       if (caught instanceof AccountError && caught.status === 401) {
         router.replace(`${prefix}${ROUTES.account}`);
@@ -48,7 +51,7 @@ export default function ForYouPage() {
       }
       setError(caught instanceof Error ? caught.message : null);
     }
-  }, [ar, prefix, router]);
+  }, [locale, prefix, router]);
 
   useEffect(() => {
     void (async () => {
@@ -67,33 +70,27 @@ export default function ForYouPage() {
   return (
     <main className="shell account-page">
       <header className="page-head">
-        <h1>{ar ? 'مختارة لك' : 'Chosen for you'}</h1>
-        <p className="lede">
-          {ar
-            ? 'مبنية على ما اشتريته فعلاً — لا على ما نريد بيعه.'
-            : 'Built from what you have actually bought — not from what we would like to sell.'}
-        </p>
+        <h1>{t('forYou')}</h1>
+        <p className="lede">{tf('lede')}</p>
       </header>
 
-      <AccountNav ar={ar} prefix={prefix} />
+      <AccountNav prefix={prefix} />
 
       {error ? <p className="error">{error}</p> : null}
       {!data ? <p className="meta">…</p> : null}
 
-      {data && data.purchases === 0 ? (
-        <p className="notice">
-          {ar
-            ? 'لا مشتريات مُسلَّمة بعد، فلا شيء نبني عليه اقتراحاً. حين يصلك أول ترخيص ستجد هنا موعد تجديده وما يناسبه.'
-            : 'Nothing delivered yet, so there is nothing to build a suggestion on. Once your first licence arrives, its renewal date and what goes with it appear here.'}
-        </p>
-      ) : null}
+      {data && data.purchases === 0 ? <p className="notice">{tf('nothing')}</p> : null}
 
       {data && data.renewals.length > 0 ? (
         <section className="for-you-section">
-          <h2>{ar ? 'تراخيص تقترب من نهايتها' : 'Licences coming to an end'}</h2>
+          <h2>{tf('endingTitle')}</h2>
           <ul className="renewal-list">
             {data.renewals.map((renewal) => (
-              <RenewalRow key={renewal.orderNumber + renewal.product.slug} renewal={renewal} ar={ar} />
+              <RenewalRow
+                key={renewal.orderNumber + renewal.product.slug}
+                renewal={renewal}
+                locale={locale}
+              />
             ))}
           </ul>
         </section>
@@ -101,12 +98,15 @@ export default function ForYouPage() {
 
       {data && data.suggestions.length > 0 ? (
         <section className="for-you-section">
-          <h2>{ar ? 'قد يناسبك أيضاً' : 'You might also want'}</h2>
+          <h2>{tf('alsoTitle')}</h2>
           <div className="product-grid">
             {data.suggestions.map((item) => (
               <div key={item.product.slug} className="for-you-tile">
                 <ProductCard card={item.product} locale={locale} />
-                <p className="for-you-reason">{reasonText(item, ar)}</p>
+                <p className="for-you-reason">
+                  {/* The reason, written as a sentence rather than shown as a tag. */}
+                  {tf(`reason.${item.reason}`, { name: item.becauseOf })}
+                </p>
               </div>
             ))}
           </div>
@@ -114,11 +114,7 @@ export default function ForYouPage() {
       ) : null}
 
       {data && data.purchases > 0 && data.renewals.length === 0 && data.suggestions.length === 0 ? (
-        <p className="notice">
-          {ar
-            ? 'تراخيصك كلها مدى الحياة ولا شيء منها يحتاج تجديداً — وقد اشتريت بالفعل ما عندنا من علاماتها.'
-            : 'Your licences are all lifetime and none needs renewing — and you already own what we carry from their brands.'}
-        </p>
+        <p className="notice">{tf('allLifetime')}</p>
       ) : null}
     </main>
   );
@@ -131,37 +127,27 @@ export default function ForYouPage() {
  * whether to renew now or next month needs the figure, and a word that means
  * three days to one reader and three weeks to another means nothing.
  */
-function RenewalRow({ renewal, ar }: { renewal: Renewal; ar: boolean }) {
+function RenewalRow({ renewal, locale }: { renewal: Renewal; locale: string }) {
+  const tf = useTranslations('forYou');
   const lapsed = renewal.daysLeft < 0;
   const days = Math.abs(renewal.daysLeft);
 
   return (
     <li className={`renewal-row${lapsed ? ' is-lapsed' : ''}`}>
       <div className="renewal-when">
-        <strong>{lapsed ? (ar ? 'انتهى' : 'Ended') : (ar ? 'يتبقّى' : 'Left')}</strong>
+        <strong>{lapsed ? tf('ended') : tf('left')}</strong>
         <span className="renewal-days">{days}</span>
-        <span className="meta">{ar ? 'يوماً' : days === 1 ? 'day' : 'days'}</span>
+        <span className="meta">{tf('daysUnit', { count: days })}</span>
       </div>
       <div className="renewal-what">
-        <ProductCard card={renewal.product} locale={ar ? 'ar' : 'en'} />
+        <ProductCard card={renewal.product} locale={locale} />
         <p className="meta">
-          {ar
-            ? `اشتريته في الطلب ${renewal.orderNumber} وينتهي في ${renewal.expiresAt.slice(0, 10)}`
-            : `Bought on order ${renewal.orderNumber}, ends ${renewal.expiresAt.slice(0, 10)}`}
+          {tf('boughtOn', {
+            order: renewal.orderNumber,
+            date: renewal.expiresAt.slice(0, 10),
+          })}
         </p>
       </div>
     </li>
   );
-}
-
-/** The reason, written as a sentence rather than shown as a tag. */
-function reasonText(item: ForYouItem, ar: boolean): string {
-  switch (item.reason) {
-    case 'sameBrand':
-      return ar ? `لأنك اشتريت من ${item.becauseOf}` : `Because you bought ${item.becauseOf}`;
-    case 'sameCategory':
-      return ar ? `من قسم ${item.becauseOf} الذي تشتري منه` : `From ${item.becauseOf}, which you buy from`;
-    case 'relatedToOwned':
-      return ar ? `يُستخدم مع ${item.becauseOf}` : `Used alongside ${item.becauseOf}`;
-  }
 }

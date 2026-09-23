@@ -2,6 +2,7 @@
 
 import type { PaymentProvider } from '@da/contracts';
 import { offeredPaymentSchema } from '@da/contracts';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 /**
@@ -97,7 +98,6 @@ export function LockShieldIcon({ size = 15 }: { size?: number }) {
 }
 
 export interface ProductTrustProps {
-  locale: string;
   showPerks?: boolean;
   /** The product's own warranty flag, when this is drawn on a product page. */
   hasGoldenWarranty?: boolean;
@@ -154,16 +154,13 @@ export function usePaymentMarks(): string[] | null {
 }
 
 /** The row itself. Renders nothing at all when the shop can take nothing. */
-export function PaymentMarks({ locale }: { locale: string }) {
-  const ar = locale !== 'en';
+export function PaymentMarks() {
+  const t = useTranslations('trust');
   const marks = usePaymentMarks();
   if (marks === null || marks.length === 0) return null;
 
   return (
-    <div
-      className="payment-badges-row"
-      aria-label={ar ? 'طرق الدفع المدعومة' : 'Accepted payment methods'}
-    >
+    <div className="payment-badges-row" aria-label={t('acceptedMethods')}>
       {marks.includes('visa') ? (
         <div className="pay-badge pay-visa" title="Visa">
           <VisaIcon />
@@ -175,17 +172,18 @@ export function PaymentMarks({ locale }: { locale: string }) {
         </div>
       ) : null}
       {marks.includes('bank') ? (
-        <div className="pay-badge pay-bank" title={ar ? 'تحويل بنكي' : 'Direct bank transfer'}>
+        <div className="pay-badge pay-bank" title={t('bankTransferTitle')}>
           <BankTransferIcon />
-          <span className="pay-label">{ar ? 'تحويل بنكي' : 'Bank'}</span>
+          <span className="pay-label">{t('bankLabel')}</span>
         </div>
       ) : null}
     </div>
   );
 }
 
-export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: ProductTrustProps) {
-  const ar = locale === 'ar';
+export function ProductTrust({ showPerks = true, hasGoldenWarranty }: ProductTrustProps) {
+  const t = useTranslations('trust');
+  const tc = useTranslations('common');
   const marks = usePaymentMarks();
 
   return (
@@ -196,13 +194,11 @@ export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: Pr
           <div className="payments-header">
             <span className="payments-title">
               <LockShieldIcon size={14} />
-              <strong>{ar ? 'طرق الدفع المتاحة' : 'Secure payment methods'}</strong>
+              <strong>{t('securePayments')}</strong>
             </span>
-            <span className="payments-ssl-badge">
-              {ar ? 'اتصال مشفّر' : 'Encrypted connection'}
-            </span>
+            <span className="payments-ssl-badge">{tc('encryptedConnection')}</span>
           </div>
-          <PaymentMarks locale={locale} />
+          <PaymentMarks />
         </div>
       ) : null}
 
@@ -219,12 +215,8 @@ export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: Pr
               ⚡
             </span>
             <div className="perk-text">
-              <strong>{ar ? 'تسليم رقمي بالبريد' : 'Delivered by email'}</strong>
-              <p>
-                {ar
-                  ? 'يصلك المفتاح والتعليمات على بريدك — المدّة مذكورة في جدول المواصفات'
-                  : 'Your key and instructions by email — the timing is in the spec table'}
-              </p>
+              <strong>{t('perkEmailTitle')}</strong>
+              <p>{t('perkEmailBody')}</p>
             </div>
           </div>
 
@@ -237,12 +229,8 @@ export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: Pr
                 🛡️
               </span>
               <div className="perk-text">
-                <strong>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</strong>
-                <p>
-                  {ar
-                    ? 'مفاتيح أصلية مع ضمان استبدال طوال مدّة الترخيص'
-                    : 'Genuine keys, with replacement cover for the licence term'}
-                </p>
+                <strong>{tc('goldenWarranty')}</strong>
+                <p>{t('perkWarrantyBody')}</p>
               </div>
             </div>
           ) : null}
@@ -252,12 +240,8 @@ export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: Pr
               💬
             </span>
             <div className="perk-text">
-              <strong>{ar ? 'دعم فني مباشر عبر واتساب' : 'Direct WhatsApp Support'}</strong>
-              <p>
-                {ar
-                  ? 'فريقنا معك خطوة بخطوة حتى التفعيل الكامل'
-                  : 'Our team guides you step-by-step through activation'}
-              </p>
+              <strong>{t('perkSupportTitle')}</strong>
+              <p>{t('perkSupportBody')}</p>
             </div>
           </div>
         </div>
@@ -274,8 +258,9 @@ export function ProductTrust({ locale, showPerks = true, hasGoldenWarranty }: Pr
  * that file is a server component — the footer renders on every page and has no
  * other reason to reach the browser. This is the only part of it that does.
  */
-export function PaymentsBar({ locale }: { locale: string }) {
-  const ar = locale !== 'en';
+export function PaymentsBar() {
+  const t = useTranslations('trust');
+  const tc = useTranslations('common');
   const marks = usePaymentMarks();
   if (marks === null || marks.length === 0) return null;
 
@@ -283,7 +268,7 @@ export function PaymentsBar({ locale }: { locale: string }) {
     <div className="footer-payments-bar">
       <div className="footer-payments-container">
         <div className="payments-label-group">
-          <span className="payments-heading">{ar ? 'طرق الدفع' : 'Payment methods'}</span>
+          <span className="payments-heading">{t('paymentMethods')}</span>
           <span className="payments-divider" aria-hidden="true">
             •
           </span>
@@ -291,10 +276,10 @@ export function PaymentsBar({ locale }: { locale: string }) {
             <LockShieldIcon size={14} />
             {/* What is true of any HTTPS page, stated plainly. "256-bit SSL"
                 and "bank-level" are marketing for the same fact. */}
-            <span>{ar ? 'اتصال مشفّر' : 'Encrypted connection'}</span>
+            <span>{tc('encryptedConnection')}</span>
           </span>
         </div>
-        <PaymentMarks locale={locale} />
+        <PaymentMarks />
       </div>
     </div>
   );

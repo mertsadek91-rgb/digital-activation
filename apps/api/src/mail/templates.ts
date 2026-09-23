@@ -24,12 +24,14 @@ export interface Rendered {
 const BRAND_AR = 'متجر التفعيل الرقمي';
 const BRAND_EN = 'Digital Activation';
 
-const TEAL = '#148576';
-const INK = '#1c2422';
-const MUTED = '#6b7472';
-const BORDER = '#e2e5e4';
+// The palette and the helpers below are exported for templates that live with
+// their feature (the retention emails), so every message shares one frame.
+export const TEAL = '#148576';
+export const INK = '#1c2422';
+export const MUTED = '#6b7472';
+export const BORDER = '#e2e5e4';
 
-function shell(input: {
+export function shell(input: {
   locale: 'ar' | 'en';
   title: string;
   body: string;
@@ -68,7 +70,7 @@ ${input.body}
 }
 
 /** Everything interpolated goes through this. An order number is user data. */
-function escape(value: string): string {
+export function escape(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -76,7 +78,7 @@ function escape(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function button(href: string, label: string): string {
+export function button(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0;"><tr><td style="background:${TEAL};border-radius:5px;">
     <a href="${escape(href)}" style="display:inline-block;padding:12px 24px;font:700 15px/1 'Segoe UI',Tahoma,Arial,sans-serif;color:#ffffff;text-decoration:none;">${escape(label)}</a>
   </td></tr></table>`;
@@ -294,7 +296,8 @@ ${button(input.orderUrl, 'Track your order')}`;
       ? [
           ar ? 'ما ستدفع مقابله:' : 'What you are paying for:',
           ...input.lines.map(
-            (line) => `- ${line.productName} (${line.sku} × ${String(line.qty)}) — ${line.lineTotal}`,
+            (line) =>
+              `- ${line.productName} (${line.sku} × ${String(line.qty)}) — ${line.lineTotal}`,
           ),
           '',
         ]
@@ -609,7 +612,6 @@ export function contactToStore(input: {
  */
 export function contactAck(input: {
   locale: 'ar' | 'en';
-  name: string;
   hours: number;
   supportEmail: string;
 }): Rendered {
@@ -617,10 +619,10 @@ export function contactAck(input: {
 
   const body = ar
     ? `<h1 style="margin:0 0 8px;font-size:20px;">وصلتنا رسالتك</h1>
-<p>شكراً ${escape(input.name)}. فريقنا يقرأ الرسائل بالترتيب ويردّ خلال ${String(input.hours)} ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.</p>
+<p>شكراً لك. فريقنا يقرأ الرسائل بالترتيب ويردّ خلال ${String(input.hours)} ساعة كحدّ أقصى، وغالباً قبل ذلك بكثير.</p>
 <p style="color:${MUTED};">إن كانت رسالتك عن مفتاح لا يعمل، لا تُعد محاولة التفعيل مراراً قبل أن نردّ — بعض المنتجات تقفل بعد عدّة محاولات خاطئة.</p>`
     : `<h1 style="margin:0 0 8px;font-size:20px;">We have your message</h1>
-<p>Thank you, ${escape(input.name)}. We read messages in order and reply within ${String(input.hours)} hours at the latest, usually well before that.</p>
+<p>Thank you. We read messages in order and reply within ${String(input.hours)} hours at the latest, usually well before that.</p>
 <p style="color:${MUTED};">If this is about a key that will not activate, please do not keep retrying before we reply — some products lock after a few failed attempts.</p>`;
 
   return {
@@ -755,5 +757,67 @@ ${button(input.url, 'Write a review')}
         : 'We send this once, after an order is delivered.',
     }),
     text,
+  };
+}
+
+/**
+ * The newsletter's confirmation step.
+ *
+ * Double opt-in: typing an address into a footer box proves nothing about who
+ * owns it, and marketing to an address nobody confirmed is how a sender lands
+ * on blocklists — the same domain that carries every licence delivery.
+ */
+export function newsletterConfirm(input: { locale: 'ar' | 'en'; confirmUrl: string }): Rendered {
+  const ar = input.locale === 'ar';
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">أكّد اشتراكك</h1>
+<p>طلب أحدهم إضافة هذا البريد إلى نشرة العروض. إن كنت أنت، أكّد بالزر أدناه. إن لم تكن أنت، تجاهل هذه الرسالة ولن نراسلك.</p>
+${button(input.confirmUrl, 'أكّد الاشتراك')}`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">Confirm your subscription</h1>
+<p>Someone asked to add this address to our deals newsletter. If it was you, confirm below. If not, ignore this email and you will not hear from us.</p>
+${button(input.confirmUrl, 'Confirm subscription')}`;
+  return {
+    subject: ar ? 'أكّد اشتراكك في النشرة' : 'Confirm your newsletter subscription',
+    html: shell({
+      locale: input.locale,
+      title: 'Confirm subscription',
+      body,
+      footerNote: ar
+        ? 'لن تصلك أي رسالة تسويقية قبل التأكيد.'
+        : 'You will receive no marketing email until you confirm.',
+    }),
+    text: ar
+      ? `أكّد اشتراكك في النشرة:\n${input.confirmUrl}`
+      : `Confirm your newsletter subscription:\n${input.confirmUrl}`,
+  };
+}
+
+/** A product somebody asked about is available again. Sent once per request. */
+export function backInStock(input: {
+  locale: 'ar' | 'en';
+  productName: string;
+  productUrl: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">عاد ${escape(input.productName)} إلى المخزون</h1>
+<p>طلبت أن نُعلمك عند توفّره، وهو متوفّر الآن. الكمية محدودة، ولا نحجزه لأحد قبل الدفع.</p>
+${button(input.productUrl, 'اذهب إلى المنتج')}`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">${escape(input.productName)} is back in stock</h1>
+<p>You asked us to tell you when it was available, and it is. Stock is limited and nothing is held for anyone before payment.</p>
+${button(input.productUrl, 'Go to the product')}`;
+  return {
+    subject: ar ? `عاد ${input.productName} إلى المخزون` : `${input.productName} is back in stock`,
+    html: shell({
+      locale: input.locale,
+      title: 'Back in stock',
+      body,
+      footerNote: ar
+        ? 'وصلتك هذه الرسالة مرة واحدة لأنك طلبتها.'
+        : 'You are receiving this once because you asked for it.',
+    }),
+    text: ar
+      ? `عاد ${input.productName} إلى المخزون:\n${input.productUrl}`
+      : `${input.productName} is back in stock:\n${input.productUrl}`,
   };
 }

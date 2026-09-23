@@ -37,7 +37,9 @@ export class TaxonomyService {
       orderBy: [{ position: 'asc' }, { slug: 'asc' }],
       include: {
         translations: true,
-        _count: { select: { products: { where: { product: { status: PublishStatus.PUBLISHED } } } } },
+        _count: {
+          select: { products: { where: { product: { status: PublishStatus.PUBLISHED } } } },
+        },
       },
     });
 
@@ -61,15 +63,22 @@ export class TaxonomyService {
     };
   }
 
-  async createCategory(input: CreateCategory, actorId: string | undefined): Promise<AdminCategoryList> {
+  async createCategory(
+    input: CreateCategory,
+    actorId: string | undefined,
+  ): Promise<AdminCategoryList> {
     const taken = await this.prisma.client.category.count({ where: { slug: input.slug } });
     if (taken > 0) {
-      throw new BadRequestException(say('هذا الرابط مستخدم لقسم آخر.', 'Another section has that URL.'));
+      throw new BadRequestException(
+        say('هذا الرابط مستخدم لقسم آخر.', 'Another section has that URL.'),
+      );
     }
     if (input.parentId) {
       const parent = await this.prisma.client.category.count({ where: { id: input.parentId } });
       if (parent === 0) {
-        throw new BadRequestException(say('القسم الأب غير موجود.', 'That parent section does not exist.'));
+        throw new BadRequestException(
+          say('القسم الأب غير موجود.', 'That parent section does not exist.'),
+        );
       }
     }
 
@@ -124,12 +133,15 @@ export class TaxonomyService {
       where: { id },
       include: { translations: true },
     });
-    if (!category) throw new NotFoundException(say('لا يوجد قسم بهذا المعرّف.', 'No such section.'));
+    if (!category)
+      throw new NotFoundException(say('لا يوجد قسم بهذا المعرّف.', 'No such section.'));
 
     if (input.slug && input.slug !== category.slug) {
       const taken = await this.prisma.client.category.count({ where: { slug: input.slug } });
       if (taken > 0) {
-        throw new BadRequestException(say('هذا الرابط مستخدم لقسم آخر.', 'Another section has that URL.'));
+        throw new BadRequestException(
+          say('هذا الرابط مستخدم لقسم آخر.', 'Another section has that URL.'),
+        );
       }
     }
 
@@ -142,7 +154,9 @@ export class TaxonomyService {
      */
     if (input.parentId) {
       if (input.parentId === id) {
-        throw new BadRequestException(say('لا يكون القسم أباً لنفسه.', 'A section cannot be its own parent.'));
+        throw new BadRequestException(
+          say('لا يكون القسم أباً لنفسه.', 'A section cannot be its own parent.'),
+        );
       }
       let walk: string | null = input.parentId;
       const seen = new Set<string>([id]);

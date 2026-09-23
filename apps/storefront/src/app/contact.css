@@ -92,7 +92,9 @@
   border-radius: var(--radius-xl);
   padding: clamp(var(--spacing-2), 3vw, var(--spacing-3));
   box-shadow: var(--shadow-card);
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease;
   box-sizing: border-box;
   inline-size: 100%;
 }
@@ -153,7 +155,9 @@
   inline-size: 100%;
   box-sizing: border-box;
   color: var(--color-ink);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .contact-form-container .account-field input:focus,
@@ -195,7 +199,9 @@
   min-block-size: 46px;
   inline-size: 100%;
   box-sizing: border-box;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .contact-field-group input:focus,
@@ -412,7 +418,9 @@
   color: var(--color-ink);
   font-size: var(--text-xs);
   font-weight: 600;
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .self-service-link:hover {
@@ -481,7 +489,9 @@
   border-radius: var(--radius-lg);
   overflow: hidden;
   box-shadow: var(--shadow-xs);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .contact-faq-item[open] {

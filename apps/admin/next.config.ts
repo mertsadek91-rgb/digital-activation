@@ -7,6 +7,7 @@ import type { NextConfig } from 'next';
 // app starts with no environment at all. Loading it here covers both the build
 // and the running server, and keeps one .env for every app.
 loadEnv({ path: path.join(import.meta.dirname, '..', '..', '.env'), quiet: true });
+
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -19,6 +20,9 @@ const config: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'no-referrer' },
+          // The Content-Security-Policy carries a per-request nonce, so
+          // `src/proxy.ts` writes it. A second one here would not replace that
+          // one — browsers enforce both.
         ],
       },
     ];

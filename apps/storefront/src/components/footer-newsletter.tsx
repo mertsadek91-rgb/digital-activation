@@ -1,85 +1,84 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-interface FooterNewsletterProps {
-  locale: string;
-}
+import { resolveLocale } from '../i18n/locale';
 
-export function FooterNewsletter({ locale }: FooterNewsletterProps) {
+import { SUBSCRIBED_KEY, memory } from '../lib/growth-client';
+import { subscriptionsApi } from '../lib/subscriptions-client';
+
+/**
+ * The footer newsletter, for real this time.
+ *
+ * The version before this waited 600ms and announced a subscription and a
+ * welcome coupon while sending the address nowhere. This one posts it, and
+ * what it says afterwards is what actually happens next: a confirmation email.
+ * No coupon is promised, because none is issued.
+ */
+export function FooterNewsletter({ locale }: { locale: string }) {
+  const t = useTranslations('newsletter');
+  const ts = useTranslations('stockAlert');
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const ar = locale !== 'en';
+  const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes('@')) {
+  async function submit(event: React.FormEvent): Promise<void> {
+    event.preventDefault();
+    if (!email.includes('@')) {
       setStatus('error');
       return;
     }
     setStatus('loading');
-    // Simulated subscription with instant feedback
-    setTimeout(() => {
-      setStatus('success');
+    const ok = await subscriptionsApi.subscribe({ email, locale: resolveLocale(locale) });
+    setStatus(ok ? 'sent' : 'error');
+    if (ok) {
       setEmail('');
-    }, 600);
-  };
+      // The welcome window does not ask a browser that has already asked here.
+      memory.set(SUBSCRIBED_KEY, String(Date.now()));
+    }
+  }
 
   return (
     <div className="footer-newsletter-card">
       <div className="newsletter-text">
         <div className="newsletter-headline">
-          <span className="newsletter-badge">🎁 {ar ? 'نادي التفعيل الرقمي' : 'VIP Club'}</span>
-          <h3>{ar ? 'انضم لنادي العروض والخصومات الحصرية' : 'Get exclusive discounts & license deals'}</h3>
+          <h3>{t('title')}</h3>
         </div>
-        <p>
-          {ar
-            ? 'اشترك ليصلك أحدث كوبونات التخفيض وتحديثات الإصدارات الجديدة فور صدورها.'
-            : 'Subscribe for instant access to member-only coupon drops and software releases.'}
-        </p>
+        <p>{t('body')}</p>
       </div>
 
       <div className="newsletter-form-wrap">
-        {status === 'success' ? (
-          <div className="newsletter-success" role="alert">
+        {status === 'sent' ? (
+          <div className="newsletter-success" role="status">
             <span className="success-icon">✓</span>
-            <span>
-              {ar
-                ? 'تم الاشتراك بنجاح! تفقد بريدك قريباً لكوبون الترحيب.'
-                : 'Subscribed successfully! Check your inbox soon for your welcome offer.'}
-            </span>
+            <span>{t('sent')}</span>
           </div>
         ) : (
-          <form className="newsletter-form" onSubmit={handleSubmit} noValidate>
+          <form className="newsletter-form" onSubmit={(event) => void submit(event)} noValidate>
             <div className="newsletter-input-group">
               <input
                 type="email"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
+                onChange={(event) => {
+                  setEmail(event.target.value);
                   if (status === 'error') setStatus('idle');
                 }}
-                placeholder={ar ? 'أدخل بريدك الإلكتروني...' : 'Enter your email address...'}
-                aria-label={ar ? 'البريد الإلكتروني للاشتراك' : 'Email subscription'}
+                placeholder={ts('placeholder')}
+                aria-label={t('inputLabel')}
                 className={`newsletter-input${status === 'error' ? ' is-error' : ''}`}
                 disabled={status === 'loading'}
+                dir="ltr"
                 required
               />
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="newsletter-submit"
-              >
-                {status === 'loading'
-                  ? (ar ? 'جاري التسجيل...' : 'Subscribing...')
-                  : (ar ? 'اشترك الآن' : 'Subscribe')}
+              <button type="submit" disabled={status === 'loading'} className="newsletter-submit">
+                {status === 'loading' ? '…' : t('subscribe')}
               </button>
             </div>
-            {status === 'error' && (
-              <p className="newsletter-error-msg">
-                {ar ? 'يرجى إدخال بريد إلكتروني صحيح' : 'Please enter a valid email address'}
+            {status === 'error' ? (
+              <p className="newsletter-error-msg" role="alert">
+                {t('error')}
               </p>
-            )}
+            ) : null}
           </form>
         )}
       </div>

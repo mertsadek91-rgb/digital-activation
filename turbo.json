@@ -6,10 +6,12 @@
   "tasks": {
     "generate": {
       "cache": false,
-      "outputs": ["generated/**"]
+      "outputs": ["generated/**"],
+      "passThroughEnv": ["DATABASE_URL_MIGRATE", "SHADOW_DATABASE_URL"]
     },
     "build": {
       "dependsOn": ["^build", "generate"],
+      "env": ["NEXT_PUBLIC_*", "S3_PUBLIC_BASE_URL"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {

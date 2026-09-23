@@ -1,18 +1,31 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
-import { productCount } from '@da/i18n';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
+import {
+  ListingChips,
+  ListingFilterPanel,
+  ListingNoResults,
+  ListingSorts,
+} from '../../../../components/listing-filters';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import {
+  apiFilters,
+  isFiltered,
+  listingHref,
+  listingSeo,
+  parseListing,
+} from '../../../../lib/listing';
+import { notFoundMetadata, pageSuffix, pageTitle, paginatedUrl } from '../../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
@@ -22,42 +35,57 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function pageNumber(value: string | string[] | undefined): number {
-  const raw = Array.isArray(value) ? value[0] : value;
-  const parsed = Number.parseInt(raw ?? '1', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-}
-
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
-  const page = pageNumber((await searchParams).page);
+  const state = parseListing(await searchParams);
+  const { page } = state;
 
-  const collection = await getCollection(slug, { locale, page, perPage: PER_PAGE });
+  // The same request the page makes, so the two share one cached response.
+  const collection = await getCollection(slug, {
+    locale,
+    page,
+    perPage: PER_PAGE,
+    sort: state.sort,
+    filters: apiFilters(state.filters),
+  });
   if (!collection) return notFoundMetadata(locale);
 
   const path = ROUTES.collection(slug);
-  const links = alternates(SITE_URL, path);
+  const title = `${collection.seo.title ?? collection.name}${pageSuffix(page, locale)}`;
 
   return {
     // The legacy store had no meta description on a single category page, and
     // not one of its sixteen categories ever earned a search impression.
-    title: collection.seo.title ?? collection.name,
+    // Page N says so in its title, or every page of a category shows the same
+    // title in a result and in Search Console's duplicate-title report.
+    title: pageTitle(title),
     description: collection.seo.description ?? collection.headline,
-    robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
-    alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
-      languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
-    },
+    // Filtered: noindex and canonical to the bare shelf; see `listingSeo`.
+    ...listingSeo(state, {
+      canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
+      languages: alternates(SITE_URL, path),
+    }),
   };
 }
 
 export default async function CollectionPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const page = pageNumber((await searchParams).page);
-  const ar = locale === 'ar';
+  const state = parseListing(await searchParams);
+  const { page } = state;
+  const t = await getTranslations('collection');
+  const tc = await getTranslations('common');
+  const tk = await getTranslations('catalog');
+  const tf = await getTranslations('filters');
+  const ar = isArabic(locale);
 
-  const collection = await getCollection(slug, { locale, page, perPage: PER_PAGE });
+  const collection = await getCollection(slug, {
+    locale,
+    page,
+    perPage: PER_PAGE,
+    sort: state.sort,
+    filters: apiFilters(state.filters),
+  });
   // Same as a product: a renamed collection is a redirect, not a dead end.
   // Narrowed by hand: `goneOrRedirect` never returns, but TypeScript
   // cannot see that through an awaited `Promise<never>`.
@@ -66,8 +94,11 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     notFound();
   }
 
-  const pageUrl = new URL(ROUTES.collection(slug), SITE_URL).toString();
   const prefix = ar ? '' : `/${locale}`;
+  const listPath = `${prefix}${ROUTES.collection(slug)}`;
+  // With the locale prefix: the English list used to identify itself by the
+  // Arabic URL, so its `@id` collided with the Arabic page's.
+  const pageUrl = paginatedUrl(new URL(listPath, SITE_URL).toString(), page);
 
   // One graph, one script tag. `buildGraph` throws in development if a second
   // ItemList or Product entity reaches it — the legacy product pages emitted two
@@ -97,7 +128,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     <main className="shell">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
         {collection.breadcrumbs.map((crumb, index) => (
           <span key={crumb.href}>
             {index > 0 ? <span aria-hidden="true"> › </span> : null}
@@ -116,16 +147,26 @@ export default async function CollectionPage({ params, searchParams }: Props) {
       </header>
 
       <div className="catalog-layout">
-        <CategoryRail
-          categories={collection.siblings}
-          current={collection.slug}
-          locale={locale}
-          title={ar ? 'التصنيفات' : 'Categories'}
-        />
+        <aside className="catalog-side">
+          <CategoryRail
+            categories={collection.siblings}
+            current={collection.slug}
+            locale={locale}
+            title={tk('categories')}
+          />
+          {collection.facets ? (
+            <ListingFilterPanel
+              facets={collection.facets}
+              state={state}
+              path={listPath}
+              total={collection.total}
+            />
+          ) : null}
+        </aside>
 
         <div className="catalog-main">
           {collection.children.length > 0 ? (
-            <nav className="subnav" aria-label={ar ? 'التصنيفات الفرعية' : 'Subcategories'}>
+            <nav className="subnav" aria-label={tk('subcategories')}>
               {collection.children.map((child) => (
                 <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
                   {child.name}
@@ -141,12 +182,22 @@ export default async function CollectionPage({ params, searchParams }: Props) {
             </div>
           ) : null}
 
-          <p className="result-count">{productCount(collection.total, locale)}</p>
+          <div className="store-bar">
+            <p className="result-count" role="status">
+              {tk('productCount', { count: collection.total })}
+            </p>
+            {/* `position` on a shelf is its own curated order, not sales. */}
+            <ListingSorts state={state} path={listPath} positionLabel={tf('sortFeatured')} />
+          </div>
+
+          <ListingChips facets={collection.facets} state={state} path={listPath} />
 
           {collection.products.length === 0 ? (
-            <p className="empty">
-              {ar ? 'لا منتجات في هذا التصنيف بعد.' : 'No products here yet.'}
-            </p>
+            isFiltered(state.filters) ? (
+              <ListingNoResults state={state} path={listPath} />
+            ) : (
+              <p className="empty">{t('empty')}</p>
+            )
           ) : (
             <div className="grid">
               {collection.products.map((card) => (
@@ -156,26 +207,16 @@ export default async function CollectionPage({ params, searchParams }: Props) {
           )}
 
           {lastPage > 1 ? (
-            <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+            <nav className="pager" aria-label={tk('pagination')}>
               {page > 1 ? (
-                <Link
-                  href={`${prefix}${ROUTES.collection(slug)}?page=${String(page - 1)}`}
-                  rel="prev"
-                >
-                  {ar ? 'السابق' : 'Previous'}
+                <Link href={listingHref(listPath, state, { page: page - 1 })} rel="prev">
+                  {tk('previous')}
                 </Link>
               ) : null}
-              <span>
-                {ar
-                  ? `صفحة ${String(page)} من ${String(lastPage)}`
-                  : `Page ${String(page)} of ${String(lastPage)}`}
-              </span>
+              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
               {page < lastPage ? (
-                <Link
-                  href={`${prefix}${ROUTES.collection(slug)}?page=${String(page + 1)}`}
-                  rel="next"
-                >
-                  {ar ? 'التالي' : 'Next'}
+                <Link href={listingHref(listPath, state, { page: page + 1 })} rel="next">
+                  {tk('next')}
                 </Link>
               ) : null}
             </nav>

@@ -1,6 +1,12 @@
 'use client';
 
-import type { AdminOrderDetail, AdminOrderList, AdminOrderRow, StaffMe } from '@da/contracts';
+import type {
+  AdminOrderDetail,
+  AdminOrderEvent,
+  AdminOrderList,
+  AdminOrderRow,
+  StaffMe,
+} from '@da/contracts';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -37,6 +43,12 @@ const STATUS_KEYS = {
   FAILED: 'statusFailed',
 } as const satisfies Record<AdminOrderRow['status'], string>;
 
+const ACTOR_KEYS = {
+  SYSTEM: 'actorSystem',
+  STAFF: 'actorStaff',
+  PROVIDER: 'actorProvider',
+} as const satisfies Record<AdminOrderEvent['actorType'], string>;
+
 const FILTERS = [
   { key: 'awaiting-payment', label: 'filterAwaitingPayment' },
   { key: 'in-review', label: 'filterInReview' },
@@ -53,12 +65,17 @@ export default function OrdersPage() {
   const [data, setData] = useState<AdminOrderList | null>(null);
   const [filter, setFilter] = useState('awaiting-payment');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [exportFrom, setExportFrom] = useState('');
+  const [exportTo, setExportTo] = useState('');
 
   const load = useCallback(async () => {
     try {
-      setData(await api.orders(filter === 'all' ? undefined : filter, query.trim() || undefined));
+      setData(
+        await api.orders(filter === 'all' ? undefined : filter, query.trim() || undefined, page),
+      );
       setError(null);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 401) {
@@ -67,7 +84,7 @@ export default function OrdersPage() {
       }
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
-  }, [filter, query, router, t]);
+  }, [filter, query, page, router, t]);
 
   useEffect(() => {
     void (async () => {
@@ -129,7 +146,10 @@ export default function OrdersPage() {
               key={entry.key}
               type="button"
               className={`tab${filter === entry.key ? ' is-active' : ''}`}
-              onClick={() => setFilter(entry.key)}
+              onClick={() => {
+                setFilter(entry.key);
+                setPage(1);
+              }}
             >
               {t(entry.label)}
             </button>
@@ -140,7 +160,8 @@ export default function OrdersPage() {
           className="lookup-form"
           onSubmit={(event) => {
             event.preventDefault();
-            void load();
+            if (page !== 1) setPage(1);
+            else void load();
           }}
         >
           <input
@@ -155,6 +176,46 @@ export default function OrdersPage() {
           </button>
         </form>
       </div>
+
+      {/* The export, for the people the API lets have it. It follows the
+          status tab that is open, so the file is the list on screen over a
+          date range rather than a second set of filters to get right. */}
+      {canConfirm ? (
+        <form
+          className="lookup-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void act(t('exportCsv'), () =>
+              api.exportOrders({
+                from: exportFrom,
+                to: exportTo,
+                status: filter === 'all' ? undefined : filter,
+              }),
+            );
+          }}
+        >
+          <label>
+            {t('exportFrom')}{' '}
+            <input
+              type="date"
+              value={exportFrom}
+              onChange={(event) => setExportFrom(event.target.value)}
+            />
+          </label>
+          <label>
+            {t('exportTo')}{' '}
+            <input
+              type="date"
+              value={exportTo}
+              onChange={(event) => setExportTo(event.target.value)}
+            />
+          </label>
+          <button type="submit" className="ghost">
+            {t('exportCsv')}
+          </button>
+          <small className="meta">{t('exportHint')}</small>
+        </form>
+      ) : null}
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
@@ -200,11 +261,42 @@ export default function OrdersPage() {
                       api.addOrderNote(row.number, body),
                     )
                   }
+                  onRelease={(reason) =>
+                    void act(t('doneHoldReleased', { number: row.number }), () =>
+                      api.releaseHold(row.number, reason),
+                    )
+                  }
+                  onRefund={(reason) =>
+                    void act(t('doneRefunded', { number: row.number }), () =>
+                      api.refundOrder(row.number, reason),
+                    )
+                  }
                 />
               ))}
             </tbody>
           </table>
         </div>
+      ) : null}
+      {data && (data.page > 1 || data.hasMore) ? (
+        <nav className="pager" aria-label={t('pagerLabel')}>
+          <button
+            type="button"
+            className="ghost"
+            disabled={data.page <= 1}
+            onClick={() => setPage(data.page - 1)}
+          >
+            {t('pagePrev')}
+          </button>
+          <span>{t('pageNumber', { page: data.page })}</span>
+          <button
+            type="button"
+            className="ghost"
+            disabled={!data.hasMore}
+            onClick={() => setPage(data.page + 1)}
+          >
+            {t('pageNext')}
+          </button>
+        </nav>
       ) : null}
     </Nav>
   );
@@ -219,17 +311,25 @@ function OrderRow({
   canResend,
   onConfirm,
   onNote,
+  onRelease,
+  onRefund,
 }: {
   row: AdminOrderRow;
   canConfirm: boolean;
   canResend: boolean;
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
+  onRelease: (reason: string) => void;
+  onRefund: (reason: string) => void;
 }) {
   const t = useT('orders');
   const c = useT('common');
   const [confirming, setConfirming] = useState(false);
   const [noting, setNoting] = useState(false);
+  const [releasing, setReleasing] = useState(false);
+  const [releaseReason, setReleaseReason] = useState('');
+  const [refunding, setRefunding] = useState(false);
+  const [refundReason, setRefundReason] = useState('');
   /**
    * The rest of the order, loaded when somebody asks for it.
    *
@@ -282,6 +382,20 @@ function OrderRow({
 
   const awaiting = row.status === 'PENDING_PAYMENT';
   const risky = row.riskLevel === 'HIGH' || row.riskLevel === 'BLOCKED';
+  // The same test the API applies: a paid order stopped by a rule, or a paid
+  // order whose risk level blocks delivery.
+  const held =
+    row.status === 'PAYMENT_REVIEW' ||
+    (risky && (row.status === 'PAID' || row.status === 'FULFILLING'));
+  // Anything the money has arrived for and not already gone back from.
+  const refundable = [
+    'PAID',
+    'PAYMENT_REVIEW',
+    'FULFILLING',
+    'FULFILLED',
+    'COMPLETED',
+    'PARTIALLY_REFUNDED',
+  ].includes(row.status);
 
   return (
     <>
@@ -330,6 +444,33 @@ function OrderRow({
               }}
             >
               {confirming ? c('cancel') : t('confirmPayment')}
+            </button>
+          ) : null}
+          {held && canConfirm ? (
+            <button
+              type="button"
+              className={releasing ? 'ghost is-active' : undefined}
+              onClick={() => {
+                setReleasing(!releasing);
+                setConfirming(false);
+                setNoting(false);
+              }}
+            >
+              {releasing ? c('cancel') : t('releaseHold')}
+            </button>
+          ) : null}
+          {refundable && canConfirm ? (
+            <button
+              type="button"
+              className={`ghost${refunding ? ' is-active' : ''}`}
+              onClick={() => {
+                setRefunding(!refunding);
+                setReleasing(false);
+                setConfirming(false);
+                setNoting(false);
+              }}
+            >
+              {refunding ? c('cancel') : t('refund')}
             </button>
           ) : null}
           <button
@@ -392,6 +533,70 @@ function OrderRow({
               </label>
               <button type="submit" disabled={reference.trim().length < 3}>
                 {t('confirmAndRelease')}
+              </button>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+
+      {refunding ? (
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onRefund(refundReason.trim());
+                setRefundReason('');
+                setRefunding(false);
+              }}
+            >
+              <label className="grow">
+                {t('refundReasonLabel')}
+                <textarea
+                  value={refundReason}
+                  onChange={(event) => setRefundReason(event.target.value)}
+                  rows={2}
+                  required
+                  minLength={3}
+                  placeholder={t('refundReasonPlaceholder')}
+                />
+                <small>{t('refundReasonHint')}</small>
+              </label>
+              <button type="submit" disabled={refundReason.trim().length < 3}>
+                {t('refundConfirm')}
+              </button>
+            </form>
+          </td>
+        </tr>
+      ) : null}
+
+      {releasing ? (
+        <tr className="order-drawer">
+          <td colSpan={COLUMNS}>
+            <form
+              className="paste-form order-action-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                onRelease(releaseReason.trim());
+                setReleaseReason('');
+                setReleasing(false);
+              }}
+            >
+              <label className="grow">
+                {t('releaseReasonLabel')}
+                <textarea
+                  value={releaseReason}
+                  onChange={(event) => setReleaseReason(event.target.value)}
+                  rows={2}
+                  required
+                  minLength={3}
+                  placeholder={t('releaseReasonPlaceholder')}
+                />
+                <small>{t('releaseReasonHint')}</small>
+              </label>
+              <button type="submit" disabled={releaseReason.trim().length < 3}>
+                {t('releaseAndDeliver')}
               </button>
             </form>
           </td>
@@ -558,6 +763,51 @@ function OrderRow({
                         ))}
                       </ul>
                     )}
+                  </div>
+
+                  {/* How the order got to where it is, and who moved it.
+                      Placed first as its own entry, from the order row, so an
+                      order from before history was recorded still has a start;
+                      the status events follow oldest first, as a story reads. */}
+                  <div className="detail-section">
+                    <h3 className="detail-heading">{t('historyHeading')}</h3>
+                    <ol className="order-notes-list order-history">
+                      <li className="order-note-item">
+                        <p className="note-text">{t('historyPlaced')}</p>
+                        <div className="note-meta-row">
+                          <span className="note-date" dir="ltr">
+                            {row.placedAt.slice(0, 16).replace('T', ' ')}
+                          </span>
+                        </div>
+                      </li>
+                      {detail.history.map((event) => (
+                        <li key={event.id} className="order-note-item">
+                          <p className="note-text">
+                            {event.from ? `${t(STATUS_KEYS[event.from])} → ` : ''}
+                            <strong>{t(STATUS_KEYS[event.to])}</strong>
+                          </p>
+                          {event.reason ? <p className="meta">{event.reason}</p> : null}
+                          <div className="note-meta-row">
+                            <span className="note-author">
+                              {t(ACTOR_KEYS[event.actorType])}
+                              {event.actor ? (
+                                <>
+                                  {' · '}
+                                  <span dir="ltr">{event.actor}</span>
+                                </>
+                              ) : null}
+                            </span>
+                            <span>·</span>
+                            <span className="note-date" dir="ltr">
+                              {event.createdAt.slice(0, 16).replace('T', ' ')}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                    {detail.history.length === 0 && row.status !== 'PENDING_PAYMENT' ? (
+                      <p className="meta empty-state-text">{t('historyNotRecorded')}</p>
+                    ) : null}
                   </div>
 
                   {detail.notes.length > 0 ? (

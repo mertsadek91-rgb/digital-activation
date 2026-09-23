@@ -147,6 +147,9 @@ export class ContentService {
     const rows = await this.prisma.client.article.findMany({
       where,
       orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+      // A ceiling on a public, uncached-at-origin read. The blog is a few
+      // dozen posts; this only matters the day it is not.
+      take: 500,
     });
 
     return { posts: rows.map(toArticleCard), total: rows.length };

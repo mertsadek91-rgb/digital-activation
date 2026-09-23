@@ -37,7 +37,9 @@ function BlockView({ block }: { block: Block }) {
       return <Tag id={block.id}>{block.text}</Tag>;
     }
     case 'richText':
-      return <div className="rich" dangerouslySetInnerHTML={{ __html: normalizeRichHtml(block.html) }} />;
+      return (
+        <div className="rich" dangerouslySetInnerHTML={{ __html: normalizeRichHtml(block.html) }} />
+      );
     case 'answerFirst':
       return <p className="answer-first">{block.text}</p>;
     case 'steps':

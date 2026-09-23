@@ -62,6 +62,11 @@ model CartItem {
   unitPriceUsd  Decimal  @db.Decimal(12, 2)
   /// True when the line was added from a checkout cross-sell offer.
   fromCrossSell Boolean  @default(false)
+  /// The seasonal sale that priced `unitPriceUsd`, and when it ends. A sale
+  /// price is advertised with an end date, so it is the one snapshot that
+  /// lapses: after `saleEndsAt` the line goes back to the current price.
+  saleId        String?
+  saleEndsAt    DateTime?
   createdAt     DateTime @default(now())
 
   @@unique([cartId, variantId])
@@ -81,6 +86,11 @@ model CartRecoveryEvent {
   /// and the system issues a single-use, customer-bound, expiring coupon.
   promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   promotionId String?
+
+  /// True when the cart fell in the measured holdout: the step was due and
+  /// deliberately not sent, so recovered revenue can be compared against carts
+  /// that were left alone instead of being credited wholesale to the ladder.
+  heldOut Boolean @default(false)
 
   sentAt    DateTime  @default(now())
   openedAt  DateTime?
@@ -117,6 +127,10 @@ model Order {
   promotion   Promotion? @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   promotionId String?
   couponCode  String?
+  /// Which basket offers the order used (`orderOfferSnapshotSchema`): the
+  /// single cart discount's kind, the sales that priced lines, whether a
+  /// curated pair was bought. Null on orders drafted before it was recorded.
+  offerSnapshot Json?
 
   /// Fraud screening. A digital key cannot be clawed back once sent, so a HIGH
   /// score holds the order in PAYMENT_REVIEW and blocks fulfilment until a
@@ -149,13 +163,16 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  items         OrderItem[]
-  payments      Payment[]
-  notes         OrderNote[]
-  invoice       Invoice?
-  reviewInvites ReviewInvite[]
-  promotionUses PromotionUsage[]
-  loyaltyTxns   LoyaltyTransaction[]
+  items              OrderItem[]
+  payments           Payment[]
+  notes              OrderNote[]
+  statusEvents       OrderStatusEvent[]
+  invoice            Invoice?
+  reviewInvites      ReviewInvite[]
+  promotionUses      PromotionUsage[]
+  loyaltyTxns        LoyaltyTransaction[]
+  /// Set when this order was a referred friend's first order.
+  referralRedemption ReferralRedemption?
 
   @@index([status, placedAt])
   @@index([customerId, placedAt])
@@ -216,9 +233,34 @@ model OrderNote {
   @@schema("public")
 }
 
+/// One row per status change, written by `transitionOrder` in the same
+/// transaction as the change itself. The order row only knows where it is;
+/// this is how it got there, and who moved it — the question a dispute, a
+/// refund argument or a "why was my key held" email is always about.
+model OrderStatusEvent {
+  id        String           @id @default(cuid())
+  order     Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+  /// Null only for the order's creation, which has no "before".
+  from      OrderStatus?
+  to        OrderStatus
+  actorType OrderEventActor
+  /// A staff id for STAFF, the provider's reference for PROVIDER. No foreign
+  /// key: the two kinds share the column, and removing a staff account must
+  /// not rewrite an order's history.
+  actorId   String?
+  reason    String?
+  createdAt DateTime         @default(now())
+
+  @@index([orderId, createdAt])
+  @@schema("public")
+}
+
 model Payment {
   id       String          @id @default(cuid())
-  order    Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  /// Restrict, not Cascade: deleting an order must never take its payment
+  /// records with it. Money that moved is accounting history.
+  order    Order           @relation(fields: [orderId], references: [id], onDelete: Restrict)
   orderId  String
   provider PaymentProvider
   state    PaymentState    @default(PROCESSING)
@@ -226,7 +268,9 @@ model Payment {
   /// Provider-side identifier (Stripe PaymentIntent, PayPal capture id).
   providerRef     String?
   /// What the customer was actually charged, in the currency they were charged.
-  amountCharged   Decimal @db.Decimal(12, 2)
+  /// Three decimals: KWD, BHD, OMR and JOD count in thousandths, and a
+  /// two-decimal column dropped the last digit of every such charge.
+  amountCharged   Decimal @db.Decimal(14, 3)
   chargedCurrency String
   /// Same amount normalised to USD for reporting.
   amountUsd       Decimal @db.Decimal(12, 2)
@@ -252,7 +296,8 @@ model Payment {
 
 model Refund {
   id          String   @id @default(cuid())
-  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  /// Restrict, for the same reason as Payment's link to Order.
+  payment     Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
   paymentId   String
   amountUsd   Decimal  @db.Decimal(12, 2)
   reason      String?

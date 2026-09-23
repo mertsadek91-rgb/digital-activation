@@ -48,10 +48,12 @@ model Promotion {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  usages         PromotionUsage[]
-  orders         Order[]
-  recoveryEvents CartRecoveryEvent[]
-  referrals      Referral[]
+  usages             PromotionUsage[]
+  orders             Order[]
+  recoveryEvents     CartRecoveryEvent[]
+  referrals          Referral[]
+  /// Set when this is the single-use code minted for a referred friend.
+  referralRedemption ReferralRedemption?
 
   @@index([isActive, startsAt, endsAt])
   @@index([issuedToId])
@@ -205,6 +207,53 @@ model Referral {
   rewardPromotionId String?
   createdAt         DateTime   @default(now())
 
+  redemptions ReferralRedemption[]
+
+  @@schema("public")
+}
+
+/// One referred friend, from the link click to the referrer's reward.
+///
+/// A row per cart that took the friend discount, not per click: the friend's
+/// code is minted when their cart first holds something, single-use and
+/// first-order-only, so the row is also the record of which promotion carried
+/// the discount. The referrer is paid only by the daily sweep, once the
+/// friend's order has stayed paid past the refund window — a reward paid at
+/// checkout is a reward paid for an order that is refunded next week.
+model ReferralRedemption {
+  id         String                   @id @default(cuid())
+  referral   Referral                 @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  referralId String
+  status     ReferralRedemptionStatus @default(ISSUED)
+
+  /// The friend's single-use code.
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  promotionId String    @unique
+  /// The cart it was attached to; one friend code per cart.
+  cartId      String?   @unique
+
+  order             Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId           String?   @unique
+  friendEmail       String?
+  friendCustomerId  String?
+  friendDiscountUsd Decimal?  @db.Decimal(12, 2)
+  paidAt            DateTime?
+
+  /// The referrer's single-use reward code, once the order clears.
+  rewardUsd         Decimal?  @db.Decimal(12, 2)
+  rewardPromotionId String?   @unique
+  rewardedAt        DateTime?
+  voidReason        String?
+  /// Things a person should look at before trusting the row: a shared IP with
+  /// the referrer, an address that differs from theirs only by "+tag" or dots.
+  flags             String[]
+
+  ip        String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([referralId, status])
+  @@index([status, paidAt])
   @@schema("public")
 }
 
@@ -251,8 +300,32 @@ model NotificationLog {
   bouncedAt   DateTime?
   error       String?
 
+  /// The provider's own id for the message (a WhatsApp `wamid`), so a status
+  /// callback can find the row it is about. Unique: Meta delivers the same
+  /// callback more than once, and the lookup must land on one row.
+  providerMessageId String? @unique
+  /// The furthest delivery state reported: sent, delivered, read or failed.
+  /// For WhatsApp `openedAt` is "read" and `bouncedAt` is "failed".
+  deliveryStatus    String?
+
   @@index([customerId, sentAt])
   @@index([channel, template, sentAt])
+  @@schema("public")
+}
+
+/// Inbound WhatsApp messages the webhook has handled, by Meta's message id.
+///
+/// Only the id, the sender and what it was taken to mean — never the text.
+/// Exists so a redelivered webhook (Meta retries anything not answered 200
+/// quickly) cannot opt somebody out twice or send a second confirmation.
+model WhatsappInbound {
+  id         String   @id
+  fromPhone  String
+  /// "stop" for an opt-out keyword, "other" for anything else.
+  kind       String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
   @@schema("public")
 }
 
@@ -278,5 +351,46 @@ model StockAlert {
   @@unique([kind, email, variantId])
   @@index([variantId, notifiedAt])
   @@index([kind, dueAt])
+  @@schema("public")
+}
+
+/// One row per renewal reminder a licence line fell due for — sent, or held
+/// out on purpose.
+///
+/// Its own table rather than `StockAlert` (kind RENEWAL_DUE): that table is
+/// unique on (kind, email, variantId), one row per watcher, while a licence
+/// gets several reminders (30, 14 and 3 days before, one after) and the same
+/// customer can hold several lines of one variant with different end dates.
+/// The unique (orderItemId, offsetDays) is what makes the daily sweep
+/// idempotent: a reminder is claimed by inserting its row.
+///
+/// Plain id columns and no relations, so the feature adds no fields to the
+/// order, customer and promotion models that other work is also changing.
+/// The rows are a log; nothing needs to cascade through them.
+model RenewalReminder {
+  id          String              @id @default(cuid())
+  orderItemId String
+  orderId     String
+  variantId   String
+  productId   String
+  customerId  String?
+  email       String
+  /// Relative to expiry: 30 is thirty days before, -7 seven days after.
+  offsetDays  Int
+  expiresAt   DateTime
+  /// In the measured holdout: due, and deliberately not sent.
+  heldOut     Boolean             @default(false)
+  /// Null when held out, or when the send failed.
+  sentAt      DateTime?
+  /// The single-use renewal code, when the customer had marketing consent.
+  promotionId String?
+  /// Where the reminder went. WhatsApp replaces the email for that offset,
+  /// never adds to it, so one row per offset still holds.
+  channel     NotificationChannel @default(EMAIL)
+  createdAt   DateTime            @default(now())
+
+  @@unique([orderItemId, offsetDays])
+  @@index([createdAt])
+  @@index([email])
   @@schema("public")
 }

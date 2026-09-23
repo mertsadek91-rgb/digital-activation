@@ -406,7 +406,30 @@ export const adminOrderLineSchema = z.object({
   deliveredAt: z.string().nullable(),
 });
 
+/**
+ * One status change, as the order's timeline shows it.
+ *
+ * `actor` is a staff member's name for STAFF, the provider's reference for
+ * PROVIDER, and null for SYSTEM (a sweep, or the delivery pipeline).
+ */
+export const adminOrderEventSchema = z.object({
+  id: z.string(),
+  /** Null only for an order's first recorded status. */
+  from: adminOrderRowSchema.shape.status.nullable(),
+  to: adminOrderRowSchema.shape.status,
+  actorType: z.enum(['SYSTEM', 'STAFF', 'PROVIDER']),
+  actor: z.string().nullable(),
+  reason: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type AdminOrderEvent = z.infer<typeof adminOrderEventSchema>;
+
 export const adminOrderDetailSchema = adminOrderRowSchema.extend({
+  /**
+   * Status history, oldest first. Empty for orders placed before it was
+   * recorded; the timeline then starts from `placedAt` alone.
+   */
+  history: z.array(adminOrderEventSchema),
   activationEmail: z.string().nullable(),
   couponCode: z.string().nullable(),
   locale: localeSchema,
@@ -445,6 +468,9 @@ export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
 
 export const adminOrderListSchema = z.object({
   rows: z.array(adminOrderRowSchema),
+  /** 1-based. The list used to stop at the newest fifty, with no way past. */
+  page: z.number().int().min(1),
+  hasMore: z.boolean(),
   counts: z.object({
     all: z.number().int().min(0),
     awaitingPayment: z.number().int().min(0),
@@ -466,6 +492,25 @@ export type AdminOrderList = z.infer<typeof adminOrderListSchema>;
 export const confirmPaymentSchema = z.object({
   provider: z.enum(['BANK_TRANSFER', 'CRYPTO']),
   reference: z.string().trim().min(3).max(200),
+});
+
+/**
+ * Lifting a hold: an order in PAYMENT_REVIEW, or one blocked by its risk level.
+ *
+ * The reason is required for the same cause the payment reference is: the
+ * hold was put there by a rule, and the only record of why a person overrode
+ * it is what they write here.
+ */
+export const releaseHoldSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
+});
+
+/**
+ * Refunding a whole order. The reason is kept on the order, like a hold
+ * release's, because it is the only record of why the money went back.
+ */
+export const refundOrderSchema = z.object({
+  reason: z.string().trim().min(3).max(500),
 });
 
 export const addOrderNoteSchema = z.object({

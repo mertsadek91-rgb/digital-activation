@@ -324,7 +324,9 @@ function VariantCard({
       <header>
         <strong dir="ltr">{variant.sku}</strong>
         {variant.isDefault ? <span className="pill pill-ready">{t('variantDefault')}</span> : null}
-        <span className={`pill ${variant.status === 'PUBLISHED' ? 'pill-published' : 'pill-draft'}`}>
+        <span
+          className={`pill ${variant.status === 'PUBLISHED' ? 'pill-published' : 'pill-draft'}`}
+        >
           {variant.status}
         </span>
         {/* Sold before. Not a warning against editing — prices change — but

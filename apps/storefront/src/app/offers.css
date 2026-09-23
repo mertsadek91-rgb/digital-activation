@@ -1,0 +1,213 @@
+/*
+ * Basket offers: the "goes well with" cards and dialog, the volume progress
+ * bar, sale badges and their licence line.
+ */
+
+.offer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+.offer-card {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: var(--spacing-2);
+  align-items: center;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.offer-card-media {
+  position: relative;
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+
+.offer-card-media img {
+  object-fit: contain;
+}
+
+.offer-card-body {
+  min-inline-size: 0;
+}
+
+.offer-card-body p {
+  margin: 2px 0;
+}
+
+.offer-card-name {
+  font-weight: 700;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.offer-card-for,
+.offer-licence,
+.offer-note,
+.card-licence {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
+.card-licence {
+  margin: 4px 0 0;
+}
+
+.offer-card-price s {
+  margin-inline-start: 6px;
+  color: var(--color-ink-muted);
+}
+
+.offer-card-pair {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+}
+
+.offer-strip {
+  margin-block-start: var(--spacing-4);
+}
+
+.offer-strip h2 {
+  font-size: var(--text-lg);
+}
+
+/* The dialog. Above the header and the sticky buy bar. */
+.offer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.offer-dialog {
+  position: fixed;
+  z-index: 1001;
+  inset-inline: 16px;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  margin-inline: auto;
+  max-inline-size: 560px;
+  max-block-size: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-lg);
+}
+
+.offer-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+
+.offer-dialog-head h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.offer-dialog-close {
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.offer-dialog-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--spacing-2);
+  margin-block-start: var(--spacing-3);
+}
+
+/* Volume tiers. */
+.volume-progress {
+  margin-block-end: var(--spacing-2);
+  padding: var(--spacing-2);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+}
+
+.volume-progress p {
+  margin: 0 0 6px;
+  font-size: var(--text-sm);
+}
+
+.volume-progress progress {
+  inline-size: 100%;
+  block-size: 8px;
+  accent-color: var(--color-accent);
+}
+
+.volume-progress.is-top {
+  background: var(--color-success-soft);
+}
+
+.offer-superseded {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+
+/* Sales. */
+.sale-notice {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  margin-block: var(--spacing-2);
+}
+
+.sale-notice .offer-licence,
+.sale-countdown {
+  margin: 0;
+}
+
+.sale-countdown {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.sale-countdown.is-over {
+  color: var(--color-ink-muted);
+}
+
+.cart-line-sale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-block: 4px;
+}
+
+.cart-line-sale .offer-licence {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .offer-card {
+    grid-template-columns: 56px 1fr;
+  }
+
+  .offer-card-media {
+    inline-size: 56px;
+    block-size: 56px;
+  }
+
+  .offer-card-action {
+    grid-column: 1 / -1;
+  }
+}

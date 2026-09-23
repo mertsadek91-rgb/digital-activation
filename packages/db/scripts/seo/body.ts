@@ -225,9 +225,7 @@ export function buildBody(product: ProductFacts, lang: Lang): Block[] | null {
           account
             ? 'يصلك حساب جاهز باسم مستخدم وكلمة مرور'
             : 'يصلك مفتاح تفعيل أصلي كسلسلة نصية تُدخلها في المنتج'
-        }${
-          account ? '' : '، مع رابط التحميل الرسمي'
-        }، وخطوات التفعيل مكتوبة بالعربية. ${
+        }${account ? '' : '، مع رابط التحميل الرسمي'}، وخطوات التفعيل مكتوبة بالعربية. ${
           // The term and the device count in prose as well as in the table.
           // The gate reads neither a table nor a step, so a body that states
           // its two most-asked facts only there states them where the one

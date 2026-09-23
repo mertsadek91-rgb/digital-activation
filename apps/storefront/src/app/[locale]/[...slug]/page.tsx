@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
+import type { AppLocale } from '@da/contracts';
+import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
+import { isArabic, resolveLocale } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { goneOrRedirect } from '../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../lib/seo';
+import { notFoundMetadata, pageTitle, robotsMeta } from '../../../lib/seo';
 
 /**
  * Editorial pages: the warranty, the policies, whatever is written next.
@@ -46,6 +48,24 @@ function slugFor(segments: string[]): string | null {
   return segments.length === 1 ? (segments[0] ?? null) : null;
 }
 
+/**
+ * The languages this page has actually been written in.
+ *
+ * The API falls back to whichever row exists, and says which one it served.
+ * So a page served in the other language is known to exist in that one only;
+ * a page served in the language asked for exists in the other as well only if
+ * asking for that one does not fall back too. That second question is the same
+ * cached request the other locale's visitors make, not a new one.
+ *
+ * Declaring both unconditionally paired `/en/privacy` with `/privacy` as
+ * translations of each other while both served the same Arabic text.
+ */
+async function writtenIn(slug: string, served: AppLocale): Promise<AppLocale[]> {
+  const other: AppLocale = isArabic(served) ? 'en' : 'ar';
+  const counterpart = await getPage(slug, { locale: other });
+  return counterpart?.locale === other ? ['ar', 'en'] : [served];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const key = slugFor(slug);
@@ -53,12 +73,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!page) return notFoundMetadata(locale);
 
   const path = `/${page.slug}`;
-  const links = alternates(SITE_URL, path);
   // The locale the body is in, which is not always the one that was asked for.
-  const served = page.locale === 'en' ? 'en' : 'ar';
+  const served = resolveLocale(page.locale);
+  const links = alternatesIn(SITE_URL, path, await writtenIn(page.slug, served));
 
   return {
-    title: page.seo.title ?? page.title,
+    title: pageTitle(page.seo.title ?? page.title),
     description: page.seo.description,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
@@ -81,11 +101,17 @@ export default async function ContentPage({ params }: Props) {
     notFound();
   }
 
-  const ar = locale === 'ar';
+  const t = await getTranslations('contentPage');
+  const tc = await getTranslations('common');
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
   // Requested against served. Equal on every page that has been translated.
-  const served = page.locale === 'en' ? 'en' : 'ar';
-  const translated = served === (ar ? 'ar' : 'en');
+  const served = resolveLocale(page.locale);
+  const translated = served === resolveLocale(locale);
+  // The link to the served version names that version in its own language —
+  // "النسخة العربية" on the English page — so it reads from the served
+  // locale's messages, not the page's.
+  const tServed = await getTranslations({ locale: served, namespace: 'contentPage' });
   const url = new URL(`${prefix}/${page.slug}`, SITE_URL).toString();
 
   // The FAQ blocks become FAQPage markup — the one part of a page like this
@@ -95,7 +121,7 @@ export default async function ContentPage({ params }: Props) {
 
   const graph = buildGraph([
     jsonld.breadcrumbs([
-      { name: ar ? 'الرئيسية' : 'Home', url: new URL(`${prefix}/`, SITE_URL).toString() },
+      { name: tc('home'), url: new URL(`${prefix}/`, SITE_URL).toString() },
       { name: page.title, url },
     ]),
     questions.length > 0 ? jsonld.faqPage(questions) : null,
@@ -111,11 +137,9 @@ export default async function ContentPage({ params }: Props) {
 
       {translated ? null : (
         <p className="notice-untranslated">
-          {ar
-            ? 'لم تُترجَم هذه الصفحة إلى العربية بعد، وما تقرأه أدناه هو النسخة الإنجليزية.'
-            : 'This page has not been translated into English yet. What follows is the Arabic version.'}{' '}
-          <a href={`${served === 'ar' ? '' : '/en'}/${page.slug}`} hrefLang={served}>
-            {served === 'ar' ? 'النسخة العربية' : 'English version'}
+          {t('untranslated')}{' '}
+          <a href={`${isArabic(served) ? '' : '/en'}/${page.slug}`} hrefLang={served}>
+            {tServed('ownVersion')}
           </a>
         </p>
       )}
@@ -123,7 +147,7 @@ export default async function ContentPage({ params }: Props) {
       {/* `lang` and `dir` follow the text, not the route: an Arabic body inside
           an English page is still Arabic, and saying otherwise mis-renders the
           punctuation and tells a screen reader to read it in the wrong voice. */}
-      <div className="prose" lang={served} dir={served === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="prose" lang={served} dir={isArabic(served) ? 'rtl' : 'ltr'}>
         <Blocks blocks={page.blocks} />
       </div>
     </main>

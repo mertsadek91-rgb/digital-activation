@@ -3,6 +3,10 @@
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+
+import { publicMarketing } from '../lib/growth-client';
 
 /**
  * The two things a signed-in customer can look at.
@@ -17,23 +21,35 @@ import { usePathname } from 'next/navigation';
  * orders page, and an order never carries a key — the key comes out one line
  * at a time through the reveal that writes to the vault's access log.
  */
-export function AccountNav({ ar, prefix }: { ar: boolean; prefix: string }) {
+export function AccountNav({ prefix }: { prefix: string }) {
+  const t = useTranslations('account');
   const pathname = usePathname();
   const licences = `${prefix}${ROUTES.licenses}`;
   const orders = `${prefix}${ROUTES.accountOrders}`;
   const forYou = `${prefix}${ROUTES.forYou}`;
+  const referral = `${prefix}/account/referral`;
+  // Only while the programme runs: a tab that opens on "not available" is noise.
+  const [referrals, setReferrals] = useState(false);
+  useEffect(() => {
+    void publicMarketing().then((value) => setReferrals(value?.referral != null));
+  }, []);
 
   return (
     <nav className="account-tabs">
       <Link href={licences} aria-current={pathname === licences ? 'page' : undefined}>
-        {ar ? 'تراخيصي' : 'My licences'}
+        {t('myLicences')}
       </Link>
       <Link href={orders} aria-current={pathname === orders ? 'page' : undefined}>
-        {ar ? 'طلباتي' : 'My orders'}
+        {t('myOrders')}
       </Link>
       <Link href={forYou} aria-current={pathname === forYou ? 'page' : undefined}>
-        {ar ? 'مختارة لك' : 'Chosen for you'}
+        {t('forYou')}
       </Link>
+      {referrals ? (
+        <Link href={referral} aria-current={pathname === referral ? 'page' : undefined}>
+          {t('referral')}
+        </Link>
+      ) : null}
     </nav>
   );
 }

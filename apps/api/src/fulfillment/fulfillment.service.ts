@@ -13,6 +13,7 @@ import {
 } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { transitionOrder } from '../checkout/order-status.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
 import { MailService } from '../mail/mail.service.js';
 import {
@@ -21,6 +22,7 @@ import {
   type OrderLineView,
   orderReceived,
 } from '../mail/templates.js';
+import { orderLink } from '../common/order-link.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type ParsedSecret, canonical, parse, parseBlock } from '../vault/credential.js';
@@ -59,10 +61,13 @@ export class FulfillmentService {
     return process.env.STOREFRONT_URL ?? 'http://localhost:3000';
   }
 
-  /** The order page, in the locale the customer bought in. */
+  /**
+   * The order page, in the locale the customer bought in, carrying the key
+   * that opens it from any device — see `order-link.ts`.
+   */
   private orderUrl(number: string, locale: Locale): string {
     const prefix = locale === Locale.EN ? '/en' : '';
-    return `${this.storefront}${prefix}/orders/${encodeURIComponent(number)}`;
+    return orderLink(this.storefront, `${prefix}/orders/${encodeURIComponent(number)}`, number);
   }
 
   private lang(locale: Locale): 'ar' | 'en' {
@@ -694,19 +699,34 @@ export class FulfillmentService {
       return;
     }
 
+    // Through the transition map, with 'skip': a re-delivery on an order
+    // already FULFILLED or COMPLETED is not a status change, and must not walk
+    // a COMPLETED order back or fail the delivery that triggered it.
     if (delivered === items.length) {
-      await this.prisma.client.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.FULFILLED, fulfilledAt: new Date() },
-      });
+      await this.prisma.client.$transaction((tx) =>
+        transitionOrder(tx, {
+          orderId,
+          from: order.status,
+          to: OrderStatus.FULFILLED,
+          actor: { type: 'SYSTEM' },
+          reason: 'Every line delivered',
+          data: { fulfilledAt: new Date() },
+          ifIllegal: 'skip',
+        }),
+      );
       return;
     }
 
     if (delivered > 0 && order.status === OrderStatus.PAID) {
-      await this.prisma.client.order.update({
-        where: { id: orderId },
-        data: { status: OrderStatus.FULFILLING },
-      });
+      await this.prisma.client.$transaction((tx) =>
+        transitionOrder(tx, {
+          orderId,
+          from: order.status,
+          to: OrderStatus.FULFILLING,
+          actor: { type: 'SYSTEM' },
+          reason: `${String(delivered)} of ${String(items.length)} lines delivered`,
+        }),
+      );
     }
   }
 

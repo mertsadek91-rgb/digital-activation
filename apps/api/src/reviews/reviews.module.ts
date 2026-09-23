@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { AuthModule } from '../auth/auth.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { MarketingModule } from '../marketing/marketing.module.js';
 
 import { InviteSweepService } from './invite-sweep.service.js';
 import { ReviewsController } from './reviews.controller.js';
@@ -25,7 +26,7 @@ import { ReviewsService } from './reviews.service.js';
  * system that must not grow a dependency on SMTP.
  */
 @Module({
-  imports: [AuthModule, MailModule],
+  imports: [AuthModule, MailModule, MarketingModule],
   controllers: [ReviewsController],
   providers: [ReviewsService, InviteSweepService],
   exports: [ReviewsService],

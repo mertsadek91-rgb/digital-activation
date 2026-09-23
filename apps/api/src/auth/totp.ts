@@ -54,8 +54,30 @@ export async function createEnrollment(email: string, issuer: string): Promise<T
  * Tolerance is expressed in SECONDS here, not in time steps — 30 is one step
  * either side, which absorbs clock drift between the server and the phone.
  * Wider than that starts trading security for convenience.
+ *
+ * Returns the time step the code belongs to, or null. The caller records the
+ * step and passes it back as `afterTimeStep` next time, so a code accepted
+ * once is refused for the rest of its window — without that, anybody who saw
+ * a code could use it again for about a minute and a half.
  */
-export function verifyTotp(token: string, secret: string): boolean {
-  const result = verifySync({ token, secret, crypto, base32, epochTolerance: 30 });
-  return result.valid;
+export function verifyTotp(
+  token: string,
+  secret: string,
+  afterTimeStep?: number | null,
+): number | null {
+  const result = verifySync({
+    token,
+    secret,
+    crypto,
+    base32,
+    epochTolerance: 30,
+    ...(afterTimeStep !== null && afterTimeStep !== undefined ? { afterTimeStep } : {}),
+  });
+  if (!result.valid) return null;
+  // The generic `verifySync` is typed for HOTP as well, which has no time
+  // step; for TOTP it is there, and the clock plus the matched offset is the
+  // same number if it ever is not.
+  if ('timeStep' in result && typeof result.timeStep === 'number') return result.timeStep;
+  const delta = 'delta' in result && typeof result.delta === 'number' ? result.delta : 0;
+  return Math.floor(Date.now() / 30_000) + delta;
 }

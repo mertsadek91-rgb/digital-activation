@@ -129,7 +129,8 @@ export default function PaymentsPage() {
    * handlers and cleared in two, and the one place it was forgotten would be a
    * bar that never appears. The object is a handful of strings.
    */
-  const dirty = draft !== null && view !== null && JSON.stringify(draft) !== JSON.stringify(view.settings);
+  const dirty =
+    draft !== null && view !== null && JSON.stringify(draft) !== JSON.stringify(view.settings);
 
   return (
     <Nav me={me} current="payments">

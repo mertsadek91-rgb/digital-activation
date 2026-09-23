@@ -97,8 +97,20 @@ export class MailService {
      * whole order item into, keys and all.
      */
     payload?: Record<string, string | number | boolean | null>;
+    /**
+     * Extra message headers. For `List-Unsubscribe` and its one-click
+     * companion, which the large mailbox providers now require on bulk
+     * marketing mail; without them a promotional send is filed as spam on the
+     * same reputation that carries licence deliveries.
+     */
+    headers?: Record<string, string>;
   }): Promise<SendResult> {
-    const result = await this.deliver(input.to, input.rendered, input.kind ?? 'transactional');
+    const result = await this.deliver(
+      input.to,
+      input.rendered,
+      input.kind ?? 'transactional',
+      input.headers,
+    );
 
     await this.prisma.client.notificationLog.create({
       data: {
@@ -132,15 +144,16 @@ export class MailService {
     to: string,
     rendered: Rendered,
     kind: 'transactional' | 'marketing',
+    headers?: Record<string, string>,
   ): Promise<SendResult> {
     try {
       switch (this.transport) {
         case 'resend':
-          return await this.viaResend(to, rendered, kind);
+          return await this.viaResend(to, rendered, kind, headers);
         case 'capture':
           return this.viaCapture(to, rendered);
         default:
-          return await this.viaSmtp(to, rendered, kind);
+          return await this.viaSmtp(to, rendered, kind, headers);
       }
     } catch (error) {
       // A failed send is a result, not an exception to propagate: the caller
@@ -158,18 +171,30 @@ export class MailService {
     to: string,
     rendered: Rendered,
     kind: 'transactional' | 'marketing',
+    headers?: Record<string, string>,
   ): Promise<SendResult> {
     const url = process.env.SMTP_URL;
     if (!url) throw new ServiceUnavailableException('SMTP_URL is not set.');
 
     const nodemailer = await import('nodemailer');
-    const transporter = nodemailer.createTransport(url);
+    // The object form, because it is the one that takes connection settings
+    // beside the URL. Without timeouts a mail host that accepts the socket and
+    // never answers holds the request open indefinitely — and one of the
+    // requests that sends mail is the Stripe webhook, which Stripe abandons
+    // and retries after its own timeout.
+    const transporter = nodemailer.createTransport({
+      url,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+    });
     const info = await transporter.sendMail({
       from: this.from(kind),
       to,
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html,
+      ...(headers ? { headers } : {}),
     });
     transporter.close();
 
@@ -180,6 +205,7 @@ export class MailService {
     to: string,
     rendered: Rendered,
     kind: 'transactional' | 'marketing',
+    headers?: Record<string, string>,
   ): Promise<SendResult> {
     const key = process.env.RESEND_API_KEY;
     if (!key) throw new ServiceUnavailableException('RESEND_API_KEY is not set.');
@@ -192,6 +218,7 @@ export class MailService {
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html,
+      ...(headers ? { headers } : {}),
     });
 
     if (error) return { ok: false, ref: null, error: error.message };

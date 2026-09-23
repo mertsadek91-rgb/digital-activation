@@ -2,6 +2,8 @@ import Image from 'next/image';
 
 import { BRAND } from '@da/ui';
 
+import { isArabic } from '../i18n/locale';
+
 /**
  * The shop's own logo, carried across from the store this replaces.
  *
@@ -31,7 +33,7 @@ export function BrandLogo({
   /** True only in the header, which is above the fold on every page. */
   priority?: boolean;
 }) {
-  const ar = locale !== 'en';
+  const ar = isArabic(locale);
   const height = Math.round((width * 86) / 200);
 
   return (

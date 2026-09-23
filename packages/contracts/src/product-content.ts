@@ -51,14 +51,19 @@ const answerFirstBlock = z.object({
 const stepsBlock = z.object({
   type: z.literal('steps'),
   title: z.string().trim().max(200).optional(),
-  steps: z.array(z.object({ text: z.string().trim().min(1).max(600) })).min(1).max(12),
+  steps: z
+    .array(z.object({ text: z.string().trim().min(1).max(600) }))
+    .min(1)
+    .max(12),
 });
 
 const faqBlock = z.object({
   type: z.literal('faq'),
   title: z.string().trim().max(200).optional(),
   items: z
-    .array(z.object({ q: z.string().trim().min(1).max(300), a: z.string().trim().min(1).max(2000) }))
+    .array(
+      z.object({ q: z.string().trim().min(1).max(300), a: z.string().trim().min(1).max(2000) }),
+    )
     .min(1)
     .max(20),
 });
@@ -67,7 +72,9 @@ const specTableBlock = z.object({
   type: z.literal('specTable'),
   title: z.string().trim().max(200).optional(),
   rows: z
-    .array(z.object({ label: z.string().trim().min(1).max(120), value: z.string().trim().max(400) }))
+    .array(
+      z.object({ label: z.string().trim().min(1).max(120), value: z.string().trim().max(400) }),
+    )
     .min(1)
     .max(40),
 });

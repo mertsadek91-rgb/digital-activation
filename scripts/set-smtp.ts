@@ -120,7 +120,9 @@ function main(): void {
 
   console.log(`SMTP_URL written: ${scheme}://${mailbox}:<password>@${host}:${port}`);
   console.log(`${path.relative(ROOT, PASSWORD_FILE)} shredded.`);
-  console.log('\nRestart the API, then open حالة المتجر — it dials the server and reports what it finds.');
+  console.log(
+    '\nRestart the API, then open حالة المتجر — it dials the server and reports what it finds.',
+  );
 }
 
 main();

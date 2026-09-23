@@ -1,11 +1,13 @@
 'use client';
 
-import type { CustomerMe, OwnReview, ReviewableLine, ReviewableList } from '@da/contracts';
+import type { CustomerMe, ReviewableLine, ReviewableList } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
+import { isArabic, resolveLocale } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
 /**
@@ -23,25 +25,15 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
  * appeared instantly and was then removed by a moderator is worse than one
  * that was honest about the wait. And a review can be corrected only while it
  * is still pending, which is why the state is on every card rather than in a
- * help page.
+ * help page. The state's wording is `accountReviews.status.<status>`.
  */
-const STATUS_AR: Record<OwnReview['status'], string> = {
-  PENDING: 'بانتظار المراجعة',
-  APPROVED: 'منشور',
-  REJECTED: 'لم يُنشَر',
-};
-
-const STATUS_EN: Record<OwnReview['status'], string> = {
-  PENDING: 'Waiting to be read',
-  APPROVED: 'Published',
-  REJECTED: 'Not published',
-};
 
 export default function AccountReviewsPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
-  const ar = (params.locale ?? 'ar') === 'ar';
-  const prefix = ar ? '' : `/${params.locale ?? 'en'}`;
+  const t = useTranslations('account');
+  const tr = useTranslations('accountReviews');
+  const prefix = isArabic(params.locale) ? '' : `/${params.locale ?? 'en'}`;
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [list, setList] = useState<ReviewableList | null>(null);
@@ -85,32 +77,22 @@ export default function AccountReviewsPage() {
   return (
     <main className="shell account-shell">
       <div className="account-head">
-        <h1>{ar ? 'تقييماتي' : 'My reviews'}</h1>
+        <h1>{t('myReviews')}</h1>
         <p className="who" dir="ltr">
           {me.email}
         </p>
         <Link className="btn btn-ghost" href={`${prefix}${ROUTES.licenses}`}>
-          {ar ? 'تراخيصي' : 'My licences'}
+          {t('myLicences')}
         </Link>
       </div>
 
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="account-sent">{note}</p> : null}
 
-      {list && list.rows.length === 0 ? (
-        <p className="notice">
-          {ar
-            ? 'لا شيء لتقييمه بعد. التقييم يُكتب على بند تمّ تسليمه فعلاً، ولا يُكتب بغير ذلك.'
-            : 'Nothing to review yet. A review is written against a line that was actually delivered, and never any other way.'}
-        </p>
-      ) : null}
+      {list && list.rows.length === 0 ? <p className="notice">{tr('none')}</p> : null}
 
       {list && list.awaiting > 0 ? (
-        <p className="notice">
-          {ar
-            ? `${String(list.awaiting)} بند لم تكتب رأيك فيه بعد. لا ننشر أيّ تقييم قبل مراجعته، ولا نعطي خصماً مقابله.`
-            : `${String(list.awaiting)} item you have not written about yet. Nothing is published before a person reads it, and we never trade a discount for a review.`}
-        </p>
+        <p className="notice">{tr('awaiting', { count: list.awaiting })}</p>
       ) : null}
 
       <ul className="licence-list">
@@ -118,7 +100,7 @@ export default function AccountReviewsPage() {
           <ReviewCard
             key={row.orderItemId}
             row={row}
-            ar={ar}
+            locale={resolveLocale(params.locale)}
             prefix={prefix}
             onDone={(message) => {
               setNote(message);
@@ -134,13 +116,13 @@ export default function AccountReviewsPage() {
 
 function ReviewCard({
   row,
-  ar,
+  locale,
   prefix,
   onDone,
   onError,
 }: {
   row: ReviewableLine;
-  ar: boolean;
+  locale: 'ar' | 'en';
   prefix: string;
   onDone: (message: string) => void;
   onError: (message: string | null) => void;
@@ -150,8 +132,9 @@ function ReviewCard({
   const [title, setTitle] = useState(row.review?.title ?? '');
   const [body, setBody] = useState(row.review?.body ?? '');
   const [busy, setBusy] = useState(false);
+  const tr = useTranslations('accountReviews');
+  const trv = useTranslations('reviews');
 
-  const statuses = ar ? STATUS_AR : STATUS_EN;
   const existing = row.review;
 
   async function save(): Promise<void> {
@@ -164,29 +147,19 @@ function ReviewCard({
           title: title.trim().length > 0 ? title.trim() : null,
           body: body.trim(),
         });
-        onDone(ar ? 'حُفظ التعديل.' : 'Your changes are saved.');
+        onDone(tr('saved'));
       } else {
         await accountApi.submitReview(row.orderItemId, {
           rating,
           ...(title.trim().length > 0 ? { title: title.trim() } : {}),
           body: body.trim(),
-          locale: ar ? 'ar' : 'en',
+          locale,
         });
-        onDone(
-          ar
-            ? 'وصلنا تقييمك. يُنشر بعد أن يقرأه أحدنا.'
-            : 'We have your review. It is published once somebody has read it.',
-        );
+        onDone(tr('received'));
       }
       setOpen(false);
     } catch (caught) {
-      onError(
-        caught instanceof Error
-          ? caught.message
-          : ar
-            ? 'تعذّر حفظ التقييم.'
-            : 'The review could not be saved.',
-      );
+      onError(caught instanceof Error ? caught.message : tr('saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -203,8 +176,7 @@ function ReviewCard({
             <span dir="ltr">{row.orderNumber}</span>
             <span>
               {' · '}
-              {ar ? 'سُلّم في ' : 'Delivered '}
-              {row.deliveredAt.slice(0, 10)}
+              {tr('delivered', { date: row.deliveredAt.slice(0, 10) })}
             </span>
           </p>
         </div>
@@ -212,7 +184,7 @@ function ReviewCard({
           <span
             className={`pill ${existing.status === 'APPROVED' ? 'pill-published' : 'pill-draft'}`}
           >
-            {statuses[existing.status]}
+            {tr(`status.${existing.status}`)}
           </span>
         ) : null}
       </div>
@@ -228,7 +200,7 @@ function ReviewCard({
           </p>
           {existing.storeReply ? (
             <div className="review-reply">
-              <p className="review-reply-who">{ar ? 'ردّ المتجر' : 'Reply from the store'}</p>
+              <p className="review-reply-who">{trv('storeReply')}</p>
               <p dir="auto">{existing.storeReply}</p>
             </div>
           ) : null}
@@ -244,7 +216,7 @@ function ReviewCard({
           }}
         >
           <label className="account-field">
-            <span>{ar ? 'التقييم' : 'Rating'}</span>
+            <span>{tr('rating')}</span>
             <select value={rating} onChange={(event) => setRating(Number(event.target.value))}>
               {[5, 4, 3, 2, 1].map((value) => (
                 <option key={value} value={value}>
@@ -255,7 +227,7 @@ function ReviewCard({
           </label>
 
           <label className="account-field">
-            <span>{ar ? 'عنوان (اختياري)' : 'Title (optional)'}</span>
+            <span>{tr('titleLabel')}</span>
             <input
               value={title}
               maxLength={120}
@@ -265,7 +237,7 @@ function ReviewCard({
           </label>
 
           <label className="account-field">
-            <span>{ar ? 'رأيك' : 'Your review'}</span>
+            <span>{tr('body')}</span>
             <textarea
               value={body}
               rows={5}
@@ -278,11 +250,7 @@ function ReviewCard({
           {/* Said before the button, not after it. Somebody who expects their
               words on the page immediately and does not see them there assumes
               the form failed and writes the same review again. */}
-          <p className="account-hint">
-            {ar
-              ? 'يُنشر بعد أن يقرأه أحدنا، ويمكنك تعديله حتى ذلك الحين. إن كان المفتاح لم يعمل فالدعم أسرع من التقييم.'
-              : 'It is published once somebody has read it, and you can change it until then. If a key did not work, support will fix that faster than a review will.'}
-          </p>
+          <p className="account-hint">{tr('hint')}</p>
 
           <div className="licence-actions">
             <button
@@ -290,10 +258,10 @@ function ReviewCard({
               className="btn btn-primary"
               disabled={busy || body.trim().length < 10}
             >
-              {busy ? '…' : ar ? 'أرسل' : 'Send'}
+              {busy ? '…' : tr('send')}
             </button>
             <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
-              {ar ? 'إلغاء' : 'Cancel'}
+              {tr('cancel')}
             </button>
           </div>
         </form>
@@ -301,20 +269,10 @@ function ReviewCard({
         <div className="licence-actions">
           {existing === null || existing.editable ? (
             <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
-              {existing === null
-                ? ar
-                  ? 'اكتب رأيك'
-                  : 'Write a review'
-                : ar
-                  ? 'عدّل تقييمك'
-                  : 'Edit your review'}
+              {existing === null ? tr('write') : tr('edit')}
             </button>
           ) : (
-            <p className="account-hint">
-              {ar
-                ? 'تمّت مراجعة هذا التقييم، فلم يعد قابلاً للتعديل.'
-                : 'This review has been moderated, so it can no longer be changed.'}
-            </p>
+            <p className="account-hint">{tr('moderated')}</p>
           )}
         </div>
       )}

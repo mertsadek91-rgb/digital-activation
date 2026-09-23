@@ -70,6 +70,35 @@ export function convert(
   return { amount: rounded.toFixed(entry.decimals), currency };
 }
 
+/**
+ * A price with a seasonal sale applied, before conversion.
+ *
+ * Here rather than beside the sale settings because this file is the one
+ * place prices are decided, and a sale is a price: the card, the product page,
+ * its structured data and the cart line all read the result, so none of them
+ * can show a different number.
+ *
+ * The compare-at becomes the real current price — the one the shopper would
+ * pay tomorrow, when the sale ends — never an older or invented "was". A
+ * variant's own compare-at is set aside while the sale runs, because two
+ * strike-throughs are one claim too many and the older one is the less true.
+ * Rounded to the cent in USD, half up, like every stored price.
+ */
+export function applySale(
+  priceUsd: Prisma.Decimal,
+  compareAtUsd: Prisma.Decimal | null,
+  salePercent: number | null,
+): { priceUsd: Prisma.Decimal; compareAtUsd: Prisma.Decimal | null } {
+  if (salePercent === null || salePercent <= 0) return { priceUsd, compareAtUsd };
+  const reduced = priceUsd
+    .times(100 - salePercent)
+    .dividedBy(100)
+    .toDecimalPlaces(2);
+  // A sale so small it rounds to nothing is not a sale; no strike-through for it.
+  if (reduced.greaterThanOrEqualTo(priceUsd)) return { priceUsd, compareAtUsd };
+  return { priceUsd: reduced, compareAtUsd: priceUsd };
+}
+
 export function displayPrice(
   priceUsd: Prisma.Decimal,
   compareAtUsd: Prisma.Decimal | null,

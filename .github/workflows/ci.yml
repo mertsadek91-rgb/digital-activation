@@ -9,9 +9,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Read-only. gitleaks lists the pull request's commits, which needs
+# pull-requests: read; nothing here writes to the repository.
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   TURBO_TELEMETRY_DISABLED: 1
   NEXT_TELEMETRY_DISABLED: 1
+  # prisma.config.ts resolves the migrate URL even for `prisma generate`,
+  # which never connects. A placeholder lets the jobs without a database
+  # generate the client; the schema job overrides it with its real Postgres.
+  DATABASE_URL_MIGRATE: postgresql://ci:ci@localhost:5432/ci
 
 jobs:
   verify:
@@ -31,12 +41,25 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
+      # The API's OpenAPI document, for the storefront and admin to generate
+      # clients from. Built from Nest's preview mode, so it needs no database;
+      # published rather than committed, so it is never stale.
+      - name: OpenAPI document
+        run: pnpm --filter @da/api openapi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: apps/api/openapi.json
+          if-no-files-found: error
+
   schema:
     name: Schema and migrations
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17-alpine
+        # The same major as docker-compose and Coolify: a migration that only
+        # works on one of them should fail here, not in production.
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: da
           POSTGRES_PASSWORD: ci
@@ -49,6 +72,9 @@ jobs:
       DATABASE_URL_MIGRATE: postgresql://da:ci@localhost:5432/da_main?schema=public
       DATABASE_URL: postgresql://da:ci@localhost:5432/da_main?schema=public
       DATABASE_URL_VAULT: postgresql://da:ci@localhost:5432/da_main?schema=vault
+      # An empty database Prisma replays the migrations into for the drift
+      # check. Prisma 7 reads it from prisma.config.ts, not a CLI flag.
+      SHADOW_DATABASE_URL: postgresql://da:ci@localhost:5432/da_shadow?schema=public
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -57,6 +83,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Before the seed, which imports the generated client.
+      - run: pnpm db:generate
 
       - name: Apply migrations
         run: pnpm --filter @da/db migrate:deploy
@@ -65,20 +93,45 @@ jobs:
       # migration: the committed migrations must reproduce the schema exactly.
       - name: Fail on schema drift
         run: |
+          PGPASSWORD=ci psql -h localhost -U da -d da_main -c 'CREATE DATABASE da_shadow'
           pnpm --filter @da/db exec prisma migrate diff \
             --from-migrations prisma/migrations \
             --to-schema prisma/schema \
-            --shadow-database-url "$DATABASE_URL_MIGRATE" \
             --exit-code
         continue-on-error: false
 
       - name: Seed
         run: pnpm db:seed
 
+      # Checkout, payment webhooks, fulfilment and cart recovery against this
+      # job's Postgres, after the seed so they run on a store with data in it.
+      # The suite creates its own uniquely named catalogue and never calls
+      # Stripe or a mail server. Owner connection for both clients: the role
+      # split is not what these tests are about (see global-setup.ts).
+      - name: Build the API's workspace dependencies
+        run: pnpm turbo run build --filter=@da/api^...
+      - name: Integration tests
+        run: pnpm --filter @da/api test:int
+        env:
+          TEST_DATABASE_URL: postgresql://da:ci@localhost:5432/da_main?schema=public
+
   budget:
     name: Performance budget
     runs-on: ubuntu-latest
     needs: verify
+    env:
+      # Built and served as production, so the SEO audits measure what a
+      # crawler sees. Without it the store renders noindex (the staging
+      # brake in @da/seo) and Lighthouse fails "blocked from indexing" on
+      # every run for a reason that is working as designed.
+      NEXT_PUBLIC_SITE_URL: https://digital-activation.com
+    # The resource-count budgets (lighthouserc.json) were first written
+    # before this job had ever run. They are now the first measured values
+    # plus a little headroom (20 scripts, 2 stylesheets, 60 requests; CI
+    # measured 15/2/50 and a local run 18/2/53), so
+    # they catch a regression rather than failing on the framework's floor.
+    # unused-javascript is a warning: with no API in CI the page renders its
+    # empty states, and the bundle for the full page looks unused.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -88,7 +141,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
-      - run: pnpm --filter @da/storefront build
+      # Through turbo, so the workspace packages the storefront imports
+      # (@da/ui, @da/seo, @da/contracts, @da/i18n) are built first; a bare
+      # `next build` finds no dist for them.
+      - run: pnpm turbo run build --filter=@da/storefront
 
       # The legacy store shipped 104 stylesheets, 93 scripts and 226 requests,
       # and finished loading in 17.4 seconds. This job is why that cannot come
@@ -118,7 +174,11 @@ jobs:
 
       - name: Reject legacy backup artefacts
         run: |
-          if git ls-files | grep -Ei '(^Old Website/|\.sql$|\.sql\.gz$|\.tar\.gz$|\.wpress$)'; then
+          # The schema's own SQL — migrations and the role scripts — lives under
+          # packages/db/prisma/ and is meant to be here. Without the exclusion
+          # this step fails on every run, and a check that always fails is one
+          # people learn to ignore.
+          if git ls-files | grep -v '^packages/db/prisma/' | grep -Ei '(^Old Website/|\.sql$|\.sql\.gz$|\.tar\.gz$|\.wpress$)'; then
             echo "::error::Legacy backup artefacts must never be committed. See .gitignore."
             exit 1
           fi

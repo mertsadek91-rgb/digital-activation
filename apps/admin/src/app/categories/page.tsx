@@ -252,9 +252,7 @@ function CategoryRow({
                 <select
                   id={`cat-parent-${row.id}`}
                   value={draft.parentId ?? ''}
-                  onChange={(event) =>
-                    setDraft({ ...draft, parentId: event.target.value || null })
-                  }
+                  onChange={(event) => setDraft({ ...draft, parentId: event.target.value || null })}
                 >
                   <option value="">{t('topLevel')}</option>
                   {parents
@@ -274,9 +272,7 @@ function CategoryRow({
                   min={0}
                   dir="ltr"
                   value={draft.position}
-                  onChange={(event) =>
-                    setDraft({ ...draft, position: Number(event.target.value) })
-                  }
+                  onChange={(event) => setDraft({ ...draft, position: Number(event.target.value) })}
                 />
               </label>
               <label>

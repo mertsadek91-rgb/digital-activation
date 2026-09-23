@@ -16,6 +16,13 @@ const envSchema = z.object({
   DATABASE_URL_VAULT: z.string().min(1),
 
   REDIS_URL: z.string().min(1),
+  /**
+   * Shared with the storefront's server, which sends it with the visitor's
+   * address so the routes it calls per visitor can be limited per visitor.
+   * Optional: unset, those routes are simply not limited. Whoever holds it can
+   * choose the address a limit counts, so it is a secret like any other.
+   */
+  INTERNAL_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
   MEILI_HOST: z.string().url(),
   MEILI_MASTER_KEY: z.string().min(1),
 
@@ -91,12 +98,37 @@ const envSchema = z.object({
       }
     }, 'is not an IANA timezone name'),
 
+  /**
+   * WhatsApp Cloud API, directly with Meta. All optional: without the token
+   * and number id the retention sweeps keep to email, and without the app
+   * secret the webhook refuses every delivery rather than trusting one.
+   */
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z
+    .string()
+    .regex(/^\d+$/, 'is the numeric id, not the phone number')
+    .optional(),
+  WHATSAPP_APP_SECRET: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().optional(),
+
   BASE_CURRENCY: z.string().length(3).default('USD'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SENTRY_DSN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+/**
+ * Whether a secret is a stand-in rather than a generated value.
+ *
+ * Length is not the test — the example file's placeholder is long enough.
+ * The words people type into placeholders are, and so is how few distinct
+ * characters a hand-typed string has next to 32 random bytes.
+ */
+export function looksLikePlaceholder(secret: string): boolean {
+  if (/change[_-]?me|placeholder|example|replace|your[_-]?secret/i.test(secret)) return true;
+  return new Set(secret).size < 12;
+}
 
 export function validateEnv(raw: Record<string, unknown>): Env {
   // An unset variable in a .env file is written `KEY=`, which dotenv hands over
@@ -140,6 +172,15 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     }
     if (env.MAIL_TRANSPORT === 'smtp' && !env.SMTP_URL) {
       missing.push('SMTP_URL (required by MAIL_TRANSPORT=smtp)');
+    }
+    // The access secret signs the staff session, and the guard trusts the
+    // role inside it without a database read — so whoever knows it can mint
+    // an OWNER token. The `.env.example` placeholder is 38 characters and
+    // passes the length check, which is exactly how it ends up in production.
+    if (looksLikePlaceholder(env.JWT_ACCESS_SECRET)) {
+      throw new Error(
+        'JWT_ACCESS_SECRET looks like a placeholder. Generate one with `pnpm secrets:generate` — anyone who knows this value can sign in as the owner.',
+      );
     }
     if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
     if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');

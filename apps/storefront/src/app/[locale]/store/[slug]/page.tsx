@@ -1,26 +1,59 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { BusinessQuote } from '../../../../components/business-quote';
 import { BuyBox } from '../../../../components/buy-box';
-import { ProductGlyph, SupportIcon } from '../../../../components/icons';
+import { SupportIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
+import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
+import { SaleNotice } from '../../../../components/sale-notice';
 import { Reviews } from '../../../../components/reviews';
+import { SocialProofNotices } from '../../../../components/social-proof';
+import { StockAlert } from '../../../../components/stock-alert';
+import { TrustBlock } from '../../../../components/trust-block';
+import { isArabic } from '../../../../i18n/locale';
+import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
-import { getProduct, getProductReviews } from '../../../../lib/api';
+import { getMarketingPublic, getProduct, getProductReviews } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
-import { notFoundMetadata, robotsMeta } from '../../../../lib/seo';
+import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
+import { deliveryPromise, localText } from '../../../../lib/trust';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
-/** Digits only: `wa.me` takes no groups. The same number the footer prints. */
-const WHATSAPP_DIAL = '966534255367';
+
+/**
+ * Where the warranty's replacement promise applies: the Gulf market the store
+ * sells to. Google asks for the countries explicitly on a return policy.
+ */
+const GCC_COUNTRIES = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+
+/**
+ * The end of next year. Google warns on an offer with no `priceValidUntil`,
+ * and a date that far out makes no promise the page cannot keep — prices here
+ * are rewritten by the catalog, not by a campaign with an end date.
+ */
+const PRICE_VALID_UNTIL = `${String(new Date().getFullYear() + 1)}-12-31`;
+
+/** Lowest and highest variant price, as the decimal strings the API sends. */
+function priceRangeOf(variants: { price: { amount: string } }[]): {
+  lowPrice: string;
+  highPrice: string;
+  offerCount: number;
+} {
+  const sorted = [...variants].sort((a, b) => Number(a.price.amount) - Number(b.price.amount));
+  return {
+    lowPrice: sorted[0]?.price.amount ?? '0',
+    highPrice: sorted[sorted.length - 1]?.price.amount ?? '0',
+    offerCount: variants.length,
+  };
+}
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -35,18 +68,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const links = alternates(SITE_URL, path);
 
   return {
-    title: product.seo.title ?? product.name,
+    title: pageTitle(product.seo.title ?? product.name),
     description: product.seo.description ?? product.shortDesc,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {
-      canonical: canonical(SITE_URL, path, locale === 'en' ? 'en' : 'ar'),
+      canonical: canonical(SITE_URL, path, isArabic(locale) ? 'ar' : 'en'),
       languages: Object.fromEntries(links.map((link) => [link.hrefLang, link.href])),
     },
     openGraph: {
+      ...openGraphDefaults(locale),
       title: product.seo.title ?? product.name,
       description: product.seo.description ?? product.shortDesc ?? undefined,
-      images: product.images.slice(0, 1).map((image) => ({ url: image.url, alt: image.alt })),
-      type: 'website',
+      // The product's own picture when it has one; the brand mark otherwise.
+      ...(product.images[0]
+        ? { images: [{ url: product.images[0].url, alt: product.images[0].alt }] }
+        : {}),
     },
   };
 }
@@ -54,11 +90,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const ar = locale === 'ar';
+  const t = await getTranslations('product');
+  const tc = await getTranslations('common');
+  const tf = await getTranslations('format');
+  const ar = isArabic(locale);
 
-  const [product, reviews] = await Promise.all([
+  const [product, reviews, marketing] = await Promise.all([
     getProduct(slug, { locale }),
     getProductReviews(slug, { locale }),
+    getMarketingPublic({ locale }),
   ]);
   // A slug that no longer exists may have been renamed rather than removed —
   // the redirect map is consulted before the 404, and the miss is recorded.
@@ -120,6 +160,25 @@ export default async function ProductPage({ params }: Props) {
       imageUrls: product.images.map((image) => image.url),
       price: { amount: selected.price.amount, currency: selected.price.currency },
       inStock: selected.inStock,
+      // The range the licence picker shows, from the same variant prices.
+      ...(product.variants.length > 1 ? { priceRange: priceRangeOf(product.variants) } : {}),
+      // During a seasonal sale the offer is valid until the sale ends, when
+      // the price really comes back — the same date the page counts down to.
+      priceValidUntil: product.sale ? product.sale.endsAt.slice(0, 10) : PRICE_VALID_UNTIL,
+      // The Golden Warranty is a replacement promise, not a refund: a key that
+      // does not work within seven days is replaced free. Declared only on the
+      // products that carry it — it has exclusions, and a product outside it
+      // makes no such promise.
+      ...(product.hasGoldenWarranty
+        ? {
+            returnPolicy: {
+              countries: GCC_COUNTRIES,
+              days: 7,
+              url: new URL(`${prefix}${ROUTES.goldenWarranty}`, SITE_URL).toString(),
+              refund: 'exchange' as const,
+            },
+          }
+        : {}),
       // Emitted only from approved, verified-purchase reviews. Inventing one
       // is what produced 565 synthetic reviews on the store this replaces.
       ...(rating ? { rating } : {}),
@@ -131,7 +190,7 @@ export default async function ProductPage({ params }: Props) {
     <main className="shell product">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={ar ? 'مسار التنقّل' : 'Breadcrumb'} className="crumbs">
+      <nav aria-label={tc('breadcrumb')} className="crumbs">
         {product.breadcrumbs.map((crumb, index) => (
           <span key={`${crumb.href}-${String(index)}`}>
             {index > 0 ? <span aria-hidden="true"> › </span> : null}
@@ -146,33 +205,27 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="product-top">
         <div className="product-media-col">
-          <div className="gallery">
-            {product.images[0] ? (
-              <Image
-                src={product.images[0].url}
-                alt={product.images[0].alt}
-                fill
-                priority
-                sizes="(max-width: 900px) 100vw, 480px"
-              />
-            ) : (
-              /* A drawing rather than the words "no image yet", which on a live
-               shop reads as broken rather than as absent. */
-              <ProductGlyph slug={product.slug} label={product.name} />
-            )}
-          </div>
+          <ProductGallery
+            images={product.images.map((image) => ({ url: image.url, alt: image.alt }))}
+            slug={product.slug}
+            name={product.name}
+          />
 
-          {product.images.length > 1 ? (
-            <div className="gallery-thumbs" aria-label={ar ? 'صور إضافية' : 'Additional images'}>
-              {product.images.map((img, idx) => (
-                <div key={idx} className="thumb-item">
-                  <Image src={img.url} alt={img.alt} width={68} height={68} />
-                </div>
-              ))}
-            </div>
+          <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
+
+          {/* The store's own guarantee and registration, from the marketing
+              panel; absent while that feature is off or says nothing. */}
+          {marketing?.trust?.showOnProduct ? (
+            <TrustBlock
+              trust={marketing.trust}
+              locale={locale}
+              delivery={deliveryPromise(
+                product.variants,
+                localText(marketing.trust.instantDeliveryText, locale),
+                tf,
+              )}
+            />
           ) : null}
-
-          <ProductTrust locale={locale} hasGoldenWarranty={product.hasGoldenWarranty} />
         </div>
 
         <div className="buybox">
@@ -191,9 +244,10 @@ export default async function ProductPage({ params }: Props) {
           {reviews && reviews.aggregate.count > 0 ? (
             <p className="proof">
               <a href="#reviews">
-                {ar
-                  ? `${reviews.aggregate.average} من 5 — ${String(reviews.aggregate.count)} تقييماً من مشترين`
-                  : `${reviews.aggregate.average} out of 5 — ${String(reviews.aggregate.count)} verified reviews`}
+                {t('ratingProof', {
+                  average: reviews.aggregate.average,
+                  count: reviews.aggregate.count,
+                })}
               </a>
             </p>
           ) : null}
@@ -201,41 +255,65 @@ export default async function ProductPage({ params }: Props) {
           {/* Real orders only, and only above the floor where a count is proof
               rather than noise. */}
           {product.salesCount > 0 ? (
-            <p className="proof">
-              {ar
-                ? `تم بيعه ${String(product.salesCount)} مرة`
-                : `Sold ${String(product.salesCount)} times`}
-            </p>
+            <p className="proof">{t('salesProof', { count: product.salesCount })}</p>
           ) : null}
 
           {/* The price, the picker, the specification table and the buy
               button move together. They all describe the selected variant, and
               a page where choosing "3 years" leaves the 1-year price on screen
               is worse than one with no picker. */}
+          {/* The badge and licence number sit above the price they explain;
+              the price itself already is the sale price. */}
+          {product.sale ? <SaleNotice sale={product.sale} /> : null}
+
           <BuyBox product={product} locale={locale} />
+
+          {marketing?.business ? (
+            <BusinessQuote
+              productSlug={product.slug}
+              productName={product.name}
+              minSeats={marketing.business.minSeats}
+              locale={locale}
+            />
+          ) : null}
 
           {!selected.inStock ? (
             <div className="oos">
               {/* The legacy store greeted its highest-traffic product page with
-                  "غير متوفر" and offered nothing else. A waiting list turns
-                  that visit into a queued buyer. */}
-              <button type="button" className="notify">
-                {ar ? 'نبّهني عند التوفّر' : 'Notify me when available'}
-              </button>
+                  "غير متوفر" and offered nothing else. Now the visit becomes a
+                  queued buyer — one email when keys arrive — with a person on
+                  WhatsApp beside it for anyone who would rather ask. */}
+              <StockAlert variantId={selected.id} locale={locale} />
+              <a
+                className="notify"
+                href={whatsappLink(t('whatsappWhenBack', { name: product.name, url: pageUrl }))}
+                rel="noopener noreferrer"
+              >
+                {t('askWhenBack')}
+              </a>
             </div>
           ) : null}
 
-          {product.isDraft ? (
-            <p className="draft-flag">
-              {ar ? 'مسودّة — مرئية في المعاينة فقط' : 'Draft — visible in preview only'}
-            </p>
+          {/* Below the buy box, not above it: on a phone the notices sit in the
+              page here, and anything inserted above the button would push it
+              down under a thumb that was already on its way. Keyed by slug so
+              a new product starts a new, separately budgeted page. */}
+          {marketing?.socialProof ? (
+            <SocialProofNotices
+              key={product.slug}
+              slug={product.slug}
+              locale={locale}
+              settings={marketing.socialProof}
+            />
           ) : null}
+
+          {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
         </div>
       </div>
 
       {product.activationSteps ? (
         <section className="prose steps">
-          <h2>{ar ? 'خطوات التفعيل' : 'How to activate'}</h2>
+          <h2>{t('howToActivate')}</h2>
           <ol>
             {product.activationSteps.map((step) => (
               <li key={step.step}>{step.text}</li>
@@ -244,7 +322,7 @@ export default async function ProductPage({ params }: Props) {
           {product.downloadUrl ? (
             <p>
               <a href={product.downloadUrl} rel="nofollow noopener" target="_blank">
-                {ar ? 'رابط التحميل الرسمي' : 'Official download link'}
+                {t('officialDownload')}
               </a>
             </p>
           ) : null}
@@ -260,7 +338,7 @@ export default async function ProductPage({ params }: Props) {
         costs more than a sale not made.
       */}
       {product.warnings.length > 0 ? (
-        <section className="product-warnings" aria-label={ar ? 'قبل الشراء' : 'Before you buy'}>
+        <section className="product-warnings" aria-label={t('beforeYouBuy')}>
           <ul>
             {product.warnings.map((warning) => (
               <li key={warning.text} className={`warning-${warning.severity}`}>
@@ -281,14 +359,14 @@ export default async function ProductPage({ params }: Props) {
         <div className="detail-main">
           {product.body.length > 0 ? (
             <section className="prose panel">
-              <h2>{ar ? 'وصف المنتج' : 'About this product'}</h2>
+              <h2>{t('about')}</h2>
               <Blocks blocks={product.body} />
             </section>
           ) : null}
 
           {product.faq ? (
             <section className="prose panel faq">
-              <h2>{ar ? 'أسئلة متكرّرة' : 'Frequently asked'}</h2>
+              <h2>{t('faq')}</h2>
               <dl>
                 {product.faq.map((item, index) => (
                   <div key={index}>
@@ -308,19 +386,17 @@ export default async function ProductPage({ params }: Props) {
               <SupportIcon />
             </span>
             <div>
-              <strong>{ar ? 'لا تتردّد في طلب الدعم' : 'Ask us before you buy'}</strong>
-              <p>
-                {ar
-                  ? 'عندك سؤال عن التفعيل أو عن النسخة المناسبة لك؟ راسلنا وسنردّ عليك.'
-                  : 'Not sure which licence you need, or how it activates? Message us and a person will answer.'}
-              </p>
+              <strong>{t('helpTitle')}</strong>
+              <p>{t('helpBody')}</p>
             </div>
+            {/* Prefilled with the product and its link, so the first reply is
+                an answer rather than "which product?". */}
             <a
               className="btn btn-ghost"
-              href={`https://wa.me/${WHATSAPP_DIAL}`}
+              href={whatsappLink(t('whatsappQuestion', { name: product.name, url: pageUrl }))}
               rel="noopener noreferrer"
             >
-              {ar ? 'اطلب الدعم' : 'Get help'}
+              {t('getHelp')}
             </a>
           </aside>
         </div>
@@ -331,7 +407,7 @@ export default async function ProductPage({ params }: Props) {
             API could not be reached, where an empty section would be a lie. */}
         {reviews ? (
           <div className="detail-side">
-            <Reviews reviews={reviews} locale={locale} />
+            <Reviews reviews={reviews} />
           </div>
         ) : null}
       </div>
@@ -343,7 +419,7 @@ export default async function ProductPage({ params }: Props) {
           sixty-eight — and absent rather than padded when it is. */}
       {product.articles.length > 0 ? (
         <section className="product-articles">
-          <h2>{ar ? 'اقرأ قبل أن تشتري' : 'Read before you buy'}</h2>
+          <h2>{t('readBeforeBuy')}</h2>
           <ul>
             {product.articles.map((article) => (
               <li key={article.slug}>
@@ -352,7 +428,7 @@ export default async function ProductPage({ params }: Props) {
                   {article.summary ? <span>{article.summary}</span> : null}
                 </Link>
                 {article.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(article.readingMinutes, locale)}</span>
+                  <span className="post-meta">{readingLabel(article.readingMinutes, tf)}</span>
                 ) : null}
               </li>
             ))}
@@ -364,7 +440,7 @@ export default async function ProductPage({ params }: Props) {
           nothing else, rather than padded out with whatever the catalog has. */}
       {product.related.length > 0 ? (
         <section className="related">
-          <h2>{ar ? 'منتجات قد تعجبك' : 'You might also like'}</h2>
+          <h2>{t('related')}</h2>
           <div className="related-row">
             {product.related.map((card) => (
               <ProductCard key={card.slug} card={card} locale={locale} />

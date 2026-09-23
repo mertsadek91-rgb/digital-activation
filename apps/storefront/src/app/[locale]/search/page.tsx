@@ -1,9 +1,10 @@
 import { ROUTES } from '@da/contracts';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ProductCard } from '../../../components/product-card';
+import { isArabic } from '../../../i18n/locale';
 import { searchProducts } from '../../../lib/api';
 
 /**
@@ -39,16 +40,10 @@ function first(value: string | string[] | undefined): string {
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
   const { locale } = await params;
   const q = first((await searchParams).q).trim();
-  const ar = locale !== 'en';
+  const t = await getTranslations({ locale, namespace: 'search' });
 
   return {
-    title: q
-      ? ar
-        ? `نتائج البحث عن ${q}`
-        : `Search results for ${q}`
-      : ar
-        ? 'ابحث في المتجر'
-        : 'Search the store',
+    title: q ? t('metaTitleQuery', { q }) : t('searchStore'),
     // Not a suggestion. A results page is thin by construction and competes
     // with the products it links to.
     robots: { index: false, follow: true },
@@ -58,8 +53,10 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 export default async function SearchPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations('search');
+  const tk = await getTranslations('catalog');
 
-  const ar = locale !== 'en';
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
   const search = await searchParams;
   const q = first(search.q).trim();
@@ -75,16 +72,12 @@ export default async function SearchPage({ params, searchParams }: Props) {
     return (
       <main className="shell">
         <header className="page-head">
-          <h1>{ar ? 'البحث' : 'Search'}</h1>
+          <h1>{t('heading')}</h1>
         </header>
-        <p className="notice">
-          {ar
-            ? 'تعذّر البحث الآن. حاوِل مرّة أخرى بعد قليل، أو تصفّح المتجر.'
-            : 'Search is unavailable just now. Try again shortly, or browse the store.'}
-        </p>
+        <p className="notice">{t('unavailable')}</p>
         <p className="missing-actions">
           <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-            {ar ? 'تصفّح المتجر' : 'Browse the store'}
+            {t('browseStore')}
           </Link>
         </p>
       </main>
@@ -98,46 +91,31 @@ export default async function SearchPage({ params, searchParams }: Props) {
   return (
     <main className="shell">
       <header className="page-head">
-        <h1>
-          {q ? (ar ? 'نتائج البحث' : 'Search results') : ar ? 'ابحث في المتجر' : 'Search the store'}
-        </h1>
+        <h1>{q ? t('results') : t('searchStore')}</h1>
         {q ? (
           <p className="lede">
-            {ar ? 'عن ' : 'for '}
-            <strong>{q}</strong>
+            {t.rich('forQuery', { q, strong: (chunks) => <strong>{chunks}</strong> })}
           </p>
         ) : (
-          <p className="lede">
-            {ar
-              ? 'اكتب اسم المنتج في مربّع البحث أعلى الصفحة — بالعربية أو بالإنجليزية.'
-              : 'Type a product name in the box at the top of the page — in English or in Arabic.'}
-          </p>
+          <p className="lede">{t('hint')}</p>
         )}
       </header>
 
       {q && results.total > 0 ? (
         <div className="store-bar">
-          <p className="result-count">
-            {ar
-              ? `${String(results.total)} نتيجة`
-              : `${String(results.total)} result${results.total === 1 ? '' : 's'}`}
-          </p>
+          <p className="result-count">{t('resultCount', { count: results.total })}</p>
         </div>
       ) : null}
 
       {q && results.total === 0 ? (
         <>
-          <p className="notice">
-            {ar
-              ? 'لا نتائج لهذا البحث. جرّب اسماً أقصر — «أوفيس» بدل «أوفيس 2021 برو بلس».'
-              : 'Nothing matched. Try a shorter name — "Office" rather than "Office 2021 Pro Plus".'}
-          </p>
+          <p className="notice">{t('noResults')}</p>
           <p className="missing-actions">
             <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-              {ar ? 'تصفّح المتجر' : 'Browse the store'}
+              {t('browseStore')}
             </Link>
             <Link className="btn btn-ghost" href={`${prefix}${ROUTES.contact}`}>
-              {ar ? 'اسألنا عنه' : 'Ask us for it'}
+              {t('askUs')}
             </Link>
           </p>
         </>
@@ -152,20 +130,16 @@ export default async function SearchPage({ params, searchParams }: Props) {
       ) : null}
 
       {lastPage > 1 ? (
-        <nav className="pager" aria-label={ar ? 'الصفحات' : 'Pagination'}>
+        <nav className="pager" aria-label={tk('pagination')}>
           {page > 1 ? (
             <Link href={href(page - 1)} rel="prev">
-              {ar ? 'السابق' : 'Previous'}
+              {tk('previous')}
             </Link>
           ) : null}
-          <span>
-            {ar
-              ? `صفحة ${String(page)} من ${String(lastPage)}`
-              : `Page ${String(page)} of ${String(lastPage)}`}
-          </span>
+          <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
           {page < lastPage ? (
             <Link href={href(page + 1)} rel="next">
-              {ar ? 'التالي' : 'Next'}
+              {tk('next')}
             </Link>
           ) : null}
         </nav>

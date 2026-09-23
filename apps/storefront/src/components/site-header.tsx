@@ -1,14 +1,17 @@
 'use client';
 
 import { ROUTES } from '@da/contracts';
-import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { BRAND } from '@da/ui';
 
+import { isArabic } from '../i18n/locale';
+import { Link as LocaleLink, usePathname as useLocalePathname } from '../i18n/navigation';
 import { CART_EVENT, type CartEventDetail, cartApi } from '../lib/cart-client';
+import { SUPPORT_EMAIL, WHATSAPP_SHOWN, whatsappLink } from '../lib/contact';
 
 import {
   CartIcon,
@@ -21,6 +24,7 @@ import {
   UserIcon,
 } from './icons';
 import { BrandLogo } from './brand-logo';
+import { CurrencySwitcher } from './currency-switcher';
 import { SearchBox } from './search-box';
 
 /**
@@ -39,9 +43,7 @@ export interface HeaderCollection {
   productCount: number;
 }
 
-const WHATSAPP_DIAL = '966534255367';
-const WHATSAPP_SHOWN = '+966 53 425 5367';
-const SUPPORT_EMAIL = 'help@digital-activation.com';
+const DRAWER_ID = 'site-drawer';
 
 export function SiteHeader({
   locale,
@@ -50,14 +52,29 @@ export function SiteHeader({
   locale: string;
   collections?: HeaderCollection[];
 }) {
-  const ar = locale === 'ar';
+  const t = useTranslations('header');
+  const tc = useTranslations('common');
+  const tk = useTranslations('catalog');
+  const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
   const pathname = usePathname();
+  // The same page without its locale prefix, for the language switch.
+  const localePath = useLocalePathname();
   const [count, setCount] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLElement>(null);
+  const drawerButtonRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
+  /**
+   * The badge, fetched once and then kept current by the cart's own event.
+   *
+   * It used to refetch on every navigation, which is a request to the API per
+   * page view to learn something nothing on the page had changed — every add,
+   * remove and coupon already announces the new cart through `CART_EVENT`.
+   */
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -71,9 +88,8 @@ export function SiteHeader({
     return () => {
       cancelled = true;
     };
-  }, [locale, pathname]);
+  }, [locale]);
 
-  // Listen to cart events
   useEffect(() => {
     const onChange = (event: Event): void => {
       const detail = (event as CustomEvent<CartEventDetail>).detail;
@@ -101,6 +117,21 @@ export function SiteHeader({
     };
   }, [drawerOpen]);
 
+  /**
+   * Focus follows the drawer: into its first link when it opens, back to the
+   * button that opened it when it closes. Without this a keyboard or
+   * screen-reader user opened a dialog and stayed on the button behind it.
+   */
+  useEffect(() => {
+    if (drawerOpen) {
+      wasOpen.current = true;
+      drawerRef.current?.querySelector<HTMLElement>('.drawer-body a')?.focus();
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      drawerButtonRef.current?.focus();
+    }
+  }, [drawerOpen]);
+
   // Escape key closes menus
   useEffect(() => {
     if (!menuOpen && !drawerOpen) return;
@@ -125,6 +156,20 @@ export function SiteHeader({
     };
   }, [menuOpen, drawerOpen]);
 
+  /**
+   * The other language, on the same page.
+   *
+   * It linked to the other language's home page, so somebody reading a
+   * product in Arabic who switched to English had to find the product again.
+   * Every route here exists in both languages under the same path, so the
+   * path is kept and only the prefix changes.
+   *
+   * Its label (`header.otherLanguage`, `header.switchLanguage`) is written in
+   * the language it switches to, because that is the language of the reader
+   * looking for it.
+   */
+  const otherLocale = ar ? 'en' : 'ar';
+
   return (
     <header className="site-header">
       {/* Tier one: how to reach a person, and who you are. Quiet by design —
@@ -134,16 +179,18 @@ export function SiteHeader({
           <div className="utility-group">
             <Link href={`${prefix}${ROUTES.licenses}`} className="utility-link">
               <UserIcon />
-              <span>{ar ? 'تراخيصي' : 'My licences'}</span>
+              <span>{t('myLicences')}</span>
             </Link>
-            <Link
-              href={ar ? '/en' : '/'}
+            <LocaleLink
+              href={localePath}
+              locale={otherLocale}
               className="utility-link"
-              hrefLang={ar ? 'en' : 'ar'}
-              lang={ar ? 'en' : 'ar'}
+              hrefLang={otherLocale}
+              lang={otherLocale}
             >
-              {ar ? 'English' : 'العربية'}
-            </Link>
+              {t('otherLanguage')}
+            </LocaleLink>
+            <CurrencySwitcher className="utility-link currency-switcher" />
           </div>
 
           <div className="utility-group">
@@ -151,11 +198,7 @@ export function SiteHeader({
               <MailIcon />
               <span dir="ltr">{SUPPORT_EMAIL}</span>
             </a>
-            <a
-              className="utility-link"
-              href={`https://wa.me/${WHATSAPP_DIAL}`}
-              rel="noopener noreferrer"
-            >
+            <a className="utility-link" href={whatsappLink()} rel="noopener noreferrer">
               <SupportIcon />
               <span dir="ltr">{WHATSAPP_SHOWN}</span>
             </a>
@@ -166,10 +209,12 @@ export function SiteHeader({
       {/* Tier two: the shop itself. */}
       <div className="site-header-inner">
         <button
+          ref={drawerButtonRef}
           type="button"
           className="mobile-menu-btn"
-          aria-label={ar ? 'فتح القائمة' : 'Open menu'}
+          aria-label={t('openMenu')}
           aria-expanded={drawerOpen}
+          aria-controls={DRAWER_ID}
           onClick={() => setDrawerOpen(true)}
         >
           <MenuIcon />
@@ -193,7 +238,7 @@ export function SiteHeader({
               onClick={() => setMenuOpen(!menuOpen)}
             >
               <MenuIcon />
-              <span>{ar ? 'جميع المنتجات' : 'All products'}</span>
+              <span>{t('allProducts')}</span>
               <ChevronIcon />
             </button>
 
@@ -213,7 +258,7 @@ export function SiteHeader({
                   ))}
                 </ul>
                 <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
-                  {ar ? 'تصفّح المتجر كاملاً' : 'Browse the whole store'}
+                  {t('browseAll')}
                 </Link>
               </div>
             ) : null}
@@ -221,178 +266,167 @@ export function SiteHeader({
         ) : null}
 
         <nav className="site-nav">
-          <Link href={`${prefix}${ROUTES.store}`}>{ar ? 'المتجر' : 'Store'}</Link>
-          <Link href={`${prefix}${ROUTES.goldenWarranty}`}>
-            {ar ? 'الضمان الذهبي' : 'Golden Warranty'}
-          </Link>
-          <Link href={`${prefix}${ROUTES.contact}`}>{ar ? 'تواصل معنا' : 'Contact'}</Link>
+          <Link href={`${prefix}${ROUTES.store}`}>{t('store')}</Link>
+          <Link href={`${prefix}${ROUTES.goldenWarranty}`}>{tc('goldenWarranty')}</Link>
+          <Link href={`${prefix}${ROUTES.contact}`}>{t('contact')}</Link>
         </nav>
 
         <div className="header-search-wrap">
           <SearchBox locale={locale} />
         </div>
 
-        <Link
-          href={`${prefix}${ROUTES.cart}`}
-          className="cart-link"
-          aria-label={ar ? 'السلة' : 'Cart'}
-        >
+        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link" aria-label={t('cart')}>
           <CartIcon />
-          <span className="cart-label">{ar ? 'السلة' : 'Cart'}</span>
+          <span className="cart-label">{t('cart')}</span>
           {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
         </Link>
       </div>
 
-      {/* Mobile Navigation Drawer & Backdrop with Framer Motion */}
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="drawer-overlay is-open"
+      {/* The mobile drawer and its backdrop.
+          Always in the document and moved by CSS transitions on `is-open`,
+          rather than mounted and animated by a script: the slide is the same,
+          and there is no animation library in the header's bundle for it.
+          `inert` while closed keeps its links out of the tab order and away
+          from assistive technology, which an off-screen transform alone does
+          not. */}
+      <div
+        className={`drawer-overlay${drawerOpen ? ' is-open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+      <aside
+        ref={drawerRef}
+        id={DRAWER_ID}
+        className={`drawer-panel${drawerOpen ? ' is-open' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('drawer')}
+        inert={!drawerOpen}
+      >
+        <div className="drawer-head">
+          <Link
+            href={`${prefix}${ROUTES.home}`}
+            className="logo"
+            aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
+            onClick={() => setDrawerOpen(false)}
+          >
+            <BrandLogo locale={locale} width={100} />
+          </Link>
+          <button
+            type="button"
+            className="drawer-close"
+            aria-label={t('closeMenu')}
+            onClick={() => setDrawerOpen(false)}
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div className="drawer-search">
+          <SearchBox locale={locale} />
+        </div>
+
+        <div className="drawer-body">
+          <nav className="drawer-section">
+            <span className="drawer-section-title">{t('quickNav')}</span>
+            <Link
+              href={`${prefix}${ROUTES.home}`}
+              className="drawer-link"
               onClick={() => setDrawerOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.aside
-              initial={{ x: ar ? '100%' : '-100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: ar ? '100%' : '-100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              className="drawer-panel is-open motion-controlled"
-              aria-label={ar ? 'قائمة التنقل' : 'Navigation Menu'}
             >
-              <div className="drawer-head">
-                <Link
-                  href={`${prefix}${ROUTES.home}`}
-                  className="logo"
-                  aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  <BrandLogo locale={locale} width={100} />
-                </Link>
-                <button
-                  type="button"
-                  className="drawer-close"
-                  aria-label={ar ? 'إغلاق القائمة' : 'Close menu'}
-                  onClick={() => setDrawerOpen(false)}
-                >
-                  <CloseIcon />
-                </button>
-              </div>
+              {tc('home')}
+            </Link>
+            <Link
+              href={`${prefix}${ROUTES.store}`}
+              className="drawer-link"
+              onClick={() => setDrawerOpen(false)}
+            >
+              {t('storeCatalog')}
+            </Link>
+            <Link
+              href={`${prefix}${ROUTES.goldenWarranty}`}
+              className="drawer-link drawer-link-gold"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <span>{tc('goldenWarranty')}</span>
+              <span className="gold-pill">100%</span>
+            </Link>
+            <Link
+              href={`${prefix}${ROUTES.blog}`}
+              className="drawer-link"
+              onClick={() => setDrawerOpen(false)}
+            >
+              {t('blog')}
+            </Link>
+            <Link
+              href={`${prefix}${ROUTES.contact}`}
+              className="drawer-link"
+              onClick={() => setDrawerOpen(false)}
+            >
+              {t('contactUs')}
+            </Link>
+          </nav>
 
-              <div className="drawer-search">
-                <SearchBox locale={locale} />
-              </div>
+          {collections.length > 0 ? (
+            <div className="drawer-section">
+              <span className="drawer-section-title">{tk('categories')}</span>
+              <ul className="drawer-cat-list">
+                {collections.map((collection) => (
+                  <li key={collection.slug}>
+                    <Link
+                      href={`${prefix}${ROUTES.collection(collection.slug)}`}
+                      className="drawer-cat-link"
+                      onClick={() => setDrawerOpen(false)}
+                    >
+                      <CategoryMark slug={collection.slug} />
+                      <span className="drawer-cat-name">{collection.name}</span>
+                      {collection.productCount > 0 ? (
+                        <span className="drawer-cat-count">{collection.productCount}</span>
+                      ) : null}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
-              <div className="drawer-body">
-                <nav className="drawer-section">
-                  <span className="drawer-section-title">
-                    {ar ? 'التنقل السريع' : 'Navigation'}
-                  </span>
-                  <Link
-                    href={`${prefix}${ROUTES.home}`}
-                    className="drawer-link"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    {ar ? 'الرئيسية' : 'Home'}
-                  </Link>
-                  <Link
-                    href={`${prefix}${ROUTES.store}`}
-                    className="drawer-link"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    {ar ? 'المتجر الإلكتروني' : 'Store Catalog'}
-                  </Link>
-                  <Link
-                    href={`${prefix}${ROUTES.goldenWarranty}`}
-                    className="drawer-link drawer-link-gold"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    <span>{ar ? 'الضمان الذهبي' : 'Golden Warranty'}</span>
-                    <span className="gold-pill">100%</span>
-                  </Link>
-                  <Link
-                    href={`${prefix}${ROUTES.blog}`}
-                    className="drawer-link"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    {ar ? 'المدونة والشروحات' : 'Blog'}
-                  </Link>
-                  <Link
-                    href={`${prefix}${ROUTES.contact}`}
-                    className="drawer-link"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    {ar ? 'تواصل معنا' : 'Contact Us'}
-                  </Link>
-                </nav>
-
-                {collections.length > 0 ? (
-                  <div className="drawer-section">
-                    <span className="drawer-section-title">{ar ? 'التصنيفات' : 'Categories'}</span>
-                    <ul className="drawer-cat-list">
-                      {collections.map((collection) => (
-                        <li key={collection.slug}>
-                          <Link
-                            href={`${prefix}${ROUTES.collection(collection.slug)}`}
-                            className="drawer-cat-link"
-                            onClick={() => setDrawerOpen(false)}
-                          >
-                            <CategoryMark slug={collection.slug} />
-                            <span className="drawer-cat-name">{collection.name}</span>
-                            {collection.productCount > 0 ? (
-                              <span className="drawer-cat-count">{collection.productCount}</span>
-                            ) : null}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                <div className="drawer-section drawer-account">
-                  <span className="drawer-section-title">
-                    {ar ? 'حسابك وتواصلك' : 'Account & Help'}
-                  </span>
-                  <Link
-                    href={`${prefix}${ROUTES.licenses}`}
-                    className="drawer-link"
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    <UserIcon />
-                    <span>{ar ? 'تراخيصي ومشترياتي' : 'My Licences & Orders'}</span>
-                  </Link>
-                  <a
-                    href={`https://wa.me/${WHATSAPP_DIAL}`}
-                    className="drawer-link drawer-link-wa"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <SupportIcon />
-                    <span dir="ltr">{WHATSAPP_SHOWN}</span>
-                  </a>
-                  <a href={`mailto:${SUPPORT_EMAIL}`} className="drawer-link">
-                    <MailIcon />
-                    <span dir="ltr">{SUPPORT_EMAIL}</span>
-                  </a>
-                  <Link
-                    href={ar ? '/en' : '/'}
-                    className="drawer-link drawer-lang"
-                    hrefLang={ar ? 'en' : 'ar'}
-                    lang={ar ? 'en' : 'ar'}
-                    onClick={() => setDrawerOpen(false)}
-                  >
-                    🌐 {ar ? 'Switch to English' : 'التحويل إلى العربية'}
-                  </Link>
-                </div>
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+          <div className="drawer-section drawer-account">
+            <span className="drawer-section-title">{t('accountHelp')}</span>
+            <Link
+              href={`${prefix}${ROUTES.licenses}`}
+              className="drawer-link"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <UserIcon />
+              <span>{t('licencesOrders')}</span>
+            </Link>
+            <a
+              href={whatsappLink()}
+              className="drawer-link drawer-link-wa"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <SupportIcon />
+              <span dir="ltr">{WHATSAPP_SHOWN}</span>
+            </a>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="drawer-link">
+              <MailIcon />
+              <span dir="ltr">{SUPPORT_EMAIL}</span>
+            </a>
+            <LocaleLink
+              href={localePath}
+              locale={otherLocale}
+              className="drawer-link drawer-lang"
+              hrefLang={otherLocale}
+              lang={otherLocale}
+              onClick={() => setDrawerOpen(false)}
+            >
+              🌐 {t('switchLanguage')}
+            </LocaleLink>
+            <CurrencySwitcher className="drawer-link currency-switcher" />
+          </div>
+        </div>
+      </aside>
     </header>
   );
 }

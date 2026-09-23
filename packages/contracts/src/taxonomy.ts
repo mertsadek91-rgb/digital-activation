@@ -69,12 +69,7 @@ export type SetCategory = z.infer<typeof setCategorySchema>;
  * `CROSS_SELL` is the one with teeth: it is what the checkout offers, and it
  * is the only kind that carries a discount. The other three are navigation.
  */
-export const productRelationKindSchema = z.enum([
-  'RELATED',
-  'CROSS_SELL',
-  'UPGRADE',
-  'ACCESSORY',
-]);
+export const productRelationKindSchema = z.enum(['RELATED', 'CROSS_SELL', 'UPGRADE', 'ACCESSORY']);
 export type ProductRelationKind = z.infer<typeof productRelationKindSchema>;
 
 export const productLinkSchema = z.object({
@@ -104,7 +99,13 @@ export const createProductLinkSchema = z.object({
    * it on the other three rather than storing a number nothing will ever read.
    */
   bundleDiscountPercent: z
-    .union([z.string().trim().regex(/^\d{1,2}(\.\d{1,2})?$/), z.literal('')])
+    .union([
+      z
+        .string()
+        .trim()
+        .regex(/^\d{1,2}(\.\d{1,2})?$/),
+      z.literal(''),
+    ])
     .default(''),
 });
 export type CreateProductLink = z.infer<typeof createProductLinkSchema>;

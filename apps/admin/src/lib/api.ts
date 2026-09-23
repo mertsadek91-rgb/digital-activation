@@ -12,17 +12,37 @@
 import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
 
 import type {
+  MarketingFeature,
+  MarketingSettings,
+  WhatsappStatus,
+  WhatsappTestResult,
+  WhatsappPurpose,
+  ReviewRequestStats,
+  SocialProofPreview,
+  AdminArticle,
+  AdminArticleList,
+  AdminBrand,
+  AdminBrandList,
   AdminCategoryList,
+  AdminCustomerDetail,
+  AdminCustomerList,
   AdminDashboard,
   AdminOrderDetail,
   AdminOrderList,
+  AdminPage,
+  AdminPageList,
+  AdminPageVersionList,
   AdminProductList,
   AdminProductRow,
   AdminPromotion,
   AdminPromotionList,
   AdminReviewList,
+  CartRecoveryStats,
+  RenewalStats,
   ContactList,
+  CreateArticle,
   CreateCategory,
+  CreatePage,
   CreatedProduct,
   CreateProduct,
   CreateProductLink,
@@ -45,7 +65,10 @@ import type {
   RedirectsView,
   RevealResult,
   SecretInput,
+  SetArticle,
+  SetBrand,
   SetCategory,
+  SetPage,
   SetProductContent,
   SetProductIdentity,
   SetVariantTerms,
@@ -77,6 +100,12 @@ function readerLanguage(): string {
   return toAdminLocale(value === undefined ? undefined : decodeURIComponent(value));
 }
 
+/** What the test form sends; the API normalises the number. */
+export interface WhatsappTestInput {
+  to: string;
+  purpose: WhatsappPurpose;
+  locale: 'ar' | 'en';
+}
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -141,7 +170,7 @@ async function refreshSession(): Promise<boolean> {
  * refusal — a role that may not write — and retrying it forever would turn one
  * permission error into a loop.
  */
-async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
+export async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   /*
    * `content-type: application/json` only when there is JSON to declare.
    *
@@ -183,6 +212,52 @@ async function request<T>(path: string, init?: RequestInit, retried = false): Pr
   }
 
   return payload as T;
+}
+
+/**
+ * Saves a file the API streams, under the name the API gives it.
+ *
+ * Through fetch rather than a plain link, because the session is a cookie
+ * the browser only sends with `credentials: 'include'` from this origin, and
+ * because a 401 needs the same one refresh as any other call — a link would
+ * download the error page as `orders.csv`.
+ */
+export async function download(path: string, retried = false): Promise<void> {
+  const response = await fetch(`${API}/v1${path}`, {
+    credentials: 'include',
+    headers: { 'accept-language': readerLanguage() },
+  });
+  if (response.status === 401 && !retried && (await refreshSession())) {
+    return download(path, true);
+  }
+  if (!response.ok) {
+    const record = ((await response.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+    throw new ApiError(
+      typeof record.message === 'string'
+        ? record.message
+        : `Request failed (${String(response.status)})`,
+      response.status,
+    );
+  }
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'export.csv';
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function query(params: Record<string, string | number | undefined>): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== '') search.set(key, String(value));
+  }
+  const text = search.toString();
+  return text ? `?${text}` : '';
 }
 
 export const api = {
@@ -292,12 +367,65 @@ export const api = {
   // --- description, FAQ, warnings -------------------------------------------
 
   productContent: (slug: string, locale: 'ar' | 'en') =>
-    request<ProductContent>(
-      `/admin/products/${encodeURIComponent(slug)}/content?locale=${locale}`,
-    ),
+    request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content?locale=${locale}`),
 
   setProductContent: (slug: string, patch: SetProductContent) =>
     request<ProductContent>(`/admin/products/${encodeURIComponent(slug)}/content`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  // --- pages, blog posts, brand hubs ----------------------------------------
+
+  contentPages: () => request<AdminPageList>('/admin/content/pages'),
+
+  contentPage: (slug: string) =>
+    request<AdminPage>(`/admin/content/pages/${encodeURIComponent(slug)}`),
+
+  createContentPage: (body: CreatePage) =>
+    request<AdminPage>('/admin/content/pages', { method: 'POST', body: JSON.stringify(body) }),
+
+  setContentPage: (slug: string, patch: SetPage) =>
+    request<AdminPage>(`/admin/content/pages/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  /** Saved states of a page, newest first, both locales. */
+  pageVersions: (slug: string) =>
+    request<AdminPageVersionList>(`/admin/content/pages/${encodeURIComponent(slug)}/versions`),
+
+  /** Saves an old state as the newest version. Status and URL are untouched. */
+  restorePageVersion: (slug: string, versionId: string) =>
+    request<AdminPage>(
+      `/admin/content/pages/${encodeURIComponent(slug)}/versions/${encodeURIComponent(versionId)}/restore`,
+      { method: 'POST' },
+    ),
+
+  contentArticles: () => request<AdminArticleList>('/admin/content/articles'),
+
+  contentArticle: (slug: string) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}`),
+
+  createContentArticle: (body: CreateArticle) =>
+    request<AdminArticle>('/admin/content/articles', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  setContentArticle: (slug: string, patch: SetArticle) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    }),
+
+  contentBrands: () => request<AdminBrandList>('/admin/content/brands'),
+
+  contentBrand: (id: string) =>
+    request<AdminBrand>(`/admin/content/brands/${encodeURIComponent(id)}`),
+
+  setContentBrand: (id: string, patch: SetBrand) =>
+    request<AdminBrand>(`/admin/content/brands/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: JSON.stringify(patch),
     }),
@@ -437,13 +565,34 @@ export const api = {
 
   // --- orders ------------------------------------------------------------------
 
-  orders: (status?: string, q?: string) => {
+  orders: (status?: string, q?: string, page = 1) => {
     const search = new URLSearchParams();
     if (status) search.set('status', status);
     if (q) search.set('q', q);
+    if (page > 1) search.set('page', String(page));
     const suffix = search.toString();
     return request<AdminOrderList>(`/admin/orders${suffix ? `?${suffix}` : ''}`);
   },
+
+  /** Orders as CSV. `status` is the list's filter key; dates are YYYY-MM-DD. */
+  exportOrders: (params: { from?: string; to?: string; status?: string }) =>
+    download(`/admin/orders/export.csv${query(params)}`),
+
+  // --- customers ---------------------------------------------------------------
+
+  customers: (q?: string, page = 1) =>
+    request<AdminCustomerList>(
+      `/admin/customers${query({ q, page: page > 1 ? page : undefined })}`,
+    ),
+
+  customer: (id: string) =>
+    request<AdminCustomerDetail>(`/admin/customers/${encodeURIComponent(id)}`),
+
+  /** Every customer, with consent columns; `optedInOnly` for a mailing list. */
+  exportCustomers: (params: { q?: string; optedInOnly?: boolean }) =>
+    download(
+      `/admin/customers/export.csv${query({ q: params.q, consent: params.optedInOnly ? 'opted-in' : undefined })}`,
+    ),
 
   /**
    * Confirms money that arrived outside the store.
@@ -457,6 +606,52 @@ export const api = {
       `/admin/orders/${encodeURIComponent(number)}/confirm-payment`,
       { method: 'POST', body: JSON.stringify({ provider, reference }) },
     ),
+
+  // --- marketing ---------------------------------------------------------------
+
+  marketingSettings: () => request<MarketingSettings>('/admin/marketing/settings'),
+
+  /** Replaces one feature's settings; the API validates them against its schema. */
+  setMarketingSettings: <F extends MarketingFeature>(feature: F, value: MarketingSettings[F]) =>
+    request<MarketingSettings[F]>(`/admin/marketing/settings/${feature}`, {
+      method: 'PUT',
+      body: JSON.stringify(value),
+    }),
+
+  /** Last 30 days of renewal reminders: sent per offset, renewals, holdout comparison. */
+  renewalStats: () => request<RenewalStats>('/admin/marketing/stats/renewals'),
+
+  /** Last 30 days of the cart ladder: per step, recovered orders, holdout comparison. */
+  cartRecoveryStats: () => request<CartRecoveryStats>('/admin/marketing/stats/cartRecovery'),
+
+  /** Which WhatsApp credentials are set (yes/no only), the webhook URL, and 30 days of sends. */
+  whatsappStatus: () => request<WhatsappStatus>('/admin/marketing/whatsapp/status'),
+
+  /** Sends the saved template to one number with sample values. ADMIN only; audited. */
+  whatsappTest: (body: WhatsappTestInput) =>
+    request<WhatsappTestResult>('/admin/marketing/whatsapp/test', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  /** Which products would show a purchase notice now, under the saved settings. */
+  socialProofPreview: () => request<SocialProofPreview>('/admin/marketing/social-proof/preview'),
+
+  /** Review invitations sent in the last 30 days. */
+  reviewRequestStats: () => request<ReviewRequestStats>('/admin/marketing/review-requests/stats'),
+
+  /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
+  refundOrder: (number: string, reason: string) =>
+    request<{ status: string; via: 'stripe' | 'recorded' }>(
+      `/admin/orders/${encodeURIComponent(number)}/refund`,
+      { method: 'POST', body: JSON.stringify({ reason }) },
+    ),
+
+  /** Lifts a review or risk hold. The reason is kept on the order. */
+  releaseHold: (number: string, reason: string) =>
+    request<{ status: string }>(`/admin/orders/${encodeURIComponent(number)}/release-hold`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
 
   addOrderNote: (number: string, body: string) =>
     request<{ id: string }>(`/admin/orders/${encodeURIComponent(number)}/notes`, {

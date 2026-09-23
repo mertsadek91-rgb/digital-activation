@@ -1,4 +1,17 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Readable } from 'node:stream';
+
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -6,10 +19,18 @@ import {
   type AdminOrderList,
   addOrderNoteSchema,
   confirmPaymentSchema,
+  refundOrderSchema,
+  releaseHoldSchema,
+  adminOrderListSchema,
+  adminOrderDetailSchema,
 } from '@da/contracts';
 import type { z } from 'zod';
 
+import { AuditService } from '../auth/audit.service.js';
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { exportBound } from '../common/csv.js';
+import { say } from '../common/panel-locale.js';
+import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { OrdersService } from './orders.service.js';
@@ -20,29 +41,86 @@ import { OrdersService } from './orders.service.js';
  * Confirming a payment is OWNER and ADMIN only, and deliberately not
  * FULFILLMENT: it releases a licence key against money nobody in this system
  * can see, which is the one action here that cannot be undone by clicking
- * again.
+ * again. Releasing a hold is the same kind of act, and has the same roles.
+ *
+ * Reading is not open to every staff role either: an order carries the
+ * customer's email, address and IP, and a CATALOG or MARKETING account has no
+ * reason to page through those.
  */
 @ApiTags('admin')
 @Controller('admin/orders')
 @UseGuards(StaffGuard)
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly audit: AuditService,
+  ) {}
 
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get()
+  @ZodResponse(adminOrderListSchema)
   @ApiOperation({ summary: 'Orders, newest first' })
   list(
     @Query('status') status?: string,
     @Query('q') q?: string,
     @Query('limit') limit?: string,
+    @Query('page') page?: string,
   ): Promise<AdminOrderList> {
     return this.orders.list({
       status,
       q: q?.trim() || undefined,
       limit: Math.min(200, Math.max(1, Number.parseInt(limit ?? '50', 10) || 50)),
+      page: Math.max(1, Number.parseInt(page ?? '1', 10) || 1),
     });
   }
 
+  /**
+   * Orders as CSV. OWNER and ADMIN: it is every buyer's email and spend in
+   * one portable file, so it is throttled and every download is audited with
+   * the filter that produced it. Never carries a licence key. Declared before
+   * `:number` so the literal path is never read as an order number.
+   */
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN')
+  @Get('export.csv')
+  @ApiOperation({ summary: 'Orders as CSV (UTF-8 with BOM for Excel); from, to, status' })
+  async exportCsv(
+    @Req() request: StaffRequest,
+    @Query('from') fromText?: string,
+    @Query('to') toText?: string,
+    @Query('status') status?: string,
+  ): Promise<StreamableFile> {
+    const from = exportBound(fromText, 'from');
+    const to = exportBound(toText, 'to');
+    if (from === undefined || to === undefined) {
+      throw new BadRequestException(
+        say('التاريخ غير صالح. استخدم YYYY-MM-DD.', 'That date does not parse. Use YYYY-MM-DD.'),
+      );
+    }
+    const filter = status && status !== 'all' ? status : undefined;
+    await this.audit.record({
+      actorId: request.staff?.sub,
+      entity: 'Order',
+      entityId: 'export',
+      action: 'orders.exported',
+      after: {
+        from: from?.toISOString() ?? null,
+        to: to?.toISOString() ?? null,
+        status: filter ?? null,
+      },
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    return new StreamableFile(Readable.from(this.orders.exportCsv({ from, to, status: filter })), {
+      type: 'text/csv; charset=utf-8',
+      disposition: `attachment; filename="orders-${stamp}.csv"`,
+    });
+  }
+
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
   @Get(':number')
+  @ZodResponse(adminOrderDetailSchema)
   @ApiOperation({ summary: 'One order with its lines, payments and notes' })
   detail(@Param('number') number: string): Promise<AdminOrderDetail> {
     return this.orders.detail(number);
@@ -65,6 +143,45 @@ export class OrdersController {
       staffId: request.staff?.sub ?? '',
       context: { ip: request.ip, userAgent: request.headers['user-agent'] },
     });
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN')
+  @Post(':number/release-hold')
+  @ApiOperation({ summary: 'Lift a review or risk hold, and let fulfilment run' })
+  releaseHold(
+    @Param('number') number: string,
+    @Body(new ZodPipe(releaseHoldSchema)) body: z.infer<typeof releaseHoldSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.orders.releaseHold({
+      number,
+      reason: body.reason,
+      staffId: request.staff?.sub ?? '',
+      context: { ip: request.ip, userAgent: request.headers['user-agent'] },
+    });
+  }
+
+  /**
+   * Refunds the whole order. OWNER and ADMIN, like confirming a payment: it
+   * moves money, and the panel is the only place that says who did.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN')
+  @Post(':number/refund')
+  @ApiOperation({ summary: 'Refund an order in full (card via Stripe; others recorded)' })
+  async refund(
+    @Param('number') number: string,
+    @Body(new ZodPipe(refundOrderSchema)) body: z.infer<typeof refundOrderSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    const result = await this.orders.refund({
+      number,
+      reason: body.reason,
+      staffId: request.staff?.sub ?? '',
+      context: { ip: request.ip, userAgent: request.headers['user-agent'] },
+    });
+    return result;
   }
 
   /**
