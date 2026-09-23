@@ -61,6 +61,23 @@ export function formatLicensePeriod(variant: LicenceTerm, locale: string): strin
   return `${String(value)} ${value === 1 ? forms[0] : forms[1]}`;
 }
 
+const PLATFORM: Record<CatalogVariant['platform'], { ar: string; en: string }> = {
+  WINDOWS: { ar: 'ويندوز', en: 'Windows' },
+  MAC: { ar: 'ماك', en: 'macOS' },
+  LINUX: { ar: 'لينكس', en: 'Linux' },
+  CROSS_PLATFORM: { ar: 'متعدد المنصّات', en: 'Cross-platform' },
+};
+
+/**
+ * The platform in words. It was the enum lower-cased — "windows",
+ * "cross platform" — which is English on the Arabic page and not quite
+ * English on the English one.
+ */
+export function formatPlatform(platform: CatalogVariant['platform'], locale: string): string {
+  const label = PLATFORM[platform];
+  return locale === 'ar' ? label.ar : label.en;
+}
+
 export function formatDevices(count: number, locale: string): string {
   if (count === 0) return locale === 'ar' ? 'غير محدود' : 'Unlimited';
   if (locale === 'ar') {

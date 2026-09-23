@@ -386,9 +386,7 @@ export function SiteHeader({
           ) : null}
 
           <div className="drawer-section drawer-account">
-            <span className="drawer-section-title">
-              {ar ? 'حسابك وتواصلك' : 'Account & Help'}
-            </span>
+            <span className="drawer-section-title">{ar ? 'حسابك وتواصلك' : 'Account & Help'}</span>
             <Link
               href={`${prefix}${ROUTES.licenses}`}
               className="drawer-link"

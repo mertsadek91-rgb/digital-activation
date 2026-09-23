@@ -111,6 +111,31 @@ summary {
 }
 
 /*
+ * Prices read left to right in both languages.
+ *
+ * `formatPrice` writes "$19.99" and "AED 36.36" with Latin digits, which is
+ * how Gulf commerce writes them — but dropped into a right-to-left line the
+ * bidi algorithm moved the symbol to the far side, so the Arabic pages showed
+ * "19.99$", and a discount's minus sign ended up after the number. Isolating
+ * each price as its own left-to-right run keeps it as written without
+ * disturbing the line around it. Every selector here is an inline run or a
+ * shrink-to-fit flex item, so the direction does not move its alignment.
+ */
+.price strong,
+.price s,
+.card-price strong,
+.card-price s,
+.variant-price,
+.buy-total strong,
+.buy-bar-price,
+.cart-line-total,
+.order-line-total,
+.totals dd {
+  unicode-bidi: isolate;
+  direction: ltr;
+}
+
+/*
  * Sections that ease in as they scroll into view (`MotionFadeIn`).
  *
  * Scroll-driven rather than script-driven, and applied only where supported

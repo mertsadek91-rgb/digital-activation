@@ -12,6 +12,7 @@ import {
   formatDevices,
   formatFulfillment,
   formatLicensePeriod,
+  formatPlatform,
   formatPrice,
   variantLabel,
 } from '../lib/format';
@@ -116,7 +117,13 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
       await cartApi.add(selected.id, qty, { locale, currency: selected.price.currency });
       setAdded(true);
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : 'تعذّر الإضافة إلى السلة.');
+      setError(
+        caught instanceof CartError
+          ? caught.message
+          : ar
+            ? 'تعذّر الإضافة إلى السلة.'
+            : 'Could not add this to your cart.',
+      );
     } finally {
       setBusy(false);
     }
@@ -161,7 +168,7 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     {
       kind: 'platform',
       label: ar ? 'المنصّة' : 'Platform',
-      value: selected.platform.replace('_', ' ').toLowerCase(),
+      value: formatPlatform(selected.platform, locale),
     },
   ];
 
@@ -329,24 +336,34 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
         )}
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <AnimatePresence>
-        {added && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 6 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -6 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-            className="added"
-          >
-            <span>{ar ? '✓ أُضيف إلى السلة بنجاح.' : '✓ Added to your cart.'}</span>{' '}
-            <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
-              {ar ? 'إتمام الشراء ←' : 'Go to checkout →'}
-            </a>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* A live region that is always in the document, so the confirmation
+          is announced when it appears — a region inserted together with its
+          text is often not read at all. The link says where it goes: it
+          opens the cart, and it was labelled "Go to checkout". */}
+      <div role="status">
+        <AnimatePresence>
+          {added && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -6 }}
+              transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+              className="added"
+            >
+              <span>{ar ? '✓ أُضيف إلى السلة بنجاح.' : '✓ Added to your cart.'}</span>{' '}
+              <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>
+                {ar ? 'عرض السلة ←' : 'View cart →'}
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* The same controls, following the page down with Framer Motion slide-up */}
       <AnimatePresence>

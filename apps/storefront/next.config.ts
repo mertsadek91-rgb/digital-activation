@@ -58,7 +58,11 @@ const config: NextConfig = {
       '/product_cat-sitemap.xml',
     ];
     return [
-      ...sitemaps.map((source) => ({ source, destination: '/sitemap.xml', statusCode: 301 as const })),
+      ...sitemaps.map((source) => ({
+        source,
+        destination: '/sitemap.xml',
+        statusCode: 301 as const,
+      })),
       // `/feed` itself and every per-post, per-category and comments feed
       // (`/<anything>/feed`). The blog is the closest thing to what a feed
       // reader wanted.
