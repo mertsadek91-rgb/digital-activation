@@ -27,6 +27,33 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation
 /** Digits only: `wa.me` takes no groups. The same number the footer prints. */
 const WHATSAPP_DIAL = '966534255367';
 
+/**
+ * Where the warranty's replacement promise applies: the Gulf market the store
+ * sells to. Google asks for the countries explicitly on a return policy.
+ */
+const GCC_COUNTRIES = ['SA', 'AE', 'KW', 'QA', 'BH', 'OM'];
+
+/**
+ * The end of next year. Google warns on an offer with no `priceValidUntil`,
+ * and a date that far out makes no promise the page cannot keep — prices here
+ * are rewritten by the catalog, not by a campaign with an end date.
+ */
+const PRICE_VALID_UNTIL = `${String(new Date().getFullYear() + 1)}-12-31`;
+
+/** Lowest and highest variant price, as the decimal strings the API sends. */
+function priceRangeOf(variants: { price: { amount: string } }[]): {
+  lowPrice: string;
+  highPrice: string;
+  offerCount: number;
+} {
+  const sorted = [...variants].sort((a, b) => Number(a.price.amount) - Number(b.price.amount));
+  return {
+    lowPrice: sorted[0]?.price.amount ?? '0',
+    highPrice: sorted[sorted.length - 1]?.price.amount ?? '0',
+    offerCount: variants.length,
+  };
+}
+
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
 }
@@ -128,6 +155,23 @@ export default async function ProductPage({ params }: Props) {
       imageUrls: product.images.map((image) => image.url),
       price: { amount: selected.price.amount, currency: selected.price.currency },
       inStock: selected.inStock,
+      // The range the licence picker shows, from the same variant prices.
+      ...(product.variants.length > 1 ? { priceRange: priceRangeOf(product.variants) } : {}),
+      priceValidUntil: PRICE_VALID_UNTIL,
+      // The Golden Warranty is a replacement promise, not a refund: a key that
+      // does not work within seven days is replaced free. Declared only on the
+      // products that carry it — it has exclusions, and a product outside it
+      // makes no such promise.
+      ...(product.hasGoldenWarranty
+        ? {
+            returnPolicy: {
+              countries: GCC_COUNTRIES,
+              days: 7,
+              url: new URL(`${prefix}${ROUTES.goldenWarranty}`, SITE_URL).toString(),
+              refund: 'exchange' as const,
+            },
+          }
+        : {}),
       // Emitted only from approved, verified-purchase reviews. Inventing one
       // is what produced 565 synthetic reviews on the store this replaces.
       ...(rating ? { rating } : {}),

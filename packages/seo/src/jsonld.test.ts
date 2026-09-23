@@ -107,6 +107,20 @@ describe('buildGraph', () => {
   it('emits one parseable JSON document, because a page renders exactly one script tag', () => {
     expect(() => graphOf(buildGraph([aProduct()]))).not.toThrow();
   });
+
+  it('cannot be closed early by a </script> inside the data', () => {
+    // A product description is editor-written text. Unescaped, this string
+    // ends the script element and whatever follows is parsed as HTML.
+    const hostile = 'Pro </script><script>alert(1)</script> & more\u2028';
+    const json = buildGraph([aProduct({ description: hostile })]);
+
+    expect(json).not.toMatch(/<\/script/i);
+    expect(json).not.toContain('<');
+    expect(json).not.toContain('\u2028');
+    // Still the same data once parsed.
+    const node = fields(graphOf(json)[0]);
+    expect(node.description).toBe(hostile);
+  });
 });
 
 describe('buildGraph in production', () => {
@@ -168,6 +182,53 @@ describe('product', () => {
     expect(aProduct({ rating: { value: '4.8', count: 12 } }).aggregateRating).toMatchObject({
       ratingValue: '4.8',
       reviewCount: 12,
+    });
+  });
+
+  it('stays a single Offer when there is only one variant', () => {
+    const offers = fields(
+      aProduct({ priceRange: { lowPrice: '9.90', highPrice: '9.90', offerCount: 1 } }).offers,
+    );
+
+    expect(offers['@type']).toBe('Offer');
+    expect(offers.price).toBe('9.90');
+  });
+
+  it('states the range as an AggregateOffer when there is more than one variant', () => {
+    const offers = fields(
+      aProduct({ priceRange: { lowPrice: '9.90', highPrice: '24.00', offerCount: 3 } }).offers,
+    );
+
+    expect(offers).toMatchObject({
+      '@type': 'AggregateOffer',
+      lowPrice: '9.90',
+      highPrice: '24.00',
+      offerCount: 3,
+      priceCurrency: 'USD',
+    });
+    expect(offers.price).toBeUndefined();
+  });
+
+  it('carries the return policy and price validity only when given', () => {
+    expect(fields(aProduct().offers).hasMerchantReturnPolicy).toBeUndefined();
+
+    const offers = fields(
+      aProduct({
+        priceValidUntil: '2027-12-31',
+        returnPolicy: {
+          countries: ['SA'],
+          days: 7,
+          url: 'https://digital-activation.com/golden-warranty',
+          refund: 'exchange',
+        },
+      }).offers,
+    );
+
+    expect(offers.priceValidUntil).toBe('2027-12-31');
+    expect(offers.hasMerchantReturnPolicy).toMatchObject({
+      '@type': 'MerchantReturnPolicy',
+      merchantReturnDays: 7,
+      refundType: 'https://schema.org/ExchangeRefund',
     });
   });
 
