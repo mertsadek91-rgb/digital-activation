@@ -29,6 +29,8 @@ import type {
   AdminPromotion,
   AdminPromotionList,
   AdminReviewList,
+  CartRecoveryStats,
+  RenewalStats,
   ContactList,
   CreateArticle,
   CreateCategory,
@@ -524,6 +526,12 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(value),
     }),
+
+  /** Last 30 days of renewal reminders: sent per offset, renewals, holdout comparison. */
+  renewalStats: () => request<RenewalStats>('/admin/marketing/stats/renewals'),
+
+  /** Last 30 days of the cart ladder: per step, recovered orders, holdout comparison. */
+  cartRecoveryStats: () => request<CartRecoveryStats>('/admin/marketing/stats/cartRecovery'),
 
   /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
   refundOrder: (number: string, reason: string) =>

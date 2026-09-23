@@ -256,9 +256,7 @@ export default function CartPage() {
           {/* Shown only when something is actually being held. Most of this
               catalog is made to order and holds nothing, so a countdown there
               would be invented urgency. */}
-          {cart.reservationExpiresAt ? (
-            <p className="hold-note">{t('holdNote')}</p>
-          ) : null}
+          {cart.reservationExpiresAt ? <p className="hold-note">{t('holdNote')}</p> : null}
 
           <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary btn-wide">
             {t('checkout')}
