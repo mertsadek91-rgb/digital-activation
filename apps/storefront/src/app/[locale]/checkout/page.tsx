@@ -1,7 +1,7 @@
 'use client';
 
 import type { Cart, Checkout, CrossSell, PaymentProvider, PaymentSession } from '@da/contracts';
-import { ROUTES } from '@da/contracts';
+import { ROUTES, normalizeWhatsappPhone } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -76,6 +76,8 @@ export default function CheckoutPage() {
   const [country, setCountry] = useState('');
   const [activationEmail, setActivationEmail] = useState('');
   const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -93,21 +95,40 @@ export default function CheckoutPage() {
   // page costs conversions on every order that did not need it.
   const needsActivationEmail = (cart?.lines ?? []).some((line) => line.requiresActivationEmail);
 
+  /**
+   * The details as the API takes them. The WhatsApp number is checked here
+   * with the same rule the API applies, so a typo is pointed at beside the
+   * field instead of coming back as a refusal after a round trip.
+   */
+  function details(): Parameters<typeof cartApi.startCheckout>[0] {
+    return {
+      email,
+      ...(name ? { name } : {}),
+      ...(country ? { country } : {}),
+      ...(needsActivationEmail ? { activationEmail } : {}),
+      marketingOptIn,
+      ...(whatsappPhone.trim() ? { whatsappPhone: whatsappPhone.trim() } : {}),
+      whatsappOptIn,
+    };
+  }
+
+  const whatsappError =
+    whatsappPhone.trim() !== '' && !normalizeWhatsappPhone(whatsappPhone, country || null)
+      ? t('whatsappPhoneInvalid')
+      : whatsappOptIn && whatsappPhone.trim() === ''
+        ? t('whatsappPhoneNeeded')
+        : null;
+
   async function submitDetails(event: React.FormEvent): Promise<void> {
     event.preventDefault();
+    if (whatsappError) {
+      setError(whatsappError);
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const checkout = await cartApi.startCheckout(
-        {
-          email,
-          ...(name ? { name } : {}),
-          ...(country ? { country } : {}),
-          ...(needsActivationEmail ? { activationEmail } : {}),
-          marketingOptIn,
-        },
-        { locale },
-      );
+      const checkout = await cartApi.startCheckout(details(), { locale });
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
       setError(caught instanceof CartError ? caught.message : t('startFailed'));
@@ -147,16 +168,7 @@ export default function CheckoutPage() {
     try {
       await cartApi.addCrossSell(offer.variantId, { locale });
       // The order has to be redrafted: its lines and total just changed.
-      const checkout = await cartApi.startCheckout(
-        {
-          email,
-          ...(name ? { name } : {}),
-          ...(country ? { country } : {}),
-          ...(needsActivationEmail ? { activationEmail } : {}),
-          marketingOptIn,
-        },
-        { locale },
-      );
+      const checkout = await cartApi.startCheckout(details(), { locale });
       setCart(checkout.cart);
       setStage({ kind: 'pay', checkout });
     } catch (caught) {
@@ -274,6 +286,32 @@ export default function CheckoutPage() {
                   onChange={(event) => setMarketingOptIn(event.target.checked)}
                 />
                 <span>{t('marketingOptIn')}</span>
+              </label>
+
+              {/* Its own number and its own box, unticked: WhatsApp consent is
+                  separate from email consent, and neither is assumed. */}
+              <label>
+                {t('whatsappPhone')}
+                <input
+                  type="tel"
+                  value={whatsappPhone}
+                  onChange={(event) => setWhatsappPhone(event.target.value)}
+                  autoComplete="tel"
+                  inputMode="tel"
+                  dir="ltr"
+                  maxLength={32}
+                  aria-invalid={whatsappError && whatsappPhone.trim() !== '' ? true : undefined}
+                />
+                <small>{t('whatsappPhoneHint')}</small>
+              </label>
+
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={whatsappOptIn}
+                  onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                />
+                <span>{t('whatsappOptIn')}</span>
               </label>
 
               {error ? (
