@@ -384,3 +384,59 @@ seasonal-sale and offer screens refuse to enable a discount without it.
 Promotional emails go only to customers with recorded marketing consent and
 carry a one-click unsubscribe. Set `API_PUBLIC_URL` (or `NEXT_PUBLIC_API_URL`)
 so the `List-Unsubscribe` header can point at the API.
+
+## 10. API — the OpenAPI document and the integration suite
+
+### The spec
+
+`/docs` (Swagger UI) and `/docs-json` exist outside production only. For the
+storefront and admin teams there is a file instead:
+
+```bash
+pnpm --filter @da/api openapi        # writes apps/api/openapi.json
+```
+
+It needs no database, Redis or secrets: the script builds the app in Nest's
+`preview` mode, which constructs the module graph without instantiating a
+single provider, and fills any unset environment variable with a placeholder
+nobody reads. CI runs it on every push and uploads the file as the `openapi`
+artefact; it is gitignored, so there is no checked-in copy to go stale.
+
+The schemas come from `@da/contracts`. Request bodies, queries and path
+params are read off the `ZodPipe` each route already validates with, so the
+spec cannot describe a shape the route does not accept. Responses are named
+per handler with `@ZodResponse(cartSchema)` (from `common/openapi.ts`); a
+handler without one shows an untyped response. Every contracts schema is a
+named component (`cartSchema` → `Cart`), with a `…Request` twin where the
+request side reads differently (defaults optional, unknown keys allowed).
+
+### Integration tests
+
+`apps/api/src/integration/*.int.test.ts` boot the real AppModule against a
+real Postgres and drive it over HTTP: checkout to a paid order and assigned
+keys, an amount mismatch held for review, a redelivered webhook, a one-use
+coupon across two buyers, an earned bundle, a Stripe refund, and the
+cart-recovery sweep's consent rule. Stripe signature checks are stubbed and
+mail uses the capture transport; nothing leaves the machine.
+
+They run only when `TEST_DATABASE_URL` is set, and refuse a URL that is
+neither local nor named like a test database. With a throwaway container:
+
+```bash
+docker run --rm -d --name da-test-pg -p 55432:5432 \
+  -e POSTGRES_USER=da -e POSTGRES_PASSWORD=test -e POSTGRES_DB=da_test \
+  postgres:18-alpine
+
+pnpm db:generate && pnpm turbo run build --filter=@da/api^...
+TEST_DATABASE_URL=postgresql://da:test@localhost:55432/da_test?schema=public \
+  pnpm --filter @da/api test:int
+
+docker rm -f da-test-pg
+```
+
+The suite applies the migrations itself (`prisma migrate deploy`) and creates
+its own uniquely named catalogue each run, so it can run repeatedly against
+the same database. It connects as the owner for both the application and the
+vault client and does not apply `prisma/init/01-roles.sql`: the role split is
+a property of the real database, not of what these tests check. `pnpm test`
+never runs this suite.
