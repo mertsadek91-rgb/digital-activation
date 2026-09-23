@@ -18,12 +18,27 @@
  *
  *   pnpm db:doctor
  */
+import fs from 'node:fs';
 import path from 'node:path';
 
 import { config as loadEnv } from 'dotenv';
 import { Client } from 'pg';
 
 loadEnv({ path: path.join(__dirname, '..', '..', '..', '.env'), quiet: true });
+
+/** Models declared across the split schema — one table each. */
+function modelCount(): number {
+  const dir = path.join(__dirname, '..', 'prisma', 'schema');
+  return fs
+    .readdirSync(dir)
+    .filter((file) => file.endsWith('.prisma'))
+    .reduce(
+      (total, file) =>
+        total +
+        (fs.readFileSync(path.join(dir, file), 'utf8').match(/^model\s+\w+/gm)?.length ?? 0),
+      0,
+    );
+}
 
 type Status = 'pass' | 'fail' | 'warn' | 'skip';
 
@@ -177,10 +192,14 @@ async function main(): Promise<void> {
             AND table_name <> '_prisma_migrations'`,
       );
       const n = Number(tables.rows[0]?.n ?? 0);
+      // Counted from the schema rather than written here: the figure was a
+      // literal 64 that nobody updated as models were added, so a database
+      // exactly in step with the schema reported that the two disagreed.
+      const expected = modelCount();
       record(
         'model tables',
-        n === 64 ? 'pass' : 'warn',
-        `${n} of 64 — ${n === 64 ? 'complete' : 'the schema and the database disagree'}`,
+        n === expected ? 'pass' : 'warn',
+        `${n} of ${expected} — ${n === expected ? 'complete' : 'the schema and the database disagree'}`,
       );
     } catch {
       record(
