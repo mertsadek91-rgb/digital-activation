@@ -366,6 +366,29 @@ imported licence and unwrapped once per delivery, not once per page view.
 `kekVersion` on every row records which generation wrapped it, so a rotation
 re-wraps incrementally instead of forcing a re-encrypt of the whole vault.
 
+### Switching an existing vault to KMS
+
+Licences imported while `KEK_PROVIDER=local` have their data keys wrapped by
+`KEK_LOCAL_BASE64`, and KMS cannot open those — under `aws-kms` the API sends
+every wrapped key to KMS. Rewrap them once, before production starts on KMS:
+
+1. With the KMS key and IAM user ready, put `AWS_KMS_KEY_ID`, `AWS_REGION`,
+   `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the `.env` that also
+   holds `KEK_LOCAL_BASE64` and `DATABASE_URL_VAULT`, and set
+   `VAULT_KEY_VERSION=2`.
+2. `pnpm --filter @da/api vault:rewrap` — reports how many rows the local KEK
+   opens. Nothing is written.
+3. `pnpm --filter @da/api vault:rewrap --apply` — rewraps each of them under
+   KMS, checks each result by opening it through KMS before writing, and
+   changes nothing but `wrappedDek` and `kekVersion`. Safe to re-run; a second
+   run finds nothing to do.
+4. Switch the API to `KEK_PROVIDER=aws-kms` with `VAULT_KEY_VERSION=2`, and the
+   `.env` on any laptop that imports keys too: a key imported under `local`
+   into the production vault is one KMS cannot open.
+
+Keep `KEK_LOCAL_BASE64` afterwards for the staff TOTP rows below; the licences
+no longer need it.
+
 ### Staff TOTP secrets use the same KEK
 
 Staff TOTP secrets are sealed the same way as a licence. Each one gets its own
