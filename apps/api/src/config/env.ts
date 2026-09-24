@@ -182,12 +182,21 @@ export function validateEnv(raw: Record<string, unknown>): Env {
         'JWT_ACCESS_SECRET looks like a placeholder. Generate one with `pnpm secrets:generate` — anyone who knows this value can sign in as the owner.',
       );
     }
-    if (!env.STRIPE_SECRET_KEY) missing.push('STRIPE_SECRET_KEY');
-    if (!env.STRIPE_WEBHOOK_SECRET) missing.push('STRIPE_WEBHOOK_SECRET');
-    // Without it the API can open a PaymentIntent that the browser has nothing
-    // to confirm, so the card option simply disappears from the checkout — a
-    // store live with no card payments and no error anywhere to say why.
-    if (!env.STRIPE_PUBLISHABLE_KEY) missing.push('STRIPE_PUBLISHABLE_KEY');
+    // Card payments are optional: a store can open on bank transfer alone, and
+    // with no Stripe key the checkout simply does not offer a card. What is
+    // refused is half a configuration. Without the webhook secret a card is
+    // charged and the order never learns it was paid; without the publishable
+    // key the card option disappears with no error anywhere to say why.
+    const stripeKeys = {
+      STRIPE_SECRET_KEY: env.STRIPE_SECRET_KEY,
+      STRIPE_WEBHOOK_SECRET: env.STRIPE_WEBHOOK_SECRET,
+      STRIPE_PUBLISHABLE_KEY: env.STRIPE_PUBLISHABLE_KEY,
+    };
+    if (Object.values(stripeKeys).some(Boolean)) {
+      for (const [key, value] of Object.entries(stripeKeys)) {
+        if (!value) missing.push(`${key} (the other Stripe keys are set)`);
+      }
+    }
     // Media lives in R2; without it, uploads would silently fall back to a
     // container filesystem that vanishes on the next deploy.
     if (!env.S3_ENDPOINT) missing.push('S3_ENDPOINT');

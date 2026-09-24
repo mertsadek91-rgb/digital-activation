@@ -468,6 +468,12 @@ collecting the same picture twice.
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `PAYPAL_CLIENT_SECRET` — API
 resource only, for the same reason as the KMS credentials.
 
+Card payments are optional. With none of the three Stripe keys set the API
+boots, the checkout offers no card, and the store takes bank transfer (and
+crypto, if configured) only — enable those under Admin → Payments. What it
+refuses is some of the keys without the others: a charge whose webhook cannot
+be verified is money taken for an order that never learns it was paid.
+
 `JWT_ACCESS_SECRET` must be generated (`pnpm secrets:generate`); production
 refuses to start with a value that looks like the `.env.example` placeholder.
 It also signs the order links in emails and the newsletter confirmation
