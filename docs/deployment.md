@@ -198,7 +198,7 @@ arrive from the storefront's address, and a per-IP limit would count the whole
 shop as one person.
 
 Set `INTERNAL_API_KEY` to the **same value on the API and the storefront**
-resources (32+ characters, `openssl rand -base64 32`). The storefront then sends
+resources (32+ characters; `pnpm secrets:generate --print` includes one). The storefront then sends
 it as `x-da-internal` together with the visitor's address in `x-da-client-ip`
 (taken from `X-Forwarded-For` using the same `TRUST_PROXY_HOPS`), and the API
 counts that address — search at 60 a minute, 404 reports at 30. The forwarded

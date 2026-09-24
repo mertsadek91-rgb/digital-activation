@@ -34,6 +34,8 @@ interface SecretSpec {
   bytes: number;
   encoding: Encoding;
   note: string;
+  /** Absent from an older .env without that being an error. */
+  optional?: boolean;
 }
 
 const SPECS: SecretSpec[] = [
@@ -66,6 +68,15 @@ const SPECS: SecretSpec[] = [
     bytes: 32,
     encoding: 'base64url',
     note: 'full read/write on the search index',
+  },
+  {
+    key: 'INTERNAL_API_KEY',
+    bytes: 32,
+    encoding: 'base64url',
+    note: 'the storefront server to the API — the SAME value on both resources',
+    // Added after most .env files were written. Unset, two routes are simply
+    // not rate-limited, so a file without the line is out of date, not broken.
+    optional: true,
   },
   {
     key: 'KEK_LOCAL_BASE64',
@@ -140,6 +151,7 @@ function main(): void {
       console.log(`${spec.key}=${generate(spec)}`);
     }
     console.warn('');
+    console.warn('INTERNAL_API_KEY goes on the API and the storefront, with the same value.');
     console.warn('KEK_LOCAL_BASE64 is for local development only. Production must use');
     console.warn('KEK_PROVIDER=aws-kms; the API refuses to start otherwise.');
     return;
@@ -155,12 +167,13 @@ function main(): void {
   const filled: string[] = [];
   const kept: string[] = [];
   const absent: string[] = [];
+  const skipped: string[] = [];
 
   for (const spec of SPECS) {
     const current = readEnvValue(lines, spec.key);
 
     if (current === null) {
-      absent.push(spec.key);
+      (spec.optional ? skipped : absent).push(spec.key);
       continue;
     }
     if (!force && !PLACEHOLDERS.has(current)) {
@@ -182,13 +195,18 @@ function main(): void {
         ? 'kept     '
         : absent.includes(spec.key)
           ? 'NO KEY   '
-          : '         ';
+          : skipped.includes(spec.key)
+            ? 'no line  '
+            : '         ';
     console.log(`[${status}] ${spec.key.padEnd(20)}  ${spec.note}`);
   }
 
   console.log('');
   console.log(`${filled.length} generated, ${kept.length} already set, ${absent.length} missing`);
 
+  if (skipped.length > 0) {
+    console.log(`Optional and not in .env: ${skipped.join(', ')}. Add the line to generate it.`);
+  }
   if (kept.length > 0 && !force) {
     console.log('Already-set values were left alone. Pass --force to replace them.');
   }
