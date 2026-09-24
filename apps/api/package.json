@@ -10,6 +10,7 @@
     "test": "vitest run --passWithNoTests",
     "test:int": "vitest run --config vitest.int.config.ts",
     "openapi": "tsc -p tsconfig.build.json && node dist/common/openapi-cli.js openapi.json",
+    "vault:rewrap": "tsc -p tsconfig.build.json && node dist/vault/rewrap-cli.js",
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
