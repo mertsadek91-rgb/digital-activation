@@ -7,3 +7,5 @@
 *.woff2 binary
 *.gz binary
 *.tar binary
+# Parallel branches both append events; keep both sides.
+agent-os/state/events.jsonl merge=union

@@ -1,0 +1,791 @@
+#!/usr/bin/env node
+// Rebuilds every derived file in project-management/ from the Markdown sources.
+//
+// The Markdown files (tasks, issues, change requests, decisions, consensus,
+// epics, milestones) and PERMISSIONS.json are the source of truth. Everything
+// else — the *_INDEX.json files, PROJECT_STATE.json, AGENT_STATE.json,
+// MANAGER_STATE.json, the generated agent/manager profiles and the dashboard's
+// data.js — is written by this script, so none of it can drift by hand.
+//
+//   node project-management/tools/sync.mjs          rebuild, report problems
+//   node project-management/tools/sync.mjs --fix    also move task files into
+//                                                   the folder their status names
+//   node project-management/tools/sync.mjs --check  exit 1 if anything is stale
+//                                                   or invalid (for CI)
+//
+// Status changes are detected against the previous TASK_INDEX.json and
+// appended to logs/task-events.log, so the event log records transitions even
+// when a task file was edited by hand.
+
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs';
+import { appendFileSync } from 'node:fs';
+import { basename, dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const args = new Set(process.argv.slice(2));
+const FIX = args.has('--fix');
+const CHECK = args.has('--check');
+const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+
+// ---------------------------------------------------------------------------
+// Vocabulary. Kept here, and mirrored in PROJECT_CONFIG.json for humans.
+// ---------------------------------------------------------------------------
+
+const STATUS_FOLDER = {
+  BACKLOG: 'backlog',
+  PLANNED: 'planned',
+  READY: 'ready',
+  IN_PROGRESS: 'active',
+  WAITING_DEPENDENCY: 'active',
+  WAITING_INFORMATION: 'active',
+  REVISION_REQUIRED: 'active',
+  BLOCKED: 'blocked',
+  MANAGER_REVIEW: 'review',
+  CROSS_MANAGER_REVIEW: 'cross-review',
+  QA: 'qa',
+  SECURITY_REVIEW: 'qa',
+  REGRESSION_TESTING: 'qa',
+  READY_FOR_RELEASE: 'qa',
+  COMPLETED: 'completed',
+  CANCELLED: 'completed',
+};
+const STAGES = [
+  'ANALYSIS',
+  'RESEARCH',
+  'IMPACT_REVIEW',
+  'APPROVAL',
+  'IMPLEMENTATION',
+  'TECHNICAL_REVIEW',
+  'UX_UI_REVIEW',
+  'MANAGER_REVIEW',
+  'QA',
+  'SECURITY_REVIEW',
+  'REGRESSION',
+  'RELEASE_REVIEW',
+  'COMPLETED',
+];
+const PRIORITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+const RISKS = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
+const OPEN_ISSUE = (s) => !['FIXED', 'VERIFIED', 'CLOSED', 'WONT_FIX', 'DUPLICATE'].includes(s);
+const TERMINAL = new Set(['COMPLETED', 'CANCELLED']);
+const REVIEW = new Set(['MANAGER_REVIEW', 'CROSS_MANAGER_REVIEW']);
+const QA_STATES = new Set(['QA', 'SECURITY_REVIEW', 'REGRESSION_TESTING']);
+
+// ---------------------------------------------------------------------------
+// Front matter: a deliberately small YAML subset — scalars, inline [a, b]
+// lists and block "- item" lists. Anything richer belongs in the body.
+// ---------------------------------------------------------------------------
+
+function scalar(raw) {
+  const v = raw.trim();
+  if (v === '' || v === '~' || v === 'null') return null;
+  if (/^".*"$/.test(v) || /^'.*'$/.test(v)) return v.slice(1, -1);
+  if (/^-?\d+(\.\d+)?$/.test(v)) return Number(v);
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (v.startsWith('[') && v.endsWith(']')) {
+    const inner = v.slice(1, -1).trim();
+    return inner === ''
+      ? []
+      : inner
+          .split(',')
+          .map((s) => scalar(s))
+          .filter((s) => s !== null);
+  }
+  return v;
+}
+
+function parse(file) {
+  const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const m = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
+  if (!m) return { meta: {}, body: text, ok: false };
+  const meta = {};
+  const blockKeys = new Set();
+  let listKey = null;
+  // A flow list Prettier has wrapped over several lines: `key:` then `  [`,
+  // one item per line, `  ]`. Collected here and parsed once it closes.
+  let flowKey = null;
+  let flow = '';
+  for (const line of m[1].split('\n')) {
+    if (flowKey) {
+      flow += ' ' + line.trim();
+      if (line.trim().endsWith(']')) {
+        meta[flowKey] = scalar(flow.replace(/,\s*\]$/, ']'));
+        flowKey = null;
+      }
+      continue;
+    }
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    if (listKey && /^\s+\[/.test(line)) {
+      blockKeys.delete(listKey);
+      flowKey = listKey;
+      listKey = null;
+      flow = line.trim();
+      if (flow.endsWith(']')) {
+        meta[flowKey] = scalar(flow.replace(/,\s*\]$/, ']'));
+        flowKey = null;
+      }
+      continue;
+    }
+    const item = /^\s+-\s+(.*)$/.exec(line);
+    if (item && listKey) {
+      meta[listKey].push(scalar(item[1]));
+      blockKeys.delete(listKey);
+      continue;
+    }
+    const kv = /^([A-Za-z0-9_]+):\s*(.*)$/.exec(line);
+    if (!kv) continue;
+    const inline = kv[2].trim();
+    if (inline === '') {
+      meta[kv[1]] = [];
+      blockKeys.add(kv[1]);
+      listKey = kv[1];
+    } else if (inline.startsWith('[') && !inline.endsWith(']')) {
+      flowKey = kv[1];
+      flow = inline;
+      listKey = null;
+    } else {
+      meta[kv[1]] = scalar(kv[2]);
+      listKey = null;
+    }
+  }
+  // `key:` with nothing under it is an empty scalar, not an empty list —
+  // otherwise `related_consensus:` would read as present (an [] is truthy).
+  for (const k of blockKeys) meta[k] = null;
+  return { meta, body: m[2], ok: true };
+}
+
+function list(v) {
+  if (v == null) return [];
+  return Array.isArray(v) ? v : [v];
+}
+
+function walk(dir) {
+  if (!existsSync(dir)) return [];
+  const out = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...walk(p));
+    else if (e.name.endsWith('.md') && !e.name.startsWith('_') && e.name !== 'README.md')
+      out.push(p);
+  }
+  return out;
+}
+
+const rel = (p) => relative(ROOT, p).split('\\').join('/');
+const problems = [];
+const problem = (where, msg) => problems.push(`${where}: ${msg}`);
+
+function load(folder, prefix) {
+  return (
+    walk(join(ROOT, folder))
+      .map((file) => {
+        const { meta, body, ok } = parse(file);
+        if (!ok) problem(rel(file), 'no front matter');
+        const expected = basename(file, '.md');
+        if (meta.id !== expected) problem(rel(file), `id "${meta.id}" does not match file name`);
+        if (meta.id && !new RegExp(`^${prefix}-\\d{4}$`).test(meta.id))
+          problem(rel(file), `id must look like ${prefix}-0000`);
+        return { ...meta, _file: rel(file), _body: body };
+      })
+      // Folder walk order changes when --fix moves a file; ids do not.
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Load
+// ---------------------------------------------------------------------------
+
+const permissions = JSON.parse(readFileSync(join(ROOT, 'PERMISSIONS.json'), 'utf8'));
+const config = JSON.parse(readFileSync(join(ROOT, 'PROJECT_CONFIG.json'), 'utf8'));
+const managers = permissions.managers;
+const roles = permissions.roles;
+const people = { ...managers, ...roles };
+
+const tasks = load('tasks', 'TASK');
+const issues = load('issues', 'BUG');
+const changes = load('change-requests', 'CR');
+const decisions = load('decisions', 'DEC');
+const consensus = load('consensus', 'CONSENSUS');
+const epics = load('epics', 'EPIC');
+const milestones = load('milestones', 'MILESTONE');
+
+const allIds = new Map();
+for (const item of [
+  ...tasks,
+  ...issues,
+  ...changes,
+  ...decisions,
+  ...consensus,
+  ...epics,
+  ...milestones,
+]) {
+  if (!item.id) continue;
+  if (allIds.has(item.id)) problem(item._file, `duplicate id, also in ${allIds.get(item.id)}`);
+  allIds.set(item.id, item._file);
+}
+
+// ---------------------------------------------------------------------------
+// Validate tasks against the constitution's rules
+// ---------------------------------------------------------------------------
+
+const taskById = new Map(tasks.map((t) => [t.id, t]));
+
+for (const t of tasks) {
+  const where = t._file;
+  if (!STATUS_FOLDER[t.status]) problem(where, `unknown status "${t.status}"`);
+  if (t.stage && !STAGES.includes(t.stage)) problem(where, `unknown stage "${t.stage}"`);
+  if (!PRIORITIES.includes(t.priority)) problem(where, `unknown priority "${t.priority}"`);
+  if (!RISKS.includes(t.risk)) problem(where, `unknown risk "${t.risk}"`);
+  if (![1, 2, 3, 4, 5].includes(t.authority_level)) problem(where, 'authority_level must be 1–5');
+  if (typeof t.progress !== 'number' || t.progress < 0 || t.progress > 100)
+    problem(where, 'progress must be 0–100');
+  if (!t.primary_agent || !people[t.primary_agent])
+    problem(where, `primary_agent "${t.primary_agent}" is not a role in PERMISSIONS.json`);
+  if (!t.responsible_manager || !managers[t.responsible_manager])
+    problem(where, `responsible_manager "${t.responsible_manager}" is not a manager`);
+  for (const r of [...list(t.supporting_agents), ...list(t.required_reviewers)])
+    if (!people[r]) problem(where, `"${r}" is not a role in PERMISSIONS.json`);
+  for (const d of [...list(t.dependencies), ...list(t.blocks)])
+    if (!taskById.has(d) && !allIds.has(d)) problem(where, `references unknown item ${d}`);
+
+  // Authority: the primary agent cannot own work above its ceiling.
+  const owner = people[t.primary_agent];
+  if (owner && t.authority_level > owner.max_authority)
+    problem(
+      where,
+      `authority ${t.authority_level} exceeds ${t.primary_agent}'s ceiling of ${owner.max_authority}`,
+    );
+
+  // Level 5 needs a consensus record before implementation; level 4 needs
+  // more than one manager among the reviewers.
+  const pastApproval = STAGES.indexOf(t.stage) > STAGES.indexOf('APPROVAL');
+  if (t.authority_level === 5 && pastApproval && !t.related_consensus && t.status !== 'CANCELLED')
+    problem(where, 'level 5 task is past APPROVAL without related_consensus');
+  if (t.authority_level >= 4) {
+    const mgrReviewers = list(t.required_reviewers).filter((r) => managers[r]);
+    if (new Set([t.responsible_manager, ...mgrReviewers]).size < 2)
+      problem(where, 'level 4+ task needs a second manager in required_reviewers');
+  }
+
+  // Completion means 100 and nothing it depends on is still open.
+  if (t.status === 'COMPLETED' && t.progress !== 100)
+    problem(where, 'COMPLETED but progress is not 100');
+  if (t.progress === 100 && t.status !== 'COMPLETED')
+    problem(where, 'progress 100 but not COMPLETED');
+  if (!TERMINAL.has(t.status) && t.status !== 'BACKLOG' && t.status !== 'PLANNED') {
+    for (const d of list(t.dependencies)) {
+      const dep = taskById.get(d);
+      if (dep && !TERMINAL.has(dep.status) && !['WAITING_DEPENDENCY', 'BLOCKED'].includes(t.status))
+        problem(where, `is ${t.status} while dependency ${d} is still ${dep.status}`);
+    }
+  }
+}
+
+// File collisions: two open, non-backlog tasks declaring the same file.
+const fileClaims = new Map();
+for (const t of tasks) {
+  if (TERMINAL.has(t.status) || ['BACKLOG', 'PLANNED'].includes(t.status)) continue;
+  for (const f of list(t.affected_files)) {
+    if (!fileClaims.has(f)) fileClaims.set(f, []);
+    fileClaims.get(f).push(t.id);
+  }
+}
+const collisions = [...fileClaims]
+  .filter(([, ids]) => ids.length > 1)
+  .map(([file, ids]) => ({ file, tasks: ids }));
+for (const c of collisions) problem('collision', `${c.file} is claimed by ${c.tasks.join(', ')}`);
+
+// ---------------------------------------------------------------------------
+// Move task files into the folder their status names
+// ---------------------------------------------------------------------------
+
+for (const t of tasks) {
+  const folder = STATUS_FOLDER[t.status];
+  if (!folder) continue;
+  const want = `tasks/${folder}/${t.id}.md`;
+  if (t._file === want) continue;
+  if (FIX) {
+    mkdirSync(join(ROOT, 'tasks', folder), { recursive: true });
+    renameSync(join(ROOT, t._file), join(ROOT, want));
+    t._file = want;
+  } else {
+    problem(t._file, `status ${t.status} belongs in ${want} (run with --fix)`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Detect status transitions against the previous index
+// ---------------------------------------------------------------------------
+
+const indexPath = join(ROOT, 'TASK_INDEX.json');
+const previous = existsSync(indexPath)
+  ? JSON.parse(readFileSync(indexPath, 'utf8'))
+  : { tasks: [] };
+const prevById = new Map(previous.tasks.map((t) => [t.id, t]));
+const transitions = [];
+for (const t of tasks) {
+  const p = prevById.get(t.id);
+  if (!p) transitions.push(`${now} | sync | TASK_CREATED | ${t.id} | ${t.status} | ${t.title}`);
+  else if (p.status !== t.status)
+    transitions.push(
+      `${now} | sync | STATUS_CHANGED | ${t.id} | ${p.status} -> ${t.status} | ${t.title}`,
+    );
+  else if (p.progress !== t.progress)
+    transitions.push(
+      `${now} | sync | PROGRESS_CHANGED | ${t.id} | ${p.progress} -> ${t.progress} | ${t.title}`,
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Build the indices
+// ---------------------------------------------------------------------------
+
+const pick = (o, keys) => Object.fromEntries(keys.map((k) => [k, o[k] ?? null]));
+const TASK_KEYS = [
+  'id',
+  'title',
+  'type',
+  'status',
+  'stage',
+  'priority',
+  'progress',
+  'authority_level',
+  'risk',
+  'primary_agent',
+  'responsible_manager',
+  'supporting_agents',
+  'required_reviewers',
+  'related_change_request',
+  'related_issue',
+  'related_consensus',
+  'related_epic',
+  'related_milestone',
+  'dependencies',
+  'blocks',
+  'affected_modules',
+  'affected_files',
+  'created_at',
+  'updated_at',
+];
+const taskRows = tasks
+  .map((t) => ({ ...pick(t, TASK_KEYS), file: t._file }))
+  .sort((a, b) => a.id.localeCompare(b.id));
+for (const r of taskRows)
+  for (const k of [
+    'supporting_agents',
+    'required_reviewers',
+    'dependencies',
+    'blocks',
+    'affected_modules',
+    'affected_pages',
+    'affected_files',
+  ])
+    r[k] = list(r[k]);
+
+const simpleRows = (items) =>
+  items
+    .map(({ _body, _file, ...rest }) => ({ ...rest, file: _file }))
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+const openTasks = tasks.filter((t) => !TERMINAL.has(t.status));
+const openIssues = issues.filter((i) => OPEN_ISSUE(i.status));
+const security = openIssues.filter((i) => i.category === 'security');
+// Health describes the new application and the infrastructure it runs on. A
+// finding confined to the legacy WordPress site or to offline migration data is
+// reported on its own line and never sets the new app's health — unless it is
+// flagged release_blocker, which is how it gates the cutover.
+const LEGACY_SYSTEMS = new Set(['LEGACY_WORDPRESS', 'MIGRATION']);
+const appIssues = openIssues.filter((i) => !LEGACY_SYSTEMS.has(i.affected_system));
+const legacyIssues = openIssues.filter((i) => LEGACY_SYSTEMS.has(i.affected_system));
+for (const i of issues)
+  if (!i.affected_system) problem(i._file, 'affected_system is required (see PROJECT_CONFIG.json)');
+
+// Health is a rule, not a score. The rule is written down in PROJECT_CONFIG.json.
+function health() {
+  const reasons = [];
+  const critBlocked = tasks.filter((t) => t.status === 'BLOCKED' && t.priority === 'CRITICAL');
+  const releaseBlockers = openIssues.filter((i) => i.release_blocker === true);
+  if (critBlocked.length || releaseBlockers.length) {
+    for (const t of critBlocked) reasons.push(`${t.id} is CRITICAL and BLOCKED`);
+    for (const i of releaseBlockers) reasons.push(`${i.id} blocks release`);
+    return { health: 'BLOCKED', reasons };
+  }
+  const crit = appIssues.filter((i) => i.severity === 'CRITICAL');
+  if (crit.length) {
+    for (const i of crit)
+      reasons.push(`${i.id} is an open CRITICAL ${i.category ? i.category + ' issue' : 'issue'}`);
+    return { health: 'AT_RISK', reasons };
+  }
+  const high = appIssues.filter((i) => i.severity === 'HIGH');
+  const blocked = tasks.filter((t) => t.status === 'BLOCKED');
+  for (const i of high)
+    reasons.push(`${i.id} is an open HIGH ${i.category ? i.category + ' issue' : 'issue'}`);
+  for (const t of blocked) reasons.push(`${t.id} is BLOCKED`);
+  if (problems.length) reasons.push(`${problems.length} governance validation problem(s)`);
+  if (reasons.length) return { health: 'ATTENTION_REQUIRED', reasons };
+  return { health: 'HEALTHY', reasons: [] };
+}
+
+const counted = tasks.filter((t) => t.status !== 'CANCELLED');
+const avg = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
+
+const milestoneRows = simpleRows(milestones).map((m) => {
+  const ts = counted.filter((t) => t.related_milestone === m.id);
+  return { ...m, task_count: ts.length, progress: avg(ts.map((t) => t.progress)) };
+});
+const epicRows = simpleRows(epics).map((e) => {
+  const ts = counted.filter((t) => t.related_epic === e.id);
+  return { ...e, task_count: ts.length, progress: avg(ts.map((t) => t.progress)) };
+});
+
+// ---------------------------------------------------------------------------
+// People state, derived from assignments
+// ---------------------------------------------------------------------------
+
+const logDir = join(ROOT, 'logs');
+mkdirSync(logDir, { recursive: true });
+const readLog = (name) => {
+  const p = join(logDir, name);
+  if (!existsSync(p)) return [];
+  return readFileSync(p, 'utf8')
+    .split(/\r?\n/)
+    .filter((l) => l.trim() && !l.startsWith('#'))
+    .map((l) => {
+      const [at, actor, event, ref, ...rest] = l.split(' | ');
+      return { at, actor, event, ref, message: rest.join(' | ') };
+    });
+};
+const activity = [
+  ...readLog('activity.log'),
+  ...readLog('task-events.log'),
+  ...transitions.map((l) => {
+    const [at, actor, event, ref, ...rest] = l.split(' | ');
+    return { at, actor, event, ref, message: rest.join(' | ') };
+  }),
+].sort((a, b) => b.at.localeCompare(a.at));
+
+const lastActivity = (id) => activity.find((a) => a.actor === id)?.at ?? null;
+
+function agentState(id) {
+  const mine = openTasks.filter((t) => t.primary_agent === id);
+  const reviewing = openTasks.filter(
+    (t) =>
+      list(t.required_reviewers).includes(id) && (REVIEW.has(t.status) || QA_STATES.has(t.status)),
+  );
+  const supporting = openTasks.filter((t) => list(t.supporting_agents).includes(id));
+  let state = 'AVAILABLE';
+  if (mine.some((t) => t.status === 'BLOCKED')) state = 'BLOCKED';
+  else if (mine.some((t) => t.status === 'IN_PROGRESS' || t.status === 'REVISION_REQUIRED'))
+    state = 'WORKING';
+  else if (reviewing.length) state = 'REVIEWING';
+  else if (mine.some((t) => t.status.startsWith('WAITING'))) state = 'WAITING';
+  else if (supporting.some((t) => QA_STATES.has(t.status))) state = 'QA_SUPPORT';
+  const current = mine.find((t) => t.status === 'IN_PROGRESS') ?? mine[0] ?? null;
+  return {
+    id,
+    role: people[id].title,
+    department: people[id].department,
+    manager: people[id].reports_to,
+    staffed: people[id].staffed !== false,
+    state,
+    current_task: current?.id ?? null,
+    assignments: mine.map((t) => t.id),
+    supporting: supporting.map((t) => t.id),
+    reviews: reviewing.map((t) => t.id),
+    workload: mine.length + supporting.length * 0.5 + reviewing.length * 0.5,
+    blockers: mine.filter((t) => t.status === 'BLOCKED').map((t) => t.id),
+    last_activity: lastActivity(id),
+  };
+}
+
+const agentState_ = Object.keys(roles).map(agentState);
+const managerState = Object.keys(managers).map((id) => {
+  const owned = openTasks.filter((t) => t.responsible_manager === id);
+  return {
+    id,
+    manager: managers[id].title,
+    department: managers[id].department,
+    team: Object.entries(roles)
+      .filter(([, r]) => r.reports_to === id)
+      .map(([rid]) => rid),
+    active_tasks: owned.filter((t) => !['BACKLOG', 'PLANNED'].includes(t.status)).map((t) => t.id),
+    owned_tasks: owned.map((t) => t.id),
+    reviews: openTasks
+      .filter(
+        (t) =>
+          (t.responsible_manager === id && REVIEW.has(t.status)) ||
+          (list(t.required_reviewers).includes(id) && t.status === 'CROSS_MANAGER_REVIEW'),
+      )
+      .map((t) => t.id),
+    blocked_work: owned.filter((t) => t.status === 'BLOCKED').map((t) => t.id),
+    pending_decisions: decisions
+      .filter((d) => d.status === 'PROPOSED' && list(d.participants).includes(id))
+      .map((d) => d.id),
+    consensus: consensus
+      .filter(
+        (c) =>
+          c.status !== 'APPROVED' && c.status !== 'REJECTED' && list(c.participants).includes(id),
+      )
+      .map((c) => c.id),
+    risks: openIssues
+      .filter((i) => i.manager === id && ['CRITICAL', 'HIGH'].includes(i.severity))
+      .map((i) => i.id),
+    last_activity: lastActivity(id),
+  };
+});
+
+const h = health();
+const currentMilestone = milestoneRows.find((m) => m.id === config.current_milestone) ?? null;
+const projectState = {
+  project_name: config.project_name,
+  project_type: config.project_type,
+  current_phase: config.current_phase,
+  current_milestone: config.current_milestone,
+  current_milestone_progress: currentMilestone?.progress ?? null,
+  progress: avg(counted.map((t) => t.progress)),
+  health: h.health,
+  health_reasons: h.reasons,
+  total_tasks: tasks.length,
+  active_tasks: tasks.filter((t) =>
+    ['IN_PROGRESS', 'WAITING_DEPENDENCY', 'WAITING_INFORMATION', 'REVISION_REQUIRED'].includes(
+      t.status,
+    ),
+  ).length,
+  blocked_tasks: tasks.filter((t) => t.status === 'BLOCKED').length,
+  review_tasks: tasks.filter((t) => REVIEW.has(t.status)).length,
+  qa_tasks: tasks.filter((t) => QA_STATES.has(t.status)).length,
+  completed_tasks: tasks.filter((t) => t.status === 'COMPLETED').length,
+  open_bugs: appIssues.filter((i) => i.category !== 'security').length,
+  legacy_and_migration_issues: legacyIssues.length,
+  legacy_and_migration_by_severity: Object.fromEntries(
+    SEVERITIES.map((sv) => [sv, legacyIssues.filter((i) => i.severity === sv).length]),
+  ),
+  security_findings: security.filter((i) => !LEGACY_SYSTEMS.has(i.affected_system)).length,
+  security_by_severity: Object.fromEntries(
+    SEVERITIES.map((s) => [
+      s,
+      security.filter((i) => i.severity === s && !LEGACY_SYSTEMS.has(i.affected_system)).length,
+    ]),
+  ),
+  active_change_requests: changes.filter(
+    (c) => !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(c.status),
+  ).length,
+  pending_decisions: decisions.filter((d) => d.status === 'PROPOSED').length,
+  pending_consensus: consensus.filter((c) => !['APPROVED', 'REJECTED'].includes(c.status)).length,
+  active_agents: agentState_.filter((a) => a.state !== 'AVAILABLE').length,
+  file_collisions: collisions.length,
+  validation_problems: problems.length,
+  last_activity: activity[0]?.at ?? null,
+};
+
+// ---------------------------------------------------------------------------
+// Generated profiles — one file per role, rebuilt from PERMISSIONS.json
+// ---------------------------------------------------------------------------
+
+const bullets = (xs) =>
+  list(xs).length
+    ? list(xs)
+        .map((x) => `- ${x}`)
+        .join('\n')
+    : '- —';
+const taskLine = (id) => {
+  const t = taskById.get(id);
+  return t ? `- ${id} — ${t.title} (${t.status}, ${t.progress}%)` : `- ${id}`;
+};
+const GENERATED =
+  '<!-- Generated by tools/sync.mjs from PERMISSIONS.json and the task files. Edit those, not this. -->';
+
+function profile(id, p, state, isManager) {
+  const reportsTo = p.reports_to
+    ? `${people[p.reports_to]?.title ?? p.reports_to} (\`${p.reports_to}\`)`
+    : '—';
+  const lines = [
+    GENERATED,
+    '',
+    `# ${p.title}`,
+    '',
+    `| | |`,
+    `|---|---|`,
+    `| Role id | \`${id}\` |`,
+    `| Department | ${p.department} |`,
+    `| Seniority | ${p.seniority} |`,
+    `| Experience | ${p.experience} |`,
+    `| Reports to | ${reportsTo} |`,
+    `| Max authority | Level ${p.max_authority} |`,
+    `| Staffed on this project | ${p.staffed === false ? 'No — ' + (p.not_staffed_reason ?? 'not required yet') : 'Yes'} |`,
+    `| Current state | ${state.state} |`,
+    '',
+    '## Responsibilities',
+    '',
+    bullets(p.responsibilities),
+    '',
+    '## Owned domains',
+    '',
+    bullets(p.owned_domains),
+    '',
+    '## Allowed',
+    '',
+    bullets(p.allowed),
+    '',
+    '## Requires approval',
+    '',
+    bullets(p.requires_approval),
+    '',
+    '## Forbidden',
+    '',
+    bullets(p.forbidden),
+    '',
+    '## Review obligations',
+    '',
+    bullets(p.review_obligations),
+    '',
+    '## Escalation',
+    '',
+    bullets(p.escalation),
+    '',
+  ];
+  if (isManager) {
+    lines.push('## Team', '', bullets(state.team.map((r) => `${roles[r].title} (\`${r}\`)`)), '');
+    lines.push(
+      '## Open reviews',
+      '',
+      state.reviews.length ? state.reviews.map(taskLine).join('\n') : '- none',
+      '',
+    );
+    lines.push(
+      '## Current risks',
+      '',
+      state.risks.length ? state.risks.map((r) => `- ${r}`).join('\n') : '- none recorded',
+      '',
+    );
+    lines.push(
+      '## Owned tasks',
+      '',
+      state.owned_tasks.length ? state.owned_tasks.map(taskLine).join('\n') : '- none',
+      '',
+    );
+  } else {
+    lines.push(
+      '## Current tasks',
+      '',
+      state.assignments.length ? state.assignments.map(taskLine).join('\n') : '- none',
+      '',
+    );
+    if (state.supporting.length)
+      lines.push('## Supporting', '', state.supporting.map(taskLine).join('\n'), '');
+    if (state.reviews.length)
+      lines.push('## Pending reviews', '', state.reviews.map(taskLine).join('\n'), '');
+  }
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// Write
+// ---------------------------------------------------------------------------
+
+const outputs = new Map();
+const json = (o) => JSON.stringify(o, null, 2) + '\n';
+outputs.set('TASK_INDEX.json', json({ generated_by: 'tools/sync.mjs', tasks: taskRows }));
+outputs.set(
+  'ISSUE_INDEX.json',
+  json({ generated_by: 'tools/sync.mjs', issues: simpleRows(issues) }),
+);
+outputs.set(
+  'CHANGE_INDEX.json',
+  json({ generated_by: 'tools/sync.mjs', change_requests: simpleRows(changes) }),
+);
+outputs.set(
+  'DECISION_INDEX.json',
+  json({
+    generated_by: 'tools/sync.mjs',
+    decisions: simpleRows(decisions),
+    consensus: simpleRows(consensus),
+  }),
+);
+outputs.set('PROJECT_STATE.json', json(projectState));
+outputs.set('AGENT_STATE.json', json({ generated_by: 'tools/sync.mjs', agents: agentState_ }));
+outputs.set('MANAGER_STATE.json', json({ generated_by: 'tools/sync.mjs', managers: managerState }));
+for (const s of agentState_) outputs.set(`agents/${s.id}.md`, profile(s.id, roles[s.id], s, false));
+for (const s of managerState)
+  outputs.set(`managers/${s.id}.md`, profile(s.id, managers[s.id], s, true));
+
+const bodies = (items) => Object.fromEntries(items.map((i) => [i.id, i._body]));
+const data = {
+  generated_at: now,
+  config,
+  state: projectState,
+  tasks: taskRows,
+  issues: simpleRows(issues),
+  changes: simpleRows(changes),
+  decisions: simpleRows(decisions),
+  consensus: simpleRows(consensus),
+  epics: epicRows,
+  milestones: milestoneRows,
+  agents: agentState_,
+  managers: managerState,
+  permissions,
+  collisions,
+  problems,
+  activity: activity.slice(0, 200),
+  bodies: {
+    ...bodies(tasks),
+    ...bodies(issues),
+    ...bodies(changes),
+    ...bodies(decisions),
+    ...bodies(consensus),
+    ...bodies(epics),
+    ...bodies(milestones),
+  },
+  files: fileClaims.size ? [...fileClaims].map(([file, ids]) => ({ file, tasks: ids })) : [],
+  ownership: config.file_ownership ?? [],
+};
+// generated_at changes every run, so --check compares everything but it.
+const stable = (s) => s.replace(/"generated_at":"[^"]*"/, '');
+const dataJs = `// Generated by tools/sync.mjs. Do not edit.\nwindow.PM_DATA = ${JSON.stringify(data)};\n`;
+outputs.set('dashboard/data.js', dataJs);
+
+let stale = 0;
+for (const [path, content] of outputs) {
+  const full = join(ROOT, path);
+  const before = existsSync(full) ? readFileSync(full, 'utf8') : null;
+  const same =
+    path === 'dashboard/data.js'
+      ? before && stable(before) === stable(content)
+      : before === content;
+  if (same) continue;
+  stale++;
+  if (CHECK) console.warn(`  ~ stale: ${path}`);
+  if (!CHECK) {
+    mkdirSync(dirname(full), { recursive: true });
+    writeFileSync(full, content);
+  }
+}
+
+if (!CHECK && transitions.length)
+  appendFileSync(join(logDir, 'task-events.log'), transitions.join('\n') + '\n');
+if (!CHECK) {
+  const day = now.slice(0, 10);
+  mkdirSync(join(ROOT, 'history'), { recursive: true });
+  writeFileSync(join(ROOT, 'history', `${day}.json`), json(projectState));
+}
+
+console.log(
+  `pm sync: ${tasks.length} tasks, ${issues.length} issues, ${changes.length} CRs, ${decisions.length} decisions, ` +
+    `${consensus.length} consensus · health ${projectState.health} · ${stale} file(s) ${CHECK ? 'stale' : 'written'}` +
+    (transitions.length
+      ? ` · ${transitions.length} transition(s) ${CHECK ? 'pending' : 'logged'}`
+      : ''),
+);
+for (const p of problems) console.warn(`  ! ${p}`);
+if (CHECK && (stale || problems.length)) process.exit(1);

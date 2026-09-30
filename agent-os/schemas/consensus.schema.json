@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Consensus / decision review",
+  "description": "A Level 5 decision review under the decision-rights matrix.",
+  "type": "object",
+  "required": ["id", "subject", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CONSENSUS-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "enums.json#/consensus_status"
+    },
+    "participants": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_decision": {
+      "type": ["string", "null"],
+      "pattern": "^DEC-\\d{4}$"
+    },
+    "related_tasks": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "approved_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "decision_class": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}

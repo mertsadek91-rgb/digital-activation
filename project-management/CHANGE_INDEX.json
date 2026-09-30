@@ -1,0 +1,74 @@
+{
+  "generated_by": "agent-os/tools/pm.mjs (projection of agent-os/state/events.jsonl)",
+  "change_requests": [
+    {
+      "title": "Activate the enterprise multi-agent governance constitution",
+      "status": "IN_REVIEW",
+      "authority_level": 3,
+      "risk": "LOW",
+      "responsible_manager": "exec-director",
+      "departments": [
+        "Executive",
+        "Engineering",
+        "Quality & Operations"
+      ],
+      "consensus_required": false,
+      "tasks": [
+        "TASK-0001",
+        "TASK-0002",
+        "TASK-0003"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "CR-0001",
+      "file": "change-requests/CR-0001.md"
+    },
+    {
+      "title": "Correct the project context and re-audit — legacy WordPress vs migration data vs the new Node.js application",
+      "status": "IN_REVIEW",
+      "authority_level": 1,
+      "risk": "LOW",
+      "responsible_manager": "exec-director",
+      "departments": [
+        "Executive",
+        "Engineering",
+        "Quality & Operations",
+        "Growth"
+      ],
+      "consensus_required": false,
+      "tasks": [
+        "TASK-0004",
+        "TASK-0043",
+        "TASK-0044"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "CR-0002",
+      "file": "change-requests/CR-0002.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Agent OS V2: enforceable governance, canonical state, dynamic routing, independent evaluation, Product Evolution (PM-07)",
+      "status": "IN_REVIEW",
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "responsible_manager": "exec-director",
+      "departments": [
+        "Executive",
+        "Engineering",
+        "Quality & Operations",
+        "Product Evolution"
+      ],
+      "consensus_required": false,
+      "tasks": [
+        "TASK-0080",
+        "TASK-0081",
+        "TASK-0082",
+        "TASK-0083"
+      ],
+      "id": "CR-0003",
+      "file": "change-requests/CR-0003.md"
+    }
+  ]
+}

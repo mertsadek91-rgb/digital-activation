@@ -1,0 +1,290 @@
+{
+  "generated_by": "agent-os/tools/pm.mjs (projection of agent-os/state/events.jsonl)",
+  "managers": [
+    {
+      "id": "exec-director",
+      "manager": "Executive Product Director",
+      "department": "Executive",
+      "team": [
+        "documentation-architect"
+      ],
+      "active_tasks": [
+        "TASK-0001",
+        "TASK-0004",
+        "TASK-0080",
+        "TASK-0081",
+        "TASK-0083"
+      ],
+      "owned_tasks": [
+        "TASK-0001",
+        "TASK-0004",
+        "TASK-0080",
+        "TASK-0081",
+        "TASK-0083"
+      ],
+      "reviews": [
+        "TASK-0001",
+        "TASK-0004"
+      ],
+      "blocked_work": [
+        "TASK-0080",
+        "TASK-0081",
+        "TASK-0083"
+      ],
+      "pending_decisions": [
+        "DEC-0012",
+        "DEC-0013",
+        "DEC-0014"
+      ],
+      "consensus": [
+        "CONSENSUS-0001",
+        "CONSENSUS-0002"
+      ],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": "2026-09-30T12:51:01Z"
+    },
+    {
+      "id": "pm-01",
+      "manager": "PM-01 · Business, Product & Requirements Manager",
+      "department": "Product",
+      "team": [
+        "product-strategist",
+        "business-analyst"
+      ],
+      "active_tasks": [
+        "TASK-0020",
+        "TASK-0043"
+      ],
+      "owned_tasks": [
+        "TASK-0017",
+        "TASK-0020",
+        "TASK-0043"
+      ],
+      "reviews": [],
+      "blocked_work": [],
+      "pending_decisions": [
+        "DEC-0014"
+      ],
+      "consensus": [
+        "CONSENSUS-0001",
+        "CONSENSUS-0002"
+      ],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": "2026-09-30T13:41:31Z"
+    },
+    {
+      "id": "pm-02",
+      "manager": "PM-02 · Research, Market & Competitive Intelligence Manager",
+      "department": "Research",
+      "team": [
+        "market-research-analyst",
+        "competitor-intelligence-analyst"
+      ],
+      "active_tasks": [],
+      "owned_tasks": [],
+      "reviews": [],
+      "blocked_work": [],
+      "pending_decisions": [],
+      "consensus": [],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": null
+    },
+    {
+      "id": "pm-03",
+      "manager": "PM-03 · UX, UI, Brand & Creative Manager",
+      "department": "Design",
+      "team": [
+        "ux-researcher",
+        "ux-architect",
+        "information-architect",
+        "art-director",
+        "product-ui-designer",
+        "design-system-architect",
+        "responsive-design-specialist",
+        "rtl-localization-specialist",
+        "interaction-designer",
+        "accessibility-specialist"
+      ],
+      "active_tasks": [
+        "TASK-0086"
+      ],
+      "owned_tasks": [
+        "TASK-0086"
+      ],
+      "reviews": [],
+      "blocked_work": [],
+      "pending_decisions": [],
+      "consensus": [
+        "CONSENSUS-0001"
+      ],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": "2026-09-30T13:49:03Z"
+    },
+    {
+      "id": "pm-04",
+      "manager": "PM-04 · Engineering, Architecture & Integrations Manager",
+      "department": "Engineering",
+      "team": [
+        "frontend-architect",
+        "frontend-engineer",
+        "backend-architect",
+        "backend-engineer",
+        "database-architect",
+        "api-architect",
+        "auth-rbac-specialist",
+        "crm-workflow-architect",
+        "integration-engineer",
+        "search-engineer",
+        "notification-architect",
+        "ai-integration-architect"
+      ],
+      "active_tasks": [
+        "TASK-0021",
+        "TASK-0035",
+        "TASK-0063"
+      ],
+      "owned_tasks": [
+        "TASK-0021",
+        "TASK-0034",
+        "TASK-0035",
+        "TASK-0041",
+        "TASK-0063",
+        "TASK-0088"
+      ],
+      "reviews": [
+        "TASK-0021"
+      ],
+      "blocked_work": [],
+      "pending_decisions": [
+        "DEC-0012",
+        "DEC-0013"
+      ],
+      "consensus": [
+        "CONSENSUS-0001",
+        "CONSENSUS-0002"
+      ],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": "2026-09-30T12:17:20Z"
+    },
+    {
+      "id": "pm-05",
+      "manager": "PM-05 · Data, Analytics, SEO & Growth Manager",
+      "department": "Growth",
+      "team": [
+        "data-analyst",
+        "bi-architect",
+        "analytics-engineer",
+        "seo-strategist",
+        "technical-seo-specialist",
+        "content-strategist",
+        "cro-specialist"
+      ],
+      "active_tasks": [
+        "TASK-0042",
+        "TASK-0050"
+      ],
+      "owned_tasks": [
+        "TASK-0042",
+        "TASK-0050"
+      ],
+      "reviews": [],
+      "blocked_work": [],
+      "pending_decisions": [],
+      "consensus": [],
+      "opportunities": [],
+      "risks": [],
+      "last_activity": "2026-09-30T07:33:34Z"
+    },
+    {
+      "id": "pm-06",
+      "manager": "PM-06 · QA, Security, DevOps & Release Manager",
+      "department": "Quality & Operations",
+      "team": [
+        "qa-lead",
+        "functional-qa-engineer",
+        "automation-test-engineer",
+        "security-engineer",
+        "performance-engineer",
+        "devops-engineer",
+        "sre",
+        "release-manager"
+      ],
+      "active_tasks": [
+        "TASK-0011",
+        "TASK-0015",
+        "TASK-0030",
+        "TASK-0031",
+        "TASK-0044",
+        "TASK-0051",
+        "TASK-0060",
+        "TASK-0082",
+        "TASK-0089"
+      ],
+      "owned_tasks": [
+        "TASK-0011",
+        "TASK-0015",
+        "TASK-0016",
+        "TASK-0018",
+        "TASK-0030",
+        "TASK-0031",
+        "TASK-0033",
+        "TASK-0040",
+        "TASK-0044",
+        "TASK-0051",
+        "TASK-0060",
+        "TASK-0082",
+        "TASK-0089"
+      ],
+      "reviews": [],
+      "blocked_work": [
+        "TASK-0082"
+      ],
+      "pending_decisions": [
+        "DEC-0012",
+        "DEC-0013"
+      ],
+      "consensus": [
+        "CONSENSUS-0001",
+        "CONSENSUS-0002"
+      ],
+      "opportunities": [],
+      "risks": [
+        "BUG-0014"
+      ],
+      "last_activity": "2026-09-30T11:11:12Z"
+    },
+    {
+      "id": "pm-07",
+      "manager": "PM-07 · Product Evolution, Growth & Innovation Manager",
+      "department": "Product Evolution",
+      "team": [
+        "competitor-intelligence-analyst",
+        "art-director",
+        "product-ui-designer",
+        "product-opportunity-lead",
+        "embedded-product-engineer",
+        "product-growth-analyst",
+        "growth-marketing-strategist"
+      ],
+      "active_tasks": [],
+      "owned_tasks": [],
+      "reviews": [],
+      "blocked_work": [],
+      "pending_decisions": [
+        "DEC-0014"
+      ],
+      "consensus": [],
+      "opportunities": [
+        "OPP-0001",
+        "OPP-0002"
+      ],
+      "risks": [],
+      "last_activity": null
+    }
+  ]
+}

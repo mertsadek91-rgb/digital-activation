@@ -1,0 +1,37 @@
+# timestamp | actor | event | ref | detail | title
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0011 | WAITING_INFORMATION | Enforce a fingerprint salt in production without breaking existing fingerprints
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0020 | WAITING_INFORMATION | Resolve the Release 1 payment line-up (CONSENSUS-0001)
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0014 | BACKLOG | Make staff deactivation and logout take effect immediately
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0016 | BACKLOG | Two-person approval for bulk licence export
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0017 | BACKLOG | Decide whether an emailed order link may pay from another device
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0018 | BACKLOG | Separate and expire the order/cart link HMAC; drop the unused refresh secret
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0021 | BACKLOG | Extract a payment-provider interface; implement PayPal behind it
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0033 | BACKLOG | Reproducible deploys: container definitions or Coolify config as code
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0034 | BACKLOG | Decide where scheduled work runs: API process or the BullMQ worker
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0035 | BACKLOG | Confirm or reverse the Meilisearch replacement (DEC-0009)
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0040 | BACKLOG | Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002)
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0041 | BACKLOG | Import legacy customers and orders with forced password reset
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0042 | BACKLOG | Cutover rehearsal on staging: 301 map crawl and zero broken links
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0050 | BACKLOG | Analytics tracking plan compatible with the CSP and the third-party budget
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0051 | BACKLOG | Reconcile the performance budgets and cover product, category and checkout on mobile
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0060 | BACKLOG | End-to-end test: card order to licence delivered
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0061 | BACKLOG | Replace the stale MASTER.md with a design-system document generated from tokens.css
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0063 | BACKLOG | Server-side session gate for admin pages
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0010 | READY | Give the cron sweeps’ advisory locks connection affinity
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0012 | READY | Keep key-access history when a licence key is deleted
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0013 | READY | Detect staff refresh-token replay and revoke the session; throttle the refresh route
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0015 | READY | Role-scope review of staff routes that carry no @Roles
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0030 | READY | Backup policy and a recorded restore drill
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0031 | READY | Error reporting and alerting, including the delivery-latency target
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0032 | READY | Write the rollback and cutover runbooks
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0062 | READY | Load Tajawal in the admin panel
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0070 | READY | Correct stale facts in deployment.md
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0001 | MANAGER_REVIEW | Stand up the project-management system and dashboard
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0002 | MANAGER_REVIEW | Make the repository tooling aware of project-management/
+2026-09-29T07:22:47Z | sync | TASK_CREATED | TASK-0003 | MANAGER_REVIEW | Current-state audit of the repository
+2026-09-29T07:23:22Z | sync | STATUS_CHANGED | TASK-0032 | READY -> PLANNED | Write the rollback and cutover runbooks
+2026-09-29T12:02:30Z | sync | STATUS_CHANGED | TASK-0003 | MANAGER_REVIEW -> CANCELLED | Current-state audit of the repository
+2026-09-29T12:02:30Z | sync | TASK_CREATED | TASK-0004 | MANAGER_REVIEW | Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application
+2026-09-29T12:02:30Z | sync | STATUS_CHANGED | TASK-0042 | BACKLOG -> READY | Cutover rehearsal on staging: 301 map crawl and zero broken links
+2026-09-29T12:02:30Z | sync | TASK_CREATED | TASK-0043 | WAITING_INFORMATION | Owner decision — which legacy customers, orders and licence keys migrate
+2026-09-29T12:02:30Z | sync | TASK_CREATED | TASK-0044 | PLANNED | Plan the staging-to-production transition of the single Coolify environment

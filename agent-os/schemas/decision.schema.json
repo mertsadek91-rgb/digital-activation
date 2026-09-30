@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Decision record",
+  "description": "ADR-style decision.",
+  "type": "object",
+  "required": ["id", "title", "status", "authority_level"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^DEC-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "status": {
+      "$ref": "enums.json#/decision_status"
+    },
+    "authority_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "decided_by": {
+      "type": ["string", "null"]
+    },
+    "date": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "participants": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_tasks": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "supersedes": {
+      "type": ["string", "null"],
+      "pattern": "^DEC-\\d{4}$"
+    },
+    "decision_class": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,123 @@
+{
+  "$comment": "DECISION_RIGHTS_MATRIX (machine form). Human form: agent-os/DECISION_RIGHTS_MATRIX.md. Only roles listed under `veto` may record VETO or BLOCKING_OBJECTION for that class; the CLI refuses it from anyone else. After max_rounds reviews without resolution the item is flagged ESCALATION_REQUIRED.",
+  "classes": {
+    "product_scope": {
+      "owner": "pm-01",
+      "required_reviewers": ["exec-director"],
+      "optional_reviewers": ["pm-07", "pm-05"],
+      "veto": ["user"],
+      "max_rounds": 2,
+      "escalation": ["exec-director", "user"]
+    },
+    "architecture": {
+      "owner": "pm-04",
+      "required_reviewers": ["backend-architect", "pm-06"],
+      "optional_reviewers": ["frontend-architect", "database-architect"],
+      "veto": ["security-engineer"],
+      "max_rounds": 3,
+      "escalation": ["exec-director", "user"]
+    },
+    "auth": {
+      "owner": "auth-rbac-specialist",
+      "required_reviewers": ["security-engineer", "backend-architect", "qa-lead"],
+      "optional_reviewers": ["pm-01"],
+      "veto": ["security-engineer"],
+      "max_rounds": 3,
+      "escalation": ["pm-04", "exec-director", "user"]
+    },
+    "database_schema": {
+      "owner": "database-architect",
+      "required_reviewers": ["backend-architect", "qa-lead"],
+      "optional_reviewers": ["security-engineer", "api-architect"],
+      "veto": ["database-architect", "security-engineer"],
+      "max_rounds": 3,
+      "escalation": ["pm-04", "user"]
+    },
+    "payment": {
+      "owner": "pm-04",
+      "required_reviewers": ["security-engineer", "integration-engineer", "pm-01"],
+      "optional_reviewers": ["cro-specialist"],
+      "veto": ["security-engineer", "user"],
+      "max_rounds": 3,
+      "escalation": ["exec-director", "user"]
+    },
+    "security": {
+      "owner": "security-engineer",
+      "required_reviewers": ["pm-06"],
+      "optional_reviewers": ["pm-04"],
+      "veto": ["security-engineer"],
+      "max_rounds": 2,
+      "escalation": ["pm-06", "exec-director", "user"]
+    },
+    "design_system": {
+      "owner": "design-system-architect",
+      "required_reviewers": ["frontend-architect", "accessibility-specialist"],
+      "optional_reviewers": ["art-director", "rtl-localization-specialist"],
+      "veto": ["accessibility-specialist"],
+      "max_rounds": 3,
+      "escalation": ["pm-03", "exec-director"]
+    },
+    "visual": {
+      "owner": "pm-03",
+      "required_reviewers": ["art-director"],
+      "optional_reviewers": ["design-system-architect", "accessibility-specialist"],
+      "veto": ["accessibility-specialist"],
+      "max_rounds": 3,
+      "escalation": ["pm-03", "exec-director"]
+    },
+    "seo_routes": {
+      "owner": "technical-seo-specialist",
+      "required_reviewers": ["frontend-architect", "pm-05"],
+      "optional_reviewers": ["analytics-engineer"],
+      "veto": ["technical-seo-specialist"],
+      "max_rounds": 2,
+      "escalation": ["pm-05", "pm-04", "user"]
+    },
+    "analytics_schema": {
+      "owner": "analytics-engineer",
+      "required_reviewers": ["pm-05", "security-engineer"],
+      "optional_reviewers": ["frontend-architect"],
+      "veto": ["security-engineer"],
+      "max_rounds": 2,
+      "escalation": ["pm-05", "user"]
+    },
+    "destructive_data": {
+      "owner": "database-architect",
+      "required_reviewers": ["security-engineer", "release-manager"],
+      "optional_reviewers": [],
+      "veto": ["database-architect", "security-engineer", "user"],
+      "max_rounds": 2,
+      "escalation": ["user"]
+    },
+    "release": {
+      "owner": "release-manager",
+      "required_reviewers": ["qa-lead"],
+      "optional_reviewers": ["security-engineer", "pm-04"],
+      "veto": ["qa-lead", "security-engineer", "release-manager"],
+      "max_rounds": 2,
+      "escalation": ["pm-06", "user"]
+    },
+    "opportunity_approval": {
+      "owner": "user",
+      "required_reviewers": ["embedded-product-engineer"],
+      "optional_reviewers": ["product-ui-designer", "art-director", "product-growth-analyst"],
+      "veto": ["user"],
+      "max_rounds": 2,
+      "escalation": ["pm-07", "user"]
+    },
+    "roadmap_ranking": {
+      "owner": "user",
+      "required_reviewers": [],
+      "optional_reviewers": ["pm-07", "pm-01"],
+      "veto": ["user"],
+      "max_rounds": 1,
+      "escalation": ["user"]
+    }
+  },
+  "owner_only_events": [
+    "opportunity_decided",
+    "ranking_set",
+    "portfolio_preferences_set",
+    "risk_accepted"
+  ]
+}

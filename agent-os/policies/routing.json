@@ -1,0 +1,359 @@
+{
+  "$comment": "AGENT_ROUTING_POLICY (machine form) and the single file-ownership table (replaces PROJECT_CONFIG.file_ownership). The router picks the smallest team: the owner of the riskiest matched domain, plus the reviewers the authority level requires, plus specialists only when a domain tag calls for them. Every member carries a reason. Executors map a role to how it actually runs.",
+  "domains": [
+    {
+      "id": "vault",
+      "paths": ["apps/api/src/vault/**", "packages/db/prisma/schema/30-vault.prisma"],
+      "primary": "security-engineer",
+      "manager": "pm-06",
+      "reviewers": ["pm-04", "database-architect"],
+      "min_level": 4,
+      "decision_class": "security",
+      "tags": ["security", "data"]
+    },
+    {
+      "id": "auth",
+      "paths": ["apps/api/src/auth/**", "apps/api/src/account/**"],
+      "primary": "auth-rbac-specialist",
+      "manager": "pm-04",
+      "reviewers": ["security-engineer", "pm-06"],
+      "min_level": 4,
+      "decision_class": "auth",
+      "tags": ["security"]
+    },
+    {
+      "id": "checkout",
+      "paths": ["apps/api/src/checkout/**"],
+      "primary": "integration-engineer",
+      "manager": "pm-04",
+      "reviewers": ["security-engineer", "pm-01"],
+      "min_level": 4,
+      "decision_class": "payment",
+      "tags": ["security", "payments"]
+    },
+    {
+      "id": "fulfillment",
+      "paths": ["apps/api/src/fulfillment/**"],
+      "primary": "backend-architect",
+      "manager": "pm-04",
+      "reviewers": ["security-engineer"],
+      "min_level": 4,
+      "decision_class": "architecture",
+      "tags": ["security"]
+    },
+    {
+      "id": "api-config",
+      "paths": ["apps/api/src/config/env.ts"],
+      "primary": "backend-architect",
+      "manager": "pm-04",
+      "reviewers": ["devops-engineer", "security-engineer"],
+      "min_level": 3,
+      "decision_class": "architecture",
+      "tags": ["security", "config"]
+    },
+    {
+      "id": "schema",
+      "paths": ["packages/db/prisma/**"],
+      "primary": "database-architect",
+      "manager": "pm-04",
+      "reviewers": ["pm-06"],
+      "min_level": 4,
+      "decision_class": "database_schema",
+      "tags": ["data"]
+    },
+    {
+      "id": "db-scripts",
+      "paths": ["packages/db/scripts/**"],
+      "primary": "database-architect",
+      "manager": "pm-04",
+      "reviewers": ["security-engineer"],
+      "min_level": 3,
+      "decision_class": "database_schema",
+      "tags": ["data", "migration"]
+    },
+    {
+      "id": "contracts",
+      "paths": ["packages/contracts/**"],
+      "primary": "api-architect",
+      "manager": "pm-04",
+      "reviewers": ["frontend-architect"],
+      "min_level": 4,
+      "decision_class": "architecture",
+      "tags": ["api"]
+    },
+    {
+      "id": "seo",
+      "paths": [
+        "packages/seo/**",
+        "apps/storefront/src/app/sitemap*/**",
+        "apps/storefront/src/app/robots.ts",
+        "apps/storefront/src/lib/gone.ts"
+      ],
+      "primary": "technical-seo-specialist",
+      "manager": "pm-05",
+      "reviewers": ["pm-04"],
+      "min_level": 3,
+      "decision_class": "seo_routes",
+      "tags": ["seo"]
+    },
+    {
+      "id": "tokens",
+      "paths": ["packages/ui/src/tokens.css", "design-system/**"],
+      "primary": "design-system-architect",
+      "manager": "pm-03",
+      "reviewers": ["frontend-architect", "accessibility-specialist"],
+      "min_level": 3,
+      "decision_class": "design_system",
+      "tags": ["visual", "user_facing"]
+    },
+    {
+      "id": "i18n",
+      "paths": ["packages/i18n/**"],
+      "primary": "search-engineer",
+      "manager": "pm-04",
+      "reviewers": ["rtl-localization-specialist"],
+      "min_level": 3,
+      "decision_class": "architecture",
+      "tags": ["rtl"]
+    },
+    {
+      "id": "storefront-routing",
+      "paths": ["apps/storefront/src/proxy.ts", "apps/storefront/next.config.ts"],
+      "primary": "frontend-architect",
+      "manager": "pm-04",
+      "reviewers": ["security-engineer", "technical-seo-specialist"],
+      "min_level": 4,
+      "decision_class": "seo_routes",
+      "tags": ["security", "seo"]
+    },
+    {
+      "id": "storefront-messages",
+      "paths": ["apps/storefront/messages/**", "apps/admin/src/i18n/**"],
+      "primary": "rtl-localization-specialist",
+      "manager": "pm-03",
+      "reviewers": ["content-strategist"],
+      "min_level": 2,
+      "decision_class": "visual",
+      "tags": ["rtl", "user_facing"]
+    },
+    {
+      "id": "storefront",
+      "paths": ["apps/storefront/src/**"],
+      "primary": "frontend-engineer",
+      "manager": "pm-04",
+      "reviewers": ["frontend-architect", "pm-03", "technical-seo-specialist"],
+      "min_level": 2,
+      "decision_class": "visual",
+      "tags": ["user_facing", "rtl"]
+    },
+    {
+      "id": "admin",
+      "paths": ["apps/admin/src/**"],
+      "primary": "frontend-engineer",
+      "manager": "pm-04",
+      "reviewers": ["frontend-architect", "pm-03"],
+      "min_level": 2,
+      "decision_class": "visual",
+      "tags": ["user_facing", "rtl"]
+    },
+    {
+      "id": "api",
+      "paths": ["apps/api/src/**"],
+      "primary": "backend-engineer",
+      "manager": "pm-04",
+      "reviewers": ["backend-architect"],
+      "min_level": 2,
+      "decision_class": "architecture",
+      "tags": []
+    },
+    {
+      "id": "worker",
+      "paths": ["workers/jobs/**"],
+      "primary": "backend-architect",
+      "manager": "pm-04",
+      "reviewers": ["sre"],
+      "min_level": 3,
+      "decision_class": "architecture",
+      "tags": []
+    },
+    {
+      "id": "ci",
+      "paths": [".github/workflows/**"],
+      "primary": "devops-engineer",
+      "manager": "pm-06",
+      "reviewers": ["pm-04"],
+      "min_level": 3,
+      "decision_class": "release",
+      "tags": ["config"]
+    },
+    {
+      "id": "deploy-docs",
+      "paths": ["docs/deployment.md"],
+      "primary": "devops-engineer",
+      "manager": "pm-06",
+      "reviewers": ["documentation-architect"],
+      "min_level": 2,
+      "decision_class": "release",
+      "tags": []
+    },
+    {
+      "id": "plan",
+      "paths": ["docs/plan.html"],
+      "primary": "exec-director",
+      "manager": "exec-director",
+      "reviewers": ["pm-01"],
+      "min_level": 3,
+      "decision_class": "product_scope",
+      "tags": []
+    },
+    {
+      "id": "secrets-tooling",
+      "paths": [".env.example", "scripts/generate-secrets.ts", "scripts/env-check.ts"],
+      "primary": "devops-engineer",
+      "manager": "pm-06",
+      "reviewers": ["security-engineer"],
+      "min_level": 3,
+      "decision_class": "security",
+      "tags": ["security", "config"]
+    },
+    {
+      "id": "toolchain",
+      "paths": [
+        "eslint.config.mjs",
+        ".prettierrc",
+        "tsconfig*.json",
+        "turbo.json",
+        "package.json",
+        "pnpm-workspace.yaml"
+      ],
+      "primary": "frontend-architect",
+      "manager": "pm-04",
+      "reviewers": ["devops-engineer"],
+      "min_level": 3,
+      "decision_class": "architecture",
+      "tags": ["config"]
+    },
+    {
+      "id": "pm-reports",
+      "paths": ["project-management/*.md", "project-management/reports/**"],
+      "primary": "documentation-architect",
+      "manager": "exec-director",
+      "reviewers": [],
+      "min_level": 1,
+      "decision_class": "product_scope",
+      "tags": []
+    },
+    {
+      "id": "agent-os",
+      "paths": ["agent-os/**", ".claude/**", "CLAUDE.md", "project-management/**"],
+      "primary": "documentation-architect",
+      "manager": "exec-director",
+      "reviewers": ["pm-06"],
+      "min_level": 2,
+      "decision_class": "architecture",
+      "tags": ["agent_os"]
+    }
+  ],
+  "tag_specialists": {
+    "security": {
+      "role": "security-engineer",
+      "from_level": 3,
+      "reason": "touches a security-sensitive area (auth, vault, payments, CSP or secrets)"
+    },
+    "user_facing": {
+      "role": "responsive-design-specialist",
+      "from_level": 2,
+      "reason": "user-facing change: the rendered UI must be inspected at representative widths in ar (RTL) and en"
+    },
+    "visual": {
+      "role": "art-director",
+      "from_level": 3,
+      "reason": "changes shared visual language (tokens, typography, icons, spacing)"
+    },
+    "data": {
+      "role": "database-architect",
+      "from_level": 3,
+      "reason": "changes persisted data or its schema"
+    },
+    "seo": {
+      "role": "technical-seo-specialist",
+      "from_level": 3,
+      "reason": "changes routes, metadata or indexability"
+    },
+    "payments": {
+      "role": "qa-lead",
+      "from_level": 3,
+      "reason": "payment flow: regression of checkout → delivery is mandatory"
+    },
+    "migration": {
+      "role": "security-engineer",
+      "from_level": 3,
+      "reason": "migration scripts can touch legacy customer secrets"
+    }
+  },
+  "level_requirements": {
+    "1": {
+      "workflow": "Inspect → Analyze → Report",
+      "independent_review": false,
+      "qa": false
+    },
+    "2": {
+      "workflow": "Understand → Implement → Test → Verify",
+      "independent_review": false,
+      "qa": false
+    },
+    "3": {
+      "workflow": "Impact review → Implement → Independent review → Tests → Relevant regression",
+      "independent_review": true,
+      "qa": false
+    },
+    "4": {
+      "workflow": "Cross-domain impact → Plan → Relevant reviews → Implement → Independent validation → Regression",
+      "independent_review": true,
+      "qa": true,
+      "second_manager": true
+    },
+    "5": {
+      "workflow": "Decision record → Specialists → Risk review → Explicit approval → Controlled implementation → Security → QA → Full regression → Release gate",
+      "independent_review": true,
+      "qa": true,
+      "second_manager": true,
+      "consensus": true
+    }
+  },
+  "executors": {
+    "$comment": "How a routed role runs. `main` = the primary session. `subagent:<name>` = .claude/agents/<name>.md with restricted tools. Any role routed as a REVIEWER runs in a fresh context: its own subagent if it has one, otherwise subagent:independent-reviewer — never `main`, so a review is never a self-review.",
+    "security-engineer": "subagent:security-reviewer",
+    "art-director": "subagent:art-director",
+    "competitor-intelligence-analyst": "subagent:research-analyst",
+    "market-research-analyst": "subagent:research-analyst",
+    "embedded-product-engineer": "subagent:embedded-product-engineer",
+    "product-opportunity-lead": "main",
+    "product-growth-analyst": "subagent:research-analyst",
+    "qa-lead": "subagent:independent-reviewer",
+    "default": "main",
+    "responsive-design-specialist": "subagent:visual-qa",
+    "accessibility-specialist": "subagent:visual-qa",
+    "rtl-localization-specialist": "subagent:visual-qa",
+    "product-ui-designer": "subagent:product-designer",
+    "technical-seo-specialist": "subagent:independent-reviewer"
+  },
+  "type_overrides": {
+    "research": {
+      "team": ["competitor-intelligence-analyst"],
+      "max_level": 1
+    },
+    "audit": {
+      "team": ["qa-lead"],
+      "max_level": 1
+    },
+    "opportunity_shaping": {
+      "team": ["product-opportunity-lead", "embedded-product-engineer"],
+      "add_if_user_facing": ["product-ui-designer"],
+      "add_if_visual": ["art-director"],
+      "max_level": 1
+    }
+  },
+  "independent_reviewer_role": "qa-lead",
+  "reviewer_executor_default": "subagent:independent-reviewer"
+}

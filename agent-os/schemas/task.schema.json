@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Task",
+  "description": "One unit of delivery work. Narrative: project-management/tasks/<status>/TASK-XXXX.md.",
+  "type": "object",
+  "required": [
+    "id",
+    "title",
+    "type",
+    "status",
+    "stage",
+    "priority",
+    "progress",
+    "authority_level",
+    "risk",
+    "primary_agent",
+    "responsible_manager"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^TASK-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "type": {
+      "type": "string"
+    },
+    "status": {
+      "$ref": "enums.json#/task_status"
+    },
+    "stage": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/task_stage"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priority": {
+      "$ref": "enums.json#/priority"
+    },
+    "progress": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "authority_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "risk": {
+      "$ref": "enums.json#/severity"
+    },
+    "requested_by": {
+      "type": ["string", "null"]
+    },
+    "primary_agent": {
+      "type": "string"
+    },
+    "responsible_manager": {
+      "type": "string"
+    },
+    "supporting_agents": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_reviewers": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_change_request": {
+      "type": ["string", "null"],
+      "pattern": "^CR-\\d{4}$"
+    },
+    "related_issue": {
+      "type": ["string", "null"],
+      "pattern": "^BUG-\\d{4}$"
+    },
+    "related_consensus": {
+      "type": ["string", "null"],
+      "pattern": "^CONSENSUS-\\d{4}$"
+    },
+    "related_epic": {
+      "type": ["string", "null"],
+      "pattern": "^EPIC-\\d{4}$"
+    },
+    "related_milestone": {
+      "type": ["string", "null"],
+      "pattern": "^MILESTONE-\\d{4}$"
+    },
+    "related_opportunity": {
+      "type": ["string", "null"],
+      "pattern": "^OPP-\\d{4}$"
+    },
+    "decision_class": {
+      "type": ["string", "null"]
+    },
+    "dependencies": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "blocks": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "affected_modules": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "affected_pages": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "affected_files": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "reaudit": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}

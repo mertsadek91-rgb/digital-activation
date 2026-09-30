@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Product opportunity",
+  "description": "A shaped proposal for human decision. Not a task and not implementation authority. Narrative (the Opportunity Development Pack): project-management/opportunities/OPP-XXXX.md.",
+  "type": "object",
+  "required": ["id", "title", "opportunity_type", "status", "proposed_by", "responsible_manager"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^OPP-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "opportunity_type": {
+      "$ref": "enums.json#/opportunity_type"
+    },
+    "status": {
+      "$ref": "enums.json#/opportunity_status"
+    },
+    "portfolio_category": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/portfolio_category"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "proposed_by": {
+      "type": "string"
+    },
+    "responsible_manager": {
+      "type": "string"
+    },
+    "contributors": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_signals": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "user_facing": {
+      "type": ["boolean", "null"]
+    },
+    "visual_impact": {
+      "type": ["boolean", "null"]
+    },
+    "user_value": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "business_value": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "strategic_alignment": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "urgency": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "time_to_value": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "technical_effort": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "design_effort": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "operational_effort": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "risk": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "complexity": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidence_strength": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/evidence_strength"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "competitive_position": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/competitive_position"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recommendation": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/recommendation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "suggested_priority": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/priority"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "related_change_request": {
+      "type": ["string", "null"],
+      "pattern": "^CR-\\d{4}$"
+    },
+    "merged_into": {
+      "type": ["string", "null"],
+      "pattern": "^OPP-\\d{4}$"
+    },
+    "revisit_when": {
+      "type": ["string", "null"]
+    },
+    "decision": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/owner_decision"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decision_reason": {
+      "type": ["string", "null"]
+    },
+    "decided_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "target_milestone": {
+      "type": ["string", "null"],
+      "pattern": "^MILESTONE-\\d{4}$"
+    }
+  },
+  "additionalProperties": true
+}

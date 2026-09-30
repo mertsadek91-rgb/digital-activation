@@ -1,0 +1,8 @@
+# timestamp | agent | FILE_CHANGED | task | file — reason
+2026-09-29 | documentation-architect | FILE_CHANGED | TASK-0001 | project-management/** — new governance tree, sync tool and dashboard
+2026-09-29 | devops-engineer | FILE_CHANGED | TASK-0002 | eslint.config.mjs — ignore project-management/** (plain .mjs outside any tsconfig)
+2026-09-29 | devops-engineer | FILE_CHANGED | TASK-0002 | .prettierignore — skip generated PM outputs
+2026-09-29 | devops-engineer | FILE_CHANGED | TASK-0002 | .gitignore — keep project-management/logs/*.log tracked
+2026-09-29 | devops-engineer | FILE_CHANGED | TASK-0002 | package.json — pm:sync and pm:check scripts
+2026-09-29 | backend-architect | FILE_CHANGED | TASK-0003 | project-management/CURRENT_STATE_AUDIT.md — new
+2026-09-29 | devops-engineer | FILE_CHANGED | TASK-0002 | .claude/launch.json — pm-dashboard static server for previewing the dashboard

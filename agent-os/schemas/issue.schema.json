@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Issue (bug / finding)",
+  "description": "A defect or verified finding.",
+  "type": "object",
+  "required": ["id", "title", "category", "severity", "status", "affected_system"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^BUG-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "category": {
+      "type": "string"
+    },
+    "severity": {
+      "$ref": "enums.json#/severity"
+    },
+    "previous_severity": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/severity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "$ref": "enums.json#/issue_status"
+    },
+    "affected_system": {
+      "$ref": "enums.json#/affected_system"
+    },
+    "module": {
+      "type": ["string", "null"]
+    },
+    "task": {
+      "type": ["string", "null"],
+      "pattern": "^TASK-\\d{4}$"
+    },
+    "reporter": {
+      "type": ["string", "null"]
+    },
+    "assigned_agent": {
+      "type": ["string", "null"]
+    },
+    "manager": {
+      "type": ["string", "null"]
+    },
+    "release_blocker": {
+      "type": ["boolean", "null"]
+    },
+    "verification": {
+      "type": ["string", "null"]
+    },
+    "reaudit": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}

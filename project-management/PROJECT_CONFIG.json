@@ -1,0 +1,97 @@
+{
+  "project_name": "Digital Activation — platform rebuild",
+  "project_type": "E-commerce platform rebuild (WordPress/WooCommerce → Next.js + NestJS), Arabic-first, licence-key delivery",
+  "current_phase": "Staging live on Coolify (new./admin./api.digital-activation.com); legacy WordPress still serves the apex; validation before production cutover",
+  "current_milestone": "MILESTONE-0001",
+  "constitution": "project-management/README.md summarises the owner's master operating constitution (CR-0001).",
+  "health_rules": {
+    "BLOCKED": "any CRITICAL-priority task is BLOCKED, or any open issue has release_blocker: true",
+    "AT_RISK": "any open issue of severity CRITICAL",
+    "ATTENTION_REQUIRED": "any open HIGH issue, any BLOCKED task, or any governance validation problem",
+    "HEALTHY": "none of the above",
+    "scope": "Health describes the new application and its infrastructure. Issues with affected_system LEGACY_WORDPRESS or MIGRATION are counted separately and set health only when flagged release_blocker."
+  },
+  "vocabulary": {
+    "task_status": [
+      "BACKLOG",
+      "PLANNED",
+      "READY",
+      "IN_PROGRESS",
+      "WAITING_DEPENDENCY",
+      "WAITING_INFORMATION",
+      "BLOCKED",
+      "MANAGER_REVIEW",
+      "CROSS_MANAGER_REVIEW",
+      "REVISION_REQUIRED",
+      "QA",
+      "SECURITY_REVIEW",
+      "REGRESSION_TESTING",
+      "READY_FOR_RELEASE",
+      "COMPLETED",
+      "CANCELLED"
+    ],
+    "issue_status": ["OPEN", "IN_PROGRESS", "FIXED", "VERIFIED", "CLOSED", "WONT_FIX", "DUPLICATE"],
+    "decision_status": ["PROPOSED", "ACTIVE", "REVISED", "SUPERSEDED", "DEPRECATED"],
+    "consensus_status": ["DRAFT", "OPEN", "AWAITING_USER_INPUT", "APPROVED", "REJECTED"],
+    "severity": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+    "affected_system": [
+      "LEGACY_WORDPRESS",
+      "MIGRATION",
+      "NODEJS_BACKEND",
+      "NODEJS_FRONTEND",
+      "DATABASE",
+      "INFRASTRUCTURE",
+      "COOLIFY",
+      "CI_CD",
+      "SECURITY",
+      "UNKNOWN"
+    ]
+  },
+  "reports": [
+    {
+      "title": "Project status",
+      "path": "PROJECT_STATUS.md",
+      "summary": "the management summary — read first"
+    },
+    {
+      "title": "Current-state audit",
+      "path": "CURRENT_STATE_AUDIT.md",
+      "summary": "what is good, fragile, risky or not to be touched"
+    },
+    {
+      "title": "Knowledge base",
+      "path": "PROJECT_KNOWLEDGE_BASE.md",
+      "summary": "architecture, modules, roles, entities, integrations"
+    },
+    {
+      "title": "Security audit",
+      "path": "SECURITY_AUDIT.md",
+      "summary": "security findings by severity with their tasks"
+    },
+    {
+      "title": "Implementation plan",
+      "path": "IMPLEMENTATION_PLAN.md",
+      "summary": "milestones from here to cutover and after"
+    },
+    {
+      "title": "File ownership",
+      "path": "FILE_OWNERSHIP.md",
+      "summary": "who owns and who must review each sensitive area"
+    },
+    {
+      "title": "Regression matrix",
+      "path": "REGRESSION_MATRIX.md",
+      "summary": "what to retest when a shared system changes"
+    },
+    {
+      "title": "QA checklist",
+      "path": "QA_CHECKLIST.md",
+      "summary": "the gate every user-facing task passes"
+    },
+    {
+      "title": "Daily snapshot 2026-09-29",
+      "path": "reports/daily/2026-09-29.md",
+      "summary": "activation day"
+    }
+  ]
+}

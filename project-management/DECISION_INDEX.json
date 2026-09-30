@@ -1,0 +1,272 @@
+{
+  "generated_by": "agent-os/tools/pm.mjs (projection of agent-os/state/events.jsonl)",
+  "decisions": [
+    {
+      "title": "Commerce backend is custom NestJS + Prisma + PostgreSQL",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0001",
+      "file": "decisions/DEC-0001.md"
+    },
+    {
+      "title": "Payments: Stripe + PayPal; bank transfer / crypto only as a last resort",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [
+        "TASK-0020",
+        "TASK-0021"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0002",
+      "file": "decisions/DEC-0002.md"
+    },
+    {
+      "title": "Arabic at /, full English under /en/, reciprocal hreflang, x-default = ar",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0003",
+      "file": "decisions/DEC-0003.md"
+    },
+    {
+      "title": "No fixes to the WordPress site, except removing the fake reviews",
+      "status": "ACTIVE",
+      "authority_level": 4,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0004",
+      "file": "decisions/DEC-0004.md"
+    },
+    {
+      "title": "Hosting on self-hosted Coolify",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0005",
+      "file": "decisions/DEC-0005.md"
+    },
+    {
+      "title": "Vault KEK is AWS KMS; KEK_PROVIDER=local refused in production",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0006",
+      "file": "decisions/DEC-0006.md"
+    },
+    {
+      "title": "Media on Cloudflare R2 served through cdn.digital-activation.com",
+      "status": "ACTIVE",
+      "authority_level": 4,
+      "decided_by": "User (project owner)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0007",
+      "file": "decisions/DEC-0007.md"
+    },
+    {
+      "title": "TypeScript pinned to 6.0.x",
+      "status": "ACTIVE",
+      "authority_level": 4,
+      "decided_by": "Engineering (recorded in README)",
+      "date": "2026-09-09",
+      "participants": [],
+      "related_tasks": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0008",
+      "file": "decisions/DEC-0008.md"
+    },
+    {
+      "title": "Catalogue search is in-app with Arabic folding, not Meilisearch",
+      "status": "ACTIVE",
+      "authority_level": 4,
+      "decided_by": "Reconstructed from code — no sign-off on record",
+      "date": "2026-09-29",
+      "participants": [],
+      "related_tasks": [
+        "TASK-0035"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0009",
+      "file": "decisions/DEC-0009.md"
+    },
+    {
+      "title": "Governance records are Markdown; indices, state and dashboard are generated",
+      "status": "SUPERSEDED",
+      "authority_level": 3,
+      "decided_by": "Proposed by exec-director with pm-04 and pm-06; awaiting owner review",
+      "date": "2026-09-29",
+      "participants": [
+        "exec-director",
+        "pm-04",
+        "pm-06"
+      ],
+      "related_tasks": [
+        "TASK-0001",
+        "TASK-0002"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0010",
+      "file": "decisions/DEC-0010.md"
+    },
+    {
+      "title": "One Coolify environment serves as staging now and becomes production in place",
+      "status": "ACTIVE",
+      "authority_level": 5,
+      "decided_by": "Reconstructed from the live deployment — owner to confirm",
+      "date": "2026-09-29",
+      "participants": [],
+      "related_tasks": [
+        "TASK-0044",
+        "TASK-0032"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "DEC-0011",
+      "file": "decisions/DEC-0011.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Canonical state is an append-only JSON-lines event log; everything else is a projection",
+      "status": "PROPOSED",
+      "authority_level": 3,
+      "decided_by": "Proposed by exec-director with pm-04 and pm-06; awaiting owner review",
+      "date": "2026-09-29",
+      "participants": [
+        "exec-director",
+        "pm-04",
+        "pm-06"
+      ],
+      "related_tasks": [
+        "TASK-0080"
+      ],
+      "supersedes": "DEC-0010",
+      "decision_class": "architecture",
+      "id": "DEC-0012",
+      "file": "decisions/DEC-0012.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Risk-adaptive governance: ownership floor, dynamic routing, independent review at L3+, domain-bound veto rights, governor limits",
+      "status": "PROPOSED",
+      "authority_level": 3,
+      "decided_by": "Proposed by exec-director; awaiting owner review",
+      "date": "2026-09-29",
+      "participants": [
+        "exec-director",
+        "pm-04",
+        "pm-06"
+      ],
+      "related_tasks": [
+        "TASK-0080"
+      ],
+      "decision_class": "architecture",
+      "id": "DEC-0013",
+      "file": "decisions/DEC-0013.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Product Evolution (PM-07): signals, watchlist and opportunities shaped by engineering and design before an owner-only decision",
+      "status": "PROPOSED",
+      "authority_level": 3,
+      "decided_by": "Proposed by exec-director; awaiting owner review",
+      "date": "2026-09-29",
+      "participants": [
+        "exec-director",
+        "pm-01",
+        "pm-07"
+      ],
+      "related_tasks": [
+        "TASK-0080"
+      ],
+      "decision_class": "product_scope",
+      "id": "DEC-0014",
+      "file": "decisions/DEC-0014.md"
+    }
+  ],
+  "consensus": [
+    {
+      "subject": "Release 1 payment line-up and the go-live gate",
+      "status": "OPEN",
+      "participants": [
+        "exec-director",
+        "pm-01",
+        "pm-03",
+        "pm-04",
+        "pm-06",
+        "security-engineer",
+        "integration-engineer",
+        "cro-specialist"
+      ],
+      "related_decision": "DEC-0002",
+      "related_tasks": [
+        "TASK-0020",
+        "TASK-0021"
+      ],
+      "approved_at": null,
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "id": "CONSENSUS-0001",
+      "file": "consensus/CONSENSUS-0001.md"
+    },
+    {
+      "subject": "Legacy licence keys: migration into the vault and scrub of the source",
+      "status": "DRAFT",
+      "participants": [
+        "exec-director",
+        "pm-01",
+        "pm-04",
+        "pm-06",
+        "database-architect",
+        "security-engineer",
+        "release-manager"
+      ],
+      "related_decision": null,
+      "related_tasks": [
+        "TASK-0040"
+      ],
+      "approved_at": null,
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "id": "CONSENSUS-0002",
+      "file": "consensus/CONSENSUS-0002.md"
+    }
+  ]
+}
