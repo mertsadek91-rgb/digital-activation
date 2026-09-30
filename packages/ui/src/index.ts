@@ -15,20 +15,9 @@ export const BRAND = {
 /** Direction per locale, used for the `dir` attribute and logical CSS. */
 export const DIRECTION = { ar: 'rtl', en: 'ltr' } as const;
 
-/**
- * Performance budget, enforced by Lighthouse CI and a bundle-size gate.
- * The legacy product page shipped 104 stylesheets, 93 scripts and 226 requests,
- * and finished loading in 17.4 seconds. These numbers are the reason the CI
- * fails a pull request rather than filing a ticket.
+/*
+ * The performance budget has one home: `apps/storefront/lighthouserc.json`,
+ * which Lighthouse CI enforces on every pull request (BUG-0010). A copy here
+ * drifted from it once — nothing read it, so nothing noticed. Change the
+ * numbers there, not here.
  */
-export const PERFORMANCE_BUDGET = {
-  lcpMs: 1800,
-  inpMs: 200,
-  cls: 0.05,
-  ttfbMs: 200,
-  htmlBytes: 60 * 1024,
-  cssFiles: 1,
-  jsFiles: 6,
-  requests: 35,
-  thirdPartyScriptsBeforeInteraction: 0,
-} as const;

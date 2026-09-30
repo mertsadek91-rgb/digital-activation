@@ -16,6 +16,7 @@ import {
 import { licenceExpiry, termOf } from '../common/licence-term.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buttonSuffix, chooseDelivery } from '../whatsapp/rules.js';
 import { renewalParams } from '../whatsapp/templates.js';
@@ -118,16 +119,10 @@ export class RenewalSweepService {
     const settings = await this.settings.get('renewals');
     if (!settings.enabled) return { sent: 0, heldOut: 0 };
 
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { sent: 0, heldOut: 0 };
-
-    try {
-      return await this.run(settings, await this.settings.get('whatsapp'), new Date());
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, async () =>
+      this.run(settings, await this.settings.get('whatsapp'), new Date()),
+    );
+    return result.ran ? result.value : { sent: 0, heldOut: 0 };
   }
 
   private async run(

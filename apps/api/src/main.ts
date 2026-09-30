@@ -9,6 +9,7 @@ import { buildOpenApiDocument } from './common/openapi.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 import { PrismaErrorFilter } from './common/prisma-error.filter.js';
 import { ServerErrorFilter } from './common/server-error.filter.js';
+import { UNPREFIXED_ROUTES } from './health/health.controller.js';
 import { ERROR_REPORTER, type ErrorReporter } from './infra/error-reporter.js';
 import { requestIdFor } from './infra/logging.js';
 
@@ -102,7 +103,7 @@ async function bootstrap(): Promise<void> {
     exposedHeaders: ['x-request-id'],
   });
 
-  app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
+  app.setGlobalPrefix('v1', { exclude: UNPREFIXED_ROUTES });
 
   // Nest consults global filters last-registered first, so the Prisma filter
   // sees Prisma errors before the catch-all does. Prisma errors that are the

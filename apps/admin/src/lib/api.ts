@@ -27,6 +27,9 @@ import type {
   AdminCustomerDetail,
   AdminCustomerList,
   AdminDashboard,
+  AdminFpConnectResult,
+  AdminFpEventList,
+  AdminFpOverview,
   AdminOrderDetail,
   AdminOrderList,
   AdminPage,
@@ -63,6 +66,8 @@ import type {
   Queue,
   Readiness,
   RedirectsView,
+  RefundOrder,
+  RefundOrderResult,
   RevealResult,
   SecretInput,
   SetArticle,
@@ -74,6 +79,7 @@ import type {
   SetVariantTerms,
   StaffLoginResult,
   StaffMe,
+  UpdateFpMethod,
   UpdatePromotion,
   VaultStockRow,
 } from '@da/contracts';
@@ -112,6 +118,8 @@ export class ApiError extends Error {
     readonly status: number,
     /** Publish blockers, when the failure was the readiness gate. */
     readonly blockers: string[] = [],
+    /** A machine-readable reason (e.g. a Final Processor error code), when the API gave one. */
+    readonly code: string | null = null,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -128,7 +136,8 @@ export class ApiError extends Error {
  */
 let refreshing: Promise<boolean> | null = null;
 
-async function refreshSession(): Promise<boolean> {
+/** Exported for the auth routes, which never refresh on their own (see `request`). */
+export async function refreshSession(): Promise<boolean> {
   refreshing ??= (async () => {
     try {
       const response = await fetch(`${API}/v1/auth/staff/refresh`, {
@@ -192,8 +201,12 @@ export async function request<T>(path: string, init?: RequestInit, retried = fal
   });
 
   // Never on the auth routes themselves: refreshing a failed login is a loop,
-  // and a failed refresh must surface as a failed refresh.
-  if (response.status === 401 && !retried && !path.startsWith('/auth/staff/')) {
+  // and a failed refresh must surface as a failed refresh. `me` is the
+  // exception: it is how every page learns who is signed in, and a 401 there
+  // usually means only that the access token expired (or predates the `sid`
+  // claim, BUG-0005), which one refresh fixes.
+  const refreshable = !path.startsWith('/auth/staff/') || path === '/auth/staff/me';
+  if (response.status === 401 && !retried && refreshable) {
     if (await refreshSession()) return request<T>(path, init, true);
   }
 
@@ -208,7 +221,8 @@ export async function request<T>(path: string, init?: RequestInit, retried = fal
     const blockers = Array.isArray(record.blockers)
       ? record.blockers.filter((item): item is string => typeof item === 'string')
       : [];
-    throw new ApiError(message, response.status, blockers);
+    const code = typeof record.code === 'string' ? record.code : null;
+    throw new ApiError(message, response.status, blockers, code);
   }
 
   return payload as T;
@@ -639,12 +653,16 @@ export const api = {
   /** Review invitations sent in the last 30 days. */
   reviewRequestStats: () => request<ReviewRequestStats>('/admin/marketing/review-requests/stats'),
 
-  /** Refunds the whole order. Card refunds settle when Stripe's webhook lands. */
-  refundOrder: (number: string, reason: string) =>
-    request<{ status: string; via: 'stripe' | 'recorded' }>(
-      `/admin/orders/${encodeURIComponent(number)}/refund`,
-      { method: 'POST', body: JSON.stringify({ reason }) },
-    ),
+  /**
+   * Refunds an order. Card refunds settle when Stripe's webhook lands. An
+   * amount (USD, a decimal string such as "12.50") is for Final Processor
+   * payments only; left out, the whole remaining balance goes back.
+   */
+  refundOrder: (number: string, reason: string, amount?: string) =>
+    request<RefundOrderResult>(`/admin/orders/${encodeURIComponent(number)}/refund`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, ...(amount ? { amount } : {}) } satisfies RefundOrder),
+    }),
 
   /** Lifts a review or risk hold. The reason is kept on the order. */
   releaseHold: (number: string, reason: string) =>
@@ -867,4 +885,28 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ totp }),
     }),
+
+  // --- Final Processor (OWNER and ADMIN only) ---------------------------------
+
+  /** Configuration, connection and methods. `refresh` skips the API's five-minute cache. */
+  fpOverview: (refresh = false) =>
+    request<AdminFpOverview>(`/admin/payments/final-processor${refresh ? '?refresh=1' : ''}`),
+
+  /** Registers the webhook URL and checks the keys. Always 200; a failure carries its code. */
+  fpConnect: () =>
+    request<AdminFpConnectResult>('/admin/payments/final-processor/connect', {
+      method: 'POST',
+      body: '{}',
+    }),
+
+  /** Saves one method's customisation. Answers the whole overview. */
+  saveFpMethod: (id: string, body: UpdateFpMethod) =>
+    request<AdminFpOverview>(`/admin/payments/final-processor/methods/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    }),
+
+  /** Processed webhooks, newest first, 30 days. */
+  fpEvents: (page: number) =>
+    request<AdminFpEventList>(`/admin/payments/final-processor/events?page=${String(page)}`),
 };

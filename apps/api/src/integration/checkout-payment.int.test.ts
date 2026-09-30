@@ -71,7 +71,17 @@ describe.skipIf(!HAS_DATABASE)('checkout, payment webhook and fulfilment', () =>
   let paidEvent: Stripe.Event;
   let paidIntent: string;
 
-  it('(a) pays a stocked order and assigns one key per licence', async () => {
+  /** Licence emails that actually left for this order. */
+  const licenceMails = (orderNumber: string) =>
+    harness.db.notificationLog.count({
+      where: {
+        template: 'licence.delivered',
+        deliveredAt: { not: null },
+        payload: { path: ['orderNumber'], equals: orderNumber },
+      },
+    });
+
+  it('(a) pays a stocked order and delivers one key per licence, unattended', async () => {
     const before = await salesCount(catalogue.stocked.productId);
     const { checkout } = await checkoutWith(
       [{ variantId: catalogue.stocked.variantId, qty: 2 }],
@@ -92,15 +102,18 @@ describe.skipIf(!HAS_DATABASE)('checkout, payment webhook and fulfilment', () =>
       where: { number: paidOrder },
       include: { items: true },
     });
-    expect(order.status).toBe(OrderStatus.PAID);
+    // BUG-0021: nobody pressed anything, and the keys went out.
+    expect(order.status).toBe(OrderStatus.FULFILLED);
     expect(order.paidAt).not.toBeNull();
 
     expect(order.items).toHaveLength(2);
     for (const item of order.items) {
       expect(item.qty).toBe(1);
-      expect(item.fulfillmentState).toBe(FulfillmentState.AUTO_ASSIGNED);
+      expect(item.fulfillmentState).toBe(FulfillmentState.DELIVERED);
+      expect(item.deliveredAt).not.toBeNull();
       expect(item.assignedKeyIds).toHaveLength(1);
     }
+    expect(await licenceMails(paidOrder)).toBe(2);
     const keys = order.items.flatMap((item) => item.assignedKeyIds);
     expect(new Set(keys).size).toBe(2);
 
@@ -128,6 +141,8 @@ describe.skipIf(!HAS_DATABASE)('checkout, payment webhook and fulfilment', () =>
     expect(await salesCount(catalogue.stocked.productId)).toBe(before);
     const items = await harness.db.orderItem.findMany({ where: { order: { number: paidOrder } } });
     expect(items.flatMap((item) => item.assignedKeyIds)).toHaveLength(2);
+    // And no second copy of either key.
+    expect(await licenceMails(paidOrder)).toBe(2);
     const payments = await harness.db.payment.count({ where: { providerRef: paidIntent } });
     expect(payments).toBe(1);
   });

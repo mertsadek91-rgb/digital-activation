@@ -2,6 +2,15 @@
 @import '@da/ui/tokens.css';
 @import './admin.css';
 
+/*
+ * The token from @da/ui names 'Tajawal' literally; next/font registers the
+ * face under a generated name, so point the token at its variable (as the
+ * storefront does). Unlayered, so it wins over the token's theme layer.
+ */
+:root {
+  --font-sans: var(--font-tajawal), system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
 *,
 *::before,
 *::after {

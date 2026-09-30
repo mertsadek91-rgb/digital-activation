@@ -1,18 +1,22 @@
 'use client';
 
 import type {
+  AdminFpOrderPayment,
   AdminOrderDetail,
   AdminOrderEvent,
   AdminOrderList,
   AdminOrderRow,
-  StaffMe,
+  FpRefundStatus,
+  RefundOrderResult,
 } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
+import { fpErrorText } from '../payments/fp-settings';
 
 /**
  * Orders.
@@ -49,6 +53,39 @@ const ACTOR_KEYS = {
   PROVIDER: 'actorProvider',
 } as const satisfies Record<AdminOrderEvent['actorType'], string>;
 
+const FP_REFUND_KEYS = {
+  PENDING: 'fpRefundPENDING',
+  SUCCEEDED: 'fpRefundSUCCEEDED',
+  FAILED: 'fpRefundFAILED',
+} as const satisfies Record<FpRefundStatus, string>;
+
+const FP_STATE_KEYS = {
+  REQUIRES_ACTION: 'fpStateREQUIRES_ACTION',
+  PROCESSING: 'fpStatePROCESSING',
+  SUCCEEDED: 'fpStateSUCCEEDED',
+  FAILED: 'fpStateFAILED',
+  CANCELLED: 'fpStateCANCELLED',
+  REFUNDED: 'fpStateREFUNDED',
+} as const;
+
+const FP_REFUND_PILLS = {
+  PENDING: 'pill-draft',
+  SUCCEEDED: 'pill-published',
+  FAILED: 'pill-blocked',
+} as const satisfies Record<FpRefundStatus, string>;
+
+/** The same shape the API accepts for a refund amount: USD, two decimals at most. */
+const AMOUNT_PATTERN = /^\d{1,10}(\.\d{1,2})?$/;
+
+/**
+ * A decimal USD string as whole cents. A third decimal (the money type allows
+ * one) is dropped, which only ever lowers the cap it is compared against.
+ */
+function toCents(value: string): number {
+  const [whole = '0', fraction = ''] = value.replace(/^-/, '').split('.');
+  return Number(whole) * 100 + Number(`${fraction}00`.slice(0, 2));
+}
+
 const FILTERS = [
   { key: 'awaiting-payment', label: 'filterAwaitingPayment' },
   { key: 'in-review', label: 'filterInReview' },
@@ -61,7 +98,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const t = useT('orders');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<AdminOrderList | null>(null);
   const [filter, setFilter] = useState('awaiting-payment');
   const [query, setQuery] = useState('');
@@ -85,21 +122,6 @@ export default function OrdersPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [filter, query, page, router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();
@@ -266,11 +288,16 @@ export default function OrdersPage() {
                       api.releaseHold(row.number, reason),
                     )
                   }
-                  onRefund={(reason) =>
-                    void act(t('doneRefunded', { number: row.number }), () =>
-                      api.refundOrder(row.number, reason),
-                    )
-                  }
+                  onRefund={async (reason, amount) => {
+                    setError(null);
+                    setNote(null);
+                    // Errors are thrown back to the row, which shows them
+                    // beside the form they belong to.
+                    const result = await api.refundOrder(row.number, reason, amount);
+                    setNote(t('doneRefunded', { number: row.number }));
+                    void load();
+                    return result;
+                  }}
                 />
               ))}
             </tbody>
@@ -320,16 +347,21 @@ function OrderRow({
   onConfirm: (provider: 'BANK_TRANSFER' | 'CRYPTO', reference: string) => void;
   onNote: (body: string) => void;
   onRelease: (reason: string) => void;
-  onRefund: (reason: string) => void;
+  onRefund: (reason: string, amount?: string) => Promise<RefundOrderResult>;
 }) {
   const t = useT('orders');
   const c = useT('common');
+  const fpT = useT('finalProcessor');
   const [confirming, setConfirming] = useState(false);
   const [noting, setNoting] = useState(false);
   const [releasing, setReleasing] = useState(false);
   const [releaseReason, setReleaseReason] = useState('');
   const [refunding, setRefunding] = useState(false);
   const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [refundSending, setRefundSending] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundResult, setRefundResult] = useState<string | null>(null);
   /**
    * The rest of the order, loaded when somebody asks for it.
    *
@@ -396,6 +428,78 @@ function OrderRow({
     'COMPLETED',
     'PARTIALLY_REFUNDED',
   ].includes(row.status);
+  // The payment the API refunds is the order's succeeded one. A Final
+  // Processor payment can be refunded in part; everything else in full only.
+  const paidThroughFp = row.payments.some(
+    (payment) => payment.provider === 'FINAL_PROCESSOR' && payment.state === 'SUCCEEDED',
+  );
+  const fp = detail?.finalProcessor ?? null;
+
+  /*
+   * The amount box, checked against the cap the API applies: what was paid,
+   * less refunds that succeeded or are still pending. Empty means the whole
+   * remaining balance, so an empty box is valid whenever anything remains.
+   */
+  const capCents = fp ? toCents(fp.refundableUsd) : null;
+  const amountText = refundAmount.trim();
+  let amountProblem: string | null = null;
+  if (paidThroughFp && fp && capCents !== null) {
+    if (capCents <= 0) amountProblem = t('refundNothingLeft');
+    else if (amountText !== '' && !AMOUNT_PATTERN.test(amountText))
+      amountProblem = t('refundAmountInvalid');
+    else if (amountText !== '' && toCents(amountText) <= 0) amountProblem = t('refundAmountZero');
+    else if (amountText !== '' && toCents(amountText) > capCents)
+      amountProblem = t('refundAmountTooHigh', { max: fp.refundableUsd });
+  }
+  const refundReady =
+    refundReason.trim().length >= 3 &&
+    !refundSending &&
+    amountProblem === null &&
+    (!paidThroughFp || fp !== null);
+
+  function openRefund(): void {
+    const next = !refunding;
+    setRefunding(next);
+    setRefundError(null);
+    setRefundResult(null);
+    setReleasing(false);
+    setConfirming(false);
+    setNoting(false);
+    // The cap lives on the detail; fetch it now rather than on submit.
+    if (next && paidThroughFp && !detail) void loadDetail();
+  }
+
+  async function submitRefund(): Promise<void> {
+    setRefundSending(true);
+    setRefundError(null);
+    setRefundResult(null);
+    try {
+      const result = await onRefund(
+        refundReason.trim(),
+        paidThroughFp && amountText !== '' ? amountText : undefined,
+      );
+      setRefundResult(
+        result.via === 'final_processor' && result.refund
+          ? t('refundResultFp', {
+              amount: result.refund.amountUsd,
+              status: t(FP_REFUND_KEYS[result.refund.status]),
+            })
+          : t('refundResultOther', { status: t(STATUS_KEYS[result.status]) }),
+      );
+      setRefundReason('');
+      setRefundAmount('');
+      // The refunds list and the cap both changed.
+      if (paidThroughFp || detail) await loadDetail();
+    } catch (caught) {
+      const code = caught instanceof ApiError ? caught.code : null;
+      // Admins see the code as well as the sentence (A.6).
+      const text =
+        fpErrorText(fpT, code) ?? (caught instanceof Error ? caught.message : t('refundFailed'));
+      setRefundError(code ? `${text} (${code})` : text);
+    } finally {
+      setRefundSending(false);
+    }
+  }
 
   return (
     <>
@@ -463,14 +567,9 @@ function OrderRow({
             <button
               type="button"
               className={`ghost${refunding ? ' is-active' : ''}`}
-              onClick={() => {
-                setRefunding(!refunding);
-                setReleasing(false);
-                setConfirming(false);
-                setNoting(false);
-              }}
+              onClick={openRefund}
             >
-              {refunding ? c('cancel') : t('refund')}
+              {refunding ? (refundResult ? c('hide') : c('cancel')) : t('refund')}
             </button>
           ) : null}
           <button
@@ -546,9 +645,7 @@ function OrderRow({
               className="paste-form order-action-form"
               onSubmit={(event) => {
                 event.preventDefault();
-                onRefund(refundReason.trim());
-                setRefundReason('');
-                setRefunding(false);
+                if (refundReady) void submitRefund();
               }}
             >
               <label className="grow">
@@ -561,12 +658,44 @@ function OrderRow({
                   minLength={3}
                   placeholder={t('refundReasonPlaceholder')}
                 />
-                <small>{t('refundReasonHint')}</small>
+                <small>{paidThroughFp ? t('refundFpHint') : t('refundReasonHint')}</small>
               </label>
-              <button type="submit" disabled={refundReason.trim().length < 3}>
-                {t('refundConfirm')}
+
+              {/* Only for Final Processor: every other provider refunds in
+                  full, and the API refuses an amount for them. */}
+              {paidThroughFp ? (
+                fp ? (
+                  <label className="refund-amount">
+                    {t('refundAmountLabel')}
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      dir="ltr"
+                      value={refundAmount}
+                      onChange={(event) => setRefundAmount(event.target.value)}
+                      placeholder={fp.refundableUsd}
+                      aria-invalid={amountProblem !== null}
+                      disabled={capCents !== null && capCents <= 0}
+                    />
+                    <small className={amountProblem ? 'warn' : undefined}>
+                      {amountProblem ?? t('refundAmountHint', { max: fp.refundableUsd })}
+                    </small>
+                  </label>
+                ) : (
+                  <p className="meta">{detailError ?? t('refundLoadingCap')}</p>
+                )
+              ) : null}
+
+              <button type="submit" disabled={!refundReady}>
+                {refundSending ? t('refundSending') : t('refundConfirm')}
               </button>
             </form>
+            {refundError ? <p className="error">{refundError}</p> : null}
+            {refundResult ? (
+              <p className="ok-note" role="status">
+                {refundResult}
+              </p>
+            ) : null}
           </td>
         </tr>
       ) : null}
@@ -670,11 +799,16 @@ function OrderRow({
                               {payment.provider} · {payment.state}
                               {payment.reference ? ` (${payment.reference})` : ''}
                             </span>
+                            {payment.testMode ? (
+                              <span className="pill pill-draft">{t('paymentTestBadge')}</span>
+                            ) : null}
                           </li>
                         ))}
                       </ul>
                     </div>
                   ) : null}
+
+                  {detail.finalProcessor ? <FpPanel fp={detail.finalProcessor} /> : null}
 
                   <div className="detail-section">
                     <h3 className="detail-heading">
@@ -748,6 +882,7 @@ function OrderRow({
                                 {mail.sentAt.slice(0, 16).replace('T', ' ')}
                               </span>
                             </div>
+
                             <span
                               className={`pill mail-status ${mail.error || mail.bouncedAt ? 'pill-blocked' : 'pill-published'}`}
                             >
@@ -854,6 +989,89 @@ function OrderRow({
         </tr>
       ) : null}
     </>
+  );
+}
+
+/**
+ * The Final Processor payment behind an order (B.4): its id at the processor,
+ * whether it was a sandbox payment, and every refund against it — those made
+ * here and those made in the processor's own admin, which arrive by webhook.
+ */
+function FpPanel({ fp }: { fp: AdminFpOrderPayment }) {
+  const t = useT('orders');
+
+  return (
+    <div className="detail-section fp-order-panel">
+      <h3 className="detail-heading">
+        {t('fpHeading')}{' '}
+        <span className={`pill ${fp.testMode ? 'pill-draft' : 'pill-ready'}`}>
+          {fp.testMode ? t('fpTest') : t('fpLive')}
+        </span>
+      </h3>
+      {fp.testMode ? <p className="meta meta-warn">{t('fpTestNote')}</p> : null}
+      <dl className="customer-facts">
+        <dt>{t('fpPaymentId')}</dt>
+        <dd>
+          <code dir="ltr">{fp.paymentId ?? '—'}</code>
+        </dd>
+        <dt>{t('fpState')}</dt>
+        <dd>
+          {Object.hasOwn(FP_STATE_KEYS, fp.state)
+            ? t(FP_STATE_KEYS[fp.state as keyof typeof FP_STATE_KEYS])
+            : fp.state}
+        </dd>
+        <dt>{t('fpPaidAt')}</dt>
+        <dd dir="ltr">{fp.paidAt ? fp.paidAt.slice(0, 16).replace('T', ' ') : t('fpNotPaid')}</dd>
+        <dt>{t('fpCharged')}</dt>
+        <dd dir="ltr">${fp.amountUsd}</dd>
+        <dt>{t('fpRefunded')}</dt>
+        <dd dir="ltr">${fp.refundedUsd}</dd>
+        <dt>{t('fpRefundable')}</dt>
+        <dd dir="ltr">${fp.refundableUsd}</dd>
+      </dl>
+
+      <h4 className="fp-subhead">{t('fpRefundsHeading', { count: fp.refunds.length })}</h4>
+      {fp.refunds.length === 0 ? (
+        <p className="meta empty-state-text">{t('fpNoRefunds')}</p>
+      ) : (
+        <ul className="order-notes-list">
+          {fp.refunds.map((refund) => (
+            <li key={refund.id} className="order-note-item">
+              <p className="note-text">
+                <strong dir="ltr">${refund.amountUsd}</strong>{' '}
+                <span className={`pill ${FP_REFUND_PILLS[refund.status]}`}>
+                  {t(FP_REFUND_KEYS[refund.status])}
+                </span>
+                {refund.failureCode ? (
+                  <span className="meta" dir="ltr">
+                    {' '}
+                    {t('fpRefundFailureCode', { code: refund.failureCode })}
+                  </span>
+                ) : null}
+              </p>
+              {refund.reason ? <p className="meta">{refund.reason}</p> : null}
+              <div className="note-meta-row">
+                <span className="note-date" dir="ltr">
+                  {refund.createdAt.slice(0, 16).replace('T', ' ')}
+                </span>
+                {refund.refundId ? (
+                  <>
+                    <span>·</span>
+                    <code dir="ltr">{refund.refundId}</code>
+                  </>
+                ) : null}
+                {refund.refundRef === null ? (
+                  <>
+                    <span>·</span>
+                    <span>{t('fpRefundOutside')}</span>
+                  </>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

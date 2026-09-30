@@ -40,6 +40,7 @@ import {
 } from './orders.js';
 import { type OrderActor, recordOrderTransition, transitionOrder } from './order-status.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
+import { recordRefundOutcome } from './refund-outcome.js';
 import { StripeService } from './stripe.service.js';
 
 type Db = Prisma.TransactionClient | PrismaService['client'];
@@ -146,9 +147,22 @@ export class CheckoutService {
     const locale = this.localeFor(query);
     const customer = await this.upsertCustomer(input, locale, query.currency);
 
-    const existing = await this.prisma.client.order.findFirst({
+    let existing = await this.prisma.client.order.findFirst({
       where: { cartId: cart.id, status: OrderStatus.PENDING_PAYMENT },
     });
+
+    // A Final Processor payment is keyed on the order id and fixed at its
+    // amount, and the processor offers no way to cancel one. A draft that now
+    // costs something else cannot be rewritten under it — the next payment
+    // would be refused as `order_ref_conflict`, and the open one would still
+    // be payable at the old price — so it is closed and a new order drafted.
+    if (existing && (await this.hasOpenFpPaymentOtherThan(existing.id, fresh.totalUsd))) {
+      await this.retireDraft(
+        existing.id,
+        'Final Processor: the cart changed while a payment was open; a new order replaces this one.',
+      );
+      existing = null;
+    }
 
     // A coupon that lost to an automatic offer is attached but not applied, so
     // the order does not carry it: it must not spend a use of the code, nor be
@@ -281,7 +295,57 @@ export class CheckoutService {
       // hardcoded buttons. A method whose details nobody has filled in is
       // absent, so the shopper never reaches a payment step with nothing on it.
       paymentMethods: await this.paymentSettings.offeredProviders(),
+      finalProcessorMethods: await this.paymentSettings.finalProcessorMethods(query.locale),
+      // A card is charged in dollars whatever the page shows (A.2.3), and the
+      // shopper is told how many before they are sent to pay.
+      chargedInUsd: order.currency === 'USD' ? null : { amountUsd: order.totalUsd.toFixed(2) },
     };
+  }
+
+  /** Whether the order has an open Final Processor payment for an amount other than `totalUsd`. */
+  private async hasOpenFpPaymentOtherThan(
+    orderId: string,
+    totalUsd: Prisma.Decimal,
+  ): Promise<boolean> {
+    const open = await this.prisma.client.payment.findMany({
+      where: {
+        orderId,
+        provider: PaymentProvider.FINAL_PROCESSOR,
+        state: { in: [PaymentState.PROCESSING, PaymentState.REQUIRES_ACTION] },
+      },
+      select: { amountUsd: true },
+    });
+    return open.some((payment) => !payment.amountUsd.equals(totalUsd));
+  }
+
+  /**
+   * Closes a draft that can no longer be paid as it stands, so the next
+   * checkout drafts a fresh order (with a fresh id, which is the processor's
+   * `order_ref`). Its open Final Processor payments are marked cancelled here;
+   * if one is paid anyway, the webhook finds the order closed and flags it.
+   * The cart is untouched.
+   */
+  async retireDraft(orderId: string, reason: string): Promise<boolean> {
+    return this.prisma.client.$transaction(async (tx) => {
+      const moved = await transitionOrder(tx, {
+        orderId,
+        from: OrderStatus.PENDING_PAYMENT,
+        to: OrderStatus.CANCELLED,
+        actor: { type: 'SYSTEM' },
+        reason,
+        data: { cancelledAt: new Date() },
+        ifIllegal: 'skip',
+      });
+      await tx.payment.updateMany({
+        where: {
+          orderId,
+          provider: PaymentProvider.FINAL_PROCESSOR,
+          state: { in: [PaymentState.PROCESSING, PaymentState.REQUIRES_ACTION] },
+        },
+        data: { state: PaymentState.CANCELLED },
+      });
+      return moved;
+    });
   }
 
   private async writeLines(
@@ -637,12 +701,24 @@ export class CheckoutService {
    */
   async markPaid(input: {
     orderNumber: string;
-    provider: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER' | 'CRYPTO';
+    provider: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER' | 'CRYPTO' | 'FINAL_PROCESSOR';
     providerRef: string;
     amountCharged: string;
     chargedCurrency: string;
-    /** What the provider says it took, in minor units. Checked when present. */
+    /**
+     * What the provider says it took, in minor units. Checked when present:
+     * against the order's charge in its display currency, except for Final
+     * Processor, which always charges the USD total (A.2.3).
+     */
     amountMinor?: number;
+    /** A sandbox payment, as the provider reports it (Final Processor). */
+    testMode?: boolean;
+    /**
+     * The provider says some or all of this money has already gone back. The
+     * order is recorded as paid for the books, but held: no key for money that
+     * was returned (a refund event can arrive before the success event).
+     */
+    refunded?: boolean;
     riskLevel?: RiskLevel;
     /** Who is applying it, for the status history. Defaults to the provider. */
     actor?: OrderActor;
@@ -672,15 +748,26 @@ export class CheckoutService {
 
       // The payment row is recorded even on a repeat delivery, because the
       // unique index on (provider, providerRef) makes that safe and the
-      // absence of a row is worse than a duplicate attempt.
+      // absence of a row is worse than a duplicate attempt. A row already
+      // REFUNDED stays refunded: a late success must not resurrect it.
+      const existing = await tx.payment.findUnique({
+        where: {
+          provider_providerRef: { provider: input.provider, providerRef: input.providerRef },
+        },
+        select: { state: true },
+      });
       await tx.payment.upsert({
         where: {
           provider_providerRef: { provider: input.provider, providerRef: input.providerRef },
         },
         update: {
-          state: PaymentState.SUCCEEDED,
+          state:
+            existing?.state === PaymentState.REFUNDED
+              ? PaymentState.REFUNDED
+              : PaymentState.SUCCEEDED,
           amountCharged: input.amountCharged,
           chargedCurrency: input.chargedCurrency,
+          ...(input.testMode === undefined ? {} : { testMode: input.testMode }),
         },
         create: {
           orderId: order.id,
@@ -690,6 +777,7 @@ export class CheckoutService {
           amountCharged: input.amountCharged,
           chargedCurrency: input.chargedCurrency,
           amountUsd: order.totalUsd,
+          testMode: input.testMode ?? false,
         },
       });
 
@@ -700,7 +788,10 @@ export class CheckoutService {
       const reasons: string[] = [];
 
       if (input.amountMinor !== undefined) {
-        const expected = await this.chargeFor(order, tx);
+        const expected =
+          input.provider === 'FINAL_PROCESSOR'
+            ? { amount: order.totalUsd.toFixed(2), currency: 'USD' }
+            : await this.chargeFor(order, tx);
         const matches = chargeMatches(expected, {
           amountMinor: input.amountMinor,
           currency: input.chargedCurrency,
@@ -762,6 +853,16 @@ export class CheckoutService {
             reasons.push('This customer had already used the coupon on this order.');
           }
         }
+      }
+
+      // A sandbox payment took no real money, but the key it would release is
+      // real stock. Held for a person unless the operator opted in — on a test
+      // site, say (`FP_FULFIL_TEST_PAYMENTS=on`).
+      if (input.refunded === true) {
+        reasons.push('The provider reports this payment as already (partly) refunded.');
+      }
+      if (input.testMode === true && process.env.FP_FULFIL_TEST_PAYMENTS !== 'on') {
+        reasons.push('Sandbox (test-mode) payment: no real money was collected.');
       }
 
       let status: OrderStatus = reasons.length > 0 ? OrderStatus.PAYMENT_REVIEW : OrderStatus.PAID;
@@ -949,25 +1050,13 @@ export class CheckoutService {
       // events arrive for the same order. 'skip', because the money has gone
       // back whatever the status can say: a late partial event after the full
       // one must not demote REFUNDED, and must not fail the webhook either.
-      const moved = await transitionOrder(tx, {
+      await recordRefundOutcome(tx, {
         orderId: payment.orderId,
-        to: input.fullyRefunded ? OrderStatus.REFUNDED : OrderStatus.PARTIALLY_REFUNDED,
+        fullyRefunded: input.fullyRefunded,
         actor: { type: 'PROVIDER', id: input.chargeId },
-        reason: `Refunded in Stripe (${input.fullyRefunded ? 'full' : 'partial'})`,
-        ifIllegal: 'skip',
-      });
-      const becameRefunded = input.fullyRefunded && moved;
-      if (becameRefunded) await countSale(tx, payment.orderId, -1);
-      await tx.orderNote.create({
-        data: {
-          orderId: payment.orderId,
-          body:
-            `Refunded in Stripe (${input.fullyRefunded ? 'full' : 'partial'}).` +
-            (delivered.length > 0
-              ? ` Already delivered, deactivate with the supplier: ${delivered.join(', ')}.`
-              : ' Nothing had been delivered.'),
-          isCustomerVisible: false,
-        },
+        label: 'Refunded in Stripe',
+        delivered,
+        note: 'always',
       });
     });
   }
@@ -1017,6 +1106,14 @@ export class CheckoutService {
     }
     const payment = order.payments[0];
     if (!payment) throw new BadRequestException(`Order ${input.number} has no succeeded payment.`);
+    // Refunded through the processor, by FpPaymentsService (the admin's refund
+    // route dispatches there). Recording one here would say the money went
+    // back when nothing asked the processor to send it.
+    if (payment.provider === PaymentProvider.FINAL_PROCESSOR) {
+      throw new BadRequestException(
+        `Order ${input.number} was paid through Final Processor; refund it from the order screen.`,
+      );
+    }
 
     await this.prisma.client.orderNote.create({
       data: {

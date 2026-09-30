@@ -1,8 +1,9 @@
 'use client';
 
-import type { AdminProductRow, Readiness, StaffMe } from '@da/contracts';
+import type { AdminProductRow, Readiness } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useStaff } from '../../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../../i18n/provider';
@@ -55,7 +56,7 @@ export default function ProductEditPage() {
   const t = useT('products');
   const c = useT('common');
 
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [row, setRow] = useState<AdminProductRow | null>(null);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [locale, setLocale] = useState<'ar' | 'en'>('ar');
@@ -92,21 +93,6 @@ export default function ProductEditPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [slug, locale, router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void refresh();

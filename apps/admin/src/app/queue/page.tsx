@@ -1,7 +1,8 @@
 'use client';
 
-import type { Queue, QueueRow, SecretInput, StaffMe } from '@da/contracts';
+import type { Queue, QueueRow, SecretInput } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -45,7 +46,7 @@ export default function QueuePage() {
   const router = useRouter();
   const t = useT('queue');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [queue, setQueue] = useState<Queue | null>(null);
   const [includeDone, setIncludeDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,27 +66,16 @@ export default function QueuePage() {
   }, [includeDone, router, t]);
 
   useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
-
-  useEffect(() => {
     if (me) void load();
   }, [me, load]);
 
   const canWork = me !== null && ['OWNER', 'ADMIN', 'FULFILLMENT'].includes(me.role);
 
-  async function act(label: string, run: () => Promise<unknown>): Promise<void> {
+  async function act(
+    label: string,
+    run: () => Promise<unknown>,
+    options?: { reloadOnRefusal?: boolean },
+  ): Promise<void> {
     setError(null);
     setDone(null);
     try {
@@ -93,6 +83,12 @@ export default function QueuePage() {
       setDone(label);
       await load();
     } catch (caught) {
+      // A refused send ("already delivered", "being sent right now") means the
+      // row on screen is out of date. Reload first — a successful load clears
+      // the error — then show why the send was refused.
+      if (options?.reloadOnRefusal && caught instanceof ApiError && caught.status === 400) {
+        await load();
+      }
       setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }
@@ -161,8 +157,10 @@ export default function QueuePage() {
                     )
                   }
                   onDeliver={() =>
-                    void act(t('doneDelivered', { sku: row.sku }), () =>
-                      api.deliver(row.orderItemId),
+                    void act(
+                      t('doneDelivered', { sku: row.sku }),
+                      () => api.deliver(row.orderItemId),
+                      { reloadOnRefusal: true },
                     )
                   }
                   onFail={(reason) =>

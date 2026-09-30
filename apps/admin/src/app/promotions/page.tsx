@@ -1,7 +1,8 @@
 'use client';
 
-import type { AdminPromotion, AdminPromotionList, StaffMe } from '@da/contracts';
+import type { AdminPromotion, AdminPromotionList } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -64,7 +65,7 @@ export default function PromotionsPage() {
   const router = useRouter();
   const t = useT('promotions');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<AdminPromotionList | null>(null);
   const [filter, setFilter] = useState('live');
   const [error, setError] = useState<string | null>(null);
@@ -83,21 +84,6 @@ export default function PromotionsPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [filter, router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

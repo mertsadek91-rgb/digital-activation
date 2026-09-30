@@ -6,6 +6,7 @@ import { KekService } from '../vault/kek.js';
 import { AuditService } from './audit.service.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { SessionPruneService } from './session-prune.service.js';
 import { StaffGuard } from './staff.guard.js';
 
 @Module({
@@ -14,7 +15,7 @@ import { StaffGuard } from './staff.guard.js';
   // KekService is stateless — it reads the provider from the environment — so a
   // second instance here is the same KEK as the vault's without exporting it
   // from VaultModule, whose exports are deliberately just VaultService.
-  providers: [AuthService, AuditService, StaffGuard, KekService],
+  providers: [AuthService, AuditService, StaffGuard, KekService, SessionPruneService],
   exports: [AuthService, AuditService, StaffGuard],
 })
 export class AuthModule {}

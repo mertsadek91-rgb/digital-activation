@@ -1,12 +1,20 @@
 'use client';
 
-import type { Cart, Checkout, CrossSell, PaymentProvider, PaymentSession } from '@da/contracts';
+import type {
+  Cart,
+  Checkout,
+  CheckoutFpMethod,
+  CrossSell,
+  PaymentProvider,
+  PaymentSession,
+  StartPayment,
+} from '@da/contracts';
 import { ROUTES, normalizeWhatsappPhone } from '@da/contracts';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { CardPayment } from '../../../components/card-payment';
 import { CountrySelect } from '../../../components/country-select';
@@ -43,17 +51,89 @@ type CardSession = Extract<PaymentSession, { provider: 'STRIPE' }>;
 type ManualSession = Extract<PaymentSession, { provider: 'BANK_TRANSFER' | 'CRYPTO' }>;
 
 /**
- * What each method is called, on the button.
+ * What each method is called, beside its radio.
  *
  * The server decides which of these a shopper may start; the wording stays
  * with the rest of the page's Arabic and English, in the `checkout` messages.
+ * Final Processor has no label of its own here: each of its methods carries
+ * the name the admin gave it.
  */
 const METHOD_LABELS = {
   STRIPE: 'methodSTRIPE',
   PAYPAL: 'methodPAYPAL',
   BANK_TRANSFER: 'methodBANK_TRANSFER',
   CRYPTO: 'methodCRYPTO',
-} as const satisfies Record<PaymentProvider, string>;
+} as const satisfies Record<Exclude<PaymentProvider, 'FINAL_PROCESSOR'>, string>;
+
+/**
+ * One radio on the payment step. A Final Processor method is a choice of its
+ * own, beside the other providers, because to the shopper "Card" and "Bank
+ * transfer" are the same kind of thing.
+ */
+type PayChoice =
+  | { key: string; provider: Exclude<PaymentProvider, 'FINAL_PROCESSOR'> }
+  | { key: string; provider: 'FINAL_PROCESSOR'; method: CheckoutFpMethod };
+
+/** In the server's order, with Final Processor expanded into its methods (in the admin's order). */
+function payChoices(checkout: Checkout): PayChoice[] {
+  return checkout.paymentMethods.flatMap((provider): PayChoice[] =>
+    provider === 'FINAL_PROCESSOR'
+      ? checkout.finalProcessorMethods.map((method) => ({
+          key: `FINAL_PROCESSOR:${method.id}`,
+          provider,
+          method,
+        }))
+      : [{ key: provider, provider }],
+  );
+}
+
+/**
+ * An icon is drawn only from an https URL or a path on this site: what the
+ * CSP's `img-src` allows, and what the admin screen accepts.
+ */
+function drawableIcon(url: string | null): string | null {
+  if (!url) return null;
+  return /^https:\/\/\S+$/.test(url) || /^\/[^\s/]\S*$/.test(url) ? url : null;
+}
+
+/** "$25.50" — the USD charge, written the same way in both languages. */
+function usd(amount: string): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+    Number(amount),
+  );
+}
+
+/**
+ * Why the processor sent the shopper back (`fp_result` on the cancel URL).
+ * Display only: it chooses a sentence, never an order state.
+ */
+type ReturnNotice = 'fpCancelled' | 'fpExpired' | 'fpFailed';
+
+function returnNoticeFor(result: string | null): ReturnNotice | null {
+  if (result === null) return null;
+  if (result === 'cancelled') return 'fpCancelled';
+  if (result === 'expired') return 'fpExpired';
+  return 'fpFailed';
+}
+
+/**
+ * Makes the document's referrer policy `same-origin` from now on (A.2.9), so
+ * the navigation to the payment gateway carries no Referer at all. A `<meta
+ * name="referrer">` inserted, or whose content changes, updates the policy of
+ * the current document. An existing one (React may own it through the
+ * layout's metadata) is updated in place rather than removed.
+ */
+function restrictReferrer(): void {
+  const existing = document.querySelector<HTMLMetaElement>('meta[name="referrer"]');
+  if (existing) {
+    existing.content = 'same-origin';
+    return;
+  }
+  const meta = document.createElement('meta');
+  meta.name = 'referrer';
+  meta.content = 'same-origin';
+  document.head.append(meta);
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -70,6 +150,8 @@ export default function CheckoutPage() {
   const [stage, setStage] = useState<Stage>({ kind: 'details' });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [returnNotice, setReturnNotice] = useState<ReturnNotice | null>(null);
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -90,6 +172,38 @@ export default function CheckoutPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Back from the processor's cancel URL. The sentence is chosen from
+  // `fp_result` and nothing else is read from it; the parameters are then
+  // dropped from the address bar so a reload does not repeat the message.
+  // The cart is untouched — it lives on the server, under the cart cookie.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('fp_result')) return;
+    setReturnNotice(returnNoticeFor(url.searchParams.get('fp_result')));
+    url.searchParams.delete('fp_result');
+    url.searchParams.delete('fp_payment');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  }, []);
+
+  // "Back" from the payment page can restore this page from the back/forward
+  // cache, still busy from the moment it left (A.8.3). Release it and say the
+  // payment did not go through; the cart is untouched.
+  useEffect(() => {
+    const onShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      setBusy(false);
+      setReturnNotice((current) => current ?? returnNoticeFor('failed'));
+    };
+    window.addEventListener('pageshow', onShow);
+    return () => window.removeEventListener('pageshow', onShow);
+  }, []);
+
+  const payCheckout = stage.kind === 'pay' ? stage.checkout : null;
+  const choices = useMemo(() => (payCheckout ? payChoices(payCheckout) : []), [payCheckout]);
+  // The first offered method until the shopper picks another; a pick that is
+  // no longer offered (the checkout was redrafted) falls back the same way.
+  const chosen = choices.find((choice) => choice.key === selected) ?? choices[0] ?? null;
 
   // Asked for only where it is needed. A field with no purpose on a checkout
   // page costs conversions on every order that did not need it.
@@ -137,12 +251,47 @@ export default function CheckoutPage() {
     }
   }
 
-  async function pay(checkout: Checkout, provider: PaymentProvider): Promise<void> {
+  /**
+   * Redrafts the order from the same cart, for when the old draft cannot be
+   * paid any more (`order_changed`) or the methods it offered went stale.
+   */
+  async function redraft(): Promise<boolean> {
+    try {
+      const fresh = await cartApi.startCheckout(details(), { locale });
+      setCart(fresh.cart);
+      setStage({ kind: 'pay', checkout: fresh });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function pay(checkout: Checkout, choice: PayChoice): Promise<void> {
     const orderNumber = checkout.order.number;
+    const body: StartPayment =
+      choice.provider === 'FINAL_PROCESSOR'
+        ? { provider: 'FINAL_PROCESSOR', method: choice.method.id }
+        : { provider: choice.provider };
     setBusy(true);
     setError(null);
+    setReturnNotice(null);
+    let leaving = false;
     try {
-      const session = await cartApi.pay(orderNumber, provider, { locale });
+      const session = await cartApi.pay(orderNumber, body, { locale });
+      if (session.provider === 'FINAL_PROCESSOR') {
+        // Exactly as given: a parameter added here would reach the gateway
+        // (A.2.9). The page stays busy while the browser leaves.
+        //
+        // The shop's address must not reach the gateway either. The
+        // Referrer-Policy header only applies to a full load of this page, and
+        // shoppers usually arrive by client-side navigation, which keeps the
+        // policy of the first page they loaded. So the document's policy is
+        // set here, immediately before leaving.
+        restrictReferrer();
+        leaving = true;
+        window.location.assign(session.redirectUrl);
+        return;
+      }
       if (session.provider === 'STRIPE') {
         setStage({ kind: 'card', session, checkout });
         return;
@@ -157,9 +306,26 @@ export default function CheckoutPage() {
       }
       setStage({ kind: 'manual', session, orderNumber });
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : t('startFailed'));
+      if (!(caught instanceof CartError)) {
+        setError(t('startFailed'));
+        return;
+      }
+      // The API's own sentence, in the order's language (A.6). What differs
+      // by reason is what the page does next.
+      if (caught.reason === 'order_changed') {
+        // The draft was closed. A new one is drafted from the same cart, and
+        // the shopper reviews it and pays again.
+        setError((await redraft()) ? caught.message : t('startFailed'));
+      } else if (caught.reason === 'unavailable') {
+        // The method may have gone: redraw the list from the server.
+        await redraft();
+        setError(caught.message);
+      } else {
+        // 'retry' and everything else: the same button works in a moment.
+        setError(caught.message);
+      }
     } finally {
-      setBusy(false);
+      if (!leaving) setBusy(false);
     }
   }
 
@@ -168,9 +334,9 @@ export default function CheckoutPage() {
     try {
       await cartApi.addCrossSell(offer.variantId, { locale });
       // The order has to be redrafted: its lines and total just changed.
-      const checkout = await cartApi.startCheckout(details(), { locale });
-      setCart(checkout.cart);
-      setStage({ kind: 'pay', checkout });
+      const redrafted = await cartApi.startCheckout(details(), { locale });
+      setCart(redrafted.cart);
+      setStage({ kind: 'pay', checkout: redrafted });
     } catch (caught) {
       setError(caught instanceof CartError ? caught.message : t('offerFailed'));
     } finally {
@@ -233,6 +399,11 @@ export default function CheckoutPage() {
 
       <div className="checkout-layout">
         <div className="checkout-main">
+          {returnNotice ? (
+            <p className="notice notice-warn checkout-return-notice" role="alert">
+              {t(returnNotice)}
+            </p>
+          ) : null}
           {stage.kind === 'details' ? (
             <form className="checkout-form" onSubmit={(event) => void submitDetails(event)}>
               <h2>{t('stepDetails')}</h2>
@@ -397,7 +568,7 @@ export default function CheckoutPage() {
                 </p>
               ) : null}
 
-              {stage.checkout.paymentMethods.length === 0 ? (
+              {choices.length === 0 ? (
                 // Nothing configured, so nothing is offered. A row of buttons
                 // where every one leads to a 503 costs the order and the
                 // goodwill; an address to write to keeps at least the order.
@@ -407,21 +578,87 @@ export default function CheckoutPage() {
                   })}
                 </p>
               ) : (
-                <div className="pay-methods">
-                  {stage.checkout.paymentMethods.map((provider, index) => (
-                    <button
-                      key={provider}
-                      type="button"
-                      className={
-                        index === 0 ? 'btn btn-primary btn-wide' : 'btn btn-ghost btn-wide'
-                      }
-                      disabled={busy}
-                      onClick={() => void pay(stage.checkout, provider)}
-                    >
-                      {t(METHOD_LABELS[provider])}
-                    </button>
-                  ))}
-                </div>
+                <form
+                  className="pay-choice-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (chosen) void pay(stage.checkout, chosen);
+                  }}
+                >
+                  <fieldset className="pay-choices" disabled={busy}>
+                    <legend className="visually-hidden">{t('howToPay')}</legend>
+                    {choices.map((choice) => {
+                      const icon =
+                        choice.provider === 'FINAL_PROCESSOR'
+                          ? drawableIcon(choice.method.iconUrl)
+                          : null;
+                      const label =
+                        choice.provider === 'FINAL_PROCESSOR'
+                          ? choice.method.label
+                          : t(METHOD_LABELS[choice.provider]);
+                      const description =
+                        choice.provider === 'FINAL_PROCESSOR' ? choice.method.description : null;
+                      return (
+                        <label key={choice.key} className="pay-choice">
+                          <input
+                            type="radio"
+                            name="payment-method"
+                            value={choice.key}
+                            checked={chosen?.key === choice.key}
+                            onChange={() => setSelected(choice.key)}
+                          />
+                          <span className="pay-choice-body">
+                            <span className="pay-choice-label">{label}</span>
+                            {description ? (
+                              <span className="pay-choice-description">{description}</span>
+                            ) : null}
+                          </span>
+                          {icon ? (
+                            // A plain <img>: the icon's host is whatever the
+                            // admin or the processor chose, which next/image
+                            // would refuse to optimise. `img-src` allows https.
+                            <img
+                              className="pay-choice-icon"
+                              src={icon}
+                              alt={label}
+                              width={40}
+                              height={28}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : null}
+                        </label>
+                      );
+                    })}
+                  </fieldset>
+
+                  {/* The server offers Final Processor only with a method behind
+                      it; if that ever disagrees, the option says so instead of
+                      being a radio that leads nowhere. */}
+                  {stage.checkout.paymentMethods.includes('FINAL_PROCESSOR') &&
+                  stage.checkout.finalProcessorMethods.length === 0 ? (
+                    <p className="notice notice-warn" role="status">
+                      {t('fpUnavailable')}
+                    </p>
+                  ) : null}
+
+                  {chosen?.provider === 'FINAL_PROCESSOR' && stage.checkout.chargedInUsd ? (
+                    <p className="notice pay-charged-usd">
+                      {t.rich('chargedInUsd', {
+                        amount: usd(stage.checkout.chargedInUsd.amountUsd),
+                        strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+                      })}
+                    </p>
+                  ) : null}
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-wide pay-submit"
+                    disabled={busy || chosen === null}
+                  >
+                    {busy ? '...' : t('payNow')}
+                  </button>
+                </form>
               )}
 
               {/* The store's guarantee and registration, beside the buttons

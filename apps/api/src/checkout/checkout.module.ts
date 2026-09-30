@@ -10,6 +10,10 @@ import { SalesModule } from '../offers/sales.module.js';
 import { CheckoutController } from './checkout.controller.js';
 import { CheckoutService } from './checkout.service.js';
 import { ExpirySweepService } from './expiry-sweep.service.js';
+import { FinalProcessorAdminController } from './final-processor-admin.controller.js';
+import { FinalProcessorService } from './final-processor.service.js';
+import { FpLogPruneService } from './fp-log-prune.service.js';
+import { FpPaymentsService } from './fp-payments.service.js';
 import { PaymentSettingsController } from './payment-settings.controller.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { StripeService } from './stripe.service.js';
@@ -30,11 +34,22 @@ import { StripeService } from './stripe.service.js';
   // AccountModule so the order page can accept a signed-in customer.
   // SalesModule so a cross-sell offer quotes the sale price the cart will use.
   imports: [AccountModule, AuthModule, CartModule, FulfillmentModule, MailModule, SalesModule],
-  controllers: [CheckoutController, PaymentSettingsController],
-  providers: [CheckoutService, ExpirySweepService, PaymentSettingsService, StripeService],
+  controllers: [CheckoutController, PaymentSettingsController, FinalProcessorAdminController],
+  // FinalProcessorService is the only place the Final Processor SDK is built,
+  // so FP_SECRET is read in this module and nowhere else.
+  providers: [
+    CheckoutService,
+    ExpirySweepService,
+    FinalProcessorService,
+    FpLogPruneService,
+    FpPaymentsService,
+    PaymentSettingsService,
+    StripeService,
+  ],
   // PaymentSettingsService too, because the launch checklist asks it the one
   // question that decides whether this store can take money at all — and the
   // methods already know their own reasons for being off.
-  exports: [CheckoutService, PaymentSettingsService],
+  // FpPaymentsService for the admin order screen: its refund and payment block.
+  exports: [CheckoutService, FpPaymentsService, PaymentSettingsService],
 })
 export class CheckoutModule {}

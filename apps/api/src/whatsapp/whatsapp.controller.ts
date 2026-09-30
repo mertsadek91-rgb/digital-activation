@@ -116,7 +116,7 @@ export class WhatsappAdminController {
   @Get('status')
   @ApiOperation({ summary: 'WhatsApp connection status and the last 30 days' })
   async status(): Promise<WhatsappStatus> {
-    const apiBase = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL;
+    const apiBase = process.env.API_PUBLIC_URL || process.env.NEXT_PUBLIC_API_URL;
     return {
       configured: this.whatsapp.configured,
       accessToken: Boolean(process.env.WHATSAPP_ACCESS_TOKEN),

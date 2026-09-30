@@ -1,7 +1,8 @@
 'use client';
 
-import type { LaunchCheck, LaunchReadiness, StaffMe } from '@da/contracts';
+import type { LaunchCheck, LaunchReadiness } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -37,7 +38,7 @@ export default function LaunchPage() {
   const router = useRouter();
   const t = useT('launch');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<LaunchReadiness | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,21 +54,6 @@ export default function LaunchPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

@@ -5572,3 +5572,159 @@ a.as-button.ghost:hover {
 .customer-facts dd {
   margin: 0;
 }
+
+/* --- Final Processor (payments screen, order detail) ------------------------ */
+
+/* Test mode is stated, not hinted: a sandbox checkout that looks live is how a
+   shop spends a week "selling" and collects nothing. */
+.fp-test-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+  margin: 0 0 var(--spacing-2);
+  padding: 12px 14px;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+}
+.fp-test-banner strong {
+  font-size: var(--text-base);
+}
+
+.fp-env-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.fp-env-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.fp-env-list code,
+.fp-method-meta code,
+.fp-connected-methods code,
+.fp-event-id {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+.fp-facts dd {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  word-break: break-all;
+}
+
+.fp-connect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 12px 0;
+}
+.fp-result {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.fp-result.is-ok {
+  border-color: var(--color-success);
+}
+.fp-result.is-bad {
+  border-color: var(--color-danger);
+}
+.fp-result > p {
+  margin: 0 0 8px;
+}
+.fp-error p {
+  margin: 0 0 6px;
+}
+.fp-subhead {
+  margin: 12px 0 6px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink-muted);
+}
+.fp-connected-methods {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-sm);
+}
+
+.fp-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fp-methods-table td {
+  vertical-align: top;
+}
+.fp-methods-table input[type='text'] {
+  inline-size: 100%;
+  min-inline-size: 9rem;
+}
+.fp-methods-table .fp-order-input {
+  inline-size: 5.5rem;
+}
+.fp-methods-table tr.fp-row-hidden > td:first-child strong {
+  color: var(--color-ink-muted);
+}
+.fp-method-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-block-start: 4px;
+}
+.fp-icon-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fp-icon-preview {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+.fp-icon-preview img {
+  max-inline-size: 32px;
+  max-block-size: 32px;
+  object-fit: contain;
+}
+.fp-reasons {
+  margin: 6px 0 0;
+  padding-inline-start: 1.1em;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  max-inline-size: 22rem;
+}
+
+.fp-order-panel .detail-heading .pill {
+  vertical-align: middle;
+}
+.refund-amount {
+  display: grid;
+  gap: 4px;
+}
+.refund-amount input {
+  inline-size: 10rem;
+}

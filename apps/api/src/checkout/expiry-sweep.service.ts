@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { OrderStatus, PaymentState } from '@da/db';
 
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { CheckoutService } from './checkout.service.js';
@@ -37,16 +38,8 @@ export class ExpirySweepService {
 
   @Cron(CronExpression.EVERY_HOUR, { name: 'expire-drafts' })
   async sweep(): Promise<{ cancelled: number }> {
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { cancelled: 0 };
-
-    try {
-      return await this.run();
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.run());
+    return result.ran ? result.value : { cancelled: 0 };
   }
 
   private async run(): Promise<{ cancelled: number }> {

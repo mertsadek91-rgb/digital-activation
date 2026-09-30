@@ -24,15 +24,26 @@ function build(overrides?: {
   /** Each stage's query: which stage, and the delivery cut-off it asked for. */
   const asked: { stage: number; due: Date }[] = [];
 
+  /** Lock transactions that have finished — the lock is released when its transaction ends. */
+  const ended = { count: 0 };
+  const $queryRaw = (strings: TemplateStringsArray) => {
+    const text = strings.join('?');
+    queries.push(text);
+    if (text.includes('pg_try_advisory_xact_lock')) {
+      return Promise.resolve([{ locked: overrides?.locked ?? true }]);
+    }
+    return Promise.resolve([]);
+  };
+
   const prisma = {
     client: {
-      $queryRaw: (strings: TemplateStringsArray) => {
-        const text = strings.join('?');
-        queries.push(text);
-        if (text.includes('pg_try_advisory_lock')) {
-          return Promise.resolve([{ locked: overrides?.locked ?? true }]);
+      $queryRaw,
+      $transaction: async (run: (tx: { $queryRaw: typeof $queryRaw }) => Promise<unknown>) => {
+        try {
+          return await run({ $queryRaw });
+        } finally {
+          ended.count += 1;
         }
-        return Promise.resolve([]);
       },
       order: {
         findMany: ({
@@ -70,7 +81,13 @@ function build(overrides?: {
       Promise.resolve(overrides?.reviewRequests ?? { firstAfterDays: 3, secondAfterDays: 10 }),
   } as unknown as MarketingSettingsService;
 
-  return { service: new InviteSweepService(prisma, reviews, settings), invited, queries, asked };
+  return {
+    service: new InviteSweepService(prisma, reviews, settings),
+    invited,
+    queries,
+    asked,
+    ended,
+  };
 }
 
 describe('InviteSweepService', () => {
@@ -129,7 +146,7 @@ describe('InviteSweepService', () => {
 
   it('releases the lock even when the pass throws', async () => {
     vi.setSystemTime(new Date('2026-09-12T08:00:00Z'));
-    const { service, queries } = build({ orders: [{ id: 'o1', number: 'DA-1' }] });
+    const { service, ended } = build({ orders: [{ id: 'o1', number: 'DA-1' }] });
     // A throw from `invite` is caught per order, so break the query instead.
     vi.spyOn(
       (service as unknown as { prisma: PrismaService }).prisma.client.order,
@@ -137,7 +154,8 @@ describe('InviteSweepService', () => {
     ).mockRejectedValue(new Error('database went away'));
 
     await expect(service.sweep()).rejects.toThrow('database went away');
-    expect(queries.some((text) => text.includes('pg_advisory_unlock'))).toBe(true);
+    // The lock is transaction-scoped: it is released because its transaction ended.
+    expect(ended.count).toBe(1);
   });
 
   it('counts an order it could not email as skipped and keeps going', async () => {

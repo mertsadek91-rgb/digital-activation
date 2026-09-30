@@ -130,6 +130,12 @@ Redis carries BullMQ: licence delivery, transactional mail, the abandoned-cart
 ladder, FX refresh, sitemap regeneration. Enable persistence (`appendonly yes`)
 so a restart does not drop queued key deliveries.
 
+**Meilisearch is optional today.** No code reads `MEILI_HOST` or
+`MEILI_MASTER_KEY` (BUG-0008); catalogue search runs in the API (DEC-0009), and
+the API boots with both unset, so Coolify does not need to provision it. The
+`docker-compose.yml` service stays for local parity until TASK-0035 confirms or
+reverses DEC-0009. If it is provisioned:
+
 Meilisearch needs a master key, which the app reads as `MEILI_MASTER_KEY`. Two
 reasons it must not have a public domain: the master key grants full read and
 write on the index, and Coolify's generated `*.sslip.io` domain serves plain
@@ -248,6 +254,36 @@ status, method, route pattern and request id — no URL, body or user data,
 since an order URL or a reveal response carries a licence key. Pending events
 are flushed on shutdown.
 
+Whatever the Sentry SDK adds on its own also passes through `scrubEvent`
+(`apps/api/src/infra/error-scrub.ts`). It applies the fields the log redacts, at
+any depth, plus URL scrubbing, email masking and licence-key masking. The user,
+the request body and cookies are dropped, and headers are cut to an allowlist.
+
+**Alerts.** Point three uptime monitors at the API:
+
+| Probe              | Fires when                                                                                          |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `/health/ready`    | the API or its database is down                                                                     |
+| `/health/sweeps`   | a cron has not run for two periods, or it left work behind (a stranded paid line, an overdue draft) |
+| `/health/delivery` | a paid line went past its delivery promise in the last hour, or is still waiting past it            |
+
+The last two need `MONITOR_API_KEY` in the header `x-da-monitor`, so the uptime
+service must be able to send a custom header. Set the key on the API only and
+generate it with `pnpm secrets:generate`. It must differ from `INTERNAL_API_KEY`,
+and the API refuses to boot if they match, because that key also steers the
+per-visitor rate limits. The probes answer 503 while firing and 404 without the
+key, allow 30 requests a minute per address, and are neither logged nor reported.
+**`AUTO_DELIVERY`** (optional, `on`|`off`, default `on`) is the incident switch
+for automatic licence delivery. With `off`, keys are still assigned on payment
+but nothing is emailed: lines wait in the admin fulfilment queue for staff to
+send. Any other value refuses the boot. Set it in Coolify and **restart the
+API**; the API logs a warning at boot while it is off. While it is `on`, staff
+confirming a bank transfer sends the keys at once.
+
+Stocked lines are sent automatically on payment (BUG-0021), so `/health/delivery`
+fires only when a send fails or an order is held for risk; on-demand and
+manual-setup lines carry their own, longer delivery promise.
+
 ### Content Security Policy
 
 The storefront and the admin each set their CSP in `src/proxy.ts` (Next 16's
@@ -315,7 +351,8 @@ It connects with all three strings and asserts, rather than assumes:
 
 - server version ≥ 16 and UTF8 encoding (Arabic content needs it)
 - both schemas present, migrations applied, none half-finished
-- 64 tables
+- one table per model the schema declares — the expected count is read from
+  the schema files, so it stays right as migrations add tables
 - **`da_app` is denied `vault.LicenseKey`** — if this line ever says `FAIL`,
   the vault is open and nothing else on this page matters
 - `da_vault` can read the vault but cannot `DELETE` from it
@@ -726,3 +763,139 @@ the same database. It connects as the owner for both the application and the
 vault client and does not apply `prisma/init/01-roles.sql`: the role split is
 a property of the real database, not of what these tests check. `pnpm test`
 never runs this suite.
+
+## 12. Releases, rollback and the migration policy
+
+### Migrations are forward-only
+
+An applied migration is never edited and never reverted; a mistake is fixed by
+the next migration. What keeps a code rollback safe is how each migration is
+written:
+
+- **Additive by default:** new tables, new nullable columns, new indexes, a
+  constraint swapped inside one transaction. The previous release keeps working
+  against the new schema, so rolling the code back needs no database step.
+- **Destructive changes take two releases (expand, then contract).** Release N
+  stops reading and writing the column; release N+1 drops it. A destructive
+  migration is an owner decision (`destructive_data`), never part of a hotfix.
+- **Migrations deploy before the code that needs them** (§7a), as a release
+  command, never on container start.
+- Before any migration on the live database: a fresh backup of the kind you have
+  restored at least once (TASK-0030), and `pnpm db:doctor` green afterwards.
+
+### Rolling back application code
+
+1. In Coolify, open the application (storefront, admin or api) → its
+   deployments, and redeploy the last good one. If that image is no longer kept,
+   deploy the last good commit of `main` instead.
+2. Roll back one application at a time, starting with the one that broke. The
+   storefront and admin depend on the API's contracts, so after rolling the API
+   back, check that both still load.
+3. Nothing in the database moves. A migration the bad release shipped stays —
+   which is why migrations have to be additive.
+4. Record what happened in a BUG record, with the commit and the time.
+
+A `NEXT_PUBLIC_*` variable is inlined at build time. Changing one, including
+`NEXT_PUBLIC_SITE_URL`, means **rebuilding** the storefront, not restarting it.
+
+## 13. Cutover runbook — WordPress to the new storefront
+
+Today the apex `digital-activation.com` is WordPress on Hostinger, and the new
+storefront runs on `new.digital-activation.com` with indexing off. Cutover moves
+the storefront to the apex; admin and API keep their hostnames (DEC-0011).
+Everything that has to differ between staging and production is TASK-0044's
+list. Most of it is applied at step C4; its own ordering section says which items come before (go/no-go) and after.
+
+The owner performs or approves every step that changes DNS, payments, Coolify
+or data. An agent may run the read-only checks.
+
+**Fill in before starting — not recorded in the repo:** where the apex DNS is
+hosted (and whether it is proxied, e.g. by Cloudflare: then `dig` shows the
+proxy's addresses, not Coolify's, and certificates are issued differently), and
+the hostname WordPress falls back to (written `old.` below).
+
+**HSTS is one-way.** The storefront sends
+`Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+(`apps/storefront/next.config.ts`). Once the apex serves it, browsers insist on
+valid HTTPS for two years on the apex **and every subdomain**, including `old.`
+and anything else still on Hostinger. A rollback cannot fall back to plain HTTP.
+Submitting the domain to the preload list is a separate, deliberate decision;
+the header alone does not do it.
+
+### Go / no-go, the day before
+
+All must hold; any one missing is a no-go.
+
+| Check                                                                                                          | Evidence                                      |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Release 1 payment line-up decided (CONSENSUS-0001), each method tested with a real small amount                | one order per method, key delivered in < 60 s |
+| Legacy data decision made (TASK-0043); if migrating, the import dry run is clean                               | `pnpm db:import` dry-run report               |
+| 301 map in place and a full crawl of staging with zero broken links (TASK-0042)                                | crawl report                                  |
+| `pnpm db:doctor` green; a restore drill within the last month (TASK-0030)                                      | command output, drill note                    |
+| Error reporting and alerting reach a person (TASK-0031)                                                        | a deliberate test error arrives               |
+| Apex DNS TTL lowered to 300 s **at least 48 hours earlier**, so the old TTL has expired everywhere             | `dig +noall +answer digital-activation.com`   |
+| SPF, DKIM and DMARC pass on both sending domains (§8)                                                          | a test message's headers                      |
+| TASK-0044's "before cutover" items done, and demo data removed from the database after a backup (TASK-0044 §H) | the list ticked; backup file; removal report  |
+| A WordPress backup taken and stored off Hostinger                                                              | the file, restorable                          |
+
+### Day of cutover
+
+| Step | What                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Who                 | Check                                                                                                                                                                                                                                                 | Abort if                                                                       |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| C1   | Freeze WordPress: no new orders or content (checkout in maintenance mode). List WordPress orders placed but not yet paid or delivered (pending bank transfers, PayPal holds) and finish each **on WordPress**                                                                                                                                                                                                                                                                                                                               | Owner               | a test checkout on WordPress is refused; the in-flight list is empty or each has an owner                                                                                                                                                             | the freeze cannot be applied                                                   |
+| C2   | Final sync of whatever TASK-0043 migrates, then `pnpm db:doctor`                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Owner               | counts match the dry run plus orders since; doctor green                                                                                                                                                                                              | counts differ and the gap is unexplained                                       |
+| C3   | Make WordPress answer on `old.` too, with valid HTTPS, and noindex **on the `old.` host only** (`Disallow: /` and `X-Robots-Tag: noindex` keyed on the host) — the apex still serves WordPress until C5 and must stay indexable; keep it running                                                                                                                                                                                                                                                                                            | Owner               | `old.` loads over HTTPS and its robots.txt disallows everything                                                                                                                                                                                       | `old.` has no valid certificate                                                |
+| C4   | Apply TASK-0044's list **and C5 straight after it**: storefront domain to the apex, `NEXT_PUBLIC_SITE_URL=https://digital-activation.com` (**rebuild**), `STOREFRONT_URL` to the apex, then restart the API (its CORS origins are `STOREFRONT_URL` and `ADMIN_URL`; there is no separate setting). From here `new.` stops working (CORS refuses it) and checkout returns and emails point at the apex, which is WordPress until C5 — so keep C4→C5 to minutes. Session cookies are host-only on `api.`; there is no cookie domain to change | Owner               | the storefront builds with the apex settings                                                                                                                                                                                                          | the build fails: revert C4, WordPress is still live                            |
+| C5   | Point the apex **and `www`** DNS at Coolify (`new.` already points there). In Coolify, add `www` and `new.` as domains that **301 to the apex, keeping the path** (nothing in the app does this)                                                                                                                                                                                                                                                                                                                                            | Owner               | `dig` returns the expected address; a certificate is issued for apex, `www`, `new.`; a deep URL on each, e.g. `curl -sI https://www.digital-activation.com/store/windows-11-pro` and the same on `new.`, answers one 301 to the same path on the apex | no valid certificate within 30 minutes (visitors see an error meanwhile)       |
+| C6   | Smoke test on the apex in ar and en: home, category, product, search, cart, one real small order per payment method                                                                                                                                                                                                                                                                                                                                                                                                                         | Owner, agent (read) | key delivered in < 60 s; no 5xx in the API log                                                                                                                                                                                                        | any payment or delivery fails                                                  |
+| C7   | Indexing: robots.txt allows, pages carry no `noindex`, the sitemap lists products and categories. Submit the sitemap in Search Console and request indexing of the top pages                                                                                                                                                                                                                                                                                                                                                                | Owner, agent (read) | `curl -s https://digital-activation.com/robots.txt`; Search Console accepts the sitemap                                                                                                                                                               | robots still disallows: C4 not rebuilt, or `SEO_BLOCK_INDEXING=true` still set |
+| C8   | Spot-check redirects: the top 20 legacy URLs from the Search Console export                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Agent (read)        | each is permanent (301 or 308) to a 200, in at most 2 hops until the trailing-slash hop is removed (TASK-0042 report)                                                                                                                                 | more than 1 in 20 fails                                                        |
+
+`SEO_BLOCK_INDEXING=true` (`packages/seo/src/indexing.ts`) forces noindex on any
+host. It is the hold switch if the site must go live before it may be indexed;
+it too needs a rebuild to change.
+
+**C4 is the point of no easy return.** Before it, abort by undoing C1–C3
+(unfreeze WordPress, move it back to the apex). After it, abort with the
+rollback below.
+
+### The first 72 hours
+
+Every few hours on day one, then daily:
+
+- the API's 5xx rate and error reports
+- time from payment to key delivery
+- the 404 log (Admin → Redirects), adding a 301 for anything real
+- orders and conversion against the WordPress baseline
+- Search Console coverage and crawl errors
+
+A 2–6 week dip in search visibility is expected while Google processes the
+redirects (plan §13). On its own it is not a reason to roll back.
+
+### Rolling back to WordPress
+
+When the new storefront cannot take orders or deliver keys, and a fix is further
+away than the rollback:
+
+1. **Decide.** The owner calls it; note the time and the reason in a BUG record.
+2. **DNS:** point the apex and `www` back at Hostinger. With the TTL at 300 s,
+   most visitors are back within minutes. Hostinger must serve valid HTTPS on
+   both: HSTS (above) leaves no plain-HTTP fallback.
+3. **WordPress:** lift the checkout freeze, and make sure the host-keyed noindex
+   still applies to `old.` only, so the apex serves and indexes the old site
+   again while `old.` stays out of the index.
+4. **New storefront and API:** set `NEXT_PUBLIC_SITE_URL` and `STOREFRONT_URL`
+   back to the staging values (restart the API for CORS) and **rebuild**, so it is noindex
+   again; remove the `www`/`new.` 301s and move its domain back to `new.`.
+5. **Orders taken on the new stack meanwhile** stay in its database and do not
+   exist in WordPress. List them in the admin (orders since the C5 time) and
+   make sure each one was delivered or refunded.
+6. **Cached redirects:** browsers and Google keep the new stack's permanent redirects (mostly 308s) for a
+   while, and those point at new URLs that WordPress answers with 404. Expect
+   that for returning visitors and in Search Console until Google recrawls; if
+   the rollback will last, add WordPress redirects from the new URLs back to the
+   old ones.
+7. Leave the TTL at 300 s until the next attempt.
+
+Admin and API are not affected by a storefront rollback; they keep their
+hostnames.

@@ -61,3 +61,161 @@ describe('validateEnv — Stripe in production', () => {
     expect(() => validateEnv(env)).toThrow(/STRIPE_SECRET_KEY[\s\S]*STRIPE_WEBHOOK_SECRET/);
   });
 });
+
+describe('validateEnv — keys other code reads from process.env', () => {
+  // ConfigModule copies only what validateEnv returns into process.env, so a
+  // key missing from the schema is silently dropped from the env file (TASK-0070).
+  it('keeps the API public origin and its fallback', () => {
+    const env = validateEnv(
+      production({
+        API_PUBLIC_URL: 'https://api.example.test',
+        NEXT_PUBLIC_API_URL: 'https://api.example.test',
+      }),
+    );
+    expect(env.API_PUBLIC_URL).toBe('https://api.example.test');
+    expect(env.NEXT_PUBLIC_API_URL).toBe('https://api.example.test');
+  });
+
+  it('treats a blank API public origin as unset', () => {
+    expect(validateEnv(production({ API_PUBLIC_URL: '' })).API_PUBLIC_URL).toBeUndefined();
+  });
+});
+
+describe('validateEnv — BUG-0020: keys read directly from process.env', () => {
+  it('passes them through so a value in the env file takes effect', () => {
+    const env = validateEnv(
+      production({
+        FX_REFRESH: 'off',
+        FX_RATES_URL: 'https://rates.example.test/usd',
+        NEXT_PUBLIC_SITE_URL: 'https://shop.example.test',
+        TRUST_PROXY_HOPS: '2',
+      }),
+    );
+    expect(env).toMatchObject({
+      FX_REFRESH: 'off',
+      FX_RATES_URL: 'https://rates.example.test/usd',
+      NEXT_PUBLIC_SITE_URL: 'https://shop.example.test',
+      TRUST_PROXY_HOPS: '2',
+    });
+  });
+
+  it('never refuses a boot over them', () => {
+    expect(() =>
+      validateEnv(production({ FX_REFRESH: 'false', TRUST_PROXY_HOPS: 'x' })),
+    ).not.toThrow();
+  });
+});
+
+describe('validateEnv — BUG-0008: Meilisearch is optional', () => {
+  // Nothing reads MEILI_* (search is in-app, DEC-0009), so boot must not need it.
+  it('boots in production with neither Meilisearch key', () => {
+    const env = validateEnv(production({ MEILI_HOST: undefined, MEILI_MASTER_KEY: undefined }));
+    expect(env.MEILI_HOST).toBeUndefined();
+    expect(env.MEILI_MASTER_KEY).toBeUndefined();
+  });
+
+  it('treats blank Meilisearch keys as unset', () => {
+    expect(() => validateEnv(production({ MEILI_HOST: '', MEILI_MASTER_KEY: '' }))).not.toThrow();
+  });
+
+  it('still refuses a malformed host when one is given', () => {
+    expect(() => validateEnv(production({ MEILI_HOST: 'not a url' }))).toThrow(/MEILI_HOST/);
+  });
+});
+
+describe('validateEnv — MONITOR_API_KEY', () => {
+  const monitor = crypto.randomBytes(32).toString('base64url');
+  const internal = crypto.randomBytes(32).toString('base64url');
+
+  it('is optional, and kept when set', () => {
+    expect(validateEnv(production()).MONITOR_API_KEY).toBeUndefined();
+    expect(validateEnv(production({ MONITOR_API_KEY: '' })).MONITOR_API_KEY).toBeUndefined();
+    expect(validateEnv(production({ MONITOR_API_KEY: monitor })).MONITOR_API_KEY).toBe(monitor);
+  });
+
+  it('refuses a short key', () => {
+    expect(() => validateEnv(production({ MONITOR_API_KEY: 'short' }))).toThrow(/MONITOR_API_KEY/);
+  });
+
+  it('refuses the same value as INTERNAL_API_KEY', () => {
+    expect(() =>
+      validateEnv(production({ MONITOR_API_KEY: internal, INTERNAL_API_KEY: internal })),
+    ).toThrow(/must differ from INTERNAL_API_KEY/);
+    expect(() =>
+      validateEnv(production({ MONITOR_API_KEY: monitor, INTERNAL_API_KEY: internal })),
+    ).not.toThrow();
+  });
+});
+
+describe('validateEnv — AUTO_DELIVERY, the incident switch', () => {
+  it('defaults to on', () => {
+    expect(validateEnv(production()).AUTO_DELIVERY).toBe('on');
+  });
+
+  it('keeps off, so a value in the env file takes effect', () => {
+    expect(validateEnv(production({ AUTO_DELIVERY: 'off' })).AUTO_DELIVERY).toBe('off');
+  });
+
+  it('treats a blank value as unset', () => {
+    expect(validateEnv(production({ AUTO_DELIVERY: '' })).AUTO_DELIVERY).toBe('on');
+  });
+
+  it('refuses a mistyped value rather than leaving delivery on', () => {
+    expect(() => validateEnv(production({ AUTO_DELIVERY: 'of' }))).toThrow(/AUTO_DELIVERY/);
+  });
+});
+
+describe('validateEnv — Final Processor', () => {
+  const fp = {
+    FP_BASE_URL: 'https://processor.example.test/payment',
+    FP_SITE_ID: 'site_test0000000000',
+    FP_SECRET: 'fpsec_' + 'env-test-'.repeat(3),
+  };
+
+  it('boots without Final Processor at all', () => {
+    const env = validateEnv(production());
+    expect(env.FP_SECRET).toBeUndefined();
+  });
+
+  it('boots with all three values and an https SITE_URL, and keeps them for process.env', () => {
+    const env = validateEnv(production({ ...fp, SITE_URL: 'https://shop.example.test' }));
+    expect(env.FP_BASE_URL).toBe(fp.FP_BASE_URL);
+    expect(env.FP_SITE_ID).toBe(fp.FP_SITE_ID);
+    expect(env.SITE_URL).toBe('https://shop.example.test');
+  });
+
+  it('refuses half a configuration, naming the missing key', () => {
+    const { FP_SECRET: _omitted, ...partial } = fp;
+    expect(() =>
+      validateEnv(production({ ...partial, SITE_URL: 'https://shop.example.test' })),
+    ).toThrow(/FP_SECRET/);
+  });
+
+  it('requires SITE_URL once configured', () => {
+    expect(() => validateEnv(production(fp))).toThrow(/SITE_URL/);
+  });
+
+  it('refuses a SITE_URL with a path or a trailing slash', () => {
+    expect(() =>
+      validateEnv(production({ ...fp, SITE_URL: 'https://shop.example.test/' })),
+    ).toThrow(/SITE_URL/);
+    expect(() =>
+      validateEnv(production({ ...fp, SITE_URL: 'https://shop.example.test/ar' })),
+    ).toThrow(/SITE_URL/);
+  });
+
+  it('refuses plain http in production', () => {
+    expect(() => validateEnv(production({ ...fp, SITE_URL: 'http://shop.example.test' }))).toThrow(
+      /SITE_URL must be https/,
+    );
+  });
+
+  it('never puts the secret in an error message', () => {
+    try {
+      validateEnv(production({ FP_SECRET: fp.FP_SECRET }));
+      throw new Error('expected a refusal');
+    } catch (error) {
+      expect(String(error)).not.toContain(fp.FP_SECRET);
+    }
+  });
+});

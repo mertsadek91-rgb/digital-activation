@@ -116,6 +116,9 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
  * verify is a mark it does not draw.
  */
 const MARKS: Record<PaymentProvider, ('visa' | 'mastercard' | 'bank' | 'crypto')[]> = {
+  // The processor's methods are card checkouts (Stripe behind it), so the same
+  // two marks Stripe earns and no more.
+  FINAL_PROCESSOR: ['visa', 'mastercard'],
   STRIPE: ['visa', 'mastercard'],
   PAYPAL: ['visa', 'mastercard'],
   BANK_TRANSFER: ['bank'],

@@ -18,6 +18,7 @@ export * from './for-you.js';
 export * from './product-content.js';
 export * from './cart.js';
 export * from './checkout.js';
+export * from './final-processor.js';
 export * from './content.js';
 export * from './content-admin.js';
 export * from './fulfillment.js';

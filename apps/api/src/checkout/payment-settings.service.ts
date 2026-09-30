@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import {
+  type AdminFpMethod,
+  type AdminFpOverview,
   type AppLocale,
+  type CheckoutFpMethod,
+  type FpHiddenReason,
   type I18nString,
   type ManualPaymentProvider,
   type ManualPaymentSetting,
@@ -10,6 +14,7 @@ import {
   type PaymentProvider,
   type PaymentSettings,
   type PaymentSettingsView,
+  type UpdateFpMethod,
   PAYMENT_SETTINGS_KEY,
   paymentSettingsSchema,
 } from '@da/contracts';
@@ -18,6 +23,8 @@ import { AuditService } from '../auth/audit.service.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+import type { PaymentMethod } from './final-processor.js';
+import { FinalProcessorService, fpAdminMessage } from './final-processor.service.js';
 import { StripeService } from './stripe.service.js';
 
 /**
@@ -41,6 +48,7 @@ export class PaymentSettingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripe: StripeService,
+    private readonly fp: FinalProcessorService,
     private readonly audit: AuditService,
   ) {}
 
@@ -70,7 +78,7 @@ export class PaymentSettingsService {
 
   async view(): Promise<PaymentSettingsView> {
     const settings = await this.read();
-    return { settings, methods: this.statuses(settings) };
+    return { settings, methods: await this.allStatuses(settings) };
   }
 
   /**
@@ -105,15 +113,219 @@ export class PaymentSettingsService {
       userAgent: actor.userAgent,
     });
 
-    return { settings, methods: this.statuses(settings) };
+    return { settings, methods: await this.allStatuses(settings) };
   }
 
   /** The providers a shopper may start right now. */
   async offeredProviders(): Promise<PaymentProvider[]> {
     const settings = await this.read();
-    return this.statuses(settings)
+    return (await this.allStatuses(settings))
       .filter((status) => status.isOffered)
       .map((status) => status.provider);
+  }
+
+  private async allStatuses(settings: PaymentSettings): Promise<PaymentMethodStatus[]> {
+    return [...this.statuses(settings), await this.finalProcessorStatus()];
+  }
+
+  // --- Final Processor ------------------------------------------------------
+
+  /**
+   * Final Processor as one provider row: offered when at least one of its
+   * methods would be shown at the checkout.
+   */
+  private async finalProcessorStatus(): Promise<PaymentMethodStatus> {
+    if (!this.fp.configured) {
+      return {
+        provider: 'FINAL_PROCESSOR',
+        isOffered: false,
+        warning: null,
+        blocker: fpAdminMessage('not_configured'),
+      };
+    }
+    const { connection, rows } = await this.fpMethodRows();
+    if (!connection.ok) {
+      return {
+        provider: 'FINAL_PROCESSOR',
+        isOffered: false,
+        warning: null,
+        blocker: fpAdminMessage(connection.code ?? 'internal_error'),
+      };
+    }
+    const visible = rows.filter((row) => row.visible);
+    return {
+      provider: 'FINAL_PROCESSOR',
+      isOffered: visible.length > 0,
+      warning: visible.some((row) => row.processor?.testMode)
+        ? say('وضع الاختبار — لا تُحصَّل أموال حقيقية.', 'Test mode — no real money is collected.')
+        : null,
+      blocker:
+        visible.length > 0
+          ? null
+          : say(
+              'لا توجد طريقة دفع مفعّلة هنا ويعيدها المعالج.',
+              'No method is both enabled here and returned by the processor.',
+            ),
+    };
+  }
+
+  /**
+   * Every method the admin should see: what the processor returns, merged
+   * with what this shop saved — including saved methods the processor no
+   * longer returns, which keep their customisation (B.3).
+   */
+  private async fpMethodRows(options: { fresh?: boolean } = {}): Promise<{
+    connection: { ok: boolean; code: string | null; checkedAt: Date | null };
+    rows: AdminFpMethod[];
+  }> {
+    const [result, saved] = await Promise.all([
+      this.fp.configured ? this.fp.methods(options) : Promise.resolve(null),
+      this.prisma.client.paymentMethodConfig.findMany(),
+    ]);
+    const connectionOk = result?.ok === true;
+    const returned = new Map<string, PaymentMethod>(
+      result?.ok ? result.methods.map((method) => [method.id, method]) : [],
+    );
+    const configs = new Map(saved.map((row) => [row.id, row]));
+    const ids = [...new Set([...returned.keys(), ...configs.keys()])];
+
+    const rows = ids.map((id): AdminFpMethod => {
+      const processor = returned.get(id) ?? null;
+      const config = configs.get(id);
+      const reasons: FpHiddenReason[] = [];
+      if (config && !config.enabled) reasons.push('disabled_here');
+      // Everything is charged in dollars (A.2.3), whatever the page shows.
+      if (processor && !processor.currencies.some((code) => code.toUpperCase() === 'USD')) {
+        reasons.push('currency_not_offered');
+      }
+      if (!connectionOk) reasons.push('connection_failing');
+      else if (!processor) reasons.push('not_returned_by_processor');
+      return {
+        id,
+        processor: processor
+          ? {
+              label: processor.label,
+              labels: processor.labels,
+              iconUrl: processor.icon_url,
+              currencies: processor.currencies,
+              refunds: processor.refunds,
+              testMode: processor.test_mode,
+            }
+          : null,
+        config: {
+          enabled: config?.enabled ?? true,
+          displayName: config?.displayName ?? null,
+          iconUrl: config?.iconUrl ?? null,
+          shortDescription: config?.shortDescription ?? null,
+          displayOrder: config?.displayOrder ?? 0,
+        },
+        saved: config !== undefined,
+        effective: {
+          label: config?.displayName || processor?.label || id,
+          iconUrl: config?.iconUrl || processor?.icon_url || null,
+        },
+        visible: reasons.length === 0,
+        hiddenReasons: reasons,
+      };
+    });
+    rows.sort(
+      (a, b) =>
+        a.config.displayOrder - b.config.displayOrder ||
+        a.effective.label.localeCompare(b.effective.label) ||
+        a.id.localeCompare(b.id),
+    );
+
+    return {
+      connection: {
+        ok: connectionOk,
+        code: result === null ? 'not_configured' : result.ok ? null : result.code,
+        checkedAt: result?.checkedAt ?? null,
+      },
+      rows,
+    };
+  }
+
+  /**
+   * The methods the checkout offers (B.1): enabled here *and* returned by the
+   * processor, in the admin's order, labelled for the shopper.
+   */
+  async finalProcessorMethods(locale: AppLocale): Promise<CheckoutFpMethod[]> {
+    if (!this.fp.configured) return [];
+    const { rows } = await this.fpMethodRows();
+    return rows
+      .filter((row) => row.visible)
+      .map((row) => ({
+        id: row.id,
+        label:
+          row.config.displayName || row.processor?.labels[locale] || row.processor?.label || row.id,
+        iconUrl: row.effective.iconUrl,
+        description: row.config.shortDescription || null,
+      }));
+  }
+
+  /** The Final Processor settings screen (B.2, B.3). `fresh` re-asks the processor. */
+  async finalProcessorOverview(options: { fresh?: boolean } = {}): Promise<AdminFpOverview> {
+    const { connection, rows } = await this.fpMethodRows(options);
+    return {
+      env: this.fp.envPresence(),
+      baseUrl: this.fp.baseUrl,
+      siteId: this.fp.siteId,
+      siteUrl: this.fp.siteUrl,
+      webhookUrl: this.fp.webhookUrl,
+      connection: {
+        ok: connection.ok,
+        errorCode: connection.code,
+        message: connection.code ? fpAdminMessage(connection.code) : null,
+        checkedAt: connection.checkedAt?.toISOString() ?? null,
+      },
+      testMode: rows.some((row) => row.processor?.testMode === true),
+      methods: rows,
+    };
+  }
+
+  /**
+   * Saves how one method appears in this shop, and records who changed it.
+   *
+   * Allowed for a method the processor does not currently return: the row is
+   * kept for when it comes back, and hiding a method is always safe.
+   */
+  async saveFinalProcessorMethod(
+    id: string,
+    input: UpdateFpMethod,
+    actor: { staffId: string; ip?: string | undefined; userAgent?: string | undefined },
+  ): Promise<AdminFpOverview> {
+    const data = {
+      enabled: input.enabled,
+      displayName: input.displayName || null,
+      iconUrl: input.iconUrl || null,
+      shortDescription: input.shortDescription || null,
+      displayOrder: input.displayOrder,
+    };
+    const before = await this.prisma.client.paymentMethodConfig.findUnique({ where: { id } });
+    await this.prisma.client.paymentMethodConfig.upsert({
+      where: { id },
+      create: { id, ...data },
+      update: data,
+    });
+    await this.audit.record({
+      actorId: actor.staffId,
+      entity: 'PaymentMethodConfig',
+      entityId: id,
+      action: 'payment.fp-method.update',
+      before: before
+        ? {
+            enabled: before.enabled,
+            displayName: before.displayName,
+            iconUrl: before.iconUrl,
+            shortDescription: before.shortDescription,
+            displayOrder: before.displayOrder,
+          }
+        : undefined,
+      after: data,
+      ip: actor.ip,
+      userAgent: actor.userAgent,
+    });
+    return this.finalProcessorOverview();
   }
 
   /**

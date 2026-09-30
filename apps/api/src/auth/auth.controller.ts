@@ -96,6 +96,8 @@ export class AuthController {
 
   @Post('refresh')
   @ApiOperation({ summary: 'Rotate the session' })
+  // Looser than login: every open admin tab refreshes on its own schedule.
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   async refresh(
     @Req() request: StaffRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
@@ -113,7 +115,10 @@ export class AuthController {
     @Req() request: StaffRequest,
     @Res({ passthrough: true }) reply: FastifyReply,
   ): Promise<{ ok: true }> {
-    await this.auth.logout(request.cookies?.da_refresh);
+    await this.auth.logout(request.cookies?.da_refresh, {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
     this.clearCookies(reply);
     return { ok: true };
   }

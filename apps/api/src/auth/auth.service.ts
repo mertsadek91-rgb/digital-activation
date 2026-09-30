@@ -20,10 +20,19 @@ import { createEnrollment, verifyTotp } from './totp.js';
 
 export interface AccessClaims {
   sub: string;
+  /**
+   * The StaffSession this token was minted for. StaffGuard looks it up on
+   * every request, so signing out or deactivating the account ends access at
+   * once rather than when the token expires (BUG-0005). A token without one
+   * predates the check and is refused; the admin answers that 401 with a
+   * refresh, which mints a token that has one.
+   */
+  sid: string;
+  /** Re-read from the database by `authenticate`, so a demotion is immediate. */
   role: StaffRole;
   /**
    * True while the account is still on the password the create-staff script
-   * printed. Carried in the token so StaffGuard needs no database read, and
+   * printed. Re-read from the database by `authenticate`, like `role`, and
    * cleared by issuing a fresh session — which is what changing a password
    * should do anyway.
    */
@@ -58,6 +67,9 @@ function ttlSeconds(value: string | undefined, fallbackSeconds: number): number 
   const multiplier = unit === 'd' ? 86_400 : unit === 'h' ? 3_600 : unit === 'm' ? 60 : 1;
   return amount * multiplier;
 }
+
+/** How long after a rotation the replaced token is taken for a concurrent tab, not a copy. */
+export const REPLAY_GRACE_MS = 10_000;
 
 interface RequestContext {
   ip?: string | undefined;
@@ -271,7 +283,8 @@ export class AuthService {
     const { token, hash } = newRefreshToken();
     const ttlDays = 30;
 
-    await this.prisma.client.staffSession.create({
+    const session = await this.prisma.client.staffSession.create({
+      select: { id: true },
       data: {
         staffId: staff.id,
         tokenHash: hash,
@@ -287,78 +300,162 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
-    const claims: AccessClaims = {
-      sub: staff.id,
-      role: staff.role,
-      mustChange: staff.mustChangePassword,
-      totpAt: Math.floor(Date.now() / 1000),
-    };
-
     return {
-      accessToken: await this.jwt.signAsync(
-        { ...claims },
-        {
-          secret: this.accessSecret(),
-          expiresIn: ttlSeconds(process.env.JWT_ACCESS_TTL, 15 * 60),
-        },
-      ),
+      accessToken: await this.signAccess({
+        sub: staff.id,
+        sid: session.id,
+        role: staff.role,
+        mustChange: staff.mustChangePassword,
+        totpAt: Math.floor(Date.now() / 1000),
+      }),
       refreshToken: token,
       staff: this.toMe(staff),
     };
   }
 
+  private signAccess(claims: AccessClaims): Promise<string> {
+    return this.jwt.signAsync(
+      { ...claims },
+      {
+        secret: this.accessSecret(),
+        expiresIn: ttlSeconds(process.env.JWT_ACCESS_TTL, 15 * 60),
+      },
+    );
+  }
+
   /**
-   * Rotates the refresh token on every use.
+   * Rotates the refresh token on every use, and remembers every hash it replaced.
    *
-   * A replayed token therefore fails, and the failure is evidence: it means the
-   * token was captured, so the whole session is revoked rather than just that
-   * request refused.
+   * A replayed token is evidence: someone holds a copy. Whoever presents it
+   * second — the attacker or the real user — gets the whole session revoked
+   * and an audit entry, rather than the first presenter keeping it (BUG-0004).
+   *
+   * The exception is a hit on a hash retired less than `REPLAY_GRACE_MS` ago.
+   * Admin tabs share one cookie, so two tabs refreshing together send the same
+   * token; the loser is refused, as before, but not treated as theft.
    */
   async refresh(refreshToken: string, context: RequestContext): Promise<SessionResult> {
+    const presented = hashToken(refreshToken);
     const session = await this.prisma.client.staffSession.findUnique({
-      where: { tokenHash: hashToken(refreshToken) },
+      where: { tokenHash: presented },
       include: { staff: true },
     });
 
-    if (!session || session.revokedAt || session.expiresAt < new Date()) {
+    if (!session) {
+      await this.detectReplay(presented, context);
+      throw new UnauthorizedException('Your session has expired.');
+    }
+    if (session.revokedAt || session.expiresAt < new Date()) {
       throw new UnauthorizedException('Your session has expired.');
     }
     if (!session.staff.isActive) {
       throw new UnauthorizedException('This account is no longer active.');
     }
 
+    // Conditional on the hash we read, so of two concurrent refreshes with the
+    // same token exactly one rotates and the other is refused. The retired hash
+    // is written in the same transaction, so there is no moment at which the old
+    // token is neither current nor on record.
     const { token, hash } = newRefreshToken();
-    await this.prisma.client.staffSession.update({
-      where: { id: session.id },
-      data: { tokenHash: hash, lastSeenAt: new Date(), ip: context.ip ?? null },
+    const now = new Date();
+    const rotated = await this.prisma.client.$transaction(async (tx) => {
+      const updated = await tx.staffSession.updateMany({
+        where: { id: session.id, tokenHash: presented, revokedAt: null },
+        data: { tokenHash: hash, lastSeenAt: now, ip: context.ip ?? null },
+      });
+      if (updated.count === 0) return false;
+      await tx.staffRetiredToken.create({
+        data: { hash: presented, sessionId: session.id, retiredAt: now },
+      });
+      return true;
     });
-
-    const claims: AccessClaims = {
-      sub: session.staff.id,
-      role: session.staff.role,
-      mustChange: session.staff.mustChangePassword,
-      totpAt: Math.floor((session.totpVerifiedAt ?? session.createdAt).getTime() / 1000),
-    };
+    if (!rotated) throw new UnauthorizedException('Your session has expired.');
 
     return {
-      accessToken: await this.jwt.signAsync(
-        { ...claims },
-        {
-          secret: this.accessSecret(),
-          expiresIn: ttlSeconds(process.env.JWT_ACCESS_TTL, 15 * 60),
-        },
-      ),
+      accessToken: await this.signAccess({
+        sub: session.staff.id,
+        sid: session.id,
+        role: session.staff.role,
+        mustChange: session.staff.mustChangePassword,
+        totpAt: Math.floor((session.totpVerifiedAt ?? session.createdAt).getTime() / 1000),
+      }),
       refreshToken: token,
       staff: this.toMe(session.staff),
     };
   }
 
-  async logout(refreshToken: string | undefined): Promise<void> {
-    if (!refreshToken) return;
-    await this.prisma.client.staffSession.updateMany({
-      where: { tokenHash: hashToken(refreshToken), revokedAt: null },
+  /**
+   * A presented token that is no session's current one: stale, forged, or
+   * replayed. Any retired hash counts, however many rotations ago — an attacker
+   * decides how often the stolen copy is rotated before the victim returns.
+   */
+  private async detectReplay(presented: string, context: RequestContext): Promise<void> {
+    const retired = await this.prisma.client.staffRetiredToken.findUnique({
+      where: { hash: presented },
+      select: { retiredAt: true, session: { select: { id: true, staffId: true } } },
+    });
+    if (!retired) return;
+    if (Date.now() - retired.retiredAt.getTime() < REPLAY_GRACE_MS) {
+      this.logger.log(
+        `Refresh with a token retired moments ago on staff session ${retired.session.id}; refused as a concurrent tab.`,
+      );
+      return;
+    }
+    await this.revokeForReplay(retired.session, 'session.replay_revoked', context);
+  }
+
+  private async revokeForReplay(
+    session: { id: string; staffId: string },
+    action: string,
+    context: RequestContext,
+  ): Promise<void> {
+    const revoked = await this.prisma.client.staffSession.updateMany({
+      where: { id: session.id, revokedAt: null },
       data: { revokedAt: new Date() },
     });
+    if (revoked.count === 0) return;
+
+    this.logger.warn(`Refresh-token replay on staff session ${session.id}; session revoked.`);
+    await this.audit.record({
+      actorId: session.staffId,
+      entity: 'StaffSession',
+      entityId: session.id,
+      action,
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+  }
+
+  /**
+   * Ends the session the cookie belongs to — including when the cookie is a
+   * retired token. That is the victim of a copied token signing out after the
+   * attacker rotated it: matching only the current hash would revoke nothing
+   * while telling them they were signed out.
+   */
+  async logout(refreshToken: string | undefined, context: RequestContext = {}): Promise<void> {
+    if (!refreshToken) return;
+    const presented = hashToken(refreshToken);
+    const ended = await this.prisma.client.staffSession.updateMany({
+      where: { tokenHash: presented, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    if (ended.count > 0) return;
+
+    const retired = await this.prisma.client.staffRetiredToken.findUnique({
+      where: { hash: presented },
+      select: { retiredAt: true, session: { select: { id: true, staffId: true } } },
+    });
+    if (!retired) return;
+    // Inside the grace window this is most likely a second tab of the same
+    // person signing out: end the session, but do not record it as theft.
+    if (Date.now() - retired.retiredAt.getTime() < REPLAY_GRACE_MS) {
+      await this.prisma.client.staffSession.updateMany({
+        where: { id: retired.session.id, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      return;
+    }
+    await this.revokeForReplay(retired.session, 'session.replay_logout', context);
   }
 
   async verifyAccess(token: string): Promise<AccessClaims> {
@@ -369,6 +466,52 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Your session has expired.');
     }
+  }
+
+  /**
+   * What StaffGuard calls on every request: the signature, then the session.
+   *
+   * The signature alone meant a revoked session or a deactivated account kept
+   * working until the access token expired (BUG-0005). One primary-key lookup
+   * joined to the staff row closes that. There is deliberately no cache: any
+   * cache is a window in which a revoked session still works, and staff
+   * traffic is far too light for the query to matter.
+   *
+   * Role and the stale-password flag come from the row, not the token, so a
+   * demotion also takes effect on the next request.
+   */
+  async authenticate(token: string): Promise<AccessClaims> {
+    const claims = await this.verifyAccess(token);
+    if (typeof claims.sid !== 'string' || claims.sid === '') {
+      throw new UnauthorizedException('Your session has expired.');
+    }
+
+    const session = await this.prisma.client.staffSession.findUnique({
+      where: { id: claims.sid },
+      select: {
+        staffId: true,
+        revokedAt: true,
+        expiresAt: true,
+        staff: { select: { isActive: true, role: true, mustChangePassword: true } },
+      },
+    });
+    if (
+      !session ||
+      session.staffId !== claims.sub ||
+      session.revokedAt !== null ||
+      session.expiresAt <= new Date()
+    ) {
+      throw new UnauthorizedException('Your session has expired.');
+    }
+    if (!session.staff.isActive) {
+      throw new UnauthorizedException('This account is no longer active.');
+    }
+
+    return {
+      ...claims,
+      role: session.staff.role,
+      mustChange: session.staff.mustChangePassword,
+    };
   }
 
   /**
@@ -447,6 +590,10 @@ export class AuthService {
     refreshToken: string | undefined,
     context: RequestContext,
   ): Promise<SessionResult> {
+    // Step-up re-attests a session, so there must be one: an access token alone
+    // can outlive its revoked session by up to 15 minutes. The refresh cookie's
+    // path covers this route.
+    if (!refreshToken) throw new UnauthorizedException('Your session has expired.');
     const staff = await this.prisma.client.staffUser.findUnique({ where: { id: staffId } });
     if (!staff?.isActive) throw new UnauthorizedException('This account is no longer active.');
     if (!staff.totpSecret || !staff.totpEnabledAt) {
@@ -475,12 +622,22 @@ export class AuthService {
     // Stamped on the session as well as in the new token: `refresh` reads
     // `totpVerifiedAt` to rebuild the claim, so without this the freshness
     // would be lost the next time the access token rotated.
-    if (refreshToken) {
-      await this.prisma.client.staffSession.updateMany({
-        where: { tokenHash: hashToken(refreshToken), revokedAt: null },
-        data: { totpVerifiedAt: new Date(), lastSeenAt: new Date() },
-      });
-    }
+    const stamped = await this.prisma.client.staffSession.updateMany({
+      where: {
+        tokenHash: hashToken(refreshToken),
+        staffId: staff.id,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      data: { totpVerifiedAt: new Date(), lastSeenAt: new Date() },
+    });
+    // A revoked or someone else's session is not re-attested with a fresh token.
+    if (stamped.count === 0) throw new UnauthorizedException('Your session has expired.');
+    const session = await this.prisma.client.staffSession.findUnique({
+      where: { tokenHash: hashToken(refreshToken) },
+      select: { id: true },
+    });
+    if (!session) throw new UnauthorizedException('Your session has expired.');
 
     await this.audit.record({
       actorId: staff.id,
@@ -491,20 +648,16 @@ export class AuthService {
       userAgent: context.userAgent,
     });
 
-    const claims: AccessClaims = {
-      sub: staff.id,
-      role: staff.role,
-      mustChange: staff.mustChangePassword,
-      totpAt: Math.floor(Date.now() / 1000),
-    };
-
     return {
-      accessToken: await this.jwt.signAsync(
-        { ...claims },
-        { secret: this.accessSecret(), expiresIn: ttlSeconds(process.env.JWT_ACCESS_TTL, 15 * 60) },
-      ),
+      accessToken: await this.signAccess({
+        sub: staff.id,
+        sid: session.id,
+        role: staff.role,
+        mustChange: staff.mustChangePassword,
+        totpAt: Math.floor(Date.now() / 1000),
+      }),
       // The refresh token is untouched: this is the same session, re-attested.
-      refreshToken: refreshToken ?? '',
+      refreshToken,
       staff: this.toMe(staff),
     };
   }

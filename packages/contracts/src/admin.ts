@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { credentialKindSchema } from './catalog.js';
+import { adminFpOrderPaymentSchema, fpRefundStatusSchema } from './final-processor.js';
 import { localeSchema, moneySchema, slugSchema } from './primitives.js';
 
 /**
@@ -384,7 +385,9 @@ export const adminOrderRowSchema = z.object({
   /** The providers that have a row against this order, succeeded or not. */
   payments: z.array(
     z.object({
-      provider: z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CRYPTO']),
+      provider: z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CRYPTO', 'FINAL_PROCESSOR']),
+      /** A sandbox payment (Final Processor test mode): no real money moved. */
+      testMode: z.boolean(),
       state: z.string(),
       /** Null for a row the provider never gave one for. */
       reference: z.string().nullable(),
@@ -463,6 +466,12 @@ export const adminOrderDetailSchema = adminOrderRowSchema.extend({
       error: z.string().nullable(),
     }),
   ),
+  /**
+   * The Final Processor payment behind this order (B.4), or null when it was
+   * not paid through Final Processor. Refunds made in the processor's own
+   * admin arrive by webhook and appear here too.
+   */
+  finalProcessor: adminFpOrderPaymentSchema.nullable(),
 });
 export type AdminOrderDetail = z.infer<typeof adminOrderDetailSchema>;
 
@@ -506,12 +515,55 @@ export const releaseHoldSchema = z.object({
 });
 
 /**
- * Refunding a whole order. The reason is kept on the order, like a hold
- * release's, because it is the only record of why the money went back.
+ * Refunding an order. The reason is kept on the order, like a hold release's,
+ * because it is the only record of why the money went back.
+ *
+ * An amount is for Final Processor payments only (full or partial, B.4), in
+ * USD — the currency the order was charged in — and at most what was paid
+ * less what is already refunded or still pending. Give it as a decimal
+ * (`amount: "12.50"`) or in cents (`amountMinor: "1250"`), not both. Omitted,
+ * the whole remaining balance is refunded. Other providers refund in full and
+ * refuse an amount.
  */
-export const refundOrderSchema = z.object({
-  reason: z.string().trim().min(3).max(500),
+export const refundOrderSchema = z
+  .object({
+    reason: z.string().trim().min(3).max(500),
+    amount: z
+      .string()
+      .trim()
+      .regex(/^\d{1,10}(\.\d{1,2})?$/, 'expected a USD amount such as 12.50')
+      .optional(),
+    amountMinor: z
+      .string()
+      .trim()
+      .regex(/^\d{1,12}$/, 'expected a whole number of cents')
+      .optional(),
+  })
+  .refine((body) => body.amount === undefined || body.amountMinor === undefined, {
+    message: 'give amount or amountMinor, not both',
+    path: ['amountMinor'],
+  });
+export type RefundOrder = z.infer<typeof refundOrderSchema>;
+
+/** What `POST /v1/admin/orders/:number/refund` answers. */
+export const refundOrderResultSchema = z.object({
+  /** The order's status after the call. */
+  status: adminOrderRowSchema.shape.status,
+  /**
+   * `stripe`: requested from Stripe; the order moves when its webhook lands.
+   * `recorded`: a manual method, recorded here. `final_processor`: see `refund`.
+   */
+  via: z.enum(['stripe', 'recorded', 'final_processor']),
+  /** The refund row, for Final Processor. `pending` settles by webhook. */
+  refund: z
+    .object({
+      id: z.string(),
+      amountUsd: moneySchema,
+      status: fpRefundStatusSchema,
+    })
+    .nullable(),
 });
+export type RefundOrderResult = z.infer<typeof refundOrderResultSchema>;
 
 export const addOrderNoteSchema = z.object({
   body: z.string().trim().min(2).max(2000),

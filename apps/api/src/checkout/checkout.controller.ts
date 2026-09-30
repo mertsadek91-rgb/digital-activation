@@ -9,6 +9,7 @@ import {
   Query,
   Req,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -16,6 +17,7 @@ import {
   type CartQuery,
   type Checkout,
   type CheckoutStart,
+  type FpPaymentStatus,
   type OfferedPayment,
   type Order,
   type PaymentInstructions,
@@ -26,6 +28,7 @@ import {
   startPaymentSchema,
   offeredPaymentSchema,
   checkoutSchema,
+  fpPaymentStatusSchema,
   orderSchema,
   paymentSessionSchema,
 } from '@da/contracts';
@@ -45,6 +48,8 @@ import { transferInstructions } from '../mail/templates.js';
 
 import { riskFromStripe } from './charge.js';
 import { CheckoutService } from './checkout.service.js';
+import { FinalProcessorService } from './final-processor.service.js';
+import { FpPaymentsService } from './fp-payments.service.js';
 import { PaymentSettingsService } from './payment-settings.service.js';
 import { fromMinorUnits, StripeService, toMinorUnits } from './stripe.service.js';
 
@@ -58,6 +63,8 @@ export class CheckoutController {
     private readonly fulfillment: FulfillmentService,
     private readonly mail: MailService,
     private readonly account: AccountService,
+    private readonly finalProcessor: FinalProcessorService,
+    private readonly fpPayments: FpPaymentsService,
   ) {}
 
   /**
@@ -142,6 +149,12 @@ export class CheckoutController {
     });
     if (order.status !== 'PENDING_PAYMENT') {
       throw new BadRequestException('هذا الطلب لم يعد في انتظار الدفع.');
+    }
+
+    if (body.provider === 'FINAL_PROCESSOR') {
+      // The amount is the order's USD total and the method must be one the
+      // shop offers right now; both are decided in the service, from the row.
+      return this.fpPayments.start(order.number, body.method ?? '');
     }
 
     if (body.provider === 'STRIPE') {
@@ -322,6 +335,59 @@ export class CheckoutController {
     return { received: true };
   }
 
+  /**
+   * Final Processor webhook (A.2.7, A.5).
+   *
+   * Verified against the raw bytes — `rawBody` on the Fastify adapter, as for
+   * Stripe — with the SDK's `verifyWebhook` (HMAC-SHA256 over timestamp and
+   * body, five-minute window). Anything that does not verify is a 401 and
+   * changes nothing. After that: 2xx once the change is stored, or for a
+   * delivery already processed; 5xx on a failure, so the processor retries
+   * (for about three days).
+   *
+   * Not throttled, for Stripe's reason: a limited webhook is a retry storm and
+   * eventually a paid order stuck unpaid.
+   */
+  @Post('webhooks/final-processor')
+  @ApiOperation({ summary: 'Final Processor payment events' })
+  async finalProcessorWebhook(
+    @Req() request: FastifyRequest & { rawBody?: Buffer },
+  ): Promise<{ received: true }> {
+    const raw = request.rawBody;
+    if (!raw) throw new BadRequestException('Raw body unavailable.');
+    if (!this.finalProcessor.configured) {
+      // Nothing to verify with, so nothing is accepted.
+      throw new UnauthorizedException('invalid_signature');
+    }
+
+    let event;
+    try {
+      event = this.finalProcessor.verifyWebhook(raw.toString('utf8'), flatHeaders(request.headers));
+    } catch {
+      throw new UnauthorizedException('invalid_signature');
+    }
+
+    await this.fpPayments.processEvent(event);
+    return { received: true };
+  }
+
+  /**
+   * Whether an order is paid, for the Final Processor return page (B.1).
+   *
+   * The server's answer: an unpaid order is confirmed with the processor's
+   * `getPayment()` and the same checks as the webhook. Query parameters —
+   * `fp_result`, `fp_payment` — are not read at all; they are for display.
+   * Answers a status word and nothing else, so it can be public; throttled
+   * because an unpaid order costs a call to the processor.
+   */
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Get('checkout/final-processor/status/:number')
+  @ZodResponse(fpPaymentStatusSchema)
+  @ApiOperation({ summary: 'Paid, pending or failed — confirmed with Final Processor' })
+  finalProcessorStatus(@Param('number') number: string): Promise<FpPaymentStatus> {
+    return this.fpPayments.confirmStatus(number);
+  }
+
   private async handleStripeEvent(event: Stripe.Event): Promise<void> {
     switch (event.type) {
       case 'payment_intent.succeeded': {
@@ -392,4 +458,15 @@ export class CheckoutController {
         return;
     }
   }
+}
+
+/** Fastify's headers as the SDK reads them: lower-case names, one value each. */
+export function flatHeaders(
+  headers: Record<string, string | string[] | undefined>,
+): Record<string, string | undefined> {
+  const flat: Record<string, string | undefined> = {};
+  for (const [name, value] of Object.entries(headers)) {
+    flat[name.toLowerCase()] = Array.isArray(value) ? value[0] : value;
+  }
+  return flat;
 }

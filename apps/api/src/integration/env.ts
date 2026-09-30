@@ -49,6 +49,12 @@ const blank = [
   'PAYPAL_CLIENT_ID',
   'PAYPAL_CLIENT_SECRET',
   'PAYPAL_WEBHOOK_ID',
+  // Final Processor too: a developer's real site secret must never reach a
+  // test run. The suite that exercises it sets test values of its own.
+  'FP_BASE_URL',
+  'FP_SITE_ID',
+  'FP_SECRET',
+  'SITE_URL',
   'SMTP_URL',
   'RESEND_API_KEY',
   'S3_ENDPOINT',

@@ -10,6 +10,28 @@ const envSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   STOREFRONT_URL: z.string().url(),
   ADMIN_URL: z.string().url(),
+  // The API's own public origin, for links it hands out itself (unsubscribe,
+  // the WhatsApp webhook). Listed so a value in the repo-root env file reaches
+  // process.env: ConfigModule only copies the keys this schema returns.
+  API_PUBLIC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_API_URL: z.string().url().optional(),
+  // The same reason for the rest of this group (BUG-0020). A key read from
+  // process.env but missing here works on Coolify, which injects variables
+  // directly, and is silently ignored when it is only in the env file — so a
+  // development API told `FX_REFRESH=off` would still write exchange rates.
+  // Loose shapes on purpose: these never gated boot, and must not start to.
+  NEXT_PUBLIC_SITE_URL: z.string().optional(),
+  TRUST_PROXY_HOPS: z.string().optional(),
+  FX_RATES_URL: z.string().optional(),
+  FX_REFRESH: z.string().optional(),
+
+  /**
+   * The incident switch for automatic licence delivery (BUG-0021). `off`
+   * still assigns stocked keys on payment but leaves the lines in the staff
+   * queue. Strict on purpose: a mistyped `of` must refuse the boot, not
+   * quietly leave delivery on. Read at call time; a change needs a restart.
+   */
+  AUTO_DELIVERY: z.enum(['on', 'off']).default('on'),
 
   // Two roles, two URLs. The vault URL is read only by the licence-vault module.
   DATABASE_URL: z.string().min(1),
@@ -23,8 +45,22 @@ const envSchema = z.object({
    * choose the address a limit counts, so it is a secret like any other.
    */
   INTERNAL_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
-  MEILI_HOST: z.string().url(),
-  MEILI_MASTER_KEY: z.string().min(1),
+  /**
+   * The uptime monitor's key for `/health/sweeps` and `/health/delivery`, sent
+   * in `x-da-monitor`. Separate from INTERNAL_API_KEY on purpose: that key also
+   * lets its holder choose the address a per-visitor limit counts, which is not
+   * something to hand a monitoring vendor. Optional: unset, the probes are 404.
+   */
+  MONITOR_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
+  /**
+   * Optional (BUG-0008): no code reads either key. Catalogue search is in-app
+   * (catalog/search.service.ts, DEC-0009), so a missing search service must not
+   * stop the API from booting. Kept in the schema, with its old shape, so a
+   * later adoption only has to make them required again. Whether Meilisearch
+   * is dropped for good is DEC-0009's call (TASK-0035), not this schema's.
+   */
+  MEILI_HOST: z.string().url().optional(),
+  MEILI_MASTER_KEY: z.string().min(1).optional(),
 
   JWT_ACCESS_SECRET: z.string().min(32, 'must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'must be at least 32 characters'),
@@ -62,6 +98,31 @@ const envSchema = z.object({
   PAYPAL_CLIENT_SECRET: z.string().optional(),
   PAYPAL_WEBHOOK_ID: z.string().optional(),
   PAYPAL_MODE: z.enum(['sandbox', 'live']).default('sandbox'),
+
+  /**
+   * Final Processor, the owner's own payment processor. All optional: without
+   * the three, the checkout simply does not offer it. "Configured" means all
+   * three are set; half of them is refused below. FP_SECRET signs every
+   * request and verifies every webhook — it is never logged, returned by any
+   * route, or shown in the panel (which says only whether it is set).
+   */
+  FP_BASE_URL: z.string().url().optional(),
+  FP_SITE_ID: z.string().min(1).optional(),
+  FP_SECRET: z.string().min(1).optional(),
+  // Whether a sandbox (test-mode) payment releases its key automatically. Off by
+  // default: the key is real stock even when the money is not.
+  FP_FULFIL_TEST_PAYMENTS: z.enum(['on', 'off']).optional(),
+  /**
+   * The storefront's public origin, e.g. https://new.digital-activation.com —
+   * no path, no trailing slash. The payment return and cancel pages are built
+   * on it, and the processor accepts only the https domain registered for the
+   * site. Required once Final Processor is configured.
+   */
+  SITE_URL: z
+    .string()
+    .url()
+    .refine(isOrigin, 'must be an origin such as https://shop.example.com, with no trailing slash')
+    .optional(),
 
   /**
    * `ses` is gone rather than listed: an option the code does not implement is
@@ -118,6 +179,22 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+function isOrigin(value: string): boolean {
+  try {
+    return new URL(value).origin === value;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether Final Processor can be used: all three of its values are set. */
+export function finalProcessorConfigured(env: Record<string, string | undefined>): boolean {
+  return Boolean(env.FP_BASE_URL && env.FP_SITE_ID && env.FP_SECRET);
+}
+
+/** Every key validateEnv keeps, and so every key ConfigModule copies into process.env. */
+export const ENV_KEYS: readonly string[] = Object.keys(envSchema.shape);
+
 /**
  * Whether a secret is a stand-in rather than a generated value.
  *
@@ -150,6 +227,14 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   }
 
   const env = parsed.data;
+
+  // The whole point of the monitor key is that holding it grants nothing the
+  // internal key grants. The same value in both would quietly undo that.
+  if (env.MONITOR_API_KEY && env.MONITOR_API_KEY === env.INTERNAL_API_KEY) {
+    throw new Error(
+      'MONITOR_API_KEY must differ from INTERNAL_API_KEY — the monitoring vendor would otherwise hold the key that steers per-visitor rate limits.',
+    );
+  }
 
   const missing: string[] = [];
 
@@ -204,6 +289,32 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     if (!env.S3_ACCESS_KEY_ID) missing.push('S3_ACCESS_KEY_ID');
     if (!env.S3_SECRET_ACCESS_KEY) missing.push('S3_SECRET_ACCESS_KEY');
     if (!env.S3_PUBLIC_BASE_URL) missing.push('S3_PUBLIC_BASE_URL');
+  }
+
+  // Final Processor: all three or none. Half a configuration boots, shows a
+  // payment method, and fails at the moment somebody tries to pay with it.
+  const fpKeys = {
+    FP_BASE_URL: env.FP_BASE_URL,
+    FP_SITE_ID: env.FP_SITE_ID,
+    FP_SECRET: env.FP_SECRET,
+  };
+  if (Object.values(fpKeys).some(Boolean)) {
+    for (const [key, value] of Object.entries(fpKeys)) {
+      if (!value) missing.push(`${key} (the other Final Processor values are set)`);
+    }
+    // The return and cancel pages are built on it; without it there is
+    // nowhere to send the customer back to.
+    if (!env.SITE_URL) missing.push('SITE_URL (required by Final Processor)');
+  }
+  if (env.NODE_ENV === 'production') {
+    // The processor refuses anything else, and the secret must not travel in
+    // the clear.
+    if (env.SITE_URL && !env.SITE_URL.startsWith('https://')) {
+      throw new Error('SITE_URL must be https:// in production.');
+    }
+    if (env.FP_BASE_URL && !env.FP_BASE_URL.startsWith('https://')) {
+      throw new Error('FP_BASE_URL must be https:// in production.');
+    }
   }
 
   if (env.KEK_PROVIDER === 'local' && !env.KEK_LOCAL_BASE64) {

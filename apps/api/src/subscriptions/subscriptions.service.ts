@@ -8,6 +8,7 @@ import { FulfillmentMode, Locale, PublishStatus, StockAlertKind } from '@da/db';
 import { WelcomeService } from '../growth/welcome.service.js';
 import { MailService } from '../mail/mail.service.js';
 import { backInStock, newsletterConfirm } from '../mail/templates.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -122,15 +123,8 @@ export class SubscriptionsService {
    */
   @Cron(CronExpression.EVERY_10_MINUTES, { name: 'back-in-stock' })
   async sweep(): Promise<{ sent: number }> {
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { sent: 0 };
-    try {
-      return await this.notify();
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.notify());
+    return result.ran ? result.value : { sent: 0 };
   }
 
   private async notify(): Promise<{ sent: number }> {

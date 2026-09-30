@@ -1,12 +1,9 @@
 'use client';
 
-import type { ContentLocaleSummary, EditableStatus, StaffMe } from '@da/contracts';
+import type { ContentLocaleSummary, EditableStatus } from '@da/contracts';
 import { READINESS_RULES, SEO_LENGTH_GUIDE } from '@da/contracts';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
-import { api } from '../../lib/api';
 import { Gauge } from '../products/copy-form';
 
 /**
@@ -22,27 +19,7 @@ import { Gauge } from '../products/copy-form';
 export const CONTENT_ROLES = ['OWNER', 'ADMIN', 'CATALOG', 'MARKETING'];
 
 /** The signed-in staff member, or null while loading; sends everyone else away. */
-export function useStaff(): StaffMe | null {
-  const router = useRouter();
-  const [me, setMe] = useState<StaffMe | null>(null);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
-
-  return me;
-}
+export { useStaff } from '../../lib/use-staff';
 
 export function messageOf(caught: unknown, fallback: string): string {
   return caught instanceof Error ? caught.message : fallback;

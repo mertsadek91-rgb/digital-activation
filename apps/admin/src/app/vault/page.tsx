@@ -1,17 +1,12 @@
 'use client';
 
-import type {
-  CredentialKind,
-  OrderKeysRow,
-  RevealResult,
-  StaffMe,
-  VaultStockRow,
-} from '@da/contracts';
+import type { CredentialKind, OrderKeysRow, RevealResult, VaultStockRow } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
-import { api, ApiError } from '../../lib/api';
+import { api, ApiError, refreshSession } from '../../lib/api';
 import { Nav } from '../nav';
 
 /**
@@ -34,7 +29,7 @@ export default function VaultPage() {
   const router = useRouter();
   const t = useT('vault');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [stock, setStock] = useState<VaultStockRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -51,21 +46,6 @@ export default function VaultPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();
@@ -428,6 +408,7 @@ function OrderLookup({
   onError: (message: string | null) => void;
   onNote: (message: string) => void;
 }) {
+  const router = useRouter();
   const t = useT('vault');
   const c = useT('common');
   const [number, setNumber] = useState('');
@@ -607,7 +588,18 @@ function OrderLookup({
             void api
               .stepUp(totp)
               .then(() => reveal(stepUp.keyId))
-              .catch((caught: unknown) => {
+              .catch(async (caught: unknown) => {
+                // Step-up answers 401 both for a wrong code and for a session that
+                // is gone (revoked, expired). One refresh tells them apart; without
+                // it a dead session leaves the code form open forever.
+                if (
+                  caught instanceof ApiError &&
+                  caught.status === 401 &&
+                  !(await refreshSession())
+                ) {
+                  router.push('/login');
+                  return;
+                }
                 onError(caught instanceof Error ? caught.message : t('stepUpBadCode'));
               });
           }}
