@@ -146,7 +146,7 @@ const queueRow = (n, over) => ({
     'omar.k@example.com',
     'lina@example.com',
   ][n % 5],
-  activationEmail: n % 2 ? 'activate.me@outlook.com' : null,
+  activationEmail: n % 2 ? 'activate.me@example.com' : null,
   sku: ['WIN11-PRO', 'OFF21-PP', 'M365-1Y', 'ADBE-CC', 'KSP-TOT'][n % 5],
   productName: [
     'ويندوز 11 برو — Windows 11 Pro',
@@ -583,7 +583,7 @@ const orderDetail = (number) => {
           ]
         : []),
     ],
-    activationEmail: n % 2 ? 'activate.me@outlook.com' : null,
+    activationEmail: n % 2 ? 'activate.me@example.com' : null,
     couponCode: n % 3 === 0 ? 'WELCOME10' : null,
     locale: 'ar',
     lines: [
