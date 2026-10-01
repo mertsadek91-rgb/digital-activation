@@ -56,6 +56,8 @@ const config: NextConfig = {
       '/page-sitemap.xml',
       '/post-sitemap.xml',
       '/product_cat-sitemap.xml',
+      '/category-sitemap.xml',
+      '/local-sitemap.xml',
     ];
     return [
       ...sitemaps.map((source) => ({
@@ -89,6 +91,27 @@ const config: NextConfig = {
           },
         ],
       },
+      /**
+       * The cart, the checkout and the page the processor returns to never
+       * tell another origin where the shopper came from (A.2.9): the payment
+       * gateway must not learn the shop's address. `same-origin` keeps the
+       * header for our own navigations and drops it everywhere else.
+       *
+       * After the rule above on purpose — for the same path and key, the last
+       * matching entry wins. Arabic has no prefix, English is under `/en`, and
+       * the processor's return and cancel URLs name the locale (`/ar/…`)
+       * before next-intl redirects them, so all three spellings are listed.
+       * `/checkout/:path*` also matches `/checkout` itself.
+       */
+      ...[
+        '/cart',
+        '/checkout/:path*',
+        '/:locale(ar|en)/cart',
+        '/:locale(ar|en)/checkout/:path*',
+      ].map((source) => ({
+        source,
+        headers: [{ key: 'Referrer-Policy', value: 'same-origin' }],
+      })),
     ];
   },
 };

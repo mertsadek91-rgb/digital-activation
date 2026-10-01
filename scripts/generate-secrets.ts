@@ -79,6 +79,14 @@ const SPECS: SecretSpec[] = [
     optional: true,
   },
   {
+    key: 'MONITOR_API_KEY',
+    bytes: 32,
+    encoding: 'base64url',
+    note: 'the uptime monitor to /health/sweeps and /health/delivery — API only, never the internal key',
+    // Optional like INTERNAL_API_KEY: unset, the two probes answer 404.
+    optional: true,
+  },
+  {
     key: 'KEK_LOCAL_BASE64',
     bytes: 32,
     // Standard base64: this one is decoded back to 32 raw bytes as an AES key,
@@ -152,6 +160,7 @@ function main(): void {
     }
     console.warn('');
     console.warn('INTERNAL_API_KEY goes on the API and the storefront, with the same value.');
+    console.warn('MONITOR_API_KEY goes on the API only, and into the uptime monitor.');
     console.warn('KEK_LOCAL_BASE64 is for local development only. Production must use');
     console.warn('KEK_PROVIDER=aws-kms; the API refuses to start otherwise.');
     return;

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signal",
+  "description": "An observation. Weak signals stay here (status WATCH = watchlist) instead of becoming opportunities.",
+  "type": "object",
+  "required": ["id", "title", "signal_type", "status", "source", "observed_at"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^SIG-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "signal_type": {
+      "$ref": "enums.json#/signal_type"
+    },
+    "status": {
+      "$ref": "enums.json#/signal_status"
+    },
+    "source": {
+      "type": "string"
+    },
+    "source_reference": {
+      "type": ["string", "null"]
+    },
+    "observed_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "proposed_by": {
+      "type": ["string", "null"]
+    },
+    "relevance": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "uncertainty": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reevaluate_when": {
+      "type": ["string", "null"]
+    },
+    "linked_to": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "evidence_quality": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/evidence_quality"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": true
+}

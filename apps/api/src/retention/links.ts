@@ -25,7 +25,7 @@ export function unsubscribeLinks(
   const page = storefrontUrl('/newsletter/unsubscribe', locale);
   page.searchParams.set('token', token);
 
-  const apiBase = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_URL;
+  const apiBase = process.env.API_PUBLIC_URL || process.env.NEXT_PUBLIC_API_URL;
   if (!apiBase) {
     return { pageUrl: page.toString(), headers: { 'List-Unsubscribe': `<${page.toString()}>` } };
   }

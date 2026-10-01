@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Milestone",
+  "description": "Delivery milestone.",
+  "type": "object",
+  "required": ["id", "title", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^MILESTONE-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "status": {
+      "$ref": "enums.json#/milestone_status"
+    },
+    "target": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "owner": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}

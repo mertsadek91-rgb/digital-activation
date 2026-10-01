@@ -1,0 +1,41 @@
+{
+  "$comment": "Cost & complexity governor. Enforced by `pnpm pm check` and the CLI; see agent-os/AGENT_OS_V2_ARCHITECTURE.md §Governor. Optimise quality per unit of orchestration — these are ceilings that trigger escalation, not targets.",
+  "max_fan_out_by_level": {
+    "1": 2,
+    "2": 3,
+    "3": 5,
+    "4": 7,
+    "5": 9
+  },
+  "max_review_rounds": 3,
+  "max_failed_attempts": 2,
+  "max_research_loops_without_new_evidence": 2,
+  "stuck_after_days": {
+    "IN_PROGRESS": 5,
+    "REVISION_REQUIRED": 5,
+    "WAITING_DEPENDENCY": 14,
+    "WAITING_INFORMATION": 14,
+    "MANAGER_REVIEW": 10,
+    "CROSS_MANAGER_REVIEW": 10,
+    "QA": 7,
+    "SECURITY_REVIEW": 7
+  },
+  "duplicate_similarity_threshold": 0.45,
+  "independent_review_required_from_level": 3,
+  "tracked_metrics": {
+    "available": [
+      "tool calls per session (PostToolUse hook)",
+      "permission denials (PreToolUse hook)",
+      "review rounds, failed attempts and state transitions (event log)"
+    ],
+    "not_available": [
+      "token consumption and model cost — not exposed to hooks; do not estimate",
+      "external API cost"
+    ]
+  },
+  "max_fan_out_by_type": {
+    "opportunity_shaping": 6,
+    "research": 3,
+    "audit": 2
+  }
+}

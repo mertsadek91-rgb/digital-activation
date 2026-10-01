@@ -18,14 +18,17 @@ import {
   type Cart,
   type CartRestoreResult,
   type Checkout,
+  type FpPaymentStatus,
   type OfferSuggestionContext,
   type OfferSuggestions,
   type Order,
   type OrderSuggestions,
   type PaymentSession,
+  type StartPayment,
   cartRestoreResultSchema,
   cartSchema,
   checkoutSchema,
+  fpPaymentStatusSchema,
   offerSuggestionsSchema,
   orderSchema,
   orderSuggestionsSchema,
@@ -38,10 +41,19 @@ import { serviceErrorMessage } from './service-errors';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
+/**
+ * Why a Final Processor payment could not start, when the API says (A.6).
+ * `order_changed` means the draft was closed: re-run `POST /checkout`.
+ */
+export type PaymentRefusal = 'unavailable' | 'retry' | 'order_changed';
+
+const REFUSALS: readonly string[] = ['unavailable', 'retry', 'order_changed'];
+
 export class CartError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly reason: PaymentRefusal | null = null,
   ) {
     super(message);
     this.name = 'CartError';
@@ -71,11 +83,16 @@ async function request<T>(
 
   if (!response.ok) {
     const record = (payload ?? {}) as Record<string, unknown>;
+    const reason =
+      typeof record.reason === 'string' && REFUSALS.includes(record.reason)
+        ? (record.reason as PaymentRefusal)
+        : null;
     throw new CartError(
       typeof record.message === 'string'
         ? record.message
         : serviceErrorMessage('unreachable', locale),
       response.status,
+      reason,
     );
   }
 
@@ -259,14 +276,25 @@ export const cartApi = {
     return request(`/orders/${encodeURIComponent(number)}${query}`, orderSchema, rest);
   },
 
-  pay: (
-    number: string,
-    provider: 'STRIPE' | 'PAYPAL' | 'BANK_TRANSFER' | 'CRYPTO',
-    options: Options,
-  ): Promise<PaymentSession> =>
+  /**
+   * Starts a payment. Never carries an amount or a currency — the API reads
+   * those off the order. `method` is the Final Processor method, and only that.
+   */
+  pay: (number: string, body: StartPayment, options: Options): Promise<PaymentSession> =>
     request(`/orders/${encodeURIComponent(number)}/pay`, paymentSessionSchema, {
       ...options,
       method: 'POST',
-      body: JSON.stringify({ provider }),
+      body: JSON.stringify(body),
     }),
+
+  /**
+   * Whether a Final Processor order is paid, as the server confirms it — the
+   * return page's only source. The `fp_result` on that page's URL is never sent.
+   */
+  finalProcessorStatus: (number: string, options: Options): Promise<FpPaymentStatus> =>
+    request(
+      `/checkout/final-processor/status/${encodeURIComponent(number)}`,
+      fpPaymentStatusSchema,
+      options,
+    ),
 };

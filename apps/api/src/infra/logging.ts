@@ -9,7 +9,7 @@ import type { Params } from 'nestjs-pino';
  * licence key. Listed at three depths because pino's redaction matches paths,
  * not names, and a logged DTO nests.
  */
-const SECRET_FIELDS = ['password', 'token', 'accessToken', 'refreshToken', 'secret', 'key'];
+export const SECRET_FIELDS = ['password', 'token', 'accessToken', 'refreshToken', 'secret', 'key'];
 
 /**
  * `code` is redacted only where a request's data sits, not everywhere: a TOTP
@@ -39,7 +39,7 @@ export const REDACT_PATHS = [
 ];
 
 /** Query parameters whose values are credentials: signed links, previews, codes. */
-const SECRET_QUERY = /^(token|code|key|secret|password|preview|signature|sig|email)$/i;
+export const SECRET_QUERY = /^(token|code|key|secret|password|preview|signature|sig|email)$/i;
 
 const EMAIL = /([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)/g;
 

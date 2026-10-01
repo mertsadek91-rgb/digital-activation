@@ -1,0 +1,22 @@
+# timestamp | actor | event | ref | message
+# Meaningful events only (constitution §114). Status transitions are appended to task-events.log by tools/sync.mjs.
+# Entries dated without a time were logged retrospectively at activation (CR-0001); their order within the day is the order written.
+2026-09-29 | user | REQUEST | CR-0001 | Owner activated the master operating constitution
+2026-09-29 | exec-director | TRIAGE | CR-0001 | Level 3; no consensus needed for the CR itself; assigned documentation-architect (tree) and devops-engineer (repo config)
+2026-09-29 | backend-architect | AUDIT_STARTED | TASK-0003 | Three parallel read-only sweeps: backend/DB/auth, frontend/design/SEO, infra/CI/plan
+2026-09-29 | security-engineer | FINDING | BUG-0002 | Fingerprint salt unenforced in production — verified at vault/kek.ts:221
+2026-09-29 | backend-architect | FINDING | BUG-0001 | Advisory lock/unlock on pooled connections across nine sweeps — verified by code reading
+2026-09-29 | security-engineer | FINDING_REJECTED | TASK-0003 | Sweep claim "POST content/not-found unthrottled" checked and wrong (@VisitorThrottle(30)); dropped
+2026-09-29 | exec-director | CONSENSUS_OPENED | CONSENSUS-0001 | Release 1 payment line-up; awaiting owner input
+2026-09-29 | exec-director | CONSENSUS_OPENED | CONSENSUS-0002 | Legacy key migration and scrub; draft
+2026-09-29 | documentation-architect | RECONSTRUCTED | DEC-0001 | Owner decisions of 2026-09-09 recorded as DEC-0001..DEC-0007; DEC-0009 reconstructed from code
+2026-09-29 | documentation-architect | REVIEW_REQUESTED | TASK-0001 | Governance tree and dashboard ready for owner review (DEC-0010)
+2026-09-29 | devops-engineer | REVIEW_REQUESTED | TASK-0002 | Repo-config changes ready for pm-04 review
+2026-09-29 | qa-lead | QA_RESULT | TASK-0001 | Three tool defects found and fixed (ordering, multi-line lists, empty-as-list); validator negative-tested on a scratch copy
+2026-09-29 | user | REQUEST | CR-0002 | Owner corrected the project context (WordPress = legacy/migration source; new app already on GitHub and deployed through Coolify) and ordered a read-only re-audit
+2026-09-29 | security-engineer | AUDIT_STARTED | TASK-0004 | Re-audit from code, git history, live hosts and read-only DB counts; TASK-0003 conclusions not relied on
+2026-09-29 | security-engineer | FINDING_REVISED | BUG-0014 | CRITICAL -> HIGH, scoped to LEGACY_WORDPRESS; git, new DB, runtime and Coolify verified clear; local-backup part split to BUG-0015
+2026-09-29 | database-architect | FINDING_REVISED | BUG-0003 | MEDIUM -> LOW; live DB denies DELETE on vault tables to da_vault
+2026-09-29 | sre | FINDING | BUG-0016 | Staging runs on production API/admin hostnames and DB, with demo data and live sweeps
+2026-09-29 | exec-director | TASK_CANCELLED | TASK-0003 | Superseded by TASK-0004 (invalid assumptions)
+2026-09-29 | security-engineer | REVIEW_REQUESTED | TASK-0004 | Corrected audit ready for owner review

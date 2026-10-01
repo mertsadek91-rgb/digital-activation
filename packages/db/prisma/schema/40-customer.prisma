@@ -209,21 +209,38 @@ model StaffUser {
 }
 
 model StaffSession {
-  id             String    @id @default(cuid())
-  staff          StaffUser @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  id             String              @id @default(cuid())
+  staff          StaffUser           @relation(fields: [staffId], references: [id], onDelete: Cascade)
   staffId        String
-  tokenHash      String    @unique
+  tokenHash      String              @unique
+  /// Every hash this session's token has had and given up.
+  retiredTokens  StaffRetiredToken[]
   ip             String?
   userAgent      String?
   /// Set once the session has cleared a TOTP challenge. Reveal-a-key and
   /// bulk-export both require a challenge newer than a few minutes.
   totpVerifiedAt DateTime?
-  createdAt      DateTime  @default(now())
-  lastSeenAt     DateTime  @default(now())
+  createdAt      DateTime            @default(now())
+  lastSeenAt     DateTime            @default(now())
   expiresAt      DateTime
   revokedAt      DateTime?
 
   @@index([staffId, revokedAt])
+  @@schema("public")
+}
+
+/// A refresh-token hash a staff session rotated away from. Presenting one
+/// again means the token was copied, so the session is revoked — unless it
+/// arrives within a few seconds of `retiredAt`, which is two tabs refreshing
+/// at once. All of them are kept, not just the last: an attacker controls how
+/// many rotations happen between the theft and the victim's next refresh.
+model StaffRetiredToken {
+  hash      String       @id
+  session   StaffSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  retiredAt DateTime     @default(now())
+
+  @@index([sessionId])
   @@schema("public")
 }
 

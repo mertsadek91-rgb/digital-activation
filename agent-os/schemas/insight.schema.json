@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Insight",
+  "description": "An interpretation across signals.",
+  "type": "object",
+  "required": ["id", "title", "related_signals", "evidence_strength", "owner"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^INS-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "related_signals": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "evidence_strength": {
+      "$ref": "enums.json#/evidence_strength"
+    },
+    "owner": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

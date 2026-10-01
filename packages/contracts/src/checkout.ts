@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { cartSchema } from './cart.js';
 import { catalogImageSchema, credentialKindSchema, displayPriceSchema } from './catalog.js';
-import { i18nStringSchema, localeSchema, slugSchema } from './primitives.js';
+import { i18nStringSchema, localeSchema, moneySchema, slugSchema } from './primitives.js';
 import { normalizeWhatsappPhone } from './whatsapp.js';
 
 /**
@@ -160,7 +160,13 @@ export type Order = z.infer<typeof orderSchema>;
 
 // --- payment ----------------------------------------------------------------
 
-export const paymentProviderSchema = z.enum(['STRIPE', 'PAYPAL', 'BANK_TRANSFER', 'CRYPTO']);
+export const paymentProviderSchema = z.enum([
+  'STRIPE',
+  'PAYPAL',
+  'BANK_TRANSFER',
+  'CRYPTO',
+  'FINAL_PROCESSOR',
+]);
 export type PaymentProvider = z.infer<typeof paymentProviderSchema>;
 
 /**
@@ -193,9 +199,39 @@ export type OfferedPayment = z.infer<typeof offeredPaymentSchema>;
 export const manualPaymentProviderSchema = z.enum(['BANK_TRANSFER', 'CRYPTO']);
 export type ManualPaymentProvider = z.infer<typeof manualPaymentProviderSchema>;
 
-export const startPaymentSchema = z.object({
-  provider: paymentProviderSchema,
-});
+/**
+ * A Final Processor method id, as `listMethods()` returns it. Kept to the
+ * characters an id can contain, so a path segment or a log line built from it
+ * cannot carry anything else.
+ */
+export const fpMethodIdSchema = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z0-9._:-]{1,64}$/, 'is not a payment method id');
+
+/**
+ * Starting a payment. Never carries an amount or a currency: those come off
+ * the order row. `method` is required for FINAL_PROCESSOR (which of the
+ * processor's methods the shopper picked) and refused for everything else.
+ */
+export const startPaymentSchema = z
+  .object({
+    provider: paymentProviderSchema,
+    method: fpMethodIdSchema.optional(),
+  })
+  .superRefine((body, context) => {
+    if (body.provider === 'FINAL_PROCESSOR' && !body.method) {
+      context.addIssue({ code: 'custom', path: ['method'], message: 'is required' });
+    }
+    if (body.provider !== 'FINAL_PROCESSOR' && body.method !== undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['method'],
+        message: 'is only for FINAL_PROCESSOR',
+      });
+    }
+  });
+export type StartPayment = z.infer<typeof startPaymentSchema>;
 
 /**
  * One line of a manual payment instruction — an IBAN, a wallet address, the
@@ -239,6 +275,18 @@ export type PaymentInstructions = z.infer<typeof paymentInstructionsSchema>;
  * payment step.
  */
 export const paymentSessionSchema = z.discriminatedUnion('provider', [
+  z.object({
+    /**
+     * Send the browser to `redirectUrl` exactly as given — no query parameters
+     * added (A.2.9). The processor forwards it to the payment page, and the
+     * shopper comes back to `/{locale}/checkout/return/{number}` (paid or
+     * pending) or `/{locale}/checkout` (cancelled or failed).
+     */
+    provider: z.literal('FINAL_PROCESSOR'),
+    redirectUrl: z.string().url(),
+    /** What is charged: always USD, whatever the display currency. */
+    amount: displayPriceSchema,
+  }),
   z.object({
     provider: z.literal('STRIPE'),
     clientSecret: z.string(),
@@ -336,6 +384,33 @@ export const paymentSettingsViewSchema = z.object({
 });
 export type PaymentSettingsView = z.infer<typeof paymentSettingsViewSchema>;
 
+// --- Final Processor --------------------------------------------------------
+
+/** One Final Processor method as the checkout shows it (B.1, B.3). */
+export const checkoutFpMethodSchema = z.object({
+  id: fpMethodIdSchema,
+  /** The admin's display name, else the processor's label in the shopper's language. */
+  label: z.string(),
+  /** The admin's icon, else the processor's; null when neither has one. */
+  iconUrl: z.string().nullable(),
+  /** The admin's short description, shown under the method. */
+  description: z.string().nullable(),
+});
+export type CheckoutFpMethod = z.infer<typeof checkoutFpMethodSchema>;
+
+/**
+ * `GET /v1/checkout/final-processor/status/:number`, for the return page.
+ *
+ * The server's answer only: it confirms with the processor (`getPayment()`)
+ * when the order is not yet paid. `fp_result` / `fp_payment` on the return
+ * URL are display hints and never change this. `pending` means "waiting for
+ * confirmation" — re-check shortly.
+ */
+export const fpPaymentStatusSchema = z.object({
+  status: z.enum(['paid', 'pending', 'failed']),
+});
+export type FpPaymentStatus = z.infer<typeof fpPaymentStatusSchema>;
+
 // --- the checkout page ------------------------------------------------------
 
 export const checkoutSchema = z.object({
@@ -354,6 +429,21 @@ export const checkoutSchema = z.object({
    * be paid?" instead of a fixed row of buttons with a 503 behind one of them.
    */
   paymentMethods: z.array(paymentProviderSchema),
+  /**
+   * Final Processor's methods the shopper may pick, in the admin's order: only
+   * the ones enabled in this shop *and* currently returned by the processor.
+   * Empty when none are (or the processor cannot be reached) — then online
+   * payment is temporarily unavailable, and `paymentMethods` has no
+   * FINAL_PROCESSOR either. Start one with `POST /v1/orders/:number/pay`
+   * `{ provider: 'FINAL_PROCESSOR', method: id }`.
+   */
+  finalProcessorMethods: z.array(checkoutFpMethodSchema),
+  /**
+   * Present when the order is shown in a currency other than USD: the card is
+   * charged in dollars regardless, and the shopper must be told how much
+   * ("You will be charged $X.XX USD", A.2.3). Null for a USD order.
+   */
+  chargedInUsd: z.object({ amountUsd: moneySchema }).nullable(),
 });
 export type Checkout = z.infer<typeof checkoutSchema>;
 

@@ -30,7 +30,8 @@ export interface StaffRequest extends FastifyRequest {
 }
 
 /**
- * Reads the access token from an httpOnly cookie, not an Authorization header.
+ * Reads the access token from an httpOnly cookie, not an Authorization header,
+ * and checks on every request that its session is still live.
  *
  * The admin is a browser application, and a token in JavaScript's reach is a
  * token an injected script can read. httpOnly plus SameSite=strict costs a
@@ -49,7 +50,9 @@ export class StaffGuard implements CanActivate {
 
     if (!token) throw new UnauthorizedException('Sign in to continue.');
 
-    const claims = await this.auth.verifyAccess(token);
+    // Signature, then a live-session lookup: revoked, expired or deactivated
+    // is a 401 on this request, not when the token runs out (BUG-0005).
+    const claims = await this.auth.authenticate(token);
     request.staff = claims;
 
     // Before role, before anything. A password that was printed to a terminal

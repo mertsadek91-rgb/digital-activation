@@ -1,7 +1,8 @@
 'use client';
 
-import type { AdminDashboard, StaffMe } from '@da/contracts';
+import type { AdminDashboard } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -36,7 +37,7 @@ export default function DashboardPage() {
   const c = useT('common');
   const format = useFormatters();
 
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<AdminDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,21 +57,6 @@ export default function DashboardPage() {
       setBusy(false);
     }
   }, [router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

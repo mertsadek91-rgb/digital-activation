@@ -1,0 +1,145 @@
+{
+  "$comment": "PreToolUse guard policy, enforced by .claude/hooks/guard.mjs and tested by agent-os/evals/guard.test.mjs. deny = blocked outright; ask = the human confirms, and is advisory in bypassPermissions mode (BUG-0018). Globs are repo-relative and matched case-insensitively. Hardened after the REV-0004 security review: secrets are protected by file name anywhere on disk, deletions are checked against protected directories and their ancestors, and shell writes are judged by their real targets, not by text that merely mentions a path.",
+  "secret_files": {
+    "names": ["^\\.env(\\..+)?$", "^owner\\.key$", "^preview-token\\.txt$", "^wh-header\\.txt$"],
+    "except": ["^\\.env\\.example$"],
+    "extensions": ["\\.sql\\.gz$", "\\.sql$"],
+    "extensions_only_under": ["Old Website", ".cache"],
+    "why": "Secret material (live credentials, the owner key, test tokens, the legacy customer dump). It is protected by name anywhere on disk, including the main checkout outside this worktree. Use `pnpm env:check`, which never prints values."
+  },
+  "protected_segments": {
+    "segments": ["Old Website", ".cache"],
+    "why": "Legacy WordPress backup and extracted uploads: read-only migration input holding plaintext customer secrets, protected wherever the checkout lives."
+  },
+  "write_deny": [
+    {
+      "glob": "agent-os/state/**",
+      "rule": "canonical-state",
+      "why": "Canonical state is append-only and changes only through `node agent-os/tools/pm.mjs`."
+    },
+    {
+      "glob": "project-management/{*_INDEX.json,*_STATE.json,dashboard/data.js,agents/*.md,managers/*.md,history/**}",
+      "rule": "generated-projection",
+      "why": "Generated from canonical state; run `node agent-os/tools/pm.mjs sync` instead."
+    },
+    {
+      "glob": "packages/db/prisma/migrations/*/migration.sql",
+      "rule": "applied-migration",
+      "when": "exists",
+      "why": "An existing migration may already be applied; changing it breaks every database that ran it. Write a new migration."
+    },
+    {
+      "glob": "project-management/logs/*.log",
+      "rule": "frozen-v1-logs",
+      "why": "V1 logs are frozen history (IMMUTABLE_HISTORY); new events go to the event log through pm."
+    }
+  ],
+  "shell_write_deny": [
+    {
+      "glob": "{.claude/settings.json,.claude/settings.local.json,.claude/hooks/**,agent-os/policies/**}",
+      "rule": "guard-tamper",
+      "why": "Editing the guardrails from a shell bypasses review; use the Edit tool so the owner confirms."
+    }
+  ],
+  "delete_protected_roots": [
+    "agent-os",
+    "project-management",
+    ".claude",
+    ".git",
+    "Old Website",
+    ".cache",
+    "packages/db/prisma/migrations"
+  ],
+  "write_ask": [
+    {
+      "glob": "{.claude/settings.json,.claude/settings.local.json,.claude/hooks/**,agent-os/policies/**}",
+      "rule": "guardrail-config",
+      "why": "Changes the rules that constrain agents — the owner confirms."
+    },
+    {
+      "glob": ".github/workflows/**",
+      "rule": "ci",
+      "why": "CI is a release gate (L3+)."
+    },
+    {
+      "glob": "packages/db/prisma/init/**",
+      "rule": "db-roles",
+      "why": "Database role and grant scripts (vault isolation)."
+    },
+    {
+      "glob": "project-management/PERMISSIONS.json",
+      "rule": "role-catalog",
+      "why": "Changes who may do what."
+    }
+  ],
+  "record_front_matter": {
+    "globs": [
+      "project-management/{tasks/*,issues,change-requests,decisions,consensus,epics,milestones,opportunities,signals,insights,releases}/[A-Za-z]*-[0-9][0-9][0-9][0-9].md"
+    ],
+    "why": "Record front matter is a projection of canonical state — use `node agent-os/tools/pm.mjs set|transition`. The body below the front matter is yours to edit."
+  },
+  "bash_deny": [
+    {
+      "pattern": "git\\s+push\\b.*(--force\\b|-f\\b|--force-with-lease|--mirror\\b|\\s\\+[\\w/.-]+)",
+      "rule": "force-push",
+      "why": "Rewrites or mirrors shared history."
+    },
+    {
+      "pattern": "git\\s+(reset\\s+--hard\\s+origin|filter-branch|filter-repo|update-ref\\s+-d)",
+      "rule": "history-rewrite",
+      "why": "Destroys history."
+    },
+    {
+      "pattern": "\\bgit\\b[^;&|]*\\sclean\\b(?![^;&|]*(\\s-n\\b|--dry-run))",
+      "rule": "git-clean",
+      "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` to preview; delete specific paths instead."
+    },
+    {
+      "pattern": "\\bprisma\\b.*\\bmigrate\\s+reset\\b|\\bdb\\s+push\\b.*--accept-data-loss|--force-reset",
+      "rule": "destructive-db",
+      "why": "Drops data; the configured database is the live staging/production database."
+    },
+    {
+      "pattern": "\\b(DROP\\s+(DATABASE|SCHEMA|TABLE)|TRUNCATE\\s+(TABLE\\s+)?\\S|DELETE\\s+FROM\\s+\\S+\\s*(;|\"|'|\\\\n|$))",
+      "flags": "i",
+      "rule": "destructive-sql",
+      "why": "Destructive SQL needs a reviewed, owner-approved migration."
+    },
+    {
+      "pattern": "\\bprintenv\\b|(^|[;&|(]\\s*)(env|export\\s+-p|declare\\s+-x|set)\\s*($|[;&|)]|\\s+-0|\\s+\\|)|\\b(dir|ls|gci|Get-ChildItem)\\s+env:|GetEnvironmentVariables",
+      "flags": "i",
+      "rule": "print-env",
+      "why": "Dumps environment variables, which can hold live credentials."
+    },
+    {
+      "pattern": "\\b(node|deno|bun|python3?)\\b[^;&|]*(\\s-e\\b|\\s--eval\\b|\\s-p\\b|\\s--print\\b|--input-type|<<)[\\s\\S]*(owner(-key)?\\.mjs|ownerEvents|\\bsign\\s*\\(|lib[\\\\/](state|rules|project)\\.mjs|\\bcommit\\s*\\()",
+      "rule": "state-library-bypass",
+      "why": "Evaluating code inline against the state libraries skips the CLI's guarded path and can forge owner events. Use `node agent-os/tools/pm.mjs`."
+    },
+    {
+      "pattern": "(\\bpm(\\.mjs)?|pnpm\\s+pm)\\s+['\"]?owner['\"]?(\\s|$)|pm:owner|/api(/|%2f)+(%6f|o)wner|\\bPM_CHANNEL=|\\bAGENT_OS_OWNER_KEY_FILE=|\\.agent-os[\\\\/]owner",
+      "flags": "i",
+      "rule": "owner-impersonation",
+      "why": "Owner decisions belong to the owner. Put the opportunity in READY_FOR_OWNER_DECISION and tell the owner."
+    },
+    {
+      "pattern": "\\b(coolify|hostinger)\\b.*\\b(api|deploy|delete|restart)\\b|curl[^|]*\\bapi\\.(coolify|hostinger)",
+      "flags": "i",
+      "rule": "production-infra",
+      "why": "Production infrastructure is changed by the owner or an approved release task, not ad hoc."
+    }
+  ],
+  "bash_ask": [
+    { "pattern": "^\\s*git\\s+push\\b", "rule": "push", "why": "Publishes to GitHub." },
+    {
+      "pattern": "\\bpnpm\\s+(db:migrate|db:seed|db:import\\s+--apply|db:media\\s+--apply|db:redirects|db:staff|db:demo)\\b|\\bprisma\\s+migrate\\s+(deploy|dev)\\b",
+      "rule": "db-write",
+      "why": "Writes to the configured database, which is the live staging database."
+    },
+    {
+      "pattern": "\\bgh\\s+(pr\\s+merge|release\\s+create|repo\\s+(delete|edit))",
+      "rule": "github-write",
+      "why": "Changes GitHub state."
+    }
+  ]
+}

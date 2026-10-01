@@ -342,7 +342,30 @@
     "noMethods": "No payment method is available right now. Your order is saved under its number — <contact>write to us</contact> and we will finish it with you.",
     "terms": "By continuing to payment you agree to the <terms>Terms of Service</terms> and the <refunds>Refund Policy</refunds>.",
     "editDetails": "Edit my details",
-    "editCart": "Edit cart"
+    "editCart": "Edit cart",
+    "payNow": "Continue to pay",
+    "fpUnavailable": "Online payment is temporarily unavailable. Try again later or choose another method.",
+    "chargedInUsd": "You will be charged <strong>{amount} USD</strong>.",
+    "fpCancelled": "The payment was cancelled. Your cart is kept as it was — try again whenever you like.",
+    "fpExpired": "The payment page expired before the payment was made. Your cart is kept; please try again.",
+    "fpFailed": "Payment failed, please try again. Your cart is kept."
+  },
+  "checkoutReturn": {
+    "title": "Payment status",
+    "orderNumber": "Your order number: <strong>{number}</strong>",
+    "checking": "Checking your payment…",
+    "paidTitle": "Payment received",
+    "paidBody": "Thank you — your payment has arrived. The order details are on their way to your email.",
+    "viewOrder": "View your order",
+    "account": "My account",
+    "pendingTitle": "Waiting for payment confirmation",
+    "pendingBody": "We have not had the confirmation yet. This page checks again every few seconds on its own — please do not pay a second time.",
+    "stillTitle": "Still confirming your payment",
+    "stillBody": "Confirmation can take a few minutes. We will email you as soon as it arrives, and you can follow the order on its page.",
+    "checkAgain": "Check again",
+    "failedTitle": "The payment did not go through",
+    "failedBody": "Payment failed, please try again. Your cart is kept.",
+    "backToCheckout": "Back to checkout"
   },
   "cardPayment": {
     "declined": "That card was not accepted. Try another card or another method.",

@@ -15,6 +15,7 @@ import {
 import { say } from '../common/panel-locale.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import {
@@ -246,11 +247,7 @@ export class ReferralService {
   async sweep(
     now: Date = new Date(),
   ): Promise<{ recorded: number; rewarded: number; voided: number }> {
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${SWEEP_LOCK}) as locked`;
-    if (!lock?.locked) return { recorded: 0, rewarded: 0, voided: 0 };
-    try {
+    const result = await withAdvisoryLock(this.prisma.client, SWEEP_LOCK, async () => {
       const recorded = await this.recordPaid();
       const { rewarded, voided } = await this.clear(now);
       if (recorded + rewarded + voided > 0) {
@@ -259,9 +256,8 @@ export class ReferralService {
         );
       }
       return { recorded, rewarded, voided };
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${SWEEP_LOCK})`;
-    }
+    });
+    return result.ran ? result.value : { recorded: 0, rewarded: 0, voided: 0 };
   }
 
   /** ISSUED rows whose friend code was used on a paid order become PENDING. */

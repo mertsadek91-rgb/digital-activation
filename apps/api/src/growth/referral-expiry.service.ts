@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { OrderStatus, ReferralRedemptionStatus as Status } from '@da/db';
 
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /** Its own advisory lock, in growth's 7612052xx range beside the referral sweep's. */
@@ -42,16 +43,8 @@ export class ReferralExpiryService {
   // paid before this could look at it.
   @Cron(CronExpression.EVERY_DAY_AT_5AM, { name: 'referral-expiry' })
   async sweep(now: Date = new Date()): Promise<{ expired: number }> {
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { expired: 0 };
-
-    try {
-      return await this.run(now);
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.run(now));
+    return result.ran ? result.value : { expired: 0 };
   }
 
   private async run(now: Date): Promise<{ expired: number }> {

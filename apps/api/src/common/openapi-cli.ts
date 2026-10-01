@@ -44,13 +44,14 @@ async function main(): Promise<void> {
   // Imported after the placeholders: ConfigModule validates on import.
   const { AppModule } = await import('../app.module.js');
   const { buildOpenApiDocument } = await import('./openapi.js');
+  const { UNPREFIXED_ROUTES } = await import('../health/health.controller.js');
 
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
     preview: true,
     logger: ['error', 'warn'],
   });
   // Must match main.ts: the document's paths carry the global prefix.
-  app.setGlobalPrefix('v1', { exclude: ['health', 'health/ready'] });
+  app.setGlobalPrefix('v1', { exclude: UNPREFIXED_ROUTES });
 
   const document = buildOpenApiDocument(app);
   const out = resolve(process.argv[2] ?? 'openapi.json');

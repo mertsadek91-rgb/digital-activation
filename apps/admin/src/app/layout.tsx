@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Tajawal } from 'next/font/google';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
 
@@ -7,6 +8,22 @@ import { ADMIN_LOCALE_COOKIE, ADMIN_LOCALE_DIR, toAdminLocale } from '../i18n/lo
 import { messages } from '../i18n/messages';
 
 import './globals.css';
+
+/**
+ * The panel's typeface: the same Tajawal the storefront uses, self-hosted by
+ * next/font at build time (the admin CSP already allows `font-src 'self'`).
+ *
+ * Without it the token's literal 'Tajawal' matched nothing and staff read
+ * Arabic in whatever system font their machine had (BUG-0011). The admin CSS
+ * uses 400, 500, 700 and 800 — and 600 in places; Tajawal has no 600, so the
+ * browser picks the nearest real face, exactly as on the storefront.
+ */
+const tajawal = Tajawal({
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '700', '800'],
+  display: 'swap',
+  variable: '--font-tajawal',
+});
 
 /**
  * The locale for this request, from the cookie the switcher writes.
@@ -45,7 +62,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const locale = await currentLocale();
 
   return (
-    <html lang={locale} dir={ADMIN_LOCALE_DIR[locale]}>
+    <html lang={locale} dir={ADMIN_LOCALE_DIR[locale]} className={tajawal.variable}>
       <body>
         <AdminI18nProvider locale={locale}>{children}</AdminI18nProvider>
       </body>

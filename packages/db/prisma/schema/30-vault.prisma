@@ -82,7 +82,7 @@ model LicenseKey {
 /// Every touch of a key by a human. Append-only; there is no update path.
 model KeyAccessLog {
   id           String          @id @default(cuid())
-  licenseKey   LicenseKey      @relation(fields: [licenseKeyId], references: [id], onDelete: Cascade)
+  licenseKey   LicenseKey      @relation(fields: [licenseKeyId], references: [id], onDelete: Restrict)
   licenseKeyId String
   action       KeyAccessAction
   actorId      String?

@@ -8,14 +8,15 @@ import type {
   PaymentMethodStatus,
   PaymentSettings,
   PaymentSettingsView,
-  StaffMe,
 } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
+import { FinalProcessorSettings } from './fp-settings';
 
 /**
  * Where customer money is sent.
@@ -48,7 +49,8 @@ export default function PaymentsPage() {
   const router = useRouter();
   const t = useT('payments');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const fp = useT('finalProcessor');
+  const me = useStaff();
   const [view, setView] = useState<PaymentSettingsView | null>(null);
   const [draft, setDraft] = useState<PaymentSettings | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,21 +71,6 @@ export default function PaymentsPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();
@@ -149,6 +136,11 @@ export default function PaymentsPage() {
       {error ? <p className="error">{error}</p> : null}
       {note ? <p className="ok-note">{note}</p> : null}
       {!canWrite ? <p className="notice"> {t('roleReadonly', { role: me.role })}</p> : null}
+
+      {/* Not rendered at all below ADMIN: the API refuses those roles even a
+          read, and a section of "forbidden" errors says less than its absence
+          with a line explaining it. */}
+      {canWrite ? <FinalProcessorSettings /> : <p className="notice">{fp('readonly')}</p>}
 
       <section className="vault-section">
         <h2>{t('shopperHeading')}</h2>

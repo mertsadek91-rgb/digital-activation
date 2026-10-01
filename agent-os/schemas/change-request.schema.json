@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Change request",
+  "description": "Approved delivery intent, from an owner request or an approved opportunity.",
+  "type": "object",
+  "required": ["id", "title", "status", "authority_level", "responsible_manager"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^CR-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "status": {
+      "$ref": "enums.json#/cr_status"
+    },
+    "authority_level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "risk": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/severity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "responsible_manager": {
+      "type": "string"
+    },
+    "departments": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "consensus_required": {
+      "type": ["boolean", "null"]
+    },
+    "tasks": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string",
+        "pattern": "^(TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL)-\\d{4}$"
+      }
+    },
+    "source_opportunity": {
+      "type": ["string", "null"],
+      "pattern": "^OPP-\\d{4}$"
+    }
+  },
+  "additionalProperties": true
+}

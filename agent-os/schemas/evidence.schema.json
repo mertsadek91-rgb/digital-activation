@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Opportunity evidence",
+  "description": "data of an evidence_added event.",
+  "type": "object",
+  "required": ["evidence_id", "evidence_type", "claim", "stance", "quality", "source"],
+  "properties": {
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^EV-\\d{4}$"
+    },
+    "evidence_type": {
+      "$ref": "enums.json#/evidence_type"
+    },
+    "claim": {
+      "type": "string",
+      "minLength": 5
+    },
+    "stance": {
+      "$ref": "enums.json#/evidence_stance"
+    },
+    "quality": {
+      "$ref": "enums.json#/evidence_quality"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 3
+    },
+    "date": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "strength": {
+      "anyOf": [
+        {
+          "$ref": "enums.json#/level"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "additionalProperties": true
+}

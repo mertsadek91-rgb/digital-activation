@@ -1,7 +1,8 @@
 'use client';
 
-import type { NotFoundRow, RedirectRow, RedirectsView, StaffMe } from '@da/contracts';
+import type { NotFoundRow, RedirectRow, RedirectsView } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -27,7 +28,7 @@ export default function RedirectsPage() {
   const router = useRouter();
   const t = useT('redirects');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [view, setView] = useState<RedirectsView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -45,21 +46,6 @@ export default function RedirectsPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

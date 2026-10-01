@@ -1,4 +1,12 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  type OnModuleInit,
+} from '@nestjs/common';
 
 import type { CredentialKind, SecretInput } from '@da/contracts';
 import {
@@ -6,6 +14,7 @@ import {
   FulfillmentMode,
   FulfillmentState,
   Locale,
+  NotificationChannel,
   OrderStatus,
   Prisma,
   RiskLevel,
@@ -15,6 +24,7 @@ import {
 import { AuditService } from '../auth/audit.service.js';
 import { transitionOrder } from '../checkout/order-status.js';
 import { parseActivationSteps } from '../common/activation-steps.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { MailService } from '../mail/mail.service.js';
 import {
   fulfilmentFailed,
@@ -27,6 +37,66 @@ import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type ParsedSecret, canonical, parse, parseBlock } from '../vault/credential.js';
 import { type Actor, VaultService } from '../vault/vault.service.js';
+
+/**
+ * The actor for the automatic send on payment.
+ *
+ * `staffId` is what the vault writes to `KeyAccessLog.actorId`, a free-text
+ * column; the SYSTEM kind is what says no person was involved. No TOTP is
+ * asked for: `openForDelivery` requires none, because sending a key to the
+ * address that paid for it is not a person looking at it.
+ */
+const SYSTEM_ACTOR: Actor = { staffId: 'system', kind: ActorType.SYSTEM, totpAt: 0 };
+
+/** Long enough for one SMTP or Resend round trip with its own timeouts. */
+const DELIVERY_LOCK_TIMEOUT_MS = 2 * 60 * 1000;
+
+/**
+ * The advisory-lock key for sending one order line.
+ *
+ * Hashed into the 32-bit range the sweep keys already use. Two different
+ * lines sharing a key only means one waits for the queue — the lock guards a
+ * duplicate send, and a collision can cause a skipped send, never a double.
+ */
+export function deliveryLockKey(orderItemId: string): number {
+  return createHash('sha256').update(`fulfillment.deliver:${orderItemId}`).digest().readInt32BE(0);
+}
+
+/** How one attempt to send an assigned line ended. */
+export type SendOutcome =
+  | { kind: 'delivered'; keys: number }
+  | { kind: 'missing' }
+  | { kind: 'unpaid'; status: OrderStatus }
+  | { kind: 'held' }
+  | { kind: 'already-delivered' }
+  | { kind: 'busy' }
+  | { kind: 'no-key' }
+  | { kind: 'send-failed'; error: string | null };
+
+function outcomeReason(outcome: Exclude<SendOutcome, { kind: 'delivered' }>): string {
+  switch (outcome.kind) {
+    case 'unpaid':
+      return `order is ${outcome.status}`;
+    case 'held':
+      return 'order is held for review';
+    case 'send-failed':
+      return `email failed: ${outcome.error ?? 'reason unknown'}`;
+    default:
+      return outcome.kind;
+  }
+}
+
+/**
+ * Whether a stocked line is sent the moment its key is assigned (BUG-0021).
+ *
+ * `AUTO_DELIVERY=off` is the incident switch: keys are still assigned on
+ * payment, but the line stops at AUTO_ASSIGNED in the staff queue, as it did
+ * before BUG-0021. Read on each call, from the value ConfigModule validated
+ * and copied in at boot — so a change needs an API restart.
+ */
+export function autoDeliveryEnabled(): boolean {
+  return process.env.AUTO_DELIVERY !== 'off';
+}
 
 /**
  * Fulfilment: turning a paid order into a delivered licence.
@@ -47,7 +117,7 @@ import { type Actor, VaultService } from '../vault/vault.service.js';
  * block is always before delivery and never after.
  */
 @Injectable()
-export class FulfillmentService {
+export class FulfillmentService implements OnModuleInit {
   private readonly logger = new Logger(FulfillmentService.name);
 
   constructor(
@@ -56,6 +126,14 @@ export class FulfillmentService {
     private readonly audit: AuditService,
     private readonly mail: MailService,
   ) {}
+
+  onModuleInit(): void {
+    if (!autoDeliveryEnabled()) {
+      this.logger.warn(
+        'AUTO_DELIVERY=off: stocked keys are assigned on payment but not sent; they wait in the staff fulfilment queue.',
+      );
+    }
+  }
 
   private get storefront(): string {
     return process.env.STOREFRONT_URL ?? 'http://localhost:3000';
@@ -106,13 +184,22 @@ export class FulfillmentService {
   /**
    * Works an order after payment.
    *
-   * Called from the payment webhook. Idempotent by state: a line already
+   * Called from the payment webhook, the stranded-order sweep and the staff
+   * paths that release a held payment. Idempotent by state: a line already
    * delivered or already holding a key is left alone, because a webhook is
    * delivered at least once and the second delivery must not produce a second
-   * key.
+   * key — or a second email.
+   *
+   * A stocked line is sent the moment its key is assigned (BUG-0021). Only
+   * the call that moved the line into AUTO_ASSIGNED sends it: the move is a
+   * compare-and-set on the state this call read, so two deliveries of the
+   * same webhook racing each other cannot both win it. A send that fails, or
+   * that the risk check holds, leaves the line AUTO_ASSIGNED — which is
+   * exactly where the staff queue looks.
    */
   async onOrderPaid(orderNumber: string): Promise<{
     autoAssigned: number;
+    autoDelivered: number;
     queued: number;
     skipped: number;
   }> {
@@ -125,12 +212,14 @@ export class FulfillmentService {
     // PAYMENT_REVIEW is money taken and delivery held. That is the whole point
     // of the state, so fulfilment must not quietly proceed through it.
     if (order.status !== OrderStatus.PAID) {
-      return { autoAssigned: 0, queued: 0, skipped: order.items.length };
+      return { autoAssigned: 0, autoDelivered: 0, queued: 0, skipped: order.items.length };
     }
 
     let autoAssigned = 0;
     let queued = 0;
     let skipped = 0;
+    /** Lines this call moved into AUTO_ASSIGNED, and so the lines it sends. */
+    const claimed: string[] = [];
 
     for (const item of order.items) {
       if (
@@ -171,19 +260,60 @@ export class FulfillmentService {
         continue;
       }
 
-      await this.prisma.client.orderItem.update({
-        where: { id: item.id },
+      // Conditional on the state read above. A concurrent call working the
+      // same order gets the same key back from `assign` (it is bound to the
+      // line already) and would otherwise both claim the send and, landing
+      // after the other call's delivery, walk a DELIVERED line back.
+      const { count } = await this.prisma.client.orderItem.updateMany({
+        where: { id: item.id, fulfillmentState: item.fulfillmentState },
         data: {
           fulfillmentState: FulfillmentState.AUTO_ASSIGNED,
           assignedKeyIds: result.assigned,
         },
       });
+      if (count === 0) {
+        skipped += 1;
+        continue;
+      }
+      claimed.push(item.id);
       autoAssigned += 1;
     }
 
     await this.refreshOrderState(order.id);
     await this.sendOrderReceived(orderNumber);
-    return { autoAssigned, queued, skipped };
+
+    let autoDelivered = 0;
+    // The kill switch stops here: keys assigned, lines AUTO_ASSIGNED, and the
+    // staff queue is where they are sent from.
+    if (!autoDeliveryEnabled()) {
+      return { autoAssigned, autoDelivered, queued, skipped };
+    }
+    for (const orderItemId of claimed) {
+      if (await this.autoDeliver(orderNumber, orderItemId)) autoDelivered += 1;
+    }
+    return { autoAssigned, autoDelivered, queued, skipped };
+  }
+
+  /**
+   * Sends one freshly assigned stocked line, as the system.
+   *
+   * Never throws. The caller is the payment webhook, and an exception there
+   * becomes a retry of a payment that is already recorded; the line is
+   * better left AUTO_ASSIGNED, in the staff queue, with the reason logged.
+   */
+  private async autoDeliver(orderNumber: string, orderItemId: string): Promise<boolean> {
+    try {
+      const outcome = await this.sendAssigned(orderItemId, SYSTEM_ACTOR);
+      if (outcome.kind === 'delivered') return true;
+      this.logger.warn(
+        `Order ${orderNumber} line ${orderItemId} not sent automatically (${outcomeReason(outcome)}); left in the fulfilment queue.`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Order ${orderNumber} line ${orderItemId} failed to send automatically (${error instanceof Error ? error.message : 'unknown'}); left in the fulfilment queue.`,
+      );
+    }
+    return false;
   }
 
   /**
@@ -214,11 +344,10 @@ export class FulfillmentService {
       hasKey: boolean;
     }[]
   > {
-    // AUTO_ASSIGNED belongs in the queue, not out of it. A stocked line gets a
-    // key the moment payment lands, but something still has to send it — and
-    // until the mail module exists that something is a person. Leaving those
-    // rows out made them invisible: key bound, customer waiting, nothing on
-    // anybody's list.
+    // AUTO_ASSIGNED belongs in the queue, not out of it. A stocked line is
+    // sent the moment payment lands, so one still sitting here is one whose
+    // automatic send failed or was held — key bound, customer waiting — and
+    // a person has to retry it. Leaving those rows out made them invisible.
     const states = input.includeDone
       ? [
           FulfillmentState.MANUAL_QUEUE,
@@ -560,80 +689,202 @@ export class FulfillmentService {
    * Delivers a line that already has a key assigned from stock.
    *
    * Split from the manual path because nothing new is being stored: the key
-   * exists, it is bound to the line, and this is the act of sending it.
+   * exists, it is bound to the line, and this is the act of sending it. This
+   * is the staff retry; the first attempt is made by `onOrderPaid`, through
+   * the same `sendAssigned`.
    */
   async deliverAssigned(input: {
     orderItemId: string;
     actor: Actor;
   }): Promise<{ state: FulfillmentState; keys: number }> {
+    const outcome = await this.sendAssigned(input.orderItemId, input.actor);
+    switch (outcome.kind) {
+      case 'delivered':
+        return { state: FulfillmentState.DELIVERED, keys: outcome.keys };
+      case 'missing':
+        throw new NotFoundException(say('لا يوجد هذا السطر.', 'No such line.'));
+      case 'unpaid':
+        throw new BadRequestException(
+          say(
+            `لا يمكن التسليم وحالة الطلب ${outcome.status}. لا يُفرج عن مفتاح قبل وصول المال.`,
+            `Cannot deliver while the order is ${outcome.status}. No key is released before the money arrives.`,
+          ),
+        );
+      case 'held':
+        throw new BadRequestException(
+          say('هذا الطلب موقوف للمراجعة.', 'This order is held for review.'),
+        );
+      case 'already-delivered':
+        throw new BadRequestException(
+          say('هذا السطر مُسلّم بالفعل.', 'This line has already been delivered.'),
+        );
+      case 'busy':
+        throw new BadRequestException(
+          say(
+            'يجري إرسال هذا السطر الآن. حدّث الطابور بعد لحظات.',
+            'This line is being sent right now. Refresh the queue in a moment.',
+          ),
+        );
+      case 'no-key':
+        throw new BadRequestException(
+          say('لا يوجد مفتاح مخصّص لهذا السطر.', 'No key is assigned to this line.'),
+        );
+      case 'send-failed':
+        throw new BadRequestException(
+          say(
+            `تعذّر إرسال البريد (${outcome.error ?? 'سبب غير معروف'}). المفتاح ما زال مخصّصاً للطلب؛ أعد المحاولة.`,
+            `The email could not be sent (${outcome.error ?? 'reason unknown'}). The key is still assigned to the order; try again.`,
+          ),
+        );
+    }
+  }
+
+  /**
+   * The act of sending a line whose key is already bound, for any actor.
+   *
+   * One line at a time, under a per-line advisory lock, with every check made
+   * again inside it. That is what makes the send idempotent across its three
+   * callers — the webhook, a redelivered webhook, and a person pressing the
+   * button — none of which can see the others: whichever holds the lock
+   * sends, and whoever comes after finds the line DELIVERED. The lock is
+   * transaction-scoped, so a process that dies mid-send lets go of it.
+   *
+   * The same two gates as the manual path, re-read here rather than trusted
+   * from the caller: the money has arrived, and the order is not held for
+   * review. A dispute that lands between payment and send is caught here.
+   *
+   * The vault writes the KeyAccessLog row before it produces the plaintext,
+   * and "delivered" is set only after the message has actually left.
+   */
+  private async sendAssigned(orderItemId: string, actor: Actor): Promise<SendOutcome> {
+    const locked = await withAdvisoryLock(
+      this.prisma.client,
+      deliveryLockKey(orderItemId),
+      () => this.sendAssignedLocked(orderItemId, actor),
+      { timeoutMs: DELIVERY_LOCK_TIMEOUT_MS },
+    );
+    return locked.ran ? locked.value : { kind: 'busy' };
+  }
+
+  private async sendAssignedLocked(orderItemId: string, actor: Actor): Promise<SendOutcome> {
     const item = await this.prisma.client.orderItem.findUnique({
-      where: { id: input.orderItemId },
-      include: { order: { select: { id: true, status: true, riskLevel: true } } },
+      where: { id: orderItemId },
+      include: { order: { select: { id: true, status: true, riskLevel: true, email: true } } },
     });
-    if (!item) throw new NotFoundException(say('لا يوجد هذا السطر.', 'No such line.'));
+    if (!item) return { kind: 'missing' };
+    // First, so that a line on an order which has since become FULFILLED is
+    // answered as sent rather than as unpaid.
+    if (item.fulfillmentState === FulfillmentState.DELIVERED) {
+      return { kind: 'already-delivered' };
+    }
+    if (item.order.status !== OrderStatus.PAID && item.order.status !== OrderStatus.FULFILLING) {
+      return { kind: 'unpaid', status: item.order.status };
+    }
     if (item.order.riskLevel === RiskLevel.HIGH || item.order.riskLevel === RiskLevel.BLOCKED) {
-      throw new BadRequestException(
-        say('هذا الطلب موقوف للمراجعة.', 'This order is held for review.'),
-      );
+      return { kind: 'held' };
     }
     // Asked of the vault, not of `assignedKeyIds`. That array is written only
     // after a successful send, so a send that failed leaves it empty while the
     // key is bound and paid for — and reading it here stranded the line: this
     // path refused it for having no key, and the manual path refused it for
     // already having one.
-    if (!(await this.vault.isBound(item.id))) {
-      throw new BadRequestException(
-        say('لا يوجد مفتاح مخصّص لهذا السطر.', 'No key is assigned to this line.'),
+    if (!(await this.vault.isBound(item.id))) return { kind: 'no-key' };
+
+    // The crash window: a process that died after the email left and before
+    // the line was marked DELIVERED leaves an AUTO_ASSIGNED line whose key the
+    // customer already has. Sending again would email the key twice; the log
+    // says it went, so the line is finished without opening the key. Only the
+    // explicit resend (`resendLicence`) sends a delivered key again.
+    if (await this.licenceAlreadyEmailed(item.id, item.order.email)) {
+      this.logger.warn(
+        `Line ${item.id} already has a delivered licence email; marked DELIVERED without sending again.`,
       );
+      return this.finishDelivered(item.id, item.order.id, actor, { recovered: true });
     }
 
-    // Opened, then marked delivered. The email itself is the next module; what
-    // matters here is that "delivered" is set after the key was actually
-    // produced, not before.
-    const opened = await this.vault.openForDelivery({
-      orderItemId: item.id,
-      actor: input.actor,
-    });
+    // The access row is written inside this call, before the plaintext exists.
+    const opened = await this.vault.openForDelivery({ orderItemId: item.id, actor });
 
     const sent = await this.emailLicence({
       orderItemId: item.id,
       secrets: opened.map((entry) => entry.secret),
     });
-    if (!sent.ok) {
-      throw new BadRequestException(
-        say(
-          `تعذّر إرسال البريد (${sent.error ?? 'سبب غير معروف'}). المفتاح ما زال مخصّصاً للطلب؛ أعد المحاولة.`,
-          `The email could not be sent (${sent.error ?? 'reason unknown'}). The key is still assigned to the order; try again.`,
-        ),
-      );
-    }
+    if (!sent.ok) return { kind: 'send-failed', error: sent.error };
 
-    await this.vault.markDelivered(item.id);
+    return this.finishDelivered(
+      item.id,
+      item.order.id,
+      actor,
+      { recovered: false },
+      opened.map((entry) => entry.licenseKeyId),
+    );
+  }
+
+  /**
+   * Whether a licence email for this line has already left.
+   *
+   * Keyed on `orderItemId` in the log payload, which is written from the
+   * licence email onwards; a log row from before that carries no id and is
+   * not matched.
+   */
+  /** Only an email the provider accepted for the order's own address, not since bounced, counts. */
+  private async licenceAlreadyEmailed(orderItemId: string, toAddress: string): Promise<boolean> {
+    const found = await this.prisma.client.notificationLog.findFirst({
+      where: {
+        template: 'licence.delivered',
+        channel: NotificationChannel.EMAIL,
+        toAddress,
+        deliveredAt: { not: null },
+        bouncedAt: null,
+        payload: { path: ['orderItemId'], equals: orderItemId },
+      },
+      select: { id: true },
+    });
+    return found !== null;
+  }
+
+  /** Records a line as sent: vault, line, audit and the order's own status. */
+  private async finishDelivered(
+    orderItemId: string,
+    orderId: string,
+    actor: Actor,
+    how: { recovered: boolean },
+    keyIds?: string[],
+  ): Promise<SendOutcome> {
+    await this.vault.markDelivered(orderItemId);
+
+    // Written here too, not only on the manual path. A delivered line with an
+    // empty array cannot be linked back to the key it sent, which is the one
+    // thing somebody handling a complaint needs. A recovered line was not
+    // opened here, so its ids are read from the vault — ids only.
+    const ids =
+      keyIds ?? (await this.vault.keysForOrderItem(orderItemId)).map((key) => key.licenseKeyId);
 
     await this.prisma.client.orderItem.update({
-      where: { id: item.id },
+      where: { id: orderItemId },
       data: {
         fulfillmentState: FulfillmentState.DELIVERED,
         deliveredAt: new Date(),
-        // Written here too, not only on the manual path. A delivered line with
-        // an empty array cannot be linked back to the key it sent, which is
-        // the one thing somebody handling a complaint needs.
-        assignedKeyIds: opened.map((entry) => entry.licenseKeyId),
+        assignedKeyIds: ids,
       },
     });
 
+    const kind = actor.kind ?? ActorType.STAFF;
     await this.audit.record({
-      actorId: input.actor.staffId,
+      // The audit actor is a staff foreign key; the system has no row there,
+      // so it is named by `actorType` alone.
+      actorId: kind === ActorType.STAFF ? actor.staffId : undefined,
+      actorType: kind,
       entity: 'OrderItem',
-      entityId: item.id,
+      entityId: orderItemId,
       action: 'fulfillment.delivered',
-      after: { keys: opened.length },
-      ip: input.actor.ip,
-      userAgent: input.actor.userAgent,
+      after: how.recovered ? { keys: ids.length, recovered: true } : { keys: ids.length },
+      ip: actor.ip,
+      userAgent: actor.userAgent,
     });
 
-    await this.refreshOrderState(item.order.id);
-    return { state: FulfillmentState.DELIVERED, keys: opened.length };
+    await this.refreshOrderState(orderId);
+    return { kind: 'delivered', keys: ids.length };
   }
 
   /** Marks a line as failed, so it stops looking like work in progress. */
@@ -868,6 +1119,8 @@ export class FulfillmentService {
       // Deliberately not the keys. `keyCount` is the most this may say.
       payload: {
         orderNumber: item.order.number,
+        // What the crash-window check in `sendAssignedLocked` looks up.
+        orderItemId: item.id,
         sku: item.skuSnapshot,
         keyCount: input.secrets.length,
       },

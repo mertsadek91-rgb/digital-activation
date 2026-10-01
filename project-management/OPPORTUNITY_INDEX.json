@@ -1,0 +1,337 @@
+{
+  "generated_by": "agent-os/tools/pm.mjs (projection of agent-os/state/events.jsonl)",
+  "opportunities": [
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "One source of truth for the store's official channels: fix the placeholder Instagram link and declare the profiles in Organization structured data",
+      "opportunity_type": "SEO_OPPORTUNITY",
+      "status": "READY_FOR_OWNER_DECISION",
+      "portfolio_category": "GROWTH",
+      "proposed_by": "technical-seo-specialist",
+      "responsible_manager": "pm-07",
+      "contributors": [
+        "product-opportunity-lead",
+        "embedded-product-engineer",
+        "product-ui-designer",
+        "competitor-intelligence-analyst"
+      ],
+      "source_signals": [
+        "SIG-0001",
+        "SIG-0002"
+      ],
+      "user_facing": true,
+      "visual_impact": false,
+      "id": "OPP-0001",
+      "user_value": "MEDIUM",
+      "business_value": "LOW",
+      "strategic_alignment": "MEDIUM",
+      "urgency": "MEDIUM",
+      "time_to_value": "HIGH",
+      "technical_effort": "LOW",
+      "design_effort": "LOW",
+      "operational_effort": "LOW",
+      "risk": "LOW",
+      "complexity": "LOW",
+      "evidence_strength": "MIXED",
+      "competitive_position": "NOT_APPLICABLE",
+      "recommendation": "IMPROVE_EXISTING",
+      "suggested_priority": "MEDIUM",
+      "file": "opportunities/OPP-0001.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Rebuild verified social proof after the synthetic legacy reviews are dropped at cutover",
+      "opportunity_type": "GROWTH_OPPORTUNITY",
+      "status": "DISCOVERY",
+      "portfolio_category": "GROWTH",
+      "proposed_by": "product-growth-analyst",
+      "responsible_manager": "pm-07",
+      "contributors": [
+        "product-opportunity-lead"
+      ],
+      "source_signals": [
+        "SIG-0003"
+      ],
+      "user_facing": true,
+      "visual_impact": true,
+      "evidence_strength": "WEAK",
+      "recommendation": "RESEARCH",
+      "id": "OPP-0002",
+      "file": "opportunities/OPP-0002.md"
+    }
+  ],
+  "signals": [
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Organization structured data declares no official profiles while the footer links to three",
+      "signal_type": "PRODUCT",
+      "status": "TRIAGED",
+      "source": "repository",
+      "source_reference": "apps/storefront/src/app/[locale]/layout.tsx:112 (sameAs: []); apps/storefront/src/components/site-footer.tsx:168-191",
+      "observed_at": "2026-09-29",
+      "proposed_by": "technical-seo-specialist",
+      "relevance": "MEDIUM",
+      "uncertainty": "LOW",
+      "evidence_quality": "FACT",
+      "id": "SIG-0001",
+      "file": "signals/SIG-0001.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Footer Instagram button points to the bare instagram.com home page, not a store profile",
+      "signal_type": "PRODUCT",
+      "status": "TRIAGED",
+      "source": "repository",
+      "source_reference": "apps/storefront/src/components/site-footer.tsx:188",
+      "observed_at": "2026-09-29",
+      "proposed_by": "frontend-engineer",
+      "relevance": "MEDIUM",
+      "uncertainty": "LOW",
+      "evidence_quality": "FACT",
+      "id": "SIG-0002",
+      "file": "signals/SIG-0002.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "Social proof restarts near zero at cutover: 565 synthetic legacy reviews are deliberately not migrated",
+      "signal_type": "BUSINESS",
+      "status": "TRIAGED",
+      "source": "repository + staging database count",
+      "source_reference": "packages/db/scripts/import/index.ts:13 (reviews not migrated); staging DB Review count = 4 on 2026-09-29",
+      "observed_at": "2026-09-29",
+      "proposed_by": "product-growth-analyst",
+      "relevance": "HIGH",
+      "uncertainty": "MEDIUM",
+      "evidence_quality": "FACT",
+      "id": "SIG-0003",
+      "file": "signals/SIG-0003.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "robots.txt welcomes GPTBot, ClaudeBot and PerplexityBot to be cited by answer engines, but nothing measures AI-assistant referrals",
+      "signal_type": "TECHNOLOGY",
+      "status": "WATCH",
+      "source": "repository",
+      "source_reference": "packages/seo/src/sitemap.ts:124-147",
+      "observed_at": "2026-09-29",
+      "proposed_by": "technical-seo-specialist",
+      "relevance": "MEDIUM",
+      "uncertainty": "HIGH",
+      "evidence_quality": "OBSERVATION",
+      "reevaluate_when": "TASK-0050 (analytics plan) is implemented and referral sources can be measured",
+      "id": "SIG-0004",
+      "file": "signals/SIG-0004.md"
+    },
+    {
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "title": "The store cannot measure any funnel step: no analytics of any kind",
+      "signal_type": "PRODUCT",
+      "status": "LINKED",
+      "source": "repository",
+      "source_reference": "apps/storefront/src/proxy.ts (CSP connect-src: API + Stripe only); apps/storefront/lighthouserc.json (third-party count 0)",
+      "observed_at": "2026-09-29",
+      "proposed_by": "product-growth-analyst",
+      "relevance": "HIGH",
+      "uncertainty": "LOW",
+      "evidence_quality": "FACT",
+      "linked_to": [
+        "TASK-0050"
+      ],
+      "id": "SIG-0005",
+      "file": "signals/SIG-0005.md"
+    }
+  ],
+  "insights": [],
+  "evidence": {
+    "OPP-0001": [
+      {
+        "evidence_id": "EV-0001",
+        "evidence_type": "TECHNICAL",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "Organization JSON-LD passes sameAs: [] on every page",
+        "source": "apps/storefront/src/app/[locale]/layout.tsx:112",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:31Z",
+        "actor": "technical-seo-specialist"
+      },
+      {
+        "evidence_id": "EV-0002",
+        "evidence_type": "PRODUCT",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "Footer Instagram button labelled Instagram Profile opens https://instagram.com, not a profile",
+        "source": "apps/storefront/src/components/site-footer.tsx:188",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:31Z",
+        "actor": "frontend-engineer"
+      },
+      {
+        "evidence_id": "EV-0003",
+        "evidence_type": "TECHNICAL",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "The repo holds conflicting handles: t.me/digitalactivation (footer) vs t.me/digitalactivations (contact page, seeds); x.com vs twitter.com; instagram only in an unused seed row",
+        "source": "REV-0001: contact/page.tsx:176, seed.ts:371-393, seed-pages.ts:217",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:31Z",
+        "actor": "embedded-product-engineer"
+      },
+      {
+        "evidence_id": "EV-0004",
+        "evidence_type": "UX",
+        "stance": "SUPPORTS",
+        "quality": "OBSERVATION",
+        "claim": "x.com/digital_activ is named DIGITAL ACTIVITY, joined 2011, 2 followers, no posts — likely not the store's account",
+        "source": "x.com/digital_activ as fetched by the UX shaping agent; not re-verified",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:32Z",
+        "actor": "product-ui-designer"
+      },
+      {
+        "evidence_id": "EV-0005",
+        "evidence_type": "MARKET",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "Google lists sameAs as a recommended Organization property pointing to the organization's profile pages",
+        "source": "https://developers.google.com/search/docs/appearance/structured-data/organization",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:32Z",
+        "actor": "competitor-intelligence-analyst"
+      },
+      {
+        "evidence_id": "EV-0006",
+        "evidence_type": "MARKET",
+        "stance": "OPPOSES",
+        "quality": "FACT",
+        "claim": "Google does not guarantee structured-data features will appear in search results",
+        "source": "https://developers.google.com/search/docs/appearance/structured-data/sd-policies",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:32Z",
+        "actor": "competitor-intelligence-analyst"
+      },
+      {
+        "evidence_id": "EV-0007",
+        "evidence_type": "MARKET",
+        "stance": "OPPOSES",
+        "quality": "OBSERVATION",
+        "claim": "No primary source states that sameAs or structured data improves ranking; a Google employee said it will not (reported second-hand)",
+        "source": "https://www.searchenginejournal.com/google-confirms-that-structured-data-wont-make-a-site-rank-better/544433/",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:33Z",
+        "actor": "competitor-intelligence-analyst"
+      },
+      {
+        "evidence_id": "EV-0008",
+        "evidence_type": "ANALYTICS",
+        "stance": "OPPOSES",
+        "quality": "FACT",
+        "claim": "There is no baseline: nothing measures footer clicks or trust, so user value is unmeasured",
+        "source": "SIG-0005 / TASK-0050",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:33Z",
+        "actor": "product-growth-analyst"
+      },
+      {
+        "evidence_id": "EV-0009",
+        "evidence_type": "UX",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "Footer social buttons are 38px, below the 44px touch-target rule",
+        "source": "apps/storefront/src/app/footer.css:264",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:33Z",
+        "actor": "product-ui-designer"
+      }
+    ],
+    "OPP-0002": [
+      {
+        "evidence_id": "EV-0010",
+        "evidence_type": "PRODUCT",
+        "stance": "SUPPORTS",
+        "quality": "FACT",
+        "claim": "Staging holds 4 native reviews; the 565 synthetic legacy reviews are deliberately not migrated",
+        "source": "staging DB count 2026-09-29; packages/db/scripts/import/index.ts:13",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:54Z",
+        "actor": "product-growth-analyst"
+      },
+      {
+        "evidence_id": "EV-0011",
+        "evidence_type": "TECHNICAL",
+        "stance": "OPPOSES",
+        "quality": "OBSERVATION",
+        "claim": "A verified-buyer review-invite sweep already exists; the gap may be configuration and timing, not a new capability",
+        "source": "apps/api/src/reviews/invite-sweep.service.ts (hourly cron)",
+        "date": "2026-09-29",
+        "strength": null,
+        "ts": "2026-09-29T12:47:55Z",
+        "actor": "embedded-product-engineer"
+      }
+    ]
+  },
+  "links": [
+    {
+      "from": "SIG-0005",
+      "to": "TASK-0050",
+      "relation": "RELATED",
+      "ts": "2026-09-29T12:40:02Z",
+      "actor": "product-growth-analyst"
+    },
+    {
+      "from": "OPP-0001",
+      "to": "SIG-0002",
+      "relation": "RELATED",
+      "ts": "2026-09-29T12:40:16Z",
+      "actor": "product-opportunity-lead"
+    },
+    {
+      "from": "OPP-0001",
+      "to": "SIG-0001",
+      "relation": "RELATED",
+      "ts": "2026-09-29T12:40:30Z",
+      "actor": "product-opportunity-lead"
+    },
+    {
+      "from": "OPP-0002",
+      "to": "SIG-0003",
+      "relation": "RELATED",
+      "ts": "2026-09-29T12:47:54Z",
+      "actor": "product-opportunity-lead"
+    },
+    {
+      "from": "TASK-0080",
+      "to": "TASK-0002",
+      "relation": "OVERLAPPING",
+      "ts": "2026-09-29T12:59:44Z",
+      "actor": "devops-engineer"
+    }
+  ],
+  "ranking": {
+    "order": [],
+    "at": null,
+    "by": null
+  },
+  "owner_decisions": [],
+  "portfolio": {
+    "preferences": null,
+    "at": null
+  }
+}

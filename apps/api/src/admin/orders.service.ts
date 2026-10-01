@@ -1,11 +1,17 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
-import type { AdminOrderDetail, AdminOrderList, AdminOrderRow } from '@da/contracts';
+import type {
+  AdminOrderDetail,
+  AdminOrderList,
+  AdminOrderRow,
+  RefundOrderResult,
+} from '@da/contracts';
 import {
   FulfillmentState,
   Locale,
   OrderEventActor,
   OrderStatus,
+  PaymentProvider,
   PaymentState,
   type Prisma,
   RiskLevel,
@@ -13,6 +19,7 @@ import {
 
 import { AuditService } from '../auth/audit.service.js';
 import { CheckoutService } from '../checkout/checkout.service.js';
+import { FpPaymentsService } from '../checkout/fp-payments.service.js';
 import { recordOrderTransition } from '../checkout/order-status.js';
 import { CSV_BOM, csvRow } from '../common/csv.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
@@ -46,6 +53,7 @@ export class OrdersService {
     private readonly checkout: CheckoutService,
     private readonly fulfillment: FulfillmentService,
     private readonly audit: AuditService,
+    private readonly fpPayments: FpPaymentsService,
   ) {}
 
   private readonly include = {
@@ -168,6 +176,7 @@ export class OrdersService {
         createdAt: note.createdAt.toISOString(),
       })),
       emails: await this.emailsFor(order.number),
+      finalProcessor: await this.fpPayments.orderPayment(order.id, order.paidAt),
     };
   }
 
@@ -427,19 +436,57 @@ export class OrdersService {
     return { status: after.status };
   }
 
+  /**
+   * Refunds an order. A Final Processor payment is refunded through the
+   * processor, in full or in part (B.4); every other provider in full, as
+   * before, and an amount for one of those is refused rather than ignored.
+   */
   async refund(input: {
     number: string;
     reason: string;
     staffId: string;
+    amount?: string | undefined;
+    amountMinor?: string | undefined;
     context: { ip?: string | undefined; userAgent?: string | undefined };
-  }): Promise<{ status: string; via: 'stripe' | 'recorded' }> {
-    const result = await this.checkout.refundOrder(input);
+  }): Promise<RefundOrderResult> {
+    // The payment `refundOrder` would pick: the order's succeeded one.
+    const paid = await this.prisma.client.payment.findFirst({
+      where: { order: { number: input.number }, state: PaymentState.SUCCEEDED },
+      select: { provider: true },
+    });
+
+    let result: RefundOrderResult;
+    if (paid?.provider === PaymentProvider.FINAL_PROCESSOR) {
+      result = await this.fpPayments.refund(input);
+    } else {
+      if (input.amount !== undefined || input.amountMinor !== undefined) {
+        throw new BadRequestException(
+          say(
+            'الاسترداد الجزئي متاح لمدفوعات Final Processor فقط؛ هذا الطلب يُسترد كاملاً.',
+            'Partial refunds are for Final Processor payments only; this order is refunded in full.',
+          ),
+        );
+      }
+      const stripeOrRecorded = await this.checkout.refundOrder(input);
+      result = { ...stripeOrRecorded, refund: null };
+    }
+
     await this.audit.record({
       actorId: input.staffId,
       entity: 'Order',
       entityId: input.number,
       action: 'order.refunded',
-      after: { via: result.via, status: result.status },
+      after: {
+        via: result.via,
+        status: result.status,
+        ...(result.refund
+          ? {
+              refundId: result.refund.id,
+              amountUsd: result.refund.amountUsd,
+              refundStatus: result.refund.status,
+            }
+          : {}),
+      },
       ip: input.context.ip,
       userAgent: input.context.userAgent,
     });
@@ -626,6 +673,7 @@ export class OrdersService {
       paidAt: order.paidAt?.toISOString() ?? null,
       payments: order.payments.map((payment) => ({
         provider: payment.provider,
+        testMode: payment.testMode,
         state: payment.state,
         reference: payment.providerRef,
         // Three places for the currencies counted in thousandths.

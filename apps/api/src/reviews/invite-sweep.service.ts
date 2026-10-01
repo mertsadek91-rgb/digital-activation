@@ -4,6 +4,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { FulfillmentState } from '@da/db';
 
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { reviewStages } from './review-stages.js';
@@ -100,16 +101,8 @@ export class InviteSweepService {
     const hour = this.storeHour(new Date());
     if (hour < EARLIEST_HOUR || hour >= LATEST_HOUR) return { sent: 0, skipped: 0 };
 
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { sent: 0, skipped: 0 };
-
-    try {
-      return await this.run();
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.run());
+    return result.ran ? result.value : { sent: 0, skipped: 0 };
   }
 
   /**

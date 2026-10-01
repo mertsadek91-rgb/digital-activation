@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project event",
+  "description": "One line of agent-os/state/events.jsonl, the canonical append-only operational state.",
+  "type": "object",
+  "required": ["id", "ts", "type", "actor", "channel", "entity"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^E\\d{14}-[0-9a-f]{6}$"
+    },
+    "ts": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "type": {
+      "enum": [
+        "v1_imported",
+        "entity_created",
+        "entity_updated",
+        "status_changed",
+        "review_recorded",
+        "evidence_added",
+        "link_added",
+        "opportunity_decided",
+        "ranking_set",
+        "portfolio_preferences_set",
+        "priority_review_suggested",
+        "attempt_failed",
+        "risk_accepted",
+        "note"
+      ]
+    },
+    "actor": {
+      "type": "string",
+      "minLength": 1
+    },
+    "channel": {
+      "enum": ["cli", "dashboard", "owner-cli", "migration", "eval"]
+    },
+    "entity": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    },
+    "reason": {
+      "type": ["string", "null"]
+    },
+    "evidence": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

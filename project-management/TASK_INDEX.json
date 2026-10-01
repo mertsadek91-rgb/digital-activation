@@ -1,0 +1,1776 @@
+{
+  "generated_by": "agent-os/tools/pm.mjs (projection of agent-os/state/events.jsonl)",
+  "tasks": [
+    {
+      "id": "TASK-0001",
+      "title": "Stand up the project-management system and dashboard",
+      "type": "process",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
+      "priority": "HIGH",
+      "progress": 80,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "documentation-architect",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [
+        "qa-lead"
+      ],
+      "required_reviewers": [
+        "exec-director"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": "MILESTONE-0001",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "project-management"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/review/TASK-0001.md"
+    },
+    {
+      "id": "TASK-0002",
+      "title": "Make the repository tooling aware of project-management/",
+      "type": "chore",
+      "status": "CANCELLED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 80,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": "MILESTONE-0001",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "repo config"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "eslint.config.mjs",
+        ".prettierignore",
+        ".gitignore",
+        "package.json",
+        ".claude/launch.json"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0002.md"
+    },
+    {
+      "id": "TASK-0003",
+      "title": "Current-state audit of the repository",
+      "type": "audit",
+      "status": "CANCELLED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 80,
+      "authority_level": 1,
+      "risk": "LOW",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [
+        "frontend-architect",
+        "devops-engineer",
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": "MILESTONE-0001",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "all"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/CURRENT_STATE_AUDIT.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "INVALID_ASSUMPTION",
+      "file": "tasks/completed/TASK-0003.md"
+    },
+    {
+      "id": "TASK-0004",
+      "title": "Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application",
+      "type": "audit",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
+      "priority": "CRITICAL",
+      "progress": 80,
+      "authority_level": 1,
+      "risk": "LOW",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [
+        "backend-architect",
+        "devops-engineer",
+        "technical-seo-specialist",
+        "database-architect"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0002",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": "MILESTONE-0001",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "all"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/CURRENT_STATE_AUDIT.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": null,
+      "file": "tasks/review/TASK-0004.md"
+    },
+    {
+      "id": "TASK-0010",
+      "title": "Give the cron sweeps’ advisory locks connection affinity",
+      "type": "bug",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "backend-engineer",
+        "automation-test-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0001",
+      "related_consensus": null,
+      "related_epic": "EPIC-0003",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [
+        "TASK-0034"
+      ],
+      "affected_modules": [
+        "api/scheduling"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/catalog/fx-refresh.service.ts",
+        "apps/api/src/checkout/expiry-sweep.service.ts",
+        "apps/api/src/fulfillment/stranded-sweep.service.ts",
+        "apps/api/src/growth/referral.service.ts",
+        "apps/api/src/growth/referral-expiry.service.ts",
+        "apps/api/src/retention/cart-recovery.service.ts",
+        "apps/api/src/retention/renewal-sweep.service.ts",
+        "apps/api/src/reviews/invite-sweep.service.ts",
+        "apps/api/src/subscriptions/subscriptions.service.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0010.md"
+    },
+    {
+      "id": "TASK-0011",
+      "title": "Enforce a fingerprint salt in production without breaking existing fingerprints",
+      "type": "security",
+      "status": "WAITING_INFORMATION",
+      "stage": "ANALYSIS",
+      "priority": "MEDIUM",
+      "progress": 20,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "database-architect"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0002",
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/vault",
+        "api/config"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/vault/kek.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/active/TASK-0011.md"
+    },
+    {
+      "id": "TASK-0012",
+      "title": "Keep key-access history when a licence key is deleted",
+      "type": "security",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "database-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0003",
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "db/vault"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "packages/db/prisma/schema/30-vault.prisma",
+        "packages/db/prisma/migrations/20260929130000_key_access_log_restrict/migration.sql"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/completed/TASK-0012.md"
+    },
+    {
+      "id": "TASK-0013",
+      "title": "Detect staff refresh-token replay and revoke the session; throttle the refresh route",
+      "type": "security",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0004",
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [
+        "TASK-0014"
+      ],
+      "affected_modules": [
+        "api/auth"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/auth/auth.service.ts",
+        "apps/api/src/auth/auth.controller.ts",
+        "apps/api/src/auth/refresh-replay.test.ts",
+        "packages/db/prisma/schema/40-customer.prisma",
+        "packages/db/prisma/migrations/20260929120000_staff_session_replay/migration.sql",
+        "packages/db/prisma/migrations/20260929121000_staff_retired_token/migration.sql"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0013.md"
+    },
+    {
+      "id": "TASK-0014",
+      "title": "Make staff deactivation and logout take effect immediately",
+      "type": "security",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0005",
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0013"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/auth"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/auth/auth.service.ts",
+        "apps/api/src/auth/staff.guard.ts",
+        "apps/api/src/auth/staff-session-live.test.ts",
+        "apps/admin/src/lib/api.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/completed/TASK-0014.md"
+    },
+    {
+      "id": "TASK-0015",
+      "title": "Role-scope review of staff routes that carry no @Roles",
+      "type": "audit",
+      "status": "IN_PROGRESS",
+      "stage": "ANALYSIS",
+      "priority": "MEDIUM",
+      "progress": 60,
+      "authority_level": 1,
+      "risk": "LOW",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "auth-rbac-specialist"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-01"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/reports/security/TASK-0015-staff-route-role-audit.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0015.md"
+    },
+    {
+      "id": "TASK-0016",
+      "title": "Two-person approval for bulk licence export",
+      "type": "feature",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 5,
+      "risk": "HIGH",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "auth-rbac-specialist",
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04",
+        "pm-01"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/vault"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/backlog/TASK-0016.md"
+    },
+    {
+      "id": "TASK-0017",
+      "title": "Decide whether an emailed order link may pay from another device",
+      "type": "product",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "pm-01",
+      "responsible_manager": "pm-01",
+      "supporting_agents": [
+        "business-analyst",
+        "security-engineer",
+        "cro-specialist"
+      ],
+      "required_reviewers": [
+        "pm-01",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0006",
+      "related_consensus": null,
+      "related_epic": "EPIC-0004",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0020"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/checkout",
+        "storefront/orders"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/backlog/TASK-0017.md"
+    },
+    {
+      "id": "TASK-0018",
+      "title": "Separate and expire the order/cart link HMAC; drop the unused refresh secret",
+      "type": "security",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0007",
+      "related_consensus": null,
+      "related_epic": "EPIC-0002",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0017"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/common",
+        "api/config"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/common/order-link.ts",
+        "apps/api/src/config/env.ts",
+        ".env.example",
+        "scripts/generate-secrets.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/backlog/TASK-0018.md"
+    },
+    {
+      "id": "TASK-0020",
+      "title": "Resolve the Release 1 payment line-up (CONSENSUS-0001)",
+      "type": "decision",
+      "status": "WAITING_INFORMATION",
+      "stage": "COMPLETED",
+      "priority": "CRITICAL",
+      "progress": 50,
+      "authority_level": 5,
+      "risk": "HIGH",
+      "primary_agent": "exec-director",
+      "responsible_manager": "pm-01",
+      "supporting_agents": [
+        "integration-engineer",
+        "cro-specialist"
+      ],
+      "required_reviewers": [
+        "pm-01",
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": "CONSENSUS-0001",
+      "related_epic": "EPIC-0004",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [
+        "TASK-0021"
+      ],
+      "affected_modules": [
+        "checkout"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/active/TASK-0020.md"
+    },
+    {
+      "id": "TASK-0021",
+      "title": "Implement Final Processor for checkout and admin",
+      "type": "feature",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
+      "priority": "HIGH",
+      "progress": 90,
+      "authority_level": 5,
+      "risk": "HIGH",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "integration-engineer",
+        "automation-test-engineer",
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "pm-01"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": "CONSENSUS-0001",
+      "related_epic": "EPIC-0004",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/checkout",
+        "storefront/checkout",
+        "admin/payments"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/checkout/",
+        "apps/api/src/admin/orders.controller.ts",
+        "apps/api/src/admin/orders.service.ts",
+        "apps/api/src/config/env.ts",
+        "packages/contracts/src/final-processor.ts",
+        "packages/contracts/src/checkout.ts",
+        "packages/contracts/src/admin.ts",
+        "packages/db/prisma/schema/",
+        "packages/db/prisma/migrations/20260930111620_payment_method_config/",
+        "packages/db/prisma/migrations/20260930140000_final_processor_payments/",
+        "apps/storefront/src/app/[locale]/checkout/",
+        "apps/storefront/next.config.ts",
+        "apps/admin/src/app/payments/",
+        "apps/admin/src/app/orders/page.tsx",
+        ".env.example"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/review/TASK-0021.md"
+    },
+    {
+      "id": "TASK-0030",
+      "title": "Backup policy and a recorded restore drill",
+      "type": "operations",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 30,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "sre",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "database-architect",
+        "devops-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0006",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "infrastructure"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/reports/release/"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0030.md"
+    },
+    {
+      "id": "TASK-0031",
+      "title": "Error reporting and alerting, including the delivery-latency target",
+      "type": "operations",
+      "status": "WAITING_INFORMATION",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 20,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "sre",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0006",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/infra",
+        "storefront",
+        "admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/infra/error-reporter.ts",
+        "apps/api/package.json"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0031.md"
+    },
+    {
+      "id": "TASK-0032",
+      "title": "Write the rollback and cutover runbooks",
+      "type": "documentation",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "release-manager",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "documentation-architect",
+        "technical-seo-specialist"
+      ],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0070"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "docs"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "docs/deployment.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/completed/TASK-0032.md"
+    },
+    {
+      "id": "TASK-0033",
+      "title": "Reproducible deploys: container definitions or Coolify config as code",
+      "type": "operations",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0006",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "infrastructure"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/backlog/TASK-0033.md"
+    },
+    {
+      "id": "TASK-0034",
+      "title": "Decide where scheduled work runs: API process or the BullMQ worker",
+      "type": "architecture",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "MEDIUM",
+      "progress": 0,
+      "authority_level": 5,
+      "risk": "MEDIUM",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "sre"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0003",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0010"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api",
+        "workers/jobs"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/backlog/TASK-0034.md"
+    },
+    {
+      "id": "TASK-0035",
+      "title": "Confirm or reverse the Meilisearch replacement (DEC-0009)",
+      "type": "architecture",
+      "status": "WAITING_INFORMATION",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 20,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "search-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0008",
+      "related_consensus": null,
+      "related_epic": "EPIC-0006",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/catalog",
+        "api/config",
+        "docs"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0035.md"
+    },
+    {
+      "id": "TASK-0040",
+      "title": "Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002)",
+      "type": "security",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 5,
+      "risk": "HIGH",
+      "primary_agent": "database-architect",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "security-engineer",
+        "release-manager"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04",
+        "pm-01"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0014",
+      "related_consensus": "CONSENSUS-0002",
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0043"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "packages/db/scripts",
+        "api/vault"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/backlog/TASK-0040.md"
+    },
+    {
+      "id": "TASK-0041",
+      "title": "Import legacy customers and orders with forced password reset",
+      "type": "feature",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "database-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "backend-engineer",
+        "business-analyst"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0043"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "packages/db/scripts"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/backlog/TASK-0041.md"
+    },
+    {
+      "id": "TASK-0042",
+      "title": "Cutover rehearsal on staging: 301 map crawl and zero broken links",
+      "type": "qa",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 60,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "technical-seo-specialist",
+      "responsible_manager": "pm-05",
+      "supporting_agents": [
+        "functional-qa-engineer",
+        "release-manager"
+      ],
+      "required_reviewers": [
+        "pm-05",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront",
+        "seo"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/reports/release/TASK-0042-cutover-crawl-2026-09-30.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID_BUT_REWRITE",
+      "file": "tasks/active/TASK-0042.md"
+    },
+    {
+      "id": "TASK-0043",
+      "title": "Owner decision — which legacy customers, orders and licence keys migrate",
+      "type": "decision",
+      "status": "WAITING_INFORMATION",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 20,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "pm-01",
+      "responsible_manager": "pm-01",
+      "supporting_agents": [
+        "business-analyst",
+        "database-architect",
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-01",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0002",
+      "related_issue": "BUG-0014",
+      "related_consensus": "CONSENSUS-0002",
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [
+        "TASK-0040",
+        "TASK-0041"
+      ],
+      "affected_modules": [
+        "migration"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0043.md"
+    },
+    {
+      "id": "TASK-0044",
+      "title": "Plan the staging-to-production transition of the single Coolify environment",
+      "type": "operations",
+      "status": "WAITING_INFORMATION",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 70,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "release-manager",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "devops-engineer",
+        "database-architect",
+        "technical-seo-specialist"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0002",
+      "related_issue": "BUG-0016",
+      "related_consensus": null,
+      "related_epic": "EPIC-0005",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "infrastructure"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/reports/release/TASK-0044-production-transition.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0044.md"
+    },
+    {
+      "id": "TASK-0050",
+      "title": "Analytics tracking plan compatible with the CSP and the third-party budget",
+      "type": "analysis",
+      "status": "WAITING_INFORMATION",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 20,
+      "authority_level": 1,
+      "risk": "LOW",
+      "primary_agent": "analytics-engineer",
+      "responsible_manager": "pm-05",
+      "supporting_agents": [
+        "data-analyst",
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-05"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0007",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront",
+        "api"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/ANALYTICS_TRACKING_PLAN.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0050.md"
+    },
+    {
+      "id": "TASK-0051",
+      "title": "Reconcile the performance budgets and cover product, category and checkout on mobile",
+      "type": "performance",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 60,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "performance-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0010",
+      "related_consensus": null,
+      "related_epic": "EPIC-0008",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront",
+        "packages/ui",
+        "ci"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "packages/ui/src/index.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0051.md"
+    },
+    {
+      "id": "TASK-0060",
+      "title": "End-to-end test: card order to licence delivered",
+      "type": "test",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "automation-test-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "qa-lead"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0008",
+      "related_milestone": "MILESTONE-0003",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront",
+        "api",
+        "ci"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0060.md"
+    },
+    {
+      "id": "TASK-0061",
+      "title": "Replace the stale MASTER.md with a design-system document generated from tokens.css",
+      "type": "documentation",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "design-system-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "art-director"
+      ],
+      "required_reviewers": [
+        "pm-03"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0009",
+      "related_consensus": null,
+      "related_epic": "EPIC-0008",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "design-system"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "design-system/DESIGN_SYSTEM.md",
+        "design-system/digital-activation/MASTER.md"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0061.md"
+    },
+    {
+      "id": "TASK-0062",
+      "title": "Load Tajawal in the admin panel",
+      "type": "bug",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-03"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0011",
+      "related_consensus": null,
+      "related_epic": "EPIC-0008",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/admin/src/app/layout.tsx"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0062.md"
+    },
+    {
+      "id": "TASK-0063",
+      "title": "Server-side session gate for admin pages",
+      "type": "security",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 50,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "frontend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "auth-rbac-specialist"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0008",
+      "related_milestone": "MILESTONE-0005",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/admin/src/proxy.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": "VALID",
+      "file": "tasks/active/TASK-0063.md"
+    },
+    {
+      "id": "TASK-0070",
+      "title": "Correct stale facts in deployment.md",
+      "type": "documentation",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": "CR-0001",
+      "related_issue": "BUG-0012",
+      "related_consensus": null,
+      "related_epic": "EPIC-0006",
+      "related_milestone": "MILESTONE-0002",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [
+        "TASK-0032"
+      ],
+      "affected_modules": [
+        "docs"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "docs/deployment.md",
+        ".env.example",
+        "apps/api/src/config/env.ts",
+        "apps/api/src/config/env.test.ts",
+        "apps/api/src/retention/links.ts",
+        "apps/api/src/whatsapp/whatsapp.controller.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-29",
+      "reaudit": "VALID",
+      "file": "tasks/completed/TASK-0070.md"
+    },
+    {
+      "id": "TASK-0080",
+      "title": "Agent OS V2 migration (CR-0003, stages M0–M11)",
+      "type": "process",
+      "status": "BLOCKED",
+      "stage": "TECHNICAL_REVIEW",
+      "priority": "HIGH",
+      "progress": 90,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [
+        "documentation-architect",
+        "security-engineer",
+        "backend-architect"
+      ],
+      "required_reviewers": [
+        "exec-director",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0003",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": "MILESTONE-0001",
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "agent-os",
+        "claude-config",
+        "project-management",
+        "ci"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "agent-os/",
+        "CLAUDE.md",
+        ".claude/settings.json",
+        ".claude/hooks/",
+        ".claude/rules/",
+        ".claude/agents/",
+        ".claude/skills/",
+        ".claude/launch.json",
+        "project-management/dashboard/",
+        "project-management/tools/",
+        ".github/workflows/ci.yml",
+        "package.json",
+        "eslint.config.mjs",
+        ".prettierignore",
+        ".gitignore",
+        ".gitattributes"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/blocked/TASK-0080.md"
+    },
+    {
+      "id": "TASK-0081",
+      "title": "Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them",
+      "type": "verification",
+      "status": "BLOCKED",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 50,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "documentation-architect",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": "CR-0003",
+      "related_issue": "BUG-0019",
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0080"
+      ],
+      "blocks": [],
+      "affected_modules": [],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/blocked/TASK-0081.md"
+    },
+    {
+      "id": "TASK-0082",
+      "title": "Guard: detect script-based writes (node -e, python -c) to protected paths, or document an allowlist",
+      "type": "security",
+      "status": "BLOCKED",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 60,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": "CR-0003",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0080"
+      ],
+      "blocks": [],
+      "affected_modules": [],
+      "affected_pages": [],
+      "affected_files": [
+        ".claude/hooks/guard.mjs",
+        "agent-os/policies/guard.json"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/blocked/TASK-0082.md"
+    },
+    {
+      "id": "TASK-0083",
+      "title": "Remove PROJECT_CONFIG.file_ownership (superseded by routing.json domains) and the V1 sync entry point after one release",
+      "type": "chore",
+      "status": "BLOCKED",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 60,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "documentation-architect",
+      "responsible_manager": "exec-director",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-04"
+      ],
+      "related_change_request": "CR-0003",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": "EPIC-0001",
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0080"
+      ],
+      "blocks": [],
+      "affected_modules": [],
+      "affected_pages": [],
+      "affected_files": [
+        "project-management/PROJECT_CONFIG.json",
+        "project-management/tools/sync.mjs"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/blocked/TASK-0083.md"
+    },
+    {
+      "id": "TASK-0084",
+      "title": "Prune retired staff refresh-token hashes and dead staff sessions",
+      "type": "maintenance",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "LOW",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0004",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0013"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/auth"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/auth/session-prune.service.ts",
+        "apps/api/src/auth/session-prune.test.ts",
+        "apps/api/src/auth/auth.module.ts"
+      ],
+      "created_at": "2026-09-29",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0084.md"
+    },
+    {
+      "id": "TASK-0085",
+      "title": "Keep API env keys set in the repo env file: add FX_REFRESH, FX_RATES_URL, NEXT_PUBLIC_SITE_URL to the schema",
+      "type": "bugfix",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "qa-lead",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0020",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/config"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/config/env.ts",
+        "apps/api/src/config/env.test.ts",
+        "apps/api/src/config/env-coverage.test.ts"
+      ],
+      "created_at": "2026-09-30",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0085.md"
+    },
+    {
+      "id": "TASK-0086",
+      "title": "Replace hardcoded colours in footer.css (then catalog, contact, account, warranty CSS) with tokens; fix failing contrast pairs",
+      "type": "design-system",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 40,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "design-system-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "accessibility-specialist"
+      ],
+      "required_reviewers": [
+        "pm-03"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0009",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront",
+        "admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/storefront/src/app/footer.css",
+        "packages/ui/src/tokens.css"
+      ],
+      "created_at": "2026-09-30",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0086.md"
+    },
+    {
+      "id": "TASK-0087",
+      "title": "Send stocked licences automatically on payment (risk-gated, idempotent)",
+      "type": "bugfix",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "backend-engineer",
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0021",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/fulfillment"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/fulfillment/fulfillment.service.ts",
+        "apps/api/src/fulfillment/stranded-sweep.service.ts",
+        "apps/api/src/fulfillment/auto-delivery.test.ts",
+        "apps/api/src/integration/checkout-payment.int.test.ts"
+      ],
+      "created_at": "2026-09-30",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0087.md"
+    },
+    {
+      "id": "TASK-0088",
+      "title": "Deactivating a staff account revokes all of its sessions",
+      "type": "security",
+      "status": "BACKLOG",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 20,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0005",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0014"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/auth"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-30",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0088.md"
+    },
+    {
+      "id": "TASK-0089",
+      "title": "Give the Lighthouse CI job a database, API and fixed seed; cover product, category and cart on mobile and desktop",
+      "type": "ci",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 30,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "performance-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "devops-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": "BUG-0010",
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "ci"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-09-30",
+      "updated_at": "2026-09-30",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0089.md"
+    }
+  ]
+}

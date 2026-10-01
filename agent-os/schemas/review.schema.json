@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Review",
+  "description": "data of a review_recorded event.",
+  "type": "object",
+  "required": ["review_id", "reviewer", "review_type", "result", "independent"],
+  "properties": {
+    "review_id": {
+      "type": "string",
+      "pattern": "^REV-\\d{4}$"
+    },
+    "reviewer": {
+      "type": "string"
+    },
+    "executor": {
+      "type": ["string", "null"]
+    },
+    "review_type": {
+      "$ref": "enums.json#/review_type"
+    },
+    "result": {
+      "$ref": "enums.json#/review_result"
+    },
+    "independent": {
+      "type": "boolean"
+    },
+    "findings": {
+      "type": ["string", "null"]
+    },
+    "round": {
+      "type": ["integer", "null"]
+    }
+  },
+  "additionalProperties": true
+}

@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { FulfillmentState, OrderStatus } from '@da/db';
 
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { FulfillmentService } from './fulfillment.service.js';
@@ -19,7 +20,12 @@ import { FulfillmentService } from './fulfillment.service.js';
  * A sweep for the same reason the review invites are one: the question it asks
  * is about the state of the database, so it also catches what failed while
  * this process was down. `onOrderPaid` is idempotent by line state, so an order
- * the webhook is handling at the same moment is not delivered twice.
+ * the webhook is handling at the same moment is not delivered twice: only the
+ * call that moves a stocked line out of PENDING sends it (BUG-0021).
+ *
+ * It does not retry a line whose automatic send failed. That line is
+ * AUTO_ASSIGNED, not PENDING, and it waits in the staff queue — a send that
+ * failed once is worth a person looking at before it is tried again.
  */
 
 /** Old enough that the webhook has had its chance. */
@@ -40,16 +46,8 @@ export class StrandedSweepService {
 
   @Cron(CronExpression.EVERY_5_MINUTES, { name: 'stranded-orders' })
   async sweep(): Promise<{ worked: number; failed: number }> {
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { worked: 0, failed: 0 };
-
-    try {
-      return await this.run();
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.run());
+    return result.ran ? result.value : { worked: 0, failed: 0 };
   }
 
   private async run(): Promise<{ worked: number; failed: number }> {

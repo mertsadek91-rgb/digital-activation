@@ -19,6 +19,8 @@ import {
   type AdminOrderList,
   addOrderNoteSchema,
   confirmPaymentSchema,
+  type RefundOrderResult,
+  refundOrderResultSchema,
   refundOrderSchema,
   releaseHoldSchema,
   adminOrderListSchema,
@@ -163,25 +165,31 @@ export class OrdersController {
   }
 
   /**
-   * Refunds the whole order. OWNER and ADMIN, like confirming a payment: it
-   * moves money, and the panel is the only place that says who did.
+   * Refunds an order. OWNER and ADMIN, like confirming a payment: it moves
+   * money, and the panel is the only place that says who did. Final Processor
+   * payments may be refunded in part (`amount` / `amountMinor`, USD).
    */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Roles('OWNER', 'ADMIN')
   @Post(':number/refund')
-  @ApiOperation({ summary: 'Refund an order in full (card via Stripe; others recorded)' })
+  @ZodResponse(refundOrderResultSchema)
+  @ApiOperation({
+    summary:
+      'Refund an order (Final Processor: full or partial; card via Stripe in full; others recorded)',
+  })
   async refund(
     @Param('number') number: string,
     @Body(new ZodPipe(refundOrderSchema)) body: z.infer<typeof refundOrderSchema>,
     @Req() request: StaffRequest,
-  ) {
-    const result = await this.orders.refund({
+  ): Promise<RefundOrderResult> {
+    return this.orders.refund({
       number,
       reason: body.reason,
+      amount: body.amount,
+      amountMinor: body.amountMinor,
       staffId: request.staff?.sub ?? '',
       context: { ip: request.ip, userAgent: request.headers['user-agent'] },
     });
-    return result;
   }
 
   /**

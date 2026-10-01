@@ -1,8 +1,9 @@
 'use client';
 
-import type { AdminProductList, AdminProductRow, StaffMe } from '@da/contracts';
+import type { AdminProductList, AdminProductRow } from '@da/contracts';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -60,7 +61,7 @@ export default function ProductsPage() {
   const router = useRouter();
   const t = useT('products');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<AdminProductList | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
@@ -91,23 +92,6 @@ export default function ProductsPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [filter, query, locale, router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        // Nothing else on this page would load anyway: the API refuses every
-        // route while the account is on its generated password.
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

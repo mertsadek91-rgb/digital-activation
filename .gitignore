@@ -62,7 +62,14 @@ test-results/
 .DS_Store
 Thumbs.db
 *.log
+# ...except the governance logs, which are the project's audit trail.
+!project-management/logs/*.log
 
 # Compiler output emitted beside the source by a stray `tsc` without -p.
 # Builds go to dist/; a map in src/ is always an accident.
 packages/*/src/**/*.map
+
+# Agent OS hook metrics (tool-call counts, guard decisions). Local only.
+.claude/metrics/
+# Canonical-state lock, held while a pm command writes.
+agent-os/state/*.lock

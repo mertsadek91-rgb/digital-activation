@@ -292,6 +292,18 @@ enum PaymentProvider {
   PAYPAL
   BANK_TRANSFER
   CRYPTO
+  FINAL_PROCESSOR
+
+  @@schema("public")
+}
+
+/// A refund's outcome at the provider. Rows recorded before refunds could be
+/// pending (Stripe, and manual methods returned outside this system) are all
+/// SUCCEEDED, which is what the column defaults to.
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
 
   @@schema("public")
 }

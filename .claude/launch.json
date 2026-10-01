@@ -4,14 +4,37 @@
     {
       "name": "admin",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@da/admin", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@da/admin",
+        "dev"
+      ],
       "port": 3001
     },
     {
       "name": "api",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@da/api", "dev"],
+      "runtimeArgs": [
+        "--filter",
+        "@da/api",
+        "dev"
+      ],
       "port": 4000
+    },
+    {
+      "name": "admin-webpack",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@da/admin", "exec", "next", "dev", "--webpack", "--port", "3011"],
+      "port": 3011
+    },
+    {
+      "name": "pm-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "agent-os/tools/server.mjs",
+        "4600"
+      ],
+      "port": 4600
     }
   ]
 }

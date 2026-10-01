@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { Prisma } from '@da/db';
 
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 /**
@@ -64,19 +65,14 @@ export class FxRefreshService implements OnApplicationBootstrap {
   async refresh(): Promise<{ written: number; held: number }> {
     if (!this.enabled) return { written: 0, held: 0 };
 
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return { written: 0, held: 0 };
     try {
-      return await this.run();
+      const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () => this.run());
+      return result.ran ? result.value : { written: 0, held: 0 };
     } catch (error) {
       // A feed that is down leaves yesterday's rates in place, which is the
       // right fallback; it must not take the API down with it.
       this.logger.error(`FX refresh failed: ${error instanceof Error ? error.message : 'unknown'}`);
       return { written: 0, held: 0 };
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
     }
   }
 

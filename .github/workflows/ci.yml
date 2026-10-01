@@ -41,6 +41,15 @@ jobs:
       - run: pnpm lint
       - run: pnpm test
 
+      # Agent OS (agent-os/). The evals prove the guardrails, routing, decision
+      # rights and opportunity rules still hold; pm:check fails if canonical
+      # state is invalid or a committed projection (index, front matter,
+      # dashboard data) no longer matches the event log.
+      - name: Agent OS evals
+        run: pnpm agent-os:eval
+      - name: Project state is consistent
+        run: pnpm pm:check
+
       # The API's OpenAPI document, for the storefront and admin to generate
       # clients from. Built from Nest's preview mode, so it needs no database;
       # published rather than committed, so it is never stale.

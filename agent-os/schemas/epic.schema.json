@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Epic",
+  "description": "Group of tasks.",
+  "type": "object",
+  "required": ["id", "title", "status", "owner"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^EPIC-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "updated_at": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}"
+    },
+    "status": {
+      "$ref": "enums.json#/epic_status"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "related_milestone": {
+      "type": ["string", "null"],
+      "pattern": "^MILESTONE-\\d{4}$"
+    }
+  },
+  "additionalProperties": true
+}

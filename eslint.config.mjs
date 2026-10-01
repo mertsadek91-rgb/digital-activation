@@ -26,6 +26,16 @@ export default tseslint.config(
       'packages/db/generated/**',
       'packages/db/prisma/migrations/**',
       'docs/**',
+      // The governance tree: records, a static dashboard and a zero-dependency
+      // sync script. None of it is part of any tsconfig, and none of it ships.
+      'project-management/**',
+      // Agent OS tooling: zero-dependency ESM scripts and node:test evals, outside
+      // every tsconfig, never shipped. Covered by its own evals instead.
+      'agent-os/**',
+      // Final Processor's reference SDK, kept byte-for-byte as the processor
+      // ships it (its contract says "copy unchanged"). Linting it would mean
+      // editing it; it is wrapped and typed by final-processor.service.ts.
+      'apps/api/src/checkout/final-processor.ts',
     ],
   },
 

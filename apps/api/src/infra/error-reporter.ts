@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
 
+import { scrubBreadcrumb, scrubEvent } from './error-scrub.js';
+
 /** What is known about the request a server error came from. */
 export interface ErrorContext {
   status: number;
@@ -31,9 +33,17 @@ export class NoopErrorReporter implements ErrorReporter {
   }
 }
 
+export interface SentryInitOptions {
+  dsn: string;
+  environment?: string;
+  sendDefaultPii?: boolean;
+  beforeSend?: <E>(event: E) => E | null;
+  beforeBreadcrumb?: <B>(breadcrumb: B) => B | null;
+}
+
 /** The part of `@sentry/node` the adapter calls. */
-interface SentryLike {
-  init(options: { dsn: string; environment?: string; sendDefaultPii?: boolean }): void;
+export interface SentryLike {
+  init(options: SentryInitOptions): void;
   captureException(
     error: unknown,
     hint?: { tags?: Record<string, string>; extra?: Record<string, unknown> },
@@ -48,7 +58,9 @@ interface SentryLike {
  * rather than imported: the API compiles and boots without it, and adding the
  * package (see docs/deployment.md, "Error reporting") is all it takes to turn
  * this on. Nothing identifying goes with the event — no PII, no URL, no body —
- * because an order URL or a reveal response is a licence key in transit.
+ * because an order URL or a reveal response is a licence key in transit. What
+ * the SDK adds by itself (the request it saw, breadcrumbs, the exception
+ * message) passes through `scrubEvent` first: see error-scrub.ts.
  */
 export class SentryErrorReporter implements ErrorReporter {
   constructor(private readonly sentry: SentryLike) {}
@@ -69,9 +81,21 @@ export class SentryErrorReporter implements ErrorReporter {
   }
 }
 
+/** The options the adapter initialises Sentry with. Exported for the test. */
+export function sentryOptions(dsn: string): SentryInitOptions {
+  return {
+    dsn,
+    environment: process.env.NODE_ENV,
+    sendDefaultPii: false,
+    beforeSend: scrubEvent,
+    beforeBreadcrumb: scrubBreadcrumb,
+  };
+}
+
 export async function createErrorReporter(
   dsn: string | undefined,
   logger: Pick<Logger, 'log' | 'warn'> = new Logger('ErrorReporter'),
+  load: (name: string) => Promise<unknown> = (name) => import(name),
 ): Promise<ErrorReporter> {
   if (!dsn) return new NoopErrorReporter();
 
@@ -80,7 +104,7 @@ export async function createErrorReporter(
   const packageName = '@sentry/node';
   let sentry: SentryLike;
   try {
-    sentry = (await import(packageName)) as SentryLike;
+    sentry = (await load(packageName)) as SentryLike;
   } catch {
     logger.warn(
       'SENTRY_DSN is set but @sentry/node is not installed; server errors are logged only. See docs/deployment.md.',
@@ -88,7 +112,7 @@ export async function createErrorReporter(
     return new NoopErrorReporter();
   }
 
-  sentry.init({ dsn, environment: process.env.NODE_ENV, sendDefaultPii: false });
+  sentry.init(sentryOptions(dsn));
   logger.log('Server errors are reported to Sentry');
   return new SentryErrorReporter(sentry);
 }

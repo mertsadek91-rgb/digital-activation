@@ -47,7 +47,12 @@
     "tunnel": "tsx scripts/tunnel.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,yml,yaml,css}\"",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "pm:sync": "node agent-os/tools/pm.mjs sync",
+    "pm:check": "node agent-os/tools/pm.mjs check",
+    "pm": "node agent-os/tools/pm.mjs",
+    "pm:dashboard": "node agent-os/tools/server.mjs",
+    "agent-os:eval": "node --test \"agent-os/evals/*.test.mjs\""
   },
   "devDependencies": {
     "@eslint/js": "catalog:",

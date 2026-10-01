@@ -25,6 +25,9 @@ export async function generateMetadata({
   return {
     title: t('title'),
     robots: { index: false, follow: false },
+    // Also in the Referrer-Policy header (next.config.ts); this covers arriving
+    // here by client-side navigation, which keeps the first page's policy.
+    referrer: 'same-origin',
   };
 }
 

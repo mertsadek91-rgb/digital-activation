@@ -463,25 +463,128 @@
   block-size: 18px;
 }
 
-.pay-methods {
-  display: grid;
-  gap: 12px;
+/*
+ * The payment choice: one radio per method, then one button. A Final
+ * Processor method sits in the list like any other provider, with the
+ * admin's name, icon and line of description.
+ */
+.pay-choice-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
   margin-block: var(--spacing-1);
 }
-.pay-methods button {
+.pay-choices {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+.checkout-form label.pay-choice {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 56px;
+  padding: 12px var(--spacing-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.checkout-form label.pay-choice:hover {
+  border-color: var(--color-brand);
+}
+.checkout-form label.pay-choice:has(input:checked) {
+  border-color: var(--color-brand);
+  background: var(--color-brand-soft);
+  box-shadow: 0 0 0 1px var(--color-brand);
+}
+.checkout-form label.pay-choice:has(input:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+.pay-choices:disabled label.pay-choice {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.pay-choice input[type='radio'] {
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  margin: 0;
+  accent-color: var(--color-brand);
+}
+.pay-choice-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+.pay-choice-label {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.pay-choice-description {
+  font-weight: 400;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+/* At the end of the row in either direction: inline-end is left in RTL. */
+.pay-choice-icon {
+  flex: none;
+  inline-size: 40px;
+  block-size: 28px;
+  object-fit: contain;
+}
+.pay-charged-usd strong {
+  color: var(--color-ink);
+  unicode-bidi: isolate;
+}
+.pay-submit {
   min-block-size: 52px;
-  padding: 12px var(--spacing-2);
   border-radius: var(--radius-lg);
   font-weight: 700;
-  font-size: var(--text-base);
-  box-shadow: var(--shadow-sm);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease;
 }
-.pay-methods button:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+.checkout-return-notice {
+  margin-block-end: var(--spacing-1);
+}
+
+/* --- return from the payment page --------------------------------------- */
+
+.checkout-return {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  max-width: 44rem;
+}
+.checkout-return-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-half);
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+.checkout-return-status h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+.checkout-return-status p {
+  margin: 0;
+}
+.checkout-return-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block-start: var(--spacing-1);
 }
 
 /* --- card --------------------------------------------------------------- */

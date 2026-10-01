@@ -1,7 +1,8 @@
 'use client';
 
-import type { AdminReviewList, AdminReviewRow, ReviewStatus, StaffMe } from '@da/contracts';
+import type { AdminReviewList, AdminReviewRow, ReviewStatus } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -43,7 +44,7 @@ export default function ReviewsPage() {
   const router = useRouter();
   const t = useT('reviews');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [status, setStatus] = useState<ReviewStatus>('PENDING');
   const [list, setList] = useState<AdminReviewList | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,21 +62,6 @@ export default function ReviewsPage() {
       setError(caught instanceof Error ? caught.message : t('loadFailed'));
     }
   }, [status, router, t]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

@@ -6,6 +6,8 @@ import { EXPIRED_REASON, ReferralExpiryService } from './referral-expiry.service
 
 function fake(moved: number) {
   const tx = {
+    // The sweep's advisory lock is taken inside a transaction (withAdvisoryLock).
+    $queryRaw: vi.fn().mockResolvedValue([{ locked: true }]),
     referralRedemption: { updateMany: vi.fn().mockResolvedValue({ count: moved }) },
     promotion: { update: vi.fn().mockResolvedValue({}) },
     cart: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },

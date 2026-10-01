@@ -16,6 +16,7 @@ import { CartService } from '../cart/cart.service.js';
 import { readLink, signLink } from '../common/signed-link.js';
 import { MailService } from '../mail/mail.service.js';
 import { MarketingSettingsService } from '../marketing/marketing-settings.service.js';
+import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { buttonSuffix, chooseDelivery } from '../whatsapp/rules.js';
 import { cartRecoveryParams } from '../whatsapp/templates.js';
@@ -132,16 +133,10 @@ export class CartRecoveryService {
     const now = new Date();
     if (inQuietHours(storeHour(now), settings.quietFromHour, settings.quietToHour)) return none;
 
-    const [lock] = await this.prisma.client.$queryRaw<
-      { locked: boolean }[]
-    >`select pg_try_advisory_lock(${LOCK_KEY}) as locked`;
-    if (!lock?.locked) return none;
-
-    try {
-      return await this.run(settings, await this.settings.get('whatsapp'), now);
-    } finally {
-      await this.prisma.client.$queryRaw`select pg_advisory_unlock(${LOCK_KEY})`;
-    }
+    const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, async () =>
+      this.run(settings, await this.settings.get('whatsapp'), now),
+    );
+    return result.ran ? result.value : none;
   }
 
   private async run(

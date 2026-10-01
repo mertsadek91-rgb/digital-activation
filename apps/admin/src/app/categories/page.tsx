@@ -1,7 +1,8 @@
 'use client';
 
-import type { AdminCategory, AdminCategoryList, StaffMe } from '@da/contracts';
+import type { AdminCategory, AdminCategoryList } from '@da/contracts';
 import { useRouter } from 'next/navigation';
+import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -24,7 +25,7 @@ export default function CategoriesPage() {
   const router = useRouter();
   const t = useT('categories');
   const c = useT('common');
-  const [me, setMe] = useState<StaffMe | null>(null);
+  const me = useStaff();
   const [data, setData] = useState<AdminCategoryList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -41,21 +42,6 @@ export default function CategoriesPage() {
       setError(caught instanceof Error ? caught.message : c('actionFailed'));
     }
   }, [router, c]);
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const staff = await api.me();
-        if (staff.mustChangePassword) {
-          router.push('/password');
-          return;
-        }
-        setMe(staff);
-      } catch {
-        router.push('/login');
-      }
-    })();
-  }, [router]);
 
   useEffect(() => {
     if (me) void load();

@@ -1,0 +1,22 @@
+# Regression matrix
+
+When a shared system changes, retest everything in its row. “Auto” is what CI
+already covers; the rest is manual until TASK-0060 adds end-to-end tests.
+
+| Shared system                            | Retest                                                                                                                                                              | Auto today                             |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Staff authentication** (`auth/`)       | login, TOTP enrol, TOTP single-use, refresh rotation, logout, password change revokes others, `mustChange` gate, step-up for vault reveal, every `@Roles` route     | unit tests                             |
+| **Customer session** (`account/`)        | magic link issue/consume/expiry, session cookie, licences list, reveal, resend, reviews, sign-out                                                                   | unit tests                             |
+| **Vault** (`vault/`, `30-vault.prisma`)  | import, fingerprint dedupe, reveal (staff + customer), access log written first, revoke, rewrap CLI, `db:doctor` vault isolation                                    | unit tests; doctor manual              |
+| **Checkout & payments**                  | cart → draft order, Stripe intent idempotency, webhook signature + dedupe, paid → fulfilment, hold for review, refund, dispute, manual confirm, order link view/pay | integration suite (checkout, webhooks) |
+| **Fulfilment**                           | deliver from stock, out-of-stock path, stranded-orders sweep, delivery email, portal shows key                                                                      | integration suite                      |
+| **Scheduled sweeps**                     | each of the nine jobs runs once per tick across replicas; lock released; runs again next tick                                                                       | cart-recovery integration only         |
+| **Schema / migrations**                  | migrate from empty, drift check, seed, `db:doctor`, integration suite, importers dry-run                                                                            | drift check + integration in CI        |
+| **API contracts** (`packages/contracts`) | storefront build, admin build, OpenAPI generation, every consumer of the changed shape                                                                              | typecheck + OpenAPI job                |
+| **Routing / middleware** (`proxy.ts`)    | `/` Arabic, `/en` English, hreflang pairs, canonical, CSP nonce on every page, Stripe allowed, legacy redirects, 404 reporting, staging noindex                     | Lighthouse (hreflang/canonical on `/`) |
+| **SEO package**                          | JSON-LD single Product, sitemaps index + sections, robots per host, indexing policy                                                                                 | unit tests                             |
+| **Design tokens** (`tokens.css`)         | storefront and admin at 1440/1280/1024/768/430/390/360, ar + en, contrast, focus rings, reduced motion                                                              | Lighthouse a11y on `/` only            |
+| **Messages** (`messages/*.json`)         | compile-time parity, RTL rendering of changed strings, no truncation on 360                                                                                         | typecheck (parity)                     |
+| **Mail**                                 | transactional vs marketing sender split, unsubscribe, capture refused in prod                                                                                       | unit tests                             |
+| **Env / secrets** (`config/env.ts`)      | boot in dev, boot refusal cases in prod mode, `env:check`, `secrets:generate`                                                                                       | partial unit tests                     |
+| **CI workflows**                         | every job on a PR that touches the workflow                                                                                                                         | the workflow itself                    |
