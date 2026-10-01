@@ -6,3 +6,8 @@
 # path, so a real secret committed to the same file would still be caught.
 0926bb831e99e7d6c022f9d1a5320b899828f9a9:apps/api/src/retention/rules.test.ts:generic-api-key:203
 74a76fddc63b93542fc3a651debc446997a2e5ce:apps/api/src/subscriptions/subscriptions.test.ts:generic-api-key:11
+#
+# Fake licence-key fixtures for the error scrubber's masking tests (TASK-0031),
+# committed in 4aa3b06 before they were assembled at runtime. Never real keys.
+4aa3b06d78d63d080e5cf58c2b706565142856ea:apps/api/src/infra/error-scrub.test.ts:generic-api-key:16
+4aa3b06d78d63d080e5cf58c2b706565142856ea:apps/api/src/infra/error-scrub.test.ts:generic-api-key:129

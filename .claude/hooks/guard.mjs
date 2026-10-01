@@ -54,7 +54,11 @@ function inProtectedSegment(p) {
 function relPath(p, cwd = '') {
   if (!p) return null;
   const clean = String(p).replace(/\\/g, '/');
-  const abs = isAbsolute(clean) || /^[A-Za-z]:\//.test(clean) ? clean : resolve(ROOT, cwd, clean);
+  const drive = /^[A-Za-z]:\//.test(clean);
+  // A drive-letter path can never be inside a POSIX checkout (CI runs on
+  // Linux); without this, relative() would read `C:/Users/…` as a subfolder.
+  if (drive && !/^[A-Za-z]:\//.test(String(ROOT).replace(/\\/g, '/'))) return null;
+  const abs = isAbsolute(clean) || drive ? clean : resolve(ROOT, cwd, clean);
   const r = relative(ROOT, abs).split('\\').join('/');
   if (r.startsWith('..') || isAbsolute(r)) return null;
   return segmentsOf(r).join('/');

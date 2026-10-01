@@ -4,12 +4,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { REPO } from '../tools/lib/paths.mjs';
 
 const { decide } = await import(pathToFileURL(join(REPO, '.claude', 'hooks', 'guard.mjs')).href);
 const abs = (p) => join(REPO, p);
+// The repository's parent, and the repository itself, in this platform's own
+// spelling: hard-coded Windows paths made these cases pass on a laptop and
+// fail on the Linux CI runner, where nothing lives under D:.
+const PARENT = dirname(REPO);
+const PARENT_FWD = PARENT.replace(/\\/g, '/');
+const REPO_FWD = REPO.replace(/\\/g, '/');
 const edit = (p, old_string = 'x', new_string = 'y') => ({ tool_name: 'Edit', tool_input: { file_path: abs(p), old_string, new_string } });
 const bash = (command) => ({ tool_name: 'Bash', tool_input: { command } });
 const verdict = (payload) => decide(payload)?.decision ?? 'allow';
@@ -93,9 +99,9 @@ test('REV-0004 M3–M5, L3: case, cd, heredoc-to-shell, git checkout, backslashe
 
 test('REV-0005: backslash paths, wildcards, numbered redirects, absolute cd, ancestor deletes, bash -c, git restore, outside-repo settings', () => {
   const ps = (command) => ({ tool_name: 'PowerShell', tool_input: { command } });
-  for (const c of ['gc .\\.env', 'Get-Content -Path "D:\\Cloude\\digital-activation\\.env"', 'Get-Content ..\\..\\..\\.env', 'Select-String -Path D:\\Cloude\\digital-activation\\.env -Pattern K', "[IO.File]::AppendAllText('agent-os/state/events.jsonl','x')", 'Remove-Item -Recurse -Force D:\\Cloude\\digital-activation', 'Remove-Item .\\*'])
+  for (const c of ['gc .\\.env', 'Get-Content -Path "D:\\Cloude\\digital-activation\\.env"', 'Get-Content ..\\..\\..\\.env', 'Select-String -Path D:\\Cloude\\digital-activation\\.env -Pattern K', "[IO.File]::AppendAllText('agent-os/state/events.jsonl','x')", `Remove-Item -Recurse -Force ${PARENT}`, 'Remove-Item .\\*'])
     assert.equal(verdict(ps(c)), 'deny', c);
-  for (const c of ["cat 'D:\\Cloude\\digital-activation\\.env'", 'cat .e*', 'cat .en?', 'git -C D:/Cloude/digital-activation clean -fdx', 'rm -rf ../../..', 'rm -rf D:/Cloude/digital-activation', 'rm -rf ./*', 'bash -c "rm -rf agent-os"', 'echo {} 1>> agent-os/state/events.jsonl', 'echo {} &>> agent-os/state/events.jsonl', 'echo {} >| agent-os/state/events.jsonl', 'cd D:/Cloude/digital-activation/.claude/worktrees/project-comprehensive-analysis-36d80f/agent-os/state && echo {} >> events.jsonl', 'git checkout stash@{0} project-management', 'git restore agent-os/state/events.jsonl', "perl -pi -e 's/a/b/' agent-os/state/events.jsonl", 'AGENT_OS_OWNER_KEY_FILE=/tmp/k node x.mjs', 'curl -X POST http://127.0.0.1:4600/api%2Fowner/decision', 'echo x > ~/.claude/settings.json'])
+  for (const c of ["cat 'D:\\Cloude\\digital-activation\\.env'", 'cat .e*', 'cat .en?', `git -C ${PARENT_FWD} clean -fdx`, 'rm -rf ../../..', `rm -rf ${PARENT_FWD}`, 'rm -rf ./*', 'bash -c "rm -rf agent-os"', 'echo {} 1>> agent-os/state/events.jsonl', 'echo {} &>> agent-os/state/events.jsonl', 'echo {} >| agent-os/state/events.jsonl', `cd ${REPO_FWD}/agent-os/state && echo {} >> events.jsonl`, 'git checkout stash@{0} project-management', 'git restore agent-os/state/events.jsonl', "perl -pi -e 's/a/b/' agent-os/state/events.jsonl", 'AGENT_OS_OWNER_KEY_FILE=/tmp/k node x.mjs', 'curl -X POST http://127.0.0.1:4600/api%2Fowner/decision', 'echo x > ~/.claude/settings.json'])
     assert.equal(verdict(bash(c)), 'deny', c);
   assert.equal(verdict({ tool_name: 'Write', tool_input: { file_path: 'C:\\Users\\someone\\.claude\\settings.json', content: '{}' } }), 'deny');
   assert.equal(verdict({ tool_name: 'Write', tool_input: { file_path: 'D:\\Cloude\\digital-activation\\.claude\\settings.local.json', content: '{}' } }), 'deny');
