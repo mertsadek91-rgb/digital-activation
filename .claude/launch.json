@@ -24,7 +24,16 @@
     {
       "name": "admin-webpack",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@da/admin", "exec", "next", "dev", "--webpack", "--port", "3011"],
+      "runtimeArgs": [
+        "--filter",
+        "@da/admin",
+        "exec",
+        "next",
+        "dev",
+        "--webpack",
+        "--port",
+        "3011"
+      ],
       "port": 3011
     },
     {
@@ -35,6 +44,14 @@
         "4600"
       ],
       "port": 4600
+    },
+    {
+      "name": "admin-mock-api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "apps/admin/mock/api.mjs"
+      ],
+      "port": 4000
     }
   ]
 }

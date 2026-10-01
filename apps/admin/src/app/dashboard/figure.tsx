@@ -3,6 +3,7 @@
 import type { DashboardWindow } from '@da/contracts';
 
 import { useT } from '../../i18n/provider';
+import { Icon, type IconName } from '../icons';
 import type { Formatters } from './formatters';
 
 /**
@@ -19,11 +20,16 @@ export function Figure({
   window: span,
   comparison,
   format,
+  icon = 'money',
+  tone,
 }: {
   label: string;
   window: DashboardWindow;
   comparison: string;
   format: Formatters;
+  /** The mark in the card's corner — the template's way of telling five figures apart at a glance. */
+  icon?: IconName;
+  tone?: 'info' | 'success' | 'warning' | 'danger' | 'secondary';
 }) {
   const t = useT('dashboard');
   const now = Number(span.revenueUsd);
@@ -34,6 +40,11 @@ export function Figure({
 
   return (
     <div className="dash-figure">
+      <div className="dash-figure-top">
+        <span className={`dash-figure-icon${tone ? ` is-${tone}` : ''}`} aria-hidden="true">
+          <Icon name={icon} />
+        </span>
+      </div>
       <p className="dash-figure-label">{label}</p>
       <p className="dash-figure-value">{format.money(span.revenueUsd)}</p>
       <p className={`dash-delta is-${direction}`}>

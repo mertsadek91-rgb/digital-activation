@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { AuthBrand } from '../auth-brand';
 
 /**
  * Staff sign-in.
@@ -73,6 +74,7 @@ export default function LoginPage() {
         }}
         className="auth-card"
       >
+        <AuthBrand />
         <h1>{t('title')}</h1>
 
         {stage.kind === 'password' ? (

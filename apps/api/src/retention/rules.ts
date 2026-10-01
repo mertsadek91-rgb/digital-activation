@@ -208,7 +208,7 @@ export function hasOptedOut(
  * without the letters that read as digits, so a customer typing it from a
  * phone screen gets it right. Fits `promotionCodeSchema`.
  */
-export function mintCode(prefix: 'RENEW' | 'BACK'): string {
+export function mintCode(prefix: 'RENEW' | 'BACK' | 'OFFER'): string {
   const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const bytes = crypto.randomBytes(10);
   let body = '';

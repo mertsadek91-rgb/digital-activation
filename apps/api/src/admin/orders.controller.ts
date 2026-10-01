@@ -19,10 +19,13 @@ import {
   type AdminOrderList,
   addOrderNoteSchema,
   confirmPaymentSchema,
+  type OrderMessageResult,
+  orderMessageResultSchema,
   type RefundOrderResult,
   refundOrderResultSchema,
   refundOrderSchema,
   releaseHoldSchema,
+  sendOrderMessageSchema,
   adminOrderListSchema,
   adminOrderDetailSchema,
 } from '@da/contracts';
@@ -35,6 +38,7 @@ import { say } from '../common/panel-locale.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
+import { OrderMessagesService } from './order-messages.service.js';
 import { OrdersService } from './orders.service.js';
 
 /**
@@ -55,6 +59,7 @@ import { OrdersService } from './orders.service.js';
 export class OrdersController {
   constructor(
     private readonly orders: OrdersService,
+    private readonly messages: OrderMessagesService,
     private readonly audit: AuditService,
   ) {}
 
@@ -221,6 +226,32 @@ export class OrdersController {
       orderItemId,
       staffId: request.staff?.sub ?? '',
       totpAt: request.staff?.totpAt ?? 0,
+      context: { ip: request.ip, userAgent: request.headers['user-agent'] },
+    });
+  }
+
+  /**
+   * A message to the customer: a receipt, a review invitation, a renewal
+   * reminder, a discount code, or a sentence of the staff member's own. The
+   * address is the order's and is not a parameter. Throttled like the resend,
+   * for the same reason: a person answering a customer never needs twenty a
+   * minute, and nothing that could should be able to.
+   */
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Roles('OWNER', 'ADMIN', 'SUPPORT')
+  @Post(':number/messages')
+  @ZodResponse(orderMessageResultSchema)
+  @ApiOperation({ summary: 'Send the customer a message about this order' })
+  sendMessage(
+    @Param('number') number: string,
+    @Body(new ZodPipe(sendOrderMessageSchema)) body: z.infer<typeof sendOrderMessageSchema>,
+    @Req() request: StaffRequest,
+  ): Promise<OrderMessageResult> {
+    return this.messages.send({
+      number,
+      body,
+      staffId: request.staff?.sub ?? '',
+      staffRole: request.staff?.role ?? '',
       context: { ip: request.ip, userAgent: request.headers['user-agent'] },
     });
   }

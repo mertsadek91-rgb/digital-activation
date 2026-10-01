@@ -32,6 +32,8 @@ import type {
   AdminFpOverview,
   AdminOrderDetail,
   AdminOrderList,
+  OrderMessageResult,
+  SendOrderMessage,
   AdminPage,
   AdminPageList,
   AdminPageVersionList,
@@ -671,10 +673,17 @@ export const api = {
       body: JSON.stringify({ reason }),
     }),
 
-  addOrderNote: (number: string, body: string) =>
+  /** A message to the customer about this order; the address is the order's. */
+  sendOrderMessage: (number: string, body: SendOrderMessage) =>
+    request<OrderMessageResult>(`/admin/orders/${encodeURIComponent(number)}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  addOrderNote: (number: string, body: string, isCustomerVisible = false) =>
     request<{ id: string }>(`/admin/orders/${encodeURIComponent(number)}/notes`, {
       method: 'POST',
-      body: JSON.stringify({ body, isCustomerVisible: false }),
+      body: JSON.stringify({ body, isCustomerVisible }),
     }),
 
   // --- redirects ---------------------------------------------------------------

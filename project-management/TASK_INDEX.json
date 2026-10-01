@@ -1771,6 +1771,117 @@
       "updated_at": "2026-09-30",
       "reaudit": null,
       "file": "tasks/active/TASK-0089.md"
+    },
+    {
+      "id": "TASK-0090",
+      "title": "Apply the licensed Envato (MediCore) admin template design system to the whole admin panel",
+      "type": "feature",
+      "status": "QA",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 80,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "admin/shell",
+        "admin/design-system"
+      ],
+      "affected_pages": [
+        "admin:*"
+      ],
+      "affected_files": [
+        "apps/admin/src/app/nav.tsx",
+        "apps/admin/src/app/layout.tsx",
+        "apps/admin/src/app/globals.css",
+        "apps/admin/src/app/admin.css",
+        "apps/admin/src/app/theme.css",
+        "apps/admin/src/app/components.css",
+        "apps/admin/src/app/shell.css",
+        "apps/admin/src/app/theme.ts",
+        "apps/admin/src/app/theme-provider.tsx",
+        "apps/admin/src/app/icons.tsx",
+        "apps/admin/src/app/auth-brand.tsx",
+        "apps/admin/src/app/login/page.tsx",
+        "apps/admin/src/app/password/page.tsx",
+        "apps/admin/src/app/dashboard/page.tsx",
+        "apps/admin/src/app/dashboard/figure.tsx"
+      ],
+      "created_at": "2026-10-01",
+      "updated_at": "2026-10-01",
+      "reaudit": null,
+      "file": "tasks/qa/TASK-0090.md"
+    },
+    {
+      "id": "TASK-0091",
+      "title": "Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin",
+      "type": "feature",
+      "status": "QA",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 70,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "api-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-engineer",
+        "backend-architect",
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "qa-lead",
+        "pm-03",
+        "pm-04",
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "admin/orders",
+        "api/admin/orders",
+        "api/mail"
+      ],
+      "affected_pages": [
+        "admin:/orders",
+        "admin:/orders/[number]"
+      ],
+      "affected_files": [
+        "apps/admin/src/app/orders/",
+        "apps/admin/src/app/customers/page.tsx",
+        "apps/admin/src/lib/api.ts",
+        "apps/admin/src/i18n/messages/",
+        "apps/admin/mock/api.mjs",
+        "apps/api/src/admin/",
+        "apps/api/src/mail/templates.ts",
+        "apps/api/src/retention/rules.ts",
+        "packages/contracts/src/"
+      ],
+      "created_at": "2026-10-01",
+      "updated_at": "2026-10-01",
+      "reaudit": null,
+      "file": "tasks/qa/TASK-0091.md"
     }
   ]
 }

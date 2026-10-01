@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { AuthBrand } from '../auth-brand';
 
 /**
  * Setting a password of your own.
@@ -70,9 +71,10 @@ export default function PasswordPage() {
         }}
         className="auth-card"
       >
+        <AuthBrand />
         <h1>{forced ? t('titleForced') : t('titleRoutine')}</h1>
 
-        {forced ? <p className="enroll-lede">{t('forcedLede')}</p> : null}
+        {forced ? <p className="auth-lede">{t('forcedLede')}</p> : null}
 
         <label>
           {t('current')}

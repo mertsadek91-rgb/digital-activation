@@ -404,9 +404,14 @@ export const adminOrderLineSchema = z.object({
   sku: z.string(),
   productName: z.string(),
   qty: z.number().int().min(1),
+  unitPrice: moneySchema,
   lineTotal: moneySchema,
   fulfillmentState: z.enum(['PENDING', 'AUTO_ASSIGNED', 'MANUAL_QUEUE', 'DELIVERED', 'FAILED']),
   deliveredAt: z.string().nullable(),
+  /** What the supplier hands back for this line, so the paste box takes the right shape. */
+  credentialKind: credentialKindSchema,
+  /** When a time-limited licence ends, from its delivery; null for lifetime or undelivered. */
+  expiresAt: z.string().nullable(),
 });
 
 /**
@@ -427,7 +432,58 @@ export const adminOrderEventSchema = z.object({
 });
 export type AdminOrderEvent = z.infer<typeof adminOrderEventSchema>;
 
+/**
+ * The person behind the order, as the order page shows them.
+ *
+ * Null for a guest checkout that never became an account. The spend and the
+ * count are computed live from paid orders, like the customers screen does —
+ * the denormalised columns on the customer row are not kept current.
+ */
+export const adminOrderCustomerSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  phone: z.string().nullable(),
+  whatsappPhone: z.string().nullable(),
+  company: z.string().nullable(),
+  locale: localeSchema,
+  riskLevel: z.enum(['LOW', 'MEDIUM', 'HIGH', 'BLOCKED']),
+  paidOrders: z.number().int().min(0),
+  totalSpentUsd: moneySchema,
+  marketingEmail: z.enum(['OPTED_IN', 'OPTED_OUT', 'NONE']),
+  whatsappOptIn: z.boolean(),
+  createdAt: z.string(),
+});
+export type AdminOrderCustomer = z.infer<typeof adminOrderCustomerSchema>;
+
 export const adminOrderDetailSchema = adminOrderRowSchema.extend({
+  customer: adminOrderCustomerSchema.nullable(),
+  /** What the invoice says, as typed at checkout. */
+  billing: z.object({
+    name: z.string().nullable(),
+    company: z.string().nullable(),
+    vat: z.string().nullable(),
+    country: z.string().nullable(),
+  }),
+  /**
+   * The order's arithmetic, in USD, and what was actually charged.
+   *
+   * `charged` is the succeeded payment row's own amount and currency — never
+   * `totalUsd × fxRate`: a transfer or a Final Processor payment is charged
+   * in USD whatever currency the shopper browsed in, and a conversion the
+   * shop never collected is not a fact about the order. Null until a payment
+   * succeeds. `currency` and `fxRate` are what the checkout showed.
+   */
+  amounts: z.object({
+    subtotalUsd: moneySchema,
+    discountUsd: moneySchema,
+    taxUsd: moneySchema,
+    totalUsd: moneySchema,
+    currency: z.string(),
+    fxRate: z.string(),
+    charged: z.object({ amount: moneySchema, currency: z.string() }).nullable(),
+  }),
+  /** Where the order came from; the risk screen's raw material. */
+  client: z.object({ ip: z.string().nullable(), userAgent: z.string().nullable() }),
   /**
    * Status history, oldest first. Empty for orders placed before it was
    * recorded; the timeline then starts from `placedAt` alone.
@@ -564,6 +620,73 @@ export const refundOrderResultSchema = z.object({
     .nullable(),
 });
 export type RefundOrderResult = z.infer<typeof refundOrderResultSchema>;
+
+/**
+ * A message to the customer, sent by a member of staff from the order page.
+ *
+ * Five kinds and no free-form "any template": each one is a sentence the
+ * store already knows how to say, so a support agent cannot be talked into
+ * sending something the store would not. `custom` is the exception and is
+ * plain text under the store's frame, never HTML from the box.
+ *
+ * `offer` mints a single-use code for this customer and is marketing: it is
+ * refused without marketing consent and leaves with an unsubscribe link.
+ */
+export const orderMessageKindSchema = z.enum([
+  'payment_received',
+  'review_request',
+  'renewal_reminder',
+  'offer',
+  'custom',
+]);
+export type OrderMessageKind = z.infer<typeof orderMessageKindSchema>;
+
+export const sendOrderMessageSchema = z
+  .object({
+    kind: orderMessageKindSchema,
+    /** `custom` only. */
+    subject: z.string().trim().min(2).max(150).optional(),
+    /** `custom`: the message. `offer`: an optional line above the code. */
+    body: z.string().trim().min(2).max(4000).optional(),
+    /** `offer` only: 1–90. */
+    percent: z.number().int().min(1).max(90).optional(),
+    /** `offer` only: how long the code lives. Default 14 days. */
+    validDays: z.number().int().min(1).max(90).default(14),
+    /** `renewal_reminder` only: which line; the first time-limited one otherwise. */
+    orderItemId: z.string().optional(),
+  })
+  .refine((input) => input.kind !== 'custom' || (input.subject && input.body), {
+    message: 'a custom message needs a subject and a body',
+    path: ['body'],
+  })
+  .refine((input) => input.kind !== 'offer' || input.percent !== undefined, {
+    message: 'an offer needs a percentage',
+    path: ['percent'],
+  });
+export type SendOrderMessage = z.input<typeof sendOrderMessageSchema>;
+
+export const orderMessageResultSchema = z.object({
+  sent: z.boolean(),
+  to: z.string(),
+  template: z.string(),
+  /** The minted code, for an offer that went out. */
+  code: z.string().nullable(),
+  /**
+   * Why nothing was sent, when `sent` is false and no error was raised:
+   * the customer was already invited, the order has no time-limited line, …
+   */
+  skipped: z
+    .enum([
+      'guest_order',
+      'already_invited',
+      'already_reviewed',
+      'nothing_delivered',
+      'no_term',
+      'not_paid',
+    ])
+    .nullable(),
+});
+export type OrderMessageResult = z.infer<typeof orderMessageResultSchema>;
 
 export const addOrderNoteSchema = z.object({
   body: z.string().trim().min(2).max(2000),

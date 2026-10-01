@@ -215,16 +215,22 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "REVIEWING",
       "current_task": null,
       "assignments": [],
-      "supporting": [],
-      "reviews": [],
-      "reviews_recorded": 0,
+      "supporting": [
+        "TASK-0090",
+        "TASK-0091"
+      ],
+      "reviews": [
+        "TASK-0090",
+        "TASK-0091"
+      ],
+      "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 0,
+      "workload": 2,
       "blockers": [],
-      "last_activity": null
+      "last_activity": "2026-10-01T08:30:04Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -314,16 +320,20 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
-      "supporting": [],
+      "state": "QA_SUPPORT",
+      "current_task": "TASK-0090",
+      "assignments": [
+        "TASK-0090"
+      ],
+      "supporting": [
+        "TASK-0091"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-09-29T14:05:48Z"
+      "last_activity": "2026-10-01T11:26:14Z"
     },
     {
       "id": "backend-architect",
@@ -342,12 +352,13 @@
       ],
       "supporting": [
         "TASK-0004",
-        "TASK-0080"
+        "TASK-0080",
+        "TASK-0091"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 4.5,
       "blockers": [],
       "last_activity": "2026-09-30T13:48:48Z"
     },
@@ -412,15 +423,17 @@
       "executor": "main",
       "squads": [],
       "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "current_task": "TASK-0091",
+      "assignments": [
+        "TASK-0091"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": null
+      "last_activity": "2026-10-01T11:28:27Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -702,19 +715,21 @@
       "staffed": true,
       "executor": "subagent:independent-reviewer",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "REVIEWING",
       "current_task": null,
       "assignments": [],
       "supporting": [
         "TASK-0001",
         "TASK-0060"
       ],
-      "reviews": [],
-      "reviews_recorded": 8,
+      "reviews": [
+        "TASK-0091"
+      ],
+      "reviews_recorded": 9,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-09-30T08:03:08Z"
+      "last_activity": "2026-10-01T11:25:57Z"
     },
     {
       "id": "functional-qa-engineer",

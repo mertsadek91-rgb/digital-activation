@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0091 — Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin (QA, 70%)

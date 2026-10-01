@@ -58,7 +58,11 @@ export default function CustomersPage() {
   const c = useT('common');
   const me = useStaff();
   const [data, setData] = useState<AdminCustomerList | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() =>
+    typeof window === 'undefined'
+      ? ''
+      : (new URLSearchParams(window.location.search).get('q') ?? ''),
+  );
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);

@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { CheckoutModule } from '../checkout/checkout.module.js';
 import { FulfillmentModule } from '../fulfillment/fulfillment.module.js';
 import { MailModule } from '../mail/mail.module.js';
+import { MarketingModule } from '../marketing/marketing.module.js';
 import { ReviewsModule } from '../reviews/reviews.module.js';
 import { VaultModule } from '../vault/vault.module.js';
 
@@ -21,6 +22,7 @@ import { DashboardController } from './dashboard.controller.js';
 import { DashboardService } from './dashboard.service.js';
 import { LaunchController } from './launch.controller.js';
 import { LaunchService } from './launch.service.js';
+import { OrderMessagesService } from './order-messages.service.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersService } from './orders.service.js';
 import { ProductContentController } from './product-content.controller.js';
@@ -32,7 +34,15 @@ import { TaxonomyController } from './taxonomy.controller.js';
 import { TaxonomyService } from './taxonomy.service.js';
 
 @Module({
-  imports: [AuthModule, VaultModule, CheckoutModule, FulfillmentModule, ReviewsModule, MailModule],
+  imports: [
+    AuthModule,
+    VaultModule,
+    CheckoutModule,
+    FulfillmentModule,
+    ReviewsModule,
+    MailModule,
+    MarketingModule,
+  ],
   controllers: [
     AdminController,
     CatalogEditController,
@@ -55,6 +65,7 @@ import { TaxonomyService } from './taxonomy.service.js';
     ContentArticlesService,
     ContentBrandsService,
     OrdersService,
+    OrderMessagesService,
     CustomersService,
     PromotionsService,
     LaunchService,

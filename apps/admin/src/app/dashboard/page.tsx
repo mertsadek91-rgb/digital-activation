@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
+import { Icon } from '../icons';
 import { Attention } from './attention';
 import { Figure } from './figure';
 import { useFormatters } from './formatters';
@@ -81,6 +82,7 @@ export default function DashboardPage() {
             disabled={busy}
             onClick={() => void load()}
           >
+            <Icon name="refresh" />
             {busy ? c('busy') : t('refresh')}
           </button>
         </div>
@@ -98,20 +100,30 @@ export default function DashboardPage() {
               window={data.today}
               comparison={t('vsYesterday')}
               format={format}
+              icon="money"
             />
             <Figure
               label={t('last7')}
               window={data.last7}
               comparison={t('vsPrevious7')}
               format={format}
+              icon="calendar"
+              tone="info"
             />
             <Figure
               label={t('last30')}
               window={data.last30}
               comparison={t('vsPrevious30')}
               format={format}
+              icon="calendar"
+              tone="success"
             />
             <div className="dash-figure">
+              <div className="dash-figure-top">
+                <span className="dash-figure-icon is-secondary" aria-hidden="true">
+                  <Icon name="orders" />
+                </span>
+              </div>
               <p className="dash-figure-label">{t('averageOrder')}</p>
               <p className="dash-figure-value">
                 {data.averageOrderUsd === null ? c('none') : format.money(data.averageOrderUsd)}
@@ -123,6 +135,11 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="dash-figure">
+              <div className="dash-figure-top">
+                <span className="dash-figure-icon is-danger" aria-hidden="true">
+                  <Icon name="undo" />
+                </span>
+              </div>
               <p className="dash-figure-label">{t('refunded')}</p>
               <p className="dash-figure-value">{format.money(data.refundedUsd)}</p>
               <p className="dash-figure-note">{t('refundedNote')}</p>
@@ -178,12 +195,12 @@ export default function DashboardPage() {
                     <li
                       key={order.number}
                       className="dash-recent-item"
-                      onClick={() => router.push('/orders')}
+                      onClick={() => router.push(`/orders/${encodeURIComponent(order.number)}`)}
                       role="button"
                       tabIndex={0}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
-                          router.push('/orders');
+                          router.push(`/orders/${encodeURIComponent(order.number)}`);
                         }
                       }}
                     >
