@@ -821,3 +821,197 @@ ${button(input.productUrl, 'Go to the product')}`;
       : `${input.productName} is back in stock:\n${input.productUrl}`,
   };
 }
+
+// --- sent by a member of staff, from the order page --------------------------
+
+/**
+ * "Your payment arrived." Sent by hand after a transfer or crypto payment is
+ * confirmed, when the automatic receipt is not enough — a customer who paid
+ * by bank and heard nothing for a day writes in, and this is the answer.
+ */
+export function paymentReceived(input: {
+  locale: 'ar' | 'en';
+  firstName: string | null;
+  orderNumber: string;
+  /** Already formatted with its currency. */
+  total: string;
+  lines: { productName: string; qty: number }[];
+  orderUrl: string;
+  supportEmail: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const greeting = input.firstName ? ` ${input.firstName}` : '';
+  const list = input.lines
+    .map(
+      (line) =>
+        `<tr><td dir="auto" style="padding:8px 0;border-bottom:1px solid ${BORDER};color:${INK};">${escape(line.productName)}${line.qty > 1 ? ` × ${String(line.qty)}` : ''}</td></tr>`,
+    )
+    .join('');
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">وصلنا مبلغ طلبك${escape(greeting)}</h1>
+<p>تأكّد استلام <strong dir="ltr">${escape(input.total)}</strong> لطلبك <span dir="ltr">${escape(input.orderNumber)}</span>، وبدأ تجهيزه الآن:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table>
+${button(input.orderUrl, 'تابع طلبك')}
+<p style="color:${MUTED};font-size:13px;">ما يُسلَّم فوراً يصلك في رسالة منفصلة؛ وما يُطلب من المورّد نرسله حال وصوله. لأي سؤال: <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a>.</p>`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">We received your payment${escape(greeting)}</h1>
+<p>Your <strong dir="ltr">${escape(input.total)}</strong> for order <span dir="ltr">${escape(input.orderNumber)}</span> has arrived, and the order is now being prepared:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">${list}</table>
+${button(input.orderUrl, 'Track your order')}
+<p style="color:${MUTED};font-size:13px;">Anything delivered instantly arrives in a separate email; anything ordered from the supplier follows as soon as it lands. Questions: <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a>.</p>`;
+
+  const text = [
+    ar
+      ? `وصلنا مبلغ طلبك ${input.orderNumber}: ${input.total}`
+      : `Payment received for order ${input.orderNumber}: ${input.total}`,
+    ...input.lines.map(
+      (line) => `- ${line.productName}${line.qty > 1 ? ` × ${String(line.qty)}` : ''}`,
+    ),
+    '',
+    input.orderUrl,
+    '',
+    input.supportEmail,
+  ].join('\n');
+
+  return {
+    subject: ar
+      ? `وصلنا مبلغ طلبك ${input.orderNumber}`
+      : `Payment received for order ${input.orderNumber}`,
+    html: shell({ locale: input.locale, title: 'Payment received', body }),
+    text,
+  };
+}
+
+/**
+ * A single-use discount, offered by a member of staff to one customer.
+ *
+ * Marketing, and framed as such: the licence number the law wants on an
+ * advertised discount, and an unsubscribe link. The optional note is plain
+ * text from the staff member — escaped, never HTML.
+ */
+export function offerEmail(input: {
+  locale: 'ar' | 'en';
+  firstName: string | null;
+  code: string;
+  percent: number;
+  /** Already formatted for the reader. */
+  validUntil: string;
+  licenceNumber: string;
+  note: string | null;
+  storeUrl: string;
+  unsubscribeUrl: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const greeting = input.firstName ? ` ${input.firstName}` : '';
+  const licence = input.licenceNumber
+    ? `<p style="color:${MUTED};font-size:13px;">${ar ? 'رقم ترخيص التخفيض' : 'Discount licence no.'}: <span dir="ltr">${escape(input.licenceNumber)}</span></p>`
+    : '';
+  const note = input.note
+    ? `<p dir="auto" style="white-space:pre-wrap;">${escape(input.note)}</p>`
+    : '';
+
+  const body = ar
+    ? `<h1 style="margin:0 0 8px;font-size:20px;">خصم ${String(input.percent)}٪ لك${escape(greeting)}</h1>
+${note}
+<p style="background:#e8f4f2;padding:14px;border-radius:5px;font-size:16px;">الكود: <strong dir="ltr" style="font-family:monospace;font-size:18px;">${escape(input.code)}</strong><br><span style="color:${MUTED};font-size:13px;">لمرّة واحدة، وصالح حتى ${escape(input.validUntil)}.</span></p>
+${button(input.storeUrl, 'تسوّق الآن')}
+${licence}
+<p style="color:${MUTED};font-size:12px;">لا تريد رسائل العروض؟ <a href="${escape(input.unsubscribeUrl)}" style="color:${TEAL};">ألغِ الاشتراك</a>.</p>`
+    : `<h1 style="margin:0 0 8px;font-size:20px;">${String(input.percent)}% off, for you${escape(greeting)}</h1>
+${note}
+<p style="background:#e8f4f2;padding:14px;border-radius:5px;font-size:16px;">Code: <strong dir="ltr" style="font-family:monospace;font-size:18px;">${escape(input.code)}</strong><br><span style="color:${MUTED};font-size:13px;">Single use, valid until ${escape(input.validUntil)}.</span></p>
+${button(input.storeUrl, 'Shop now')}
+${licence}
+<p style="color:${MUTED};font-size:12px;">Do not want offers by email? <a href="${escape(input.unsubscribeUrl)}" style="color:${TEAL};">Unsubscribe</a>.</p>`;
+
+  const text = [
+    ar
+      ? `خصم ${String(input.percent)}٪ بالكود ${input.code}`
+      : `${String(input.percent)}% off with code ${input.code}`,
+    input.note ?? '',
+    ar ? `لمرّة واحدة، حتى ${input.validUntil}.` : `Single use, until ${input.validUntil}.`,
+    input.licenceNumber
+      ? `${ar ? 'رقم ترخيص التخفيض' : 'Discount licence no.'}: ${input.licenceNumber}`
+      : '',
+    '',
+    input.storeUrl,
+    `${ar ? 'إلغاء الاشتراك' : 'Unsubscribe'}: ${input.unsubscribeUrl}`,
+  ]
+    .filter((line, index, all) => line !== '' || all[index - 1] !== '')
+    .join('\n');
+
+  return {
+    subject: ar
+      ? `خصم ${String(input.percent)}٪ على طلبك القادم`
+      : `${String(input.percent)}% off your next order`,
+    html: shell({
+      locale: input.locale,
+      title: 'Your discount code',
+      body,
+      footerNote: ar
+        ? 'وصلتك هذه الرسالة لأنك وافقت على رسائل العروض من متجرنا.'
+        : 'You are receiving this because you agreed to offers from our store.',
+    }),
+    text,
+  };
+}
+
+/**
+ * A message written by a member of staff about one order.
+ *
+ * Plain text under the store's frame. `white-space: pre-wrap` keeps the
+ * writer's paragraphs; everything is escaped, so nothing typed in the panel
+ * becomes markup in the inbox.
+ */
+export function storeMessage(input: {
+  locale: 'ar' | 'en';
+  firstName: string | null;
+  subject: string;
+  body: string;
+  orderNumber: string;
+  orderUrl: string;
+  supportEmail: string;
+}): Rendered {
+  const ar = input.locale === 'ar';
+  const greeting = input.firstName
+    ? ar
+      ? `مرحباً ${input.firstName}،`
+      : `Hello ${input.firstName},`
+    : ar
+      ? 'مرحباً،'
+      : 'Hello,';
+
+  const body = `<h1 style="margin:0 0 8px;font-size:20px;">${escape(input.subject)}</h1>
+<p>${escape(greeting)}</p>
+<p dir="auto" style="white-space:pre-wrap;">${escape(input.body)}</p>
+<p style="color:${MUTED};font-size:13px;border-top:1px solid ${BORDER};padding-top:12px;">${
+    ar
+      ? `بخصوص طلبك <span dir="ltr">${escape(input.orderNumber)}</span> — <a href="${escape(input.orderUrl)}" style="color:${TEAL};">صفحة الطلب</a>. للرد، راسِلنا على <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a>.`
+      : `About your order <span dir="ltr">${escape(input.orderNumber)}</span> — <a href="${escape(input.orderUrl)}" style="color:${TEAL};">order page</a>. To reply, write to <a href="mailto:${escape(input.supportEmail)}" style="color:${TEAL};">${escape(input.supportEmail)}</a>.`
+  }</p>`;
+
+  const text = [
+    input.subject,
+    '',
+    greeting,
+    input.body,
+    '',
+    `${ar ? 'الطلب' : 'Order'} ${input.orderNumber}: ${input.orderUrl}`,
+    input.supportEmail,
+  ].join('\n');
+
+  return {
+    subject: ar
+      ? `${input.subject} — طلب ${input.orderNumber}`
+      : `${input.subject} — order ${input.orderNumber}`,
+    html: shell({
+      locale: input.locale,
+      title: input.subject,
+      body,
+      footerNote: ar
+        ? 'رسالة من فريق المتجر بخصوص طلبك.'
+        : 'A message from the store team about your order.',
+    }),
+    text,
+  };
+}

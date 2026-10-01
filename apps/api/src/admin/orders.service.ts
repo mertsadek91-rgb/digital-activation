@@ -13,7 +13,7 @@ import {
   OrderStatus,
   PaymentProvider,
   PaymentState,
-  type Prisma,
+  Prisma,
   RiskLevel,
 } from '@da/db';
 
@@ -22,6 +22,7 @@ import { CheckoutService } from '../checkout/checkout.service.js';
 import { FpPaymentsService } from '../checkout/fp-payments.service.js';
 import { recordOrderTransition } from '../checkout/order-status.js';
 import { CSV_BOM, csvRow } from '../common/csv.js';
+import { licenceExpiry, termOf } from '../common/licence-term.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -46,6 +47,28 @@ import { PrismaService } from '../prisma/prisma.service.js';
  * its backup is a file full of customer licence keys — so notes here are for
  * what was agreed, never for what was delivered.
  */
+/** Three places for the currencies counted in thousandths. */
+export function formatCharged(amount: Prisma.Decimal, currency: string): string {
+  return amount.toFixed(['BHD', 'JOD', 'KWD', 'OMR', 'TND'].includes(currency) ? 3 : 2);
+}
+
+/**
+ * What the customer actually paid: the succeeded payment row, as charged.
+ * Null until one succeeds; the first one if several did (a re-try after a
+ * decline leaves the failed row behind).
+ */
+export function chargedAmount(
+  payments: { state: PaymentState; amountCharged: Prisma.Decimal; chargedCurrency: string }[],
+): { amount: string; currency: string } | null {
+  const paid = payments.find((payment) => payment.state === PaymentState.SUCCEEDED);
+  return paid
+    ? {
+        amount: formatCharged(paid.amountCharged, paid.chargedCurrency),
+        currency: paid.chargedCurrency,
+      }
+    : null;
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -114,7 +137,30 @@ export class OrdersService {
       where: { number },
       include: {
         ...this.include,
-        items: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            whatsappPhone: true,
+            company: true,
+            locale: true,
+            riskLevel: true,
+            marketingOptInAt: true,
+            marketingOptOutAt: true,
+            whatsappOptInAt: true,
+            whatsappOptOutAt: true,
+            createdAt: true,
+          },
+        },
+        items: {
+          include: {
+            variant: {
+              select: { credentialKind: true, licensePeriodUnit: true, licensePeriodValue: true },
+            },
+          },
+        },
         notes: { include: { author: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
         statusEvents: { orderBy: { createdAt: 'asc' } },
       },
@@ -142,8 +188,72 @@ export class OrdersService {
         : [];
     const staffName = new Map(staff.map((member) => [member.id, member.name]));
 
+    // The customer's standing, computed live: the denormalised counters on
+    // the customer row are not maintained, and a lifetime value that reads
+    // zero beside a third order is worse than none.
+    const paid = order.customer
+      ? await this.prisma.client.order.aggregate({
+          where: {
+            customerId: order.customer.id,
+            status: {
+              in: [
+                OrderStatus.PAID,
+                OrderStatus.FULFILLING,
+                OrderStatus.FULFILLED,
+                OrderStatus.COMPLETED,
+                OrderStatus.PARTIALLY_REFUNDED,
+              ],
+            },
+          },
+          _count: { _all: true },
+          _sum: { totalUsd: true },
+        })
+      : null;
+    const consent = (optIn: Date | null, optOut: Date | null): 'OPTED_IN' | 'OPTED_OUT' | 'NONE' =>
+      optIn && (!optOut || optOut < optIn) ? 'OPTED_IN' : optOut ? 'OPTED_OUT' : 'NONE';
+
     return {
       ...this.toRow(order),
+      customer:
+        order.customer && paid
+          ? {
+              id: order.customer.id,
+              name:
+                [order.customer.firstName, order.customer.lastName].filter(Boolean).join(' ') ||
+                null,
+              phone: order.customer.phone,
+              whatsappPhone: order.customer.whatsappPhone,
+              company: order.customer.company,
+              locale: order.customer.locale === Locale.EN ? 'en' : 'ar',
+              riskLevel: order.customer.riskLevel,
+              paidOrders: paid._count._all,
+              totalSpentUsd: (paid._sum.totalUsd ?? new Prisma.Decimal(0)).toFixed(2),
+              marketingEmail: consent(
+                order.customer.marketingOptInAt,
+                order.customer.marketingOptOutAt,
+              ),
+              whatsappOptIn:
+                consent(order.customer.whatsappOptInAt, order.customer.whatsappOptOutAt) ===
+                'OPTED_IN',
+              createdAt: order.customer.createdAt.toISOString(),
+            }
+          : null,
+      billing: {
+        name: order.billingName,
+        company: order.billingCompany,
+        vat: order.billingVat,
+        country: order.billingCountry,
+      },
+      amounts: {
+        subtotalUsd: order.subtotalUsd.toFixed(2),
+        discountUsd: order.discountUsd.toFixed(2),
+        taxUsd: order.taxUsd.toFixed(2),
+        totalUsd: order.totalUsd.toFixed(2),
+        currency: order.currency,
+        fxRate: order.fxRate.toString(),
+        charged: chargedAmount(order.payments),
+      },
+      client: { ip: order.ip, userAgent: order.userAgent },
       history: order.statusEvents.map((event) => ({
         id: event.id,
         from: event.from,
@@ -164,9 +274,20 @@ export class OrdersService {
         sku: item.skuSnapshot,
         productName: item.productNameSnapshot,
         qty: item.qty,
+        unitPrice: item.unitPriceUsd.toFixed(2),
         lineTotal: item.lineTotalUsd.toFixed(2),
         fulfillmentState: item.fulfillmentState,
         deliveredAt: item.deliveredAt?.toISOString() ?? null,
+        credentialKind: item.variant.credentialKind,
+        expiresAt: item.deliveredAt
+          ? (licenceExpiry(
+              item.deliveredAt,
+              termOf(item.variantSpecSnapshot, {
+                unit: item.variant.licensePeriodUnit,
+                value: item.variant.licensePeriodValue,
+              }),
+            )?.toISOString() ?? null)
+          : null,
       })),
       notes: order.notes.map((note) => ({
         id: note.id,
@@ -676,10 +797,7 @@ export class OrdersService {
         testMode: payment.testMode,
         state: payment.state,
         reference: payment.providerRef,
-        // Three places for the currencies counted in thousandths.
-        amount: payment.amountCharged.toFixed(
-          ['BHD', 'JOD', 'KWD', 'OMR', 'TND'].includes(payment.chargedCurrency) ? 3 : 2,
-        ),
+        amount: formatCharged(payment.amountCharged, payment.chargedCurrency),
         currency: payment.chargedCurrency,
         createdAt: payment.createdAt.toISOString(),
       })),

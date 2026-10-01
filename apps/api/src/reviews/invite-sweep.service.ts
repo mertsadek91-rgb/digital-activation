@@ -135,6 +135,8 @@ export class InviteSweepService {
               review: null,
             },
           },
+          // A hand-sent invitation from the order page is stage 0 and does
+          // not stop the ladder: the owner wants both (decision on TASK-0091).
           reviewInvites: { none: { stage } },
         },
         // Oldest first: a backlog is worked from the end that has been waiting

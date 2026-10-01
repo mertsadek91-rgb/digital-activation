@@ -220,11 +220,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 5,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": null
+      "last_activity": "2026-10-01T11:49:05Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -323,7 +323,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-09-29T14:05:48Z"
+      "last_activity": "2026-10-01T11:50:50Z"
     },
     {
       "id": "backend-architect",
@@ -420,7 +420,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": null
+      "last_activity": "2026-10-01T11:50:48Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -710,11 +710,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 8,
+      "reviews_recorded": 10,
       "opportunities": [],
       "workload": 1,
       "blockers": [],
-      "last_activity": "2026-09-30T08:03:08Z"
+      "last_activity": "2026-10-01T11:44:33Z"
     },
     {
       "id": "functional-qa-engineer",

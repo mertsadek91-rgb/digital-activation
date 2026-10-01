@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { softBreakEmail } from '../../lib/text';
 import { Nav } from '../nav';
 
 /**
@@ -254,7 +255,7 @@ function QueueRow({
         </td>
 
         <td className="queue-mail">
-          <span dir="ltr">{row.email}</span>
+          <span dir="ltr">{softBreakEmail(row.email)}</span>
           <button type="button" className="linky" onClick={() => void copy(row.email, c('email'))}>
             {c('copy')}
           </button>

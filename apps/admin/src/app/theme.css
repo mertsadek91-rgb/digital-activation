@@ -1,0 +1,221 @@
+/*
+ * The admin's design tokens — the MediCore admin template (Envato, licence
+ * 6EB7W3PXGL), carried onto the token names this panel already uses.
+ *
+ * Two vocabularies meet here. The page styles were written against the
+ * storefront's names (`--color-bg` is a card, `--color-surface` is the app
+ * background, `--color-ink*` is text); the template's shell and components
+ * use its own (`--color-card`, `--color-text-*`, `--space-*`). Both are
+ * defined, from one set of values, so a page written in either reads the same
+ * palette — and so the storefront, which imports the same `@da/ui` tokens,
+ * is untouched: this file is admin-only and unlayered, which is why it wins
+ * over the `@theme` layer below it.
+ *
+ * Two of the template's greys are darkened. Its muted text (#8A97A0) is 3.3:1
+ * on white, under the 4.5:1 that small text needs; the same hue at #66757F
+ * clears it on every surface here. The template's own contrast is otherwise
+ * kept as it ships.
+ *
+ * Dark is a real theme, not an inversion: the app background is darkest, the
+ * sidebar and topbar one step up, cards one more, the way the template does it.
+ */
+
+:root {
+  /* --- brand ------------------------------------------------------------ */
+  --color-brand: #0e7c86;
+  --color-brand-hover: #0b6871;
+  --color-brand-active: #095760;
+  --color-brand-soft: #e4f2f3;
+  --color-brand-ink: #0b5c64;
+  --color-brand-rgb: 14, 124, 134;
+  /* The richer two-tone brand, for the few high-visibility surfaces — primary
+     buttons, the sidebar mark, the active-item spine. Flat teal everywhere else. */
+  --color-brand-gradient: linear-gradient(135deg, #129099 0%, #0a5a63 100%);
+
+  --color-secondary: #3e5c76;
+  --color-secondary-hover: #33495e;
+  --color-secondary-soft: #eaeef2;
+
+  /* Offers and urgency keep the storefront's amber role, in the template's tone. */
+  --color-accent: #c9821a;
+  --color-accent-hover: #a86a12;
+  --color-accent-soft: #fbf0de;
+
+  /* --- semantic --------------------------------------------------------- */
+  --color-success: #2e9d6f;
+  --color-success-rgb: 46, 157, 111;
+  --color-success-soft: #e6f5ef;
+  /* Text on the soft tints. The flat colours are 3:1 there; these clear 4.5:1. */
+  --color-success-ink: #1b6b4a;
+  --color-warning: #b8730f;
+  --color-warning-rgb: 201, 130, 26;
+  --color-warning-soft: #fbf0de;
+  --color-warning-ink: #7a4a05;
+  --color-danger: #c1443c;
+  --color-danger-rgb: 193, 68, 60;
+  --color-danger-soft: #fae7e5;
+  --color-danger-ink: #9a2f28;
+  --color-info: #3b82a6;
+  --color-info-rgb: 59, 130, 166;
+  --color-info-soft: #e7f1f6;
+  --color-info-ink: #255f7d;
+
+  /* --- surfaces: `bg` is a card, `surface` is the app behind it ------------ */
+  --color-bg: #ffffff;
+  --color-card: #ffffff;
+  --color-card-alt: #f9fafb;
+  --color-surface: #f5f7f8;
+  --color-surface-2: #eef2f4;
+  --color-border: #e3e8ea;
+  --color-border-strong: #cbd3d7;
+  --color-border-soft: #edf1f3;
+
+  /* --- text ------------------------------------------------------------- */
+  --color-ink: #1b2530;
+  --color-ink-body: #2f3b46;
+  --color-ink-secondary: #55636e;
+  --color-ink-muted: #5f6d77;
+  --color-ink-inverse: #ffffff;
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-ink-secondary);
+  --color-text-muted: var(--color-ink-muted);
+  --color-text-on-primary: #ffffff;
+
+  /* --- type ------------------------------------------------------------- */
+  /* Inter for the English panel, as the template; Tajawal stays the Arabic
+     face, which Inter does not have. The pair is picked per `lang` below. */
+  --font-sans:
+    var(--font-tajawal), var(--font-inter), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --text-xs: 0.8125rem; /* 13 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-base: 0.9375rem; /* 15 — the template's body size */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.375rem; /* 22 */
+  --text-2xl: 1.75rem; /* 28 */
+  --text-3xl: 2rem;
+  --fs-label: 0.75rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.55;
+
+  /* --- spacing: the template's 4px scale, and the legacy 15px grid mapped onto it */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --spacing-half: 8px;
+  --spacing-1: 16px;
+  --spacing-2: 24px;
+  --spacing-3: 32px;
+  --spacing-4: 48px;
+  --spacing-5: 64px;
+
+  /* --- radius & elevation ----------------------------------------------- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  --shadow-xs: 0 1px 2px rgba(20, 30, 35, 0.05);
+  --shadow-sm: 0 1px 2px rgba(20, 30, 35, 0.06), 0 1px 1px rgba(20, 30, 35, 0.04);
+  --shadow-card: 0 1px 2px rgba(20, 30, 35, 0.06), 0 1px 1px rgba(20, 30, 35, 0.04);
+  --shadow-md: 0 6px 16px rgba(20, 30, 35, 0.1);
+  --shadow-popover: 0 6px 16px rgba(20, 30, 35, 0.1);
+  --shadow-dropdown: 0 10px 28px rgba(20, 30, 35, 0.14), 0 3px 8px rgba(20, 30, 35, 0.07);
+  --shadow-lg: 0 10px 28px rgba(20, 30, 35, 0.14), 0 3px 8px rgba(20, 30, 35, 0.07);
+  --shadow-modal: 0 24px 56px rgba(20, 30, 35, 0.22), 0 6px 16px rgba(20, 30, 35, 0.09);
+  --shadow-drawer: 0 24px 56px rgba(20, 30, 35, 0.22), 0 6px 16px rgba(20, 30, 35, 0.09);
+  --shadow-card-hover: 0 6px 16px rgba(20, 30, 35, 0.1);
+
+  /* --- layout ------------------------------------------------------------- */
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 76px;
+  --topbar-height: 64px;
+  --container-max: 1440px;
+
+  /* --- motion ------------------------------------------------------------- */
+  --ease-standard: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+
+  color-scheme: light;
+}
+
+html[lang='en'] {
+  --font-sans:
+    var(--font-inter), var(--font-tajawal), system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ==========================================================================
+   DARK — `data-theme="dark"` on <html>, set from the cookie the topbar
+   toggle writes, so the first paint is already the right one.
+   ========================================================================== */
+[data-theme='dark'] {
+  --color-brand: #35b0b8;
+  --color-brand-hover: #4fc2c9;
+  --color-brand-active: #2c979e;
+  --color-brand-soft: #113238;
+  --color-brand-ink: #7fd4da;
+  --color-brand-rgb: 53, 176, 184;
+  --color-brand-gradient: linear-gradient(135deg, #3dbcc4 0%, #1d7a82 100%);
+
+  --color-secondary: #93a6ba;
+  --color-secondary-hover: #a9bacb;
+  --color-secondary-soft: #202b36;
+
+  --color-accent: #e0a23e;
+  --color-accent-hover: #ecb55c;
+  --color-accent-soft: #34270f;
+
+  --color-success: #4fbe8e;
+  --color-success-soft: #123227;
+  --color-success-ink: #6fd3a6;
+  --color-warning: #e0a23e;
+  --color-warning-soft: #34270f;
+  --color-warning-ink: #f0bd68;
+  --color-danger: #e0665c;
+  --color-danger-soft: #391a18;
+  --color-danger-ink: #f08a82;
+  --color-info: #6baac9;
+  --color-info-soft: #12262e;
+  --color-info-ink: #8ec3dc;
+
+  --color-bg: #182226;
+  --color-card: #182226;
+  --color-card-alt: #1d282c;
+  --color-surface: #0e1416;
+  --color-surface-2: #1d282c;
+  --color-border: #263238;
+  --color-border-strong: #33424a;
+  --color-border-soft: #202b30;
+
+  --color-ink: #e7edef;
+  --color-ink-body: #c9d3d7;
+  --color-ink-secondary: #a6b3b8;
+  --color-ink-muted: #8d9ca4;
+  --color-ink-inverse: #08191b;
+  --color-text-on-primary: #08191b;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 6px 16px rgba(0, 0, 0, 0.35);
+  --shadow-dropdown: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-modal: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-drawer: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 6px 16px rgba(0, 0, 0, 0.35);
+
+  color-scheme: dark;
+}

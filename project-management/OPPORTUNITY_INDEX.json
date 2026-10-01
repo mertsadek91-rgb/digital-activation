@@ -322,6 +322,13 @@
       "relation": "OVERLAPPING",
       "ts": "2026-09-29T12:59:44Z",
       "actor": "devops-engineer"
+    },
+    {
+      "from": "TASK-0091",
+      "to": "TASK-0090",
+      "relation": "RELATED",
+      "ts": "2026-10-01T11:16:22Z",
+      "actor": "api-architect"
     }
   ],
   "ranking": {

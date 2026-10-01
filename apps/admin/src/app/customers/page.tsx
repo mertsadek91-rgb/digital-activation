@@ -6,12 +6,13 @@ import type {
   AdminCustomerRow,
   AdminOrderRow,
 } from '@da/contracts';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useStaff } from '../../lib/use-staff';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { softBreakEmail } from '../../lib/text';
 import { Nav } from '../nav';
 
 /**
@@ -52,13 +53,29 @@ function stamp(value: string | null): string {
   return value ? value.slice(0, 16).replace('T', ' ') : '—';
 }
 
+/**
+ * `useSearchParams` reads the URL React is navigating to, which is what the
+ * order page's "all orders from this customer" link relies on; a
+ * `window.location` read in a state initialiser still held the previous URL
+ * during a client-side navigation. The Suspense boundary is what the App
+ * Router asks for around it.
+ */
 export default function CustomersPage() {
+  return (
+    <Suspense fallback={null}>
+      <CustomersScreen />
+    </Suspense>
+  );
+}
+
+function CustomersScreen() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const t = useT('customers');
   const c = useT('common');
   const me = useStaff();
   const [data, setData] = useState<AdminCustomerList | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -118,6 +135,7 @@ export default function CustomersPage() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('searchPlaceholder')}
             aria-label={t('searchLabel')}
+            dir="auto"
           />
           <button type="submit" className="ghost">
             {c('search')}
@@ -223,7 +241,7 @@ function CustomerRow({ row }: { row: AdminCustomerRow }) {
       <tr className={`order-row${open ? ' is-open' : ''}`}>
         <td className="order-customer">
           {row.name ? <strong>{row.name}</strong> : null}
-          <span dir="ltr">{row.email}</span>
+          <span dir="ltr">{softBreakEmail(row.email)}</span>
         </td>
         <td className="num">{row.paidOrders}</td>
         <td className="num order-total" dir="ltr">
