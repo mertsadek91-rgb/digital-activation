@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | subagent:security-reviewer |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | WAITING |
 
 ## Responsibilities
 
@@ -53,7 +53,7 @@
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 - TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (WAITING_INFORMATION, 20%)
-- TASK-0015 — Role-scope review of staff routes that carry no @Roles (IN_PROGRESS, 60%)
+- TASK-0015 — Role-scope review of staff routes that carry no @Roles (WAITING_INFORMATION, 60%)
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
 - TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
 

@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -51,10 +51,10 @@
 
 ## Current tasks
 
-- TASK-0088 — Deactivating a staff account revokes all of its sessions (BACKLOG, 20%)
+- TASK-0088 — Deactivating a staff account revokes all of its sessions (IN_PROGRESS, 20%)
 
 ## Supporting
 
-- TASK-0015 — Role-scope review of staff routes that carry no @Roles (IN_PROGRESS, 60%)
+- TASK-0015 — Role-scope review of staff routes that carry no @Roles (WAITING_INFORMATION, 60%)
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
 - TASK-0063 — Server-side session gate for admin pages (IN_PROGRESS, 50%)

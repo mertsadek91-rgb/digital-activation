@@ -349,7 +349,7 @@
       "opportunities": [],
       "workload": 4,
       "blockers": [],
-      "last_activity": "2026-09-30T13:48:48Z"
+      "last_activity": "2026-10-01T12:49:07Z"
     },
     {
       "id": "backend-engineer",
@@ -430,7 +430,7 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "WORKING",
       "current_task": "TASK-0088",
       "assignments": [
         "TASK-0088"
@@ -445,7 +445,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-09-30T13:43:19Z"
+      "last_activity": "2026-10-01T12:49:21Z"
     },
     {
       "id": "crm-workflow-architect",
@@ -768,8 +768,8 @@
       "staffed": true,
       "executor": "subagent:security-reviewer",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0015",
+      "state": "WAITING",
+      "current_task": "TASK-0004",
       "assignments": [
         "TASK-0004",
         "TASK-0011",
@@ -790,7 +790,7 @@
       "opportunities": [],
       "workload": 8,
       "blockers": [],
-      "last_activity": "2026-09-30T13:49:16Z"
+      "last_activity": "2026-10-01T12:49:22Z"
     },
     {
       "id": "performance-engineer",
@@ -827,7 +827,8 @@
       "assignments": [
         "TASK-0033",
         "TASK-0080",
-        "TASK-0082"
+        "TASK-0082",
+        "TASK-0092"
       ],
       "supporting": [
         "TASK-0004",
@@ -838,12 +839,12 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 5,
+      "workload": 6,
       "blockers": [
         "TASK-0080",
         "TASK-0082"
       ],
-      "last_activity": "2026-09-30T13:41:39Z"
+      "last_activity": "2026-10-01T12:54:48Z"
     },
     {
       "id": "sre",

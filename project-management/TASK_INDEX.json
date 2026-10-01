@@ -386,7 +386,7 @@
       "id": "TASK-0015",
       "title": "Role-scope review of staff routes that carry no @Roles",
       "type": "audit",
-      "status": "IN_PROGRESS",
+      "status": "WAITING_INFORMATION",
       "stage": "ANALYSIS",
       "priority": "MEDIUM",
       "progress": 60,
@@ -417,7 +417,7 @@
         "project-management/reports/security/TASK-0015-staff-route-role-audit.md"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-01",
       "reaudit": "VALID",
       "file": "tasks/active/TASK-0015.md"
     },
@@ -1702,7 +1702,7 @@
       "id": "TASK-0088",
       "title": "Deactivating a staff account revokes all of its sessions",
       "type": "security",
-      "status": "BACKLOG",
+      "status": "IN_PROGRESS",
       "stage": "IMPLEMENTATION",
       "priority": "LOW",
       "progress": 20,
@@ -1732,9 +1732,9 @@
       "affected_pages": [],
       "affected_files": [],
       "created_at": "2026-09-30",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-01",
       "reaudit": null,
-      "file": "tasks/backlog/TASK-0088.md"
+      "file": "tasks/active/TASK-0088.md"
     },
     {
       "id": "TASK-0089",
@@ -1887,6 +1887,44 @@
       "updated_at": "2026-10-01",
       "reaudit": null,
       "file": "tasks/completed/TASK-0091.md"
+    },
+    {
+      "id": "TASK-0092",
+      "title": "pm CLI: let a reviewer or manager formally invalidate a review (append-only), so a fake PASS stops counting",
+      "type": "tooling",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "MEDIUM",
+      "progress": 0,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "agent-os"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "agent-os/tools/pm.mjs",
+        "agent-os/tools/lib/rules.mjs"
+      ],
+      "created_at": "2026-10-01",
+      "updated_at": "2026-10-01",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0092.md"
     }
   ]
 }
