@@ -128,19 +128,52 @@ jobs:
     name: Performance budget
     runs-on: ubuntu-latest
     needs: verify
+    # A real API on a real database, so the product, category and cart pages
+    # render what a shopper sees rather than their empty states. The same
+    # Postgres major as the schema job; Redis because the API's rate limits
+    # and the readiness probe expect one.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: da
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: da_main
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U da -d da_main"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       # Built and served as production, so the SEO audits measure what a
       # crawler sees. Without it the store renders noindex (the staging
       # brake in @da/seo) and Lighthouse fails "blocked from indexing" on
       # every run for a reason that is working as designed.
       NEXT_PUBLIC_SITE_URL: https://digital-activation.com
+      # Where the storefront finds the API, on the server and in the browser.
+      # Both are also the code's defaults; set so the job does not depend on that.
+      API_URL: http://localhost:4000
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      DATABASE_URL_MIGRATE: postgresql://da:ci@localhost:5432/da_main?schema=public
+      DATABASE_URL: postgresql://da:ci@localhost:5432/da_main?schema=public
+      DATABASE_URL_VAULT: postgresql://da:ci@localhost:5432/da_main?schema=vault
     # The resource-count budgets (lighthouserc.json) were first written
     # before this job had ever run. They are now the first measured values
     # plus a little headroom (20 scripts, 2 stylesheets, 60 requests; CI
     # measured 15/2/50 and a local run 18/2/53), so
     # they catch a regression rather than failing on the framework's floor.
-    # unused-javascript is a warning: with no API in CI the page renders its
-    # empty states, and the bundle for the full page looks unused.
+    # unused-javascript stays a warning: the shared bundle carries code for
+    # pages other than the one measured, which Lighthouse counts as unused.
+    #
+    # Mobile (Lighthouse's default, simulated slow 4G and 4x CPU) and desktop
+    # run as two steps over the same five pages. The URLs carry `?ff=mobile`
+    # or `?ff=desktop` only so lighthouserc.json can hold one budget per form
+    # factor in its assertMatrix; no page reads the parameter.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -150,6 +183,54 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:generate
+
+      - name: Apply migrations
+        run: pnpm --filter @da/db migrate:deploy
+      # Reference data (currencies, navigation, the Organization block), then
+      # a fixed two-product catalogue whose slugs lighthouserc.json lists.
+      # The fixture refuses any database that is not on this machine.
+      - name: Seed
+        run: pnpm db:seed
+      - name: CI catalogue fixture
+        run: pnpm --filter @da/db ci-fixture
+
+      - name: Build the API
+        run: pnpm turbo run build --filter=@da/api
+
+      # Throwaway values generated per run: nothing here is a real secret,
+      # and nothing in this job sends mail, takes a payment or holds a key.
+      # NODE_ENV=development for the API alone, because the capture mail
+      # transport and the local KEK are refused in production; the storefront
+      # is still built and served as production.
+      - name: Start the API
+        working-directory: apps/api
+        run: |
+          export NODE_ENV=development
+          export STOREFRONT_URL=http://localhost:3000
+          export ADMIN_URL=http://localhost:3001
+          export REDIS_URL=redis://localhost:6379
+          export JWT_ACCESS_SECRET="$(openssl rand -hex 32)"
+          export JWT_REFRESH_SECRET="$(openssl rand -hex 32)"
+          export KEK_PROVIDER=local
+          export KEK_LOCAL_BASE64="$(openssl rand -base64 32)"
+          export MAIL_TRANSPORT=capture
+          export MAIL_FROM_TRANSACTIONAL=ci@example.com
+          export MAIL_FROM_MARKETING=ci@example.com
+          export FX_REFRESH=off
+          export AUTO_DELIVERY=off
+          nohup node dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:4000/health/ready; then
+              echo
+              curl -fsS -o /dev/null "http://localhost:4000/v1/catalog/products/ci-fixture-product?locale=ar&currency=USD"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::The API did not become ready within 60 seconds."
+          cat "$RUNNER_TEMP/api.log"
+          exit 1
+
       # Through turbo, so the workspace packages the storefront imports
       # (@da/ui, @da/seo, @da/contracts, @da/i18n) are built first; a bare
       # `next build` finds no dist for them.
@@ -159,11 +240,33 @@ jobs:
       # and finished loading in 17.4 seconds. This job is why that cannot come
       # back one pull request at a time: exceeding the budget fails the build,
       # it does not open a ticket.
-      - name: Lighthouse CI
+      - name: Lighthouse CI (mobile)
+        id: lhci-mobile
         run: npx --yes @lhci/cli@0.15.x autorun
         working-directory: apps/storefront
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      # Runs even when the mobile step failed, so one red run reports both
+      # form factors instead of hiding the second behind the first. The job
+      # still fails if either does.
+      - name: Lighthouse CI (desktop)
+        if: ${{ !cancelled() && (steps.lhci-mobile.outcome == 'success' || steps.lhci-mobile.outcome == 'failure') }}
+        run: >-
+          npx --yes @lhci/cli@0.15.x autorun
+          --collect.settings.preset=desktop
+          --collect.url='http://localhost:3000/?ff=desktop'
+          --collect.url='http://localhost:3000/en?ff=desktop'
+          --collect.url='http://localhost:3000/store/ci-fixture-product?ff=desktop'
+          --collect.url='http://localhost:3000/collections/ci-fixture-category?ff=desktop'
+          --collect.url='http://localhost:3000/cart?ff=desktop'
+        working-directory: apps/storefront
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: API log
+        if: failure()
+        run: cat "$RUNNER_TEMP/api.log" || true
 
   secrets-scan:
     name: Secret scan

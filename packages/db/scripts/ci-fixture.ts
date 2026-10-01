@@ -42,7 +42,11 @@ function assertLocalDatabase(): void {
 function body(locale: Locale, name: string): Prisma.InputJsonValue {
   const ar = locale === Locale.AR;
   return [
-    { type: 'heading', level: 2, text: ar ? `ما الذي تحصل عليه مع ${name}` : `What ${name} includes` },
+    {
+      type: 'heading',
+      level: 2,
+      text: ar ? `ما الذي تحصل عليه مع ${name}` : `What ${name} includes`,
+    },
     {
       type: 'richText',
       html: ar
@@ -59,8 +63,14 @@ function faq(locale: Locale): Prisma.InputJsonValue {
         { q: 'هل الترخيص أصلي؟', a: 'نعم، ومشمول بضمان الاستبدال طوال مدة الترخيص.' },
       ]
     : [
-        { q: 'When does the key arrive?', a: 'Within minutes of payment, by email and on your order page.' },
-        { q: 'Is the licence genuine?', a: 'Yes, and it is covered by replacement for its whole term.' },
+        {
+          q: 'When does the key arrive?',
+          a: 'Within minutes of payment, by email and on your order page.',
+        },
+        {
+          q: 'Is the licence genuine?',
+          a: 'Yes, and it is covered by replacement for its whole term.',
+        },
       ];
 }
 

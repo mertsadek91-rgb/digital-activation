@@ -3,98 +3,201 @@
     "collect": {
       "startServerCommand": "pnpm start",
       "startServerReadyPattern": "Ready in",
-      "url": ["http://localhost:3000/", "http://localhost:3000/en"],
+      "url": [
+        "http://localhost:3000/?ff=mobile",
+        "http://localhost:3000/en?ff=mobile",
+        "http://localhost:3000/store/ci-fixture-product?ff=mobile",
+        "http://localhost:3000/collections/ci-fixture-category?ff=mobile",
+        "http://localhost:3000/cart?ff=mobile"
+      ],
       "numberOfRuns": 3,
       "settings": {
-        "preset": "desktop",
         "throttlingMethod": "simulate"
       }
     },
     "assert": {
-      "assertions": {
-        "categories:performance": [
-          "error",
-          {
-            "minScore": 0.95
+      "assertMatrix": [
+        {
+          "matchingUrlPattern": "^(?!.*/cart?).*$",
+          "assertions": {
+            "categories:performance": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "categories:accessibility": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "cumulative-layout-shift": [
+              "error",
+              {
+                "maxNumericValue": 0.05
+              }
+            ],
+            "total-blocking-time": [
+              "error",
+              {
+                "maxNumericValue": 200
+              }
+            ],
+            "server-response-time": [
+              "error",
+              {
+                "maxNumericValue": 200
+              }
+            ],
+            "resource-summary:script:count": [
+              "error",
+              {
+                "maxNumericValue": 20
+              }
+            ],
+            "resource-summary:stylesheet:count": [
+              "error",
+              {
+                "maxNumericValue": 2
+              }
+            ],
+            "resource-summary:total:count": [
+              "error",
+              {
+                "maxNumericValue": 60
+              }
+            ],
+            "resource-summary:third-party:count": [
+              "error",
+              {
+                "maxNumericValue": 0
+              }
+            ],
+            "resource-summary:document:size": [
+              "error",
+              {
+                "maxNumericValue": 61440
+              }
+            ],
+            "uses-responsive-images": "error",
+            "modern-image-formats": "error",
+            "image-alt": "error",
+            "font-display": "error",
+            "render-blocking-resources": "error",
+            "unused-css-rules": "error",
+            "unused-javascript": "warn",
+            "hreflang": "error",
+            "canonical": "error",
+            "structured-data": "off",
+            "categories:seo": [
+              "error",
+              {
+                "minScore": 1
+              }
+            ]
           }
-        ],
-        "categories:accessibility": [
-          "error",
-          {
-            "minScore": 0.95
+        },
+        {
+          "matchingUrlPattern": "/cart?",
+          "assertions": {
+            "categories:performance": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "categories:accessibility": [
+              "error",
+              {
+                "minScore": 0.95
+              }
+            ],
+            "cumulative-layout-shift": [
+              "error",
+              {
+                "maxNumericValue": 0.05
+              }
+            ],
+            "total-blocking-time": [
+              "error",
+              {
+                "maxNumericValue": 200
+              }
+            ],
+            "server-response-time": [
+              "error",
+              {
+                "maxNumericValue": 200
+              }
+            ],
+            "resource-summary:script:count": [
+              "error",
+              {
+                "maxNumericValue": 20
+              }
+            ],
+            "resource-summary:stylesheet:count": [
+              "error",
+              {
+                "maxNumericValue": 2
+              }
+            ],
+            "resource-summary:total:count": [
+              "error",
+              {
+                "maxNumericValue": 60
+              }
+            ],
+            "resource-summary:third-party:count": [
+              "error",
+              {
+                "maxNumericValue": 0
+              }
+            ],
+            "resource-summary:document:size": [
+              "error",
+              {
+                "maxNumericValue": 61440
+              }
+            ],
+            "uses-responsive-images": "error",
+            "modern-image-formats": "error",
+            "image-alt": "error",
+            "font-display": "error",
+            "render-blocking-resources": "error",
+            "unused-css-rules": "error",
+            "unused-javascript": "warn",
+            "hreflang": "error",
+            "canonical": "error",
+            "structured-data": "off",
+            "categories:seo": "off",
+            "is-crawlable": "off"
           }
-        ],
-        "categories:seo": [
-          "error",
-          {
-            "minScore": 1
+        },
+        {
+          "matchingUrlPattern": "[?&]ff=desktop",
+          "assertions": {
+            "largest-contentful-paint": [
+              "error",
+              {
+                "maxNumericValue": 1800
+              }
+            ]
           }
-        ],
-        "largest-contentful-paint": [
-          "error",
-          {
-            "maxNumericValue": 1800
+        },
+        {
+          "matchingUrlPattern": "[?&]ff=mobile",
+          "assertions": {
+            "largest-contentful-paint": [
+              "warn",
+              {
+                "maxNumericValue": 1800
+              }
+            ]
           }
-        ],
-        "cumulative-layout-shift": [
-          "error",
-          {
-            "maxNumericValue": 0.05
-          }
-        ],
-        "total-blocking-time": [
-          "error",
-          {
-            "maxNumericValue": 200
-          }
-        ],
-        "server-response-time": [
-          "error",
-          {
-            "maxNumericValue": 200
-          }
-        ],
-        "resource-summary:script:count": [
-          "error",
-          {
-            "maxNumericValue": 20
-          }
-        ],
-        "resource-summary:stylesheet:count": [
-          "error",
-          {
-            "maxNumericValue": 2
-          }
-        ],
-        "resource-summary:total:count": [
-          "error",
-          {
-            "maxNumericValue": 60
-          }
-        ],
-        "resource-summary:third-party:count": [
-          "error",
-          {
-            "maxNumericValue": 0
-          }
-        ],
-        "resource-summary:document:size": [
-          "error",
-          {
-            "maxNumericValue": 61440
-          }
-        ],
-        "uses-responsive-images": "error",
-        "modern-image-formats": "error",
-        "image-alt": "error",
-        "font-display": "error",
-        "render-blocking-resources": "error",
-        "unused-css-rules": "error",
-        "unused-javascript": "warn",
-        "hreflang": "error",
-        "canonical": "error",
-        "structured-data": "off"
-      }
+        }
+      ]
     },
     "upload": {
       "target": "temporary-public-storage"
