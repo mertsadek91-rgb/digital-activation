@@ -66,8 +66,27 @@ a hardcoded value — see "Known debt").
 | `--color-gold`         | `#b37400` |
 | `--color-gold-soft`    | `#fff9e6` |
 | `--color-gold-border`  | `#f2dc99` |
+| `--color-gold-ink`     | `#8a5300` |
 | `--color-instant`      | `#0b7a5a` |
 | `--color-instant-soft` | `#e3f5ee` |
+
+`--color-gold-ink` is gold as text (the footer's warranty link, the gold
+guarantee badge icon); `--color-gold` stays a border and icon colour.
+
+### Footer guarantee badges
+
+Added for the footer's delivery and support badges (TASK-0086). The base value
+is the card's start stripe and hover border only; `-ink` is the icon/text
+colour on `-soft`.
+
+| Token                 | Value     |
+| --------------------- | --------- |
+| `--color-info`        | `#0284c7` |
+| `--color-info-soft`   | `#e0f2fe` |
+| `--color-info-ink`    | `#0369a1` |
+| `--color-purple`      | `#7c3aed` |
+| `--color-purple-soft` | `#ede9fe` |
+| `--color-purple-ink`  | `#6d28d9` |
 
 ### Surfaces
 
@@ -113,6 +132,13 @@ Computed with the WCAG 2 relative-luminance formula from the hex values in
 | `success` `#127658`     | `success-soft` `#e0f0ea` | 4.74:1  | Pass           |
 | `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee` | 4.70:1  | Pass           |
 | `danger` `#d93a12`      | `bg` `#ffffff`           | 4.60:1  | Pass           |
+| `gold-ink` `#8a5300`    | `bg` `#ffffff`           | 6.33:1  | Pass           |
+| `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`    | 6.01:1  | Pass           |
+| `gold-ink` `#8a5300`    | `surface` `#f6f6f6`      | 5.86:1  | Pass           |
+| `info-ink` `#0369a1`    | `info-soft` `#e0f2fe`    | 5.17:1  | Pass           |
+| `purple-ink` `#6d28d9`  | `purple-soft` `#ede9fe`  | 5.98:1  | Pass           |
+| `brand-ink` `#0a544b`   | `surface` `#f6f6f6`      | 8.16:1  | Pass           |
+| `ink-inverse` `#ffffff` | `success` `#127658`      | 5.59:1  | Pass           |
 | `brand` `#148576`       | `surface` `#f6f6f6`      | 4.18:1  | **Fail**       |
 | `danger` `#d93a12`      | `danger-soft` `#fdeae4`  | 3.96:1  | **Fail**       |
 | `gold` `#b37400`        | `bg` `#ffffff`           | 3.88:1  | **Fail**       |
@@ -338,7 +364,7 @@ Hex literals that bypass the tokens, counted with
 
 | File                                                               | Hex literals |
 | ------------------------------------------------------------------ | ------------ |
-| `footer.css`                                                       | 54           |
+| `footer.css`                                                       | 15           |
 | `catalog.css`                                                      | 21           |
 | `contact.css`                                                      | 16           |
 | `account.css`                                                      | 7            |
@@ -349,9 +375,12 @@ Hex literals that bypass the tokens, counted with
 
 Some are legitimate third-party brand colours (WhatsApp `#25d366` on
 `.whatsapp-fab`, and the `.social-btn` WhatsApp, Telegram, X and Instagram
-hovers in `footer.css`). The rest — Tailwind-palette
-greens, violets and ambers in `footer.css` especially — should map to tokens.
-`footer.css` needs its own follow-up task (not yet created).
+hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 15
+remaining matches are those 13 brand values plus two in a comment. The rest of
+the table still maps to tokens. Known residue: the WhatsApp hover puts a white
+icon on `#25d366` (1.98:1, under the 3:1 non-text floor), and
+`.newsletter-error-msg` (`--color-danger`) is 3.92:1 where the newsletter card
+fades to `--color-brand-soft`.
 
 ## Known debt — font weights
 
@@ -362,7 +391,6 @@ greens, violets and ambers in `footer.css` especially — should map to tokens.
 | -------------------------------------------- | ----- | ----- |
 | `apps/admin/src/app/admin.css`               | 16    | 0     |
 | `apps/admin/src/app/marketing/retention.css` | 2     | 0     |
-| `apps/storefront/src/app/footer.css`         | 6     | 0     |
 | `apps/storefront/src/app/catalog.css`        | 5     | 0     |
 | `apps/storefront/src/app/home.css`           | 2     | 1     |
 | `apps/storefront/src/app/contact.css`        | 2     | 0     |

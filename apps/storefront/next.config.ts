@@ -11,6 +11,42 @@ loadEnv({ path: path.join(import.meta.dirname, '..', '..', '.env'), quiet: true 
 import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
+/**
+ * Legacy URLs the database map does not cover, found by the TASK-0042 cutover
+ * crawl (`project-management/reports/release/TASK-0042-cutover-crawl-2026-10-01.md`).
+ *
+ * Static on purpose, and only these five. The map the catch-all consults
+ * (`lib/gone.ts`) lives in the staging database, and writing to it is a data
+ * change this task may not make. The two policy pages were skipped by the
+ * generator because `/refunds` was not published when it ran; the two blog
+ * categories and the KML file were never in its scope at all. Config redirects
+ * run before the filesystem and the catch-all, so a database row added for the
+ * same path later is shadowed by these. If the map is regenerated, delete the
+ * policy-page pairs here.
+ *
+ * Written unslashed and decoded. Next strips the trailing slash with its own
+ * 308 before any custom redirect is consulted (its internal rule is unshifted
+ * ahead of these), and it matches against the percent-encoded request path,
+ * which is why the source goes through `encodeURI`.
+ *
+ * - `/refund-and-return-policy` was the English copy of the refund policy; it
+ *   became the `en` row of `refunds` (`packages/db/scripts/legacy/pages.ts`).
+ * - `/شروحات` and `/تفعيل-البرامج` are WordPress post categories. The blog has
+ *   no category pages, so the blog index is the closest page.
+ * - `/locations.kml` is Rank Math's local-SEO file: the shop's name, address
+ *   and coordinates, discovered only through `/local-sitemap.xml` (which already
+ *   redirects). `/contact` carries that same information. A 410 would need a
+ *   route handler of its own for a URL nobody links to, and would throw away
+ *   whatever the file had earned.
+ */
+const legacyGaps: [from: string, to: string][] = [
+  ['/refund-and-return-policy', '/en/refunds'],
+  ['/سياسة-الاسترجاع', '/refunds'],
+  ['/شروحات', '/blog'],
+  ['/تفعيل-البرامج', '/blog'],
+  ['/locations.kml', '/contact'],
+];
+
 const config: NextConfig = {
   reactStrictMode: true,
   // Everything the browser downloads is accounted for. The performance budget
@@ -70,6 +106,11 @@ const config: NextConfig = {
       // reader wanted.
       { source: '/feed', destination: '/blog', statusCode: 301 as const },
       { source: '/:path*/feed', destination: '/blog', statusCode: 301 as const },
+      ...legacyGaps.map(([from, destination]) => ({
+        source: encodeURI(from),
+        destination,
+        statusCode: 301 as const,
+      })),
     ];
   },
   async headers() {

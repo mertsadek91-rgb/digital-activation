@@ -98,8 +98,21 @@
   --color-gold: #b37400;
   --color-gold-soft: #fff9e6;
   --color-gold-border: #f2dc99;
+  /* Gold as text. --color-gold is 3.88:1 on white and 3.68:1 on gold-soft, so
+     it stays a border/icon colour; this is 6.01:1 on gold-soft, 5.86:1 on
+     --color-surface (the footer's warranty link and guarantee badge). */
+  --color-gold-ink: #8a5300;
   --color-instant: #0b7a5a;
   --color-instant-soft: #e3f5ee;
+
+  /* Footer guarantee badges (delivery, support). -ink is text/icon on -soft:
+     info 5.17:1, purple 5.98:1. The base value is a stripe/border only. */
+  --color-info: #0284c7;
+  --color-info-soft: #e0f2fe;
+  --color-info-ink: #0369a1;
+  --color-purple: #7c3aed;
+  --color-purple-soft: #ede9fe;
+  --color-purple-ink: #6d28d9;
 
   /* --- layout ------------------------------------------------------------ */
   --container-max: 1400px;

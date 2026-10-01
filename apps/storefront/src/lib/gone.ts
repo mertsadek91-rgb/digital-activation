@@ -1,6 +1,8 @@
 import { headers } from 'next/headers';
 import { notFound, permanentRedirect, redirect } from 'next/navigation';
 
+import type { RedirectTarget } from '@da/contracts';
+
 import { isArabic } from '../i18n/locale';
 
 import { getRedirect, reportNotFound } from './api';
@@ -25,7 +27,7 @@ import { getRedirect, reportNotFound } from './api';
  * Never returns: it either redirects or renders the 404.
  */
 export async function goneOrRedirect(pathname: string, locale: string): Promise<never> {
-  const target = await getRedirect(pathname);
+  const target = (await getRedirect(pathname)) ?? (await legacyCategoryRedirect(pathname));
 
   if (!target) {
     // Recorded on the way past. The generated map covers what the WordPress
@@ -42,4 +44,26 @@ export async function goneOrRedirect(pathname: string, locale: string): Promise<
 
   if (target.code === 301 || target.code === 308) permanentRedirect(destination);
   redirect(destination);
+}
+
+/**
+ * A WooCommerce category archive, under the permalink the legacy site serves.
+ *
+ * The redirect map keys category archives as `/product-category/<term-slug>`,
+ * which is WooCommerce's default base and what the export's term rows imply.
+ * The live site had its base renamed to `collections`, and nests children
+ * under their parents — `/collections/ويندوز-windows/windows-11-ويندوز/` — so
+ * the URLs Google has indexed are not the ones the map holds (TASK-0042 crawl,
+ * 2026-10-01: 15 of 16 answered 404). The term slug is the last segment in
+ * both spellings, so the row the generator wrote is still the right answer.
+ *
+ * Only consulted for a `/collections/…` path that was about to 404 anyway, so
+ * a live collection never pays for the second lookup, and the new site's own
+ * collection slugs are Latin and single-segment, so nothing it serves is
+ * shadowed.
+ */
+async function legacyCategoryRedirect(pathname: string): Promise<RedirectTarget | null> {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments[0] !== 'collections' || segments.length < 2) return null;
+  return getRedirect(`/product-category/${segments[segments.length - 1] ?? ''}`);
 }

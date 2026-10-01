@@ -21,15 +21,15 @@ const DB_PACKAGE = path.resolve(__dirname, '..', '..', '..', '..', 'packages', '
  * that is already set, so the repo's `.env` cannot redirect it.
  */
 function deactivateCli(...args: string[]): { status: number | null; output: string } {
+  return dbScript('scripts/deactivate-staff.ts', args);
+}
+
+function dbScript(script: string, args: string[]): { status: number | null; output: string } {
   const url = testDatabaseUrl();
   if (!url) throw new Error('No test database.');
   const result = spawnSync(
     process.execPath,
-    [
-      path.join(DB_PACKAGE, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
-      'scripts/deactivate-staff.ts',
-      ...args,
-    ],
+    [path.join(DB_PACKAGE, 'node_modules', 'tsx', 'dist', 'cli.mjs'), script, ...args],
     {
       cwd: DB_PACKAGE,
       env: { ...process.env, DATABASE_URL: url },
@@ -169,6 +169,37 @@ describe.skipIf(!HAS_DATABASE)('deactivating a staff account', () => {
       expect((await me(session)).statusCode).toBe(401);
       expect((await refresh(session)).statusCode).toBe(401);
     }
+    expect(
+      await harness.db.staffSession.count({ where: { staffId: target.id, revokedAt: null } }),
+    ).toBe(0);
+  });
+
+  it('create-staff, the real reactivation path, revokes any session left alive', async () => {
+    // A session that slipped in while the account was off (a login racing the
+    // deactivation): create-staff must not let it survive the reactivation.
+    await harness.db.staffUser.update({ where: { id: target.id }, data: { isActive: false } });
+    const stray = await harness.db.staffSession.create({
+      data: {
+        staffId: target.id,
+        tokenHash: `stray-${target.id}`,
+        expiresAt: new Date(Date.now() + 86_400_000),
+      },
+    });
+
+    const run = dbScript('scripts/create-staff.ts', [
+      '--email',
+      target.email,
+      '--name',
+      target.name,
+      '--role',
+      target.role,
+    ]);
+    expect(run.status, run.output).toBe(0);
+
+    const after = await harness.db.staffUser.findUniqueOrThrow({ where: { id: target.id } });
+    expect(after.isActive).toBe(true);
+    const row = await harness.db.staffSession.findUniqueOrThrow({ where: { id: stray.id } });
+    expect(row.revokedAt).not.toBeNull();
     expect(
       await harness.db.staffSession.count({ where: { staffId: target.id, revokedAt: null } }),
     ).toBe(0);

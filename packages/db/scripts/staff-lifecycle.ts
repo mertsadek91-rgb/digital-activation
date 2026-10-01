@@ -99,35 +99,56 @@ export async function deactivateStaff(
   input: DeactivateInput,
   now: Date = new Date(),
 ): Promise<DeactivationResult> {
-  return db.$transaction(async (tx) => {
-    // Re-checked inside the transaction, so the last-owner and actor checks
-    // hold for the state this transaction writes over.
-    const plan = await planDeactivation(tx, input);
-    const { target, actor } = plan;
-    const wasActive = target.isActive;
-    if (plan.noop) return { staffId: target.id, wasActive: false, sessionsRevoked: 0 };
-
-    await tx.staffUser.update({ where: { id: target.id }, data: { isActive: false } });
-
-    // Every row not yet revoked, including expired ones: an expired session
-    // cannot be refreshed, but there is no reason to leave it ambiguous.
-    const revoked = await tx.staffSession.updateMany({
-      where: { staffId: target.id, revokedAt: null },
-      data: { revokedAt: now },
+  // Serializable, not the default READ COMMITTED: the last-owner check is a
+  // count, and two runs deactivating the only two OWNERs at once would each
+  // see "one other owner" and both commit. Under Serializable one of them fails
+  // instead (P2034) and can simply be run again — it then sees the truth. The
+  // same holds for two runs on one account writing two audit rows.
+  return db
+    .$transaction((tx) => deactivateIn(tx, input, now), { isolationLevel: 'Serializable' })
+    .catch((error: unknown) => {
+      if ((error as { code?: string }).code === 'P2034') {
+        throw new Error(
+          'Another staff change ran at the same moment; nothing was written. Run the command again.',
+          { cause: error },
+        );
+      }
+      throw error;
     });
+}
 
-    await recordAudit(tx, {
-      actorId: actor.id,
-      entity: 'StaffUser',
-      entityId: target.id,
-      action: 'staff.deactivated',
-      before: { isActive: wasActive, role: target.role },
-      after: { isActive: false, sessionsRevoked: revoked.count, via: 'cli' },
-      at: now,
-    });
+async function deactivateIn(
+  tx: Db,
+  input: DeactivateInput,
+  now: Date,
+): Promise<DeactivationResult> {
+  // Re-checked inside the transaction, so the last-owner and actor checks
+  // hold for the state this transaction writes over.
+  const plan = await planDeactivation(tx, input);
+  const { target, actor } = plan;
+  const wasActive = target.isActive;
+  if (plan.noop) return { staffId: target.id, wasActive: false, sessionsRevoked: 0 };
 
-    return { staffId: target.id, wasActive, sessionsRevoked: revoked.count };
+  await tx.staffUser.update({ where: { id: target.id }, data: { isActive: false } });
+
+  // Every row not yet revoked, including expired ones: an expired session
+  // cannot be refreshed, but there is no reason to leave it ambiguous.
+  const revoked = await tx.staffSession.updateMany({
+    where: { staffId: target.id, revokedAt: null },
+    data: { revokedAt: now },
   });
+
+  await recordAudit(tx, {
+    actorId: actor.id,
+    entity: 'StaffUser',
+    entityId: target.id,
+    action: 'staff.deactivated',
+    before: { isActive: wasActive, role: target.role },
+    after: { isActive: false, sessionsRevoked: revoked.count, via: 'cli' },
+    at: now,
+  });
+
+  return { staffId: target.id, wasActive, sessionsRevoked: revoked.count };
 }
 
 /**
