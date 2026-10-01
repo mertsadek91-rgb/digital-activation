@@ -364,7 +364,7 @@ Hex literals that bypass the tokens, counted with
 
 | File                                                               | Hex literals |
 | ------------------------------------------------------------------ | ------------ |
-| `footer.css`                                                       | 15           |
+| `footer.css`                                                       | 14           |
 | `catalog.css`                                                      | 21           |
 | `contact.css`                                                      | 16           |
 | `account.css`                                                      | 7            |
@@ -375,8 +375,8 @@ Hex literals that bypass the tokens, counted with
 
 Some are legitimate third-party brand colours (WhatsApp `#25d366` on
 `.whatsapp-fab`, and the `.social-btn` WhatsApp, Telegram, X and Instagram
-hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 15
-remaining matches are those 13 brand values plus two in a comment. The rest of
+hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 14
+remaining matches are those 12 brand values plus two in a comment. The rest of
 the table still maps to tokens. Known residue: the WhatsApp hover puts a white
 icon on `#25d366` (1.98:1, under the 3:1 non-text floor), and
 `.newsletter-error-msg` (`--color-danger`) is 3.92:1 where the newsletter card

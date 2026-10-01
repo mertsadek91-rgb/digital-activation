@@ -197,15 +197,17 @@
       "state": "WORKING",
       "current_task": "TASK-0086",
       "assignments": [
-        "TASK-0086"
+        "TASK-0086",
+        "TASK-0093",
+        "TASK-0094"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 3,
       "blockers": [],
-      "last_activity": "2026-09-30T13:53:30Z"
+      "last_activity": "2026-10-01T13:06:41Z"
     },
     {
       "id": "responsive-design-specialist",
@@ -276,12 +278,14 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0086"
+        "TASK-0086",
+        "TASK-0093",
+        "TASK-0094"
       ],
       "reviews": [],
       "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-09-30T07:53:57Z"
     },
@@ -349,7 +353,7 @@
       "opportunities": [],
       "workload": 4,
       "blockers": [],
-      "last_activity": "2026-10-01T12:49:07Z"
+      "last_activity": "2026-10-01T13:07:40Z"
     },
     {
       "id": "backend-engineer",
@@ -430,11 +434,9 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0088",
-      "assignments": [
-        "TASK-0088"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0015",
         "TASK-0016",
@@ -443,9 +445,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-10-01T13:04:30Z"
+      "last_activity": "2026-10-01T13:06:54Z"
     },
     {
       "id": "crm-workflow-architect",
@@ -651,7 +653,7 @@
       ],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-09-30T13:49:15Z"
+      "last_activity": "2026-10-01T13:07:15Z"
     },
     {
       "id": "content-strategist",
@@ -786,11 +788,11 @@
         "TASK-0080"
       ],
       "reviews": [],
-      "reviews_recorded": 20,
+      "reviews_recorded": 21,
       "opportunities": [],
       "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-01T13:04:29Z"
+      "last_activity": "2026-10-01T13:06:53Z"
     },
     {
       "id": "performance-engineer",

@@ -90,9 +90,9 @@ A path that appears in more than one source is counted in each.
 On the live site, the WooCommerce category base was renamed from
 `product-category` to `collections`, and child categories nest under their
 parents. The generator keys every category row as
-`/product-category/<term-slug>`, so the URLs Google actually has do not match
+`/product-category/<term-slug>`, so the URLs the legacy site serves do not match
 the map. The legacy pages are `index, follow` with a self-canonical, so they
-are indexed.
+are indexable; whether Google holds them needs Search Console to confirm.
 
 | Legacy path (live permalink)                                                      | Chain                 |
 | --------------------------------------------------------------------------------- | --------------------- |
@@ -256,7 +256,11 @@ fallback today.
    `next.config.ts` shadows them, so delete it afterwards. The generator should
    also learn the live `/collections/<parents>/<slug>/` form, after which the
    `gone.ts` fallback can go.
-4. **Two hops:** amend runbook C8, or open the L4 proxy task.
+4. **Two hops:** no action. Runbook check C8 (`docs/deployment.md` §13)
+   already accepts at most two permanent hops.
 5. **English privacy and terms text:** this is the owner's content.
 6. **Reviews:** this task is L4. It still needs the independent review and the
-   cross-manager reviews (pm-05, pm-06) before COMPLETED. None has happened.
+   cross-manager reviews (pm-05, pm-06) before COMPLETED. The PASS reviews
+   REV-0045/0046 recorded on 2026-09-30 were invalidated (owner-confirmed;
+   reopen event at 12:17Z). A pre-deploy review on 2026-10-01 returned CONCERN;
+   the post-deploy re-crawl and its review are still to come.

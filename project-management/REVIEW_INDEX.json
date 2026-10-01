@@ -1274,6 +1274,48 @@
       "ts": "2026-10-01T13:04:29Z",
       "actor": "security-engineer",
       "event": "E20261001130429-7d4f89"
+    },
+    {
+      "review_id": "REV-0092",
+      "reviewer": "pm-03",
+      "executor": "subagent:general-purpose (art-director/accessibility reviewer brief)",
+      "review_type": "ART_DIRECTION",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Contrast recomputed and matches (gold-ink 5.86-6.33, brand-ink 8.16, white on success 5.59, info 5.17, purple 5.98); naming consistent; remaining hex are brand only; screenshots ar-1440/en-390 show identical layout and RTL. Out-of-scope but harmless: 600->700 weights, .remote-text span colour. DESIGN_SYSTEM count wrong (15/13 vs 14/12) - fixed. Follow-ups: TASK-0093 (WhatsApp hover 1.98), TASK-0094 (newsletter error 3.92).",
+      "round": 2,
+      "target": "TASK-0086",
+      "ts": "2026-10-01T13:06:53Z",
+      "actor": "pm-03",
+      "event": "E20261001130653-a93208"
+    },
+    {
+      "review_id": "REV-0093",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose (independent security-reviewer brief, pm-04/pm-06 lens)",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Round 2: Serializable closes the two-owner race (rw-dependency cycle aborts one) and the duplicate audit row (40001); P2034 mapping correct for adapter-pg/client 7.10; new int test runs the real create-staff and proves the revoke step. Minor gap (unit test for Serializable/P2034) added afterwards: 40/40.",
+      "round": 3,
+      "target": "TASK-0088",
+      "ts": "2026-10-01T13:06:53Z",
+      "actor": "security-engineer",
+      "event": "E20261001130653-8005a7"
+    },
+    {
+      "review_id": "REV-0094",
+      "reviewer": "pm-05",
+      "executor": "subagent:general-purpose (pm-05/pm-06 reviewer brief)",
+      "review_type": "SEO",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Pre-deploy: targets /refunds, /en/refunds, /blog, /contact live; static rules correct; gone.ts fallback safe (unique product_cat slugs, permanence kept, no open redirect; adds up to 2 uncached lookups on /collections 404s). Counts reconcile (174 = 106 pass now, 125 expected after deploy). Report fixed: 'indexed' -> 'indexable', C8 needs no change, invalidated reviews noted. Before COMPLETED: deploy + full re-crawl evidence, owner/SEO call on microsoft-sql-server.",
+      "round": 3,
+      "target": "TASK-0042",
+      "ts": "2026-10-01T13:07:15Z",
+      "actor": "pm-05",
+      "event": "E20261001130715-fe930c"
     }
   ]
 }

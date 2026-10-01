@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -51,7 +51,7 @@
 
 ## Current tasks
 
-- TASK-0088 — Deactivating a staff account revokes all of its sessions (IN_PROGRESS, 20%)
+- none
 
 ## Supporting
 

@@ -259,3 +259,30 @@ describe('deactivateStaff (TASK-0088)', () => {
     expect(audit).toHaveLength(1);
   });
 });
+
+describe('deactivateStaff concurrency (TASK-0088 review)', () => {
+  it('runs Serializable and turns a serialization failure into a "run again" message', async () => {
+    let options: unknown;
+    const conflict = Object.assign(new Error('write conflict'), { code: 'P2034' });
+    const db = {
+      $transaction: (_work: unknown, opts: unknown) => {
+        options = opts;
+        return Promise.reject(conflict);
+      },
+    } as unknown as PrismaClient;
+
+    await expect(
+      deactivateStaff(db, { email: 'a@example.test', by: 'owner@example.test' }),
+    ).rejects.toThrow(/run the command again/i);
+    expect(options).toEqual({ isolationLevel: 'Serializable' });
+  });
+
+  it('passes any other failure through unchanged', async () => {
+    const db = {
+      $transaction: () => Promise.reject(new Error('connection refused')),
+    } as unknown as PrismaClient;
+    await expect(
+      deactivateStaff(db, { email: 'a@example.test', by: 'owner@example.test' }),
+    ).rejects.toThrow('connection refused');
+  });
+});
