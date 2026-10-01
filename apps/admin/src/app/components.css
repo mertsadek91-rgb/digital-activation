@@ -942,11 +942,16 @@ tr.drawer td {
   .btn-sm,
   .icon-btn,
   .chip,
-  .locale-switch .chip {
+  .locale-switch .chip,
+  .order-hero__actions button,
+  .order-hero__actions .as-button,
+  .order-hero__actions .button,
+  .profile-card__email,
+  .app-nav__link {
     min-block-size: 44px;
   }
   button.linky {
-    min-block-size: 32px;
+    min-block-size: 36px;
     padding-block: 4px;
   }
 }

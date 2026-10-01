@@ -40,6 +40,19 @@ export interface Notice {
   text: string;
 }
 
+/** The strip, in order: key, label, and how many things the tab holds. */
+const TABS: readonly [
+  Tab,
+  'tabOverview' | 'tabLines' | 'tabPayment' | 'tabMessages' | 'tabNotes',
+  (detail: AdminOrderDetail) => number | null,
+][] = [
+  ['overview', 'tabOverview', () => null],
+  ['lines', 'tabLines', (detail) => detail.lines.length],
+  ['payment', 'tabPayment', (detail) => detail.payments.length],
+  ['messages', 'tabMessages', (detail) => detail.emails.length],
+  ['notes', 'tabNotes', (detail) => detail.notes.length],
+];
+
 export default function OrderPage() {
   const params = useParams<{ number: string }>();
   const number = decodeURIComponent(params.number);
@@ -161,31 +174,59 @@ export default function OrderPage() {
           </aside>
 
           <section className="order-main card">
-            <div className="tabs-bar" role="tablist">
-              {(
-                [
-                  ['overview', 'tabOverview', null],
-                  ['lines', 'tabLines', detail.lines.length],
-                  ['payment', 'tabPayment', detail.payments.length],
-                  ['messages', 'tabMessages', detail.emails.length],
-                  ['notes', 'tabNotes', detail.notes.length],
-                ] as const
-              ).map(([key, label, count]) => (
-                <button
-                  key={key}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === key}
-                  className={`tab${tab === key ? ' is-active' : ''}`}
-                  onClick={() => setTab(key)}
-                >
-                  {t(label)}
-                  {count !== null && count > 0 ? <span className="tab-count">{count}</span> : null}
-                </button>
-              ))}
+            <div
+              className="tabs-bar"
+              role="tablist"
+              aria-label={t('title', { number })}
+              onKeyDown={(event) => {
+                // Arrow keys move along the strip in reading order; Home and
+                // End jump to its ends.
+                const order = TABS.map(([key]) => key);
+                const index = order.indexOf(tab);
+                const rtl = document.documentElement.dir === 'rtl';
+                const next = rtl ? 'ArrowLeft' : 'ArrowRight';
+                const previous = rtl ? 'ArrowRight' : 'ArrowLeft';
+                let target: Tab | null = null;
+                if (event.key === next) target = order[(index + 1) % order.length] ?? null;
+                else if (event.key === previous)
+                  target = order[(index - 1 + order.length) % order.length] ?? null;
+                else if (event.key === 'Home') target = order[0] ?? null;
+                else if (event.key === 'End') target = order[order.length - 1] ?? null;
+                if (!target) return;
+                event.preventDefault();
+                setTab(target);
+                document.getElementById(`tab-${target}`)?.focus();
+              }}
+            >
+              {TABS.map(([key, label, countOf]) => {
+                const count = countOf(detail);
+                return (
+                  <button
+                    key={key}
+                    id={`tab-${key}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === key}
+                    aria-controls={`panel-${key}`}
+                    tabIndex={tab === key ? 0 : -1}
+                    className={`tab${tab === key ? ' is-active' : ''}`}
+                    onClick={() => setTab(key)}
+                  >
+                    {t(label)}
+                    {count !== null && count > 0 ? (
+                      <span className="tab-count">{count}</span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="tab-panel is-active">
+            <div
+              className="tab-panel is-active"
+              role="tabpanel"
+              id={`panel-${tab}`}
+              aria-labelledby={`tab-${tab}`}
+            >
               {tab === 'overview' ? (
                 <OverviewTab detail={detail} onGo={setTab} />
               ) : tab === 'lines' ? (

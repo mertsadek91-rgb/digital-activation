@@ -157,6 +157,7 @@ export function Nav({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const firstItemRef = useRef<HTMLButtonElement>(null);
+  const firstLinkRef = useRef<HTMLButtonElement>(null);
   // Under 992px the sidebar is a drawer; closed, it is off-canvas and must be
   // out of the tab order too, which `inert` does and a transform does not.
   const [narrow, setNarrow] = useState(false);
@@ -205,9 +206,10 @@ export function Nav({
     };
   }, []);
 
-  // The page behind an open drawer does not scroll.
+  // The page behind an open drawer does not scroll, and focus moves into it.
   useEffect(() => {
     if (!mobileOpen) return;
+    firstLinkRef.current?.focus();
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -348,13 +350,14 @@ export function Nav({
             <div key={group.label}>
               <div className="app-nav__label">{group.label}</div>
               <ul className="app-nav__list">
-                {group.items.map((item) => {
+                {group.items.map((item, index) => {
                   const active = current === item.key;
                   const count = item.count ?? 0;
                   const late = (item.overdue ?? 0) > 0;
                   return (
                     <li key={item.key}>
                       <button
+                        ref={group === groups[0] && index === 0 ? firstLinkRef : undefined}
                         type="button"
                         className={`app-nav__link${active ? ' is-active' : ''}`}
                         aria-current={active ? 'page' : undefined}

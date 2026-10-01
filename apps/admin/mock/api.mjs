@@ -335,10 +335,10 @@ const customers = {
       id: 'cu2',
       email: 'khaled@example.com',
       name: 'خالد العمري',
-      paidOrders: 1,
-      totalSpentUsd: '49.00',
+      paidOrders: 3,
+      totalSpentUsd: '110.00',
       lastOrderAt: iso(55),
-      marketingEmail: 'NONE',
+      marketingEmail: 'OPTED_OUT',
       createdAt: iso(400),
     },
     {
@@ -504,7 +504,8 @@ const marketing = Object.fromEntries(
 
 const orderDetail = (number) => {
   const n = Number(number.slice(-1)) || 7;
-  const row = orders.rows.find((r) => r.number === number) ?? orderRow(n, 'PAID', 'LOW');
+  const row = orders.rows.find((r) => r.number === number);
+  if (!row) return undefined;
   const delivered = row.status === 'FULFILLED' || row.status === 'COMPLETED';
   return {
     ...row,
@@ -733,13 +734,24 @@ const dynamic = [
   ],
   [
     /^POST \/v1\/admin\/orders\/([^/]+)\/messages$/,
-    (m) => ({
-      sent: true,
-      to: 'sara.h@example.com',
-      template: 'admin.message',
-      code: 'OFFER-DEMO1234',
-      skipped: null,
-    }),
+    (m, body) => {
+      const kind = body?.kind ?? 'custom';
+      const template =
+        {
+          payment_received: 'order.payment_received',
+          review_request: 'review.invite',
+          renewal_reminder: 'renewal.reminder',
+          offer: 'admin.offer',
+          custom: 'admin.message',
+        }[kind] ?? 'admin.message';
+      return {
+        sent: true,
+        to: 'sara.h@example.com',
+        template,
+        code: kind === 'offer' ? 'OFFER-DEMO1234' : null,
+        skipped: null,
+      };
+    },
   ],
   [/^POST \/v1\/admin\/orders\/([^/]+)\/notes$/, () => ({ id: 'n_new' })],
   [/^POST \/v1\/admin\/orders\/([^/]+)\/confirm-payment$/, () => ({ ok: true })],
@@ -776,8 +788,16 @@ const routes = new Map([
   ['GET /v1/admin/marketing/settings', marketing],
 ]);
 
-createServer((req, res) => {
+createServer(async (req, res) => {
   const origin = req.headers.origin ?? ORIGIN;
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  let parsed = null;
+  try {
+    parsed = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : null;
+  } catch {
+    parsed = null;
+  }
   res.setHeader('access-control-allow-origin', origin);
   res.setHeader('access-control-allow-credentials', 'true');
   res.setHeader('access-control-allow-headers', 'content-type, accept-language');
@@ -795,7 +815,7 @@ createServer((req, res) => {
     for (const [pattern, answer] of dynamic) {
       const match = pattern.exec(key);
       if (match) {
-        body = answer(match);
+        body = answer(match, parsed);
         break;
       }
     }

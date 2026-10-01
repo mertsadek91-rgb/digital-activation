@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { softBreakEmail } from '../../lib/text';
 import { useStaff } from '../../lib/use-staff';
 import { Nav } from '../nav';
 import { STATUS_KEYS, stamp, statusPill } from './order-shared';
@@ -245,7 +246,7 @@ function OrderRow({ row }: { row: AdminOrderRow }) {
       </td>
       <td className="order-customer">
         {row.customerName ? <strong>{row.customerName}</strong> : null}
-        <span dir="ltr">{row.email}</span>
+        <span dir="ltr">{softBreakEmail(row.email)}</span>
       </td>
       <td className="num">{row.itemCount}</td>
       <td className="num order-total" dir="ltr">

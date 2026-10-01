@@ -53,7 +53,10 @@ export function MessagesTab({
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
 
-  const paid = detail.paidAt !== null;
+  // The same statuses the API accepts a receipt for: money in, not gone back.
+  const paid =
+    detail.paidAt !== null &&
+    ['PAID', 'FULFILLING', 'FULFILLED', 'COMPLETED'].includes(detail.status);
   const hasAccount = detail.customer !== null;
   const delivered = detail.lines.some((line) => line.fulfillmentState === 'DELIVERED');
   const hasTerm = detail.lines.some((line) => line.expiresAt !== null);
@@ -181,11 +184,14 @@ export function MessagesTab({
             </span>
             <div className="compose-card__body">
               <strong>{entry.label}</strong>
-              <p className="meta">{entry.why ?? entry.hint}</p>
+              <p className="meta" id={`why-${entry.kind}`}>
+                {entry.why ?? entry.hint}
+              </p>
             </div>
             <button
               type="button"
               className={entry.hasForm ? 'ghost btn-sm' : 'btn-sm'}
+              aria-describedby={`why-${entry.kind}`}
               disabled={!canMessage || !entry.enabled || sending !== null}
               onClick={() => {
                 if (entry.hasForm) setOpen(open === entry.kind ? null : entry.kind);

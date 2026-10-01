@@ -17,6 +17,15 @@ import {
 } from '../order-shared';
 import type { Notice } from './page';
 
+const PAY_STATE_KEYS = {
+  REQUIRES_ACTION: 'payStateREQUIRES_ACTION',
+  PROCESSING: 'payStatePROCESSING',
+  SUCCEEDED: 'payStateSUCCEEDED',
+  FAILED: 'payStateFAILED',
+  CANCELLED: 'payStateCANCELLED',
+  REFUNDED: 'payStateREFUNDED',
+} as const;
+
 /**
  * The money: every payment row against the order, the processor's own view
  * of it when there is one, and the three acts that move it — confirming a
@@ -169,7 +178,9 @@ export function PaymentTab({
                             : 'pill-draft'
                       }`}
                     >
-                      {payment.state}
+                      {Object.hasOwn(PAY_STATE_KEYS, payment.state)
+                        ? t(PAY_STATE_KEYS[payment.state as keyof typeof PAY_STATE_KEYS])
+                        : payment.state}
                     </span>
                   </td>
                   <td>{payment.reference ? <code dir="ltr">{payment.reference}</code> : '—'}</td>

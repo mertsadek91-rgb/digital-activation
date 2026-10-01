@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
+import { softBreakEmail } from '../../lib/text';
 import { Nav } from '../nav';
 
 /** * The moderation queue.
@@ -229,7 +230,7 @@ function ReviewRow({
 
         <td className="queue-mail">
           {row.customerName ? <strong>{row.customerName}</strong> : null}
-          <span dir="ltr">{row.customerEmail}</span>
+          <span dir="ltr">{softBreakEmail(row.customerEmail)}</span>
           <span className="meta" dir="ltr">
             {row.orderNumber}
           </span>

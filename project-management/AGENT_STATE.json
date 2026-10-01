@@ -226,11 +226,11 @@
         "TASK-0090",
         "TASK-0091"
       ],
-      "reviews_recorded": 1,
+      "reviews_recorded": 3,
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-01T08:30:04Z"
+      "last_activity": "2026-10-01T11:35:34Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -433,7 +433,7 @@
       "opportunities": [],
       "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-01T11:28:27Z"
+      "last_activity": "2026-10-01T11:40:16Z"
     },
     {
       "id": "auth-rbac-specialist",

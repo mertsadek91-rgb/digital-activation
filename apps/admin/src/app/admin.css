@@ -305,7 +305,7 @@
 }
 .dash-attention.is-urgent .dash-attention-count {
   background: var(--color-danger-ink);
-  color: #fff;
+  color: var(--color-ink-inverse);
 }
 .dash-attention.is-due .dash-attention-count {
   background: var(--color-warning-soft);
@@ -2254,7 +2254,7 @@ tr.drawer td > * {
  * a ceiling and allowed to wrap instead.
  */
 .queue-mail {
-  min-inline-size: 13rem;
+  min-inline-size: 10rem;
 }
 .queue-mail span {
   overflow-wrap: break-word;
@@ -3820,6 +3820,17 @@ a.as-button.ghost:hover {
   min-block-size: 48px;
   gap: 8px;
 }
+/* On a phone the strip wraps so every tab stays in reach. */
+@media (max-width: 576px) {
+  .tabs-bar {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .tabs-bar .tab {
+    min-block-size: 44px;
+    padding-inline: 10px;
+  }
+}
 
 /* The customer card: the template's patient card. */
 .profile-card {
@@ -4099,6 +4110,10 @@ a.as-button.ghost:hover {
 .lines-table__when {
   display: block;
   margin-block-start: 4px;
+}
+.lines-table td.actions {
+  white-space: normal;
+  min-inline-size: 12rem;
 }
 .lines-table td.actions > * {
   margin-block: 2px;
