@@ -11,7 +11,7 @@
 | Max authority | Level 2 |
 | Executes as | subagent:visual-qa |
 | Staffed on this project | Yes |
-| Current state | REVIEWING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -49,13 +49,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0090 — Apply the licensed Envato (MediCore) admin template design system to the whole admin panel (QA, 80%)
-- TASK-0091 — Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin (QA, 70%)
-
-## Pending reviews
-
-- TASK-0090 — Apply the licensed Envato (MediCore) admin template design system to the whole admin panel (QA, 80%)
-- TASK-0091 — Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin (QA, 70%)

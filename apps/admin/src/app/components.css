@@ -947,7 +947,8 @@ tr.drawer td {
   .order-hero__actions .as-button,
   .order-hero__actions .button,
   .profile-card__email,
-  .app-nav__link {
+  .action-row button,
+  .order-main .paste-form button {
     min-block-size: 44px;
   }
   button.linky {

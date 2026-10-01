@@ -1134,6 +1134,76 @@
       "ts": "2026-10-01T11:35:34Z",
       "actor": "responsive-design-specialist",
       "event": "E20261001113534-110e0f"
+    },
+    {
+      "review_id": "REV-0082",
+      "reviewer": "pm-04",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Re-check after REV-0077: all three concerns resolved. (1) The charged figure: contracts admin.ts:483 now carries amounts.charged {amount,currency}|null (no 'total'); orders.service.ts:51-68 formatCharged (3 decimals for BHD/JOD/KWD/OMR/TND, 2 otherwise) and chargedAmount (first SUCCEEDED Payment row's amountCharged/chargedCurrency, null without one) feed the detail at :254 and the list row at :800-801; grep finds no remaining totalUsd x fxRate in orders.service, order-messages.service or mail/templates; side-cards.tsx:249-252 and overview-tab.tsx:77-78 render the line only when charged is non-null, with the i18n key present in ar.ts:585 and en.ts:573; the fixture mock/api.mjs:542 matches the new shape. (2) payment_received (order-messages.service.ts:118-127) names the payment row's charge, falls back to '<totalUsd> USD' only without a row, and is skipped not_paid unless paidAt is set AND status is in RECEIPT_STATUSES {PAID,FULFILLING,FULFILLED,COMPLETED} (:27-32); the audit 'after' carries status: order.status (:359). (3) src/admin/order-messages.service.test.ts exists (7 cases) and covers the charge (fixture SAR/fxRate 3.75/totalUsd 30 with a SUCCEEDED 30.000 USD row: asserts '30.00 USD' present and '112.50' absent, audit status PAID) and the refusal on PENDING_PAYMENT, REFUNDED and CANCELLED (sent=false, skipped=not_paid, mail never called). (4) Observed: vitest run src/admin src/checkout 9 files/150 tests green (order-messages 7/7); api tsc exit 0; admin tsc exit 0. LOW, not blocking: the 3-decimal branch of formatCharged is verified by reading only (no unit fixture in a thousandths currency). UNVERIFIED as scoped: DB-backed assertions and the live endpoint (real API not started, no disposable DB); rendering is the responsive-design-specialist's review (REV-0080 fixes not re-checked here).",
+      "round": 2,
+      "target": "TASK-0091",
+      "ts": "2026-10-01T11:43:25Z",
+      "actor": "pm-04",
+      "event": "E20261001114325-73f924"
+    },
+    {
+      "review_id": "REV-0083",
+      "reviewer": "pm-03",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Re-check after REV-0078: the two owner decisions are implemented and observed. (1) PASS tests: vitest run src/admin src/reviews = 8 files / 96 tests green; order-messages.service.test.ts has 7 cases (receipt to order address with the Payment row charge and real status in the audit, receipt refused on PENDING_PAYMENT/REFUNDED/CANCELLED, offer refused without consent, SUPPORT offer rejected with ForbiddenException, code minted single-use and deactivated on a failed send, body never in the log payload, guest review request skipped). (2) PASS role gate: order-messages.service.ts:71-77 throws ForbiddenException (403) for kind=offer unless role is OWNER or ADMIN; the controller passes request.staff.role (orders.controller.ts:241-254, route stays OWNER/ADMIN/SUPPORT with Throttle 20/60s); messages-tab.tsx:46 canOffer, :106-107 the offer card is disabled with why=offerRoleOnly and :186-194 the reason is rendered beside the button and linked by aria-describedby; keys exist in en.ts:786 and ar.ts:787. (3) PASS sweep: invite-sweep.service.ts:138-140 selects reviewInvites none-of-this-stage only, so a stage-0 manual invitation no longer suppresses stages 1-2, with the owner decision cited in the comment; invite-sweep.test.ts passes but has no case for the stage-0 side-by-side rule, so that is confirmed by reading only. (4) PARTIAL: markFailed and resendLicence are identical between the queue and order namespaces in en.ts (330/438 vs 624/625) and ar.ts (336/443 vs 632/633); the previously unclaimed files (auth-brand, icons, theme-provider, theme, password/page, dashboard/figure) are now in TASK-0090 affected_files, next-env.d.ts is unchanged against main so needs no claim, and launch.json is noted on TASK-0090 because TASK-0080 claims it. BUT the task note 'fixture email is example.com' is not true for the whole fixture: apps/admin/mock/api.mjs:149 and :586 still use activate.me@outlook.com as activationEmail in HEAD 852c761 (customer emails are example.com). LOW. Trivial residue: the en accountPasswordPlaceholder wording differs between queue and order (ar is identical). (5) tsc: admin exit 0, api exit 0. pm check exits 1: TASK-0091 has 4 unresolved review rounds (3 CONCERN + 1 FAIL) against a limit of 3 (rules.mjs:299-300) and this review makes 5, so the governor is asking the responsible manager to escalate rather than loop; this is a governance state, not a code defect, but item 5 as stated is not met. UNVERIFIED: every DB-backed assertion (Promotion row, NotificationLog, AuditLog, ReviewInvite) and the live 403 over HTTP; the real API was not started per instruction. No fake approval; the owner decisions were taken in chat on 2026-10-01 and are recorded in the task note.",
+      "round": 2,
+      "target": "TASK-0091",
+      "ts": "2026-10-01T11:43:48Z",
+      "actor": "pm-03",
+      "event": "E20261001114348-eb5e45"
+    },
+    {
+      "review_id": "REV-0084",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Re-check after REV-0079: the code concerns are resolved and verified by observation; what remains is governance, not a defect. (1) apps/api/src/admin/order-messages.service.test.ts exists and passes (vitest run src/admin src/reviews: 8 files, 96 tests green, the new file 7/7). It covers every behaviour asked: recipient is the order address (L93,99); charge taken from the SUCCEEDED payment row, 30.00 USD and never totalUsd x fxRate 112.50 (L101-102); receipt refused on PENDING_PAYMENT, REFUNDED and CANCELLED with no send (L110-124); offer refused without consent, nothing minted (L126-142); offer refused for SUPPORT with 403, OWNER/ADMIN only per the owner decision (L144-157); single-use code minted then deactivated when the send fails, sent as marketing with List-Unsubscribe (L159-186); custom-message payload carries subject only and never the body (L188-208); guest order skipped without calling invite (L210-221). (2) api tsc 0, admin tsc 0, eslint 0, prettier clean. (3) order-messages.service.ts: stage-0 reviewInvite.findUnique -> already_invited (L171-178), invite sent:false -> already_reviewed (L179-186); receipt uses chargedAmount() from orders.service.ts:60-71 which picks the SUCCEEDED row and formatCharged gives 3 decimals for BHD/JOD/KWD/OMR/TND (L51-53), answering REV-0077 concern 1-2; the audit after.status is order.status (L359) and the receipt gate is paidAt plus a PAID/FULFILLING/FULFILLED/COMPLETED status set (L27-32, L118). (4) invite-sweep.service.ts:140 filters only reviewInvites none stage of the ladder's own stage; the diff over the two commits is comment-only (+2 lines), so stage 0 never suppresses stages 1-2, matching the owner decision noted 11:40; invite-sweep.test.ts:53-64 pins that where shape. (5) NOT MET as stated: pm check exits 1 with TASK-0091: 4 unresolved review rounds (limit 3) - escalate, do not loop (agent-os/tools/lib/rules.mjs:300, governor max_review_rounds). This review is itself a fifth round; per the governor the manager (pm-03) must escalate rather than re-review, and REV-0080 (visual FAIL) is a separate reviewer's finding I did not re-check. git log: 852c761 and 5d15cc9 are the task's two commits; git status clean. LOW: the already_reviewed label also covers the race where two staff press the button together and ReviewsService.invite hits its own already-sent check (reviews.service.ts:525-529), and the already_invited/already_reviewed split has no unit test (findUnique is only mocked null). LOW scope: the restyle files are now claimed by TASK-0090, but .claude/launch.json, apps/admin/src/lib/text.ts, messages/queue/reviews page.tsx (3 lines each, label alignment) and apps/api/src/reviews/invite-sweep.service.ts are claimed by neither task. UNVERIFIED by execution (no disposable DB, real API not started): NotificationLog/Promotion/AuditLog rows, the 400/403 over HTTP, the throttle, and the sweep against real rows.",
+      "round": 2,
+      "target": "TASK-0091",
+      "ts": "2026-10-01T11:44:33Z",
+      "actor": "qa-lead",
+      "event": "E20261001114433-75b80c"
+    },
+    {
+      "review_id": "REV-0085",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Re-check after REV-0080: rendered in the built-in browser against the admin dev server (localhost:3011) and the fixture API (localhost:4000); real API not started. FIXED (1) /orders/DA-2026-01186, 1440, en and ar: All orders from this customer / كل طلبات هذا العميل is a client-side navigation (a window marker set before the click survives), the customers search input arrives holding khaled@example.com and both list requests carry ?q=khaled%40example.com. FIXED (2) payment tab states read Succeeded (en) / نجحت (ar); no raw enum anywhere in the panel. FIXED (3 at 390) the tab strip wraps (flex-wrap: wrap) into two rows of 44px tabs, all five inside the 390 viewport in en and ar. REMAINING (3 at 1024, sidebar expanded 264px): the lines table still scrolls inside the card: DA-2026-01187 en 702px in a 659px wrapper (Paste the code at x 877-995 against a wrapper edge of 970, Failed cut), DA-2026-01186 en 686 / ar 692 in 659; the actions column is a fixed min-width 192px with its buttons stacked (cell 121-140px tall) so the overflow is now 27-43px instead of 73-105, but the in-card scrollbar is still there. FIXED (4) role=tablist with role=tab, aria-controls, aria-selected and roving tabindex; the shown panel is role=tabpanel with aria-labelledby; ArrowRight/ArrowLeft move and select with wrap-around, Home/End jump to first/last (en), and in ar ArrowLeft advances / ArrowRight goes back. PARTLY FIXED (5, 390 coarse pointer): Print, All orders and Send the key / أرسل المفتاح are 44px in en and ar, but the copy-email control is 36px (was 32) on 01186 and 01187 and the payment-tab Refund toggle, Cancel and Refund the order submit are 40px. FIXED (6) each disabled Send carries aria-describedby=why-<kind> pointing at its visible reason (not paid / nothing delivered / no limited term). FIXED (7) on DA-2026-01185 (Payment under review) Payment received is disabled with the reason Not sent: the order is not paid yet. Error state: /orders/DA-0000-00000 renders No order has that number with an All orders link, no overflow; only the expected fixture 404 in the console. NEW, minor: on /customers?q=<email> in ar the search input is direction rtl while holding an email (mixed-direction input should stay ltr); the fixture returns 4 rows for the exact-email query (fixture, not page). No document-level horizontal overflow at 1440/1024/390 in either locale; no console errors beyond the fixture 404s.",
+      "round": 2,
+      "target": "TASK-0091",
+      "ts": "2026-10-01T11:48:55Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261001114855-9f2bdb"
+    },
+    {
+      "review_id": "REV-0086",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Re-check after REV-0081: rendered in the built-in browser against the admin dev server (localhost:3011) and the fixture API (localhost:4000); real API not started. REMAINING (a) /queue at 1440 with the sidebar expanded (264px): en table 1239px in the 1126px wrapper (wrapper 288-1416; Paste the code at x 1324-1443 and Failed at 1451-1514 are off the card), ar table 1172 in 1126 (wrapper 24-1152; Failed/تعذّر at x -7..44 is cut); the email cell is 160px and wraps after the @ (zero-width space present) so the rows are 107px (en) / 86px (ar) tall, but the table still overflows and scrolls inside the card. FIXED (b) dark dashboard: the urgent attention count is rgb(8,25,27) on rgb(240,138,130) = 7.43:1 at 14px/700 (warning counts 8.44:1, neutral 12.76:1). PARTLY FIXED (c) coarse pointer at 390 (pointer:coarse matches): queue row Copy buttons are 33x36 (meets 36); opening the drawer moves focus to the first nav link (Dashboard / لوحة المعلومات) in en and ar, body overflow hidden while open, Escape closes it; but drawer nav links are still 40px: components.css has @media (pointer: coarse) .app-nav__link { min-block-size: 44px } yet the computed min-block-size is 40px because shell.css .app-nav__link { min-block-size: 40px } comes later in the compiled layout.css at equal specificity. NEW regression from the focus-in fix: after Escape closes the drawer (opened from the keyboard with the toggle focused) document.activeElement is BODY, not the toggle; nav.tsx onKey only calls setMobileOpen(false) and nothing restores focus, so keyboard focus is lost (REV-0081 had observed it returning to the toggle, which only held because focus never left it). No document-level horizontal overflow on /queue or /dashboard at 1440 or 390; the two console 404s in the tab are carried over from the DA-0000-00000 order lookup, every /queue fixture request returned 200.",
+      "round": 3,
+      "target": "TASK-0090",
+      "ts": "2026-10-01T11:49:05Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261001114905-6ad852"
     }
   ]
 }

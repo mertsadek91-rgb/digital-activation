@@ -135,6 +135,7 @@ function CustomersScreen() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('searchPlaceholder')}
             aria-label={t('searchLabel')}
+            dir="auto"
           />
           <button type="submit" className="ghost">
             {c('search')}

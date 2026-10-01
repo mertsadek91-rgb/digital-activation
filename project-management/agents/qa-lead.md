@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | subagent:independent-reviewer |
 | Staffed on this project | Yes |
-| Current state | REVIEWING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -57,7 +57,3 @@
 
 - TASK-0001 — Stand up the project-management system and dashboard (MANAGER_REVIEW, 80%)
 - TASK-0060 — End-to-end test: card order to licence delivered (IN_PROGRESS, 0%)
-
-## Pending reviews
-
-- TASK-0091 — Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin (QA, 70%)

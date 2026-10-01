@@ -792,12 +792,13 @@ createServer(async (req, res) => {
   const origin = req.headers.origin ?? ORIGIN;
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  let parsed = null;
-  try {
-    parsed = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : null;
-  } catch {
-    parsed = null;
-  }
+  const parsed = (() => {
+    try {
+      return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : null;
+    } catch {
+      return null;
+    }
+  })();
   res.setHeader('access-control-allow-origin', origin);
   res.setHeader('access-control-allow-credentials', 'true');
   res.setHeader('access-control-allow-headers', 'content-type, accept-language');
@@ -829,5 +830,6 @@ createServer(async (req, res) => {
   res.writeHead(200);
   res.end(JSON.stringify(body));
 }).listen(PORT, () => {
-  console.log(`mock admin API on http://localhost:${PORT} for ${ORIGIN}`);
+  // The one line this server prints: where it is. Not a log, a banner.
+  console.warn(`mock admin API on http://localhost:${PORT} for ${ORIGIN}`);
 });

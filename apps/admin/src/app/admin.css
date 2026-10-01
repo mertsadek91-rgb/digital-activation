@@ -2201,8 +2201,8 @@ tr.drawer td > * {
 }
 .queue-product-cell,
 .review-product {
-  min-inline-size: 16rem;
-  max-inline-size: 18rem;
+  min-inline-size: 12rem;
+  max-inline-size: 16rem;
 }
 
 /*
@@ -4113,7 +4113,7 @@ a.as-button.ghost:hover {
 }
 .lines-table td.actions {
   white-space: normal;
-  min-inline-size: 12rem;
+  min-inline-size: 9rem;
 }
 .lines-table td.actions > * {
   margin-block: 2px;

@@ -161,6 +161,7 @@ export function Nav({
   // Under 992px the sidebar is a drawer; closed, it is off-canvas and must be
   // out of the tab order too, which `inert` does and a transform does not.
   const [narrow, setNarrow] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   // The collapsed rail is a preference and survives the session.
   useEffect(() => {
@@ -188,7 +189,12 @@ export function Nav({
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setMobileOpen(false);
+        // Focus went into the drawer when it opened; it comes back to the
+        // control that opened it, so a keyboard user is not dropped on body.
+        setMobileOpen((open) => {
+          if (open) toggleRef.current?.focus();
+          return false;
+        });
         setMenuOpen(false);
       }
     };
@@ -406,6 +412,7 @@ export function Nav({
       <div className="app-main">
         <header className="app-topbar">
           <button
+            ref={toggleRef}
             type="button"
             className="icon-btn app-topbar__menu-toggle"
             aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}

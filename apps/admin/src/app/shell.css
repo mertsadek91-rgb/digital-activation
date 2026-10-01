@@ -573,3 +573,11 @@
     display: none;
   }
 }
+
+/* A finger needs a taller row than a pointer; declared here so it outranks
+   the 40px above at equal specificity. */
+@media (pointer: coarse) {
+  .app-nav__link {
+    min-block-size: 44px;
+  }
+}

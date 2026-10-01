@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | QA_SUPPORT |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -55,8 +55,4 @@
 
 ## Current tasks
 
-- TASK-0090 — Apply the licensed Envato (MediCore) admin template design system to the whole admin panel (QA, 80%)
-
-## Supporting
-
-- TASK-0091 — Order detail page: customer, payment, delivery, keys, notes and customer messaging actions in the admin (QA, 70%)
+- none
