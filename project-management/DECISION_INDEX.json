@@ -112,14 +112,14 @@
       "title": "Catalogue search is in-app with Arabic folding, not Meilisearch",
       "status": "ACTIVE",
       "authority_level": 4,
-      "decided_by": "Reconstructed from code — no sign-off on record",
+      "decided_by": "owner",
       "date": "2026-09-29",
       "participants": [],
       "related_tasks": [
         "TASK-0035"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-29",
+      "updated_at": "2026-10-02",
       "id": "DEC-0009",
       "file": "decisions/DEC-0009.md"
     },

@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WAITING |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -48,4 +48,8 @@
 
 ## Current tasks
 
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (WAITING_INFORMATION, 20%)
+- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (IN_PROGRESS, 20%)
+
+## Supporting
+
+- TASK-0096 — First-party analytics: a server-fed events table for the funnel, no browser scripts (IN_PROGRESS, 10%)

@@ -52,4 +52,4 @@
 
 ## Supporting
 
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (WAITING_INFORMATION, 20%)
+- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (IN_PROGRESS, 20%)

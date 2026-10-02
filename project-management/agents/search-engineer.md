@@ -49,7 +49,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0035 — Confirm or reverse the Meilisearch replacement (DEC-0009) (WAITING_INFORMATION, 20%)

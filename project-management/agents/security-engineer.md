@@ -53,7 +53,6 @@
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 - TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (WAITING_INFORMATION, 20%)
-- TASK-0015 — Role-scope review of staff routes that carry no @Roles (WAITING_INFORMATION, 60%)
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
 - TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
 
@@ -63,5 +62,5 @@
 - TASK-0021 — Implement Final Processor for checkout and admin (MANAGER_REVIEW, 90%)
 - TASK-0040 — Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002) (BACKLOG, 0%)
 - TASK-0043 — Owner decision — which legacy customers, orders and licence keys migrate (WAITING_INFORMATION, 20%)
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (WAITING_INFORMATION, 20%)
+- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (IN_PROGRESS, 20%)
 - TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)

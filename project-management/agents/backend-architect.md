@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WAITING |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -53,7 +53,7 @@
 
 - TASK-0021 — Implement Final Processor for checkout and admin (MANAGER_REVIEW, 90%)
 - TASK-0034 — Decide where scheduled work runs: API process or the BullMQ worker (BACKLOG, 0%)
-- TASK-0035 — Confirm or reverse the Meilisearch replacement (DEC-0009) (WAITING_INFORMATION, 20%)
+- TASK-0096 — First-party analytics: a server-fed events table for the funnel, no browser scripts (IN_PROGRESS, 10%)
 
 ## Supporting
 
