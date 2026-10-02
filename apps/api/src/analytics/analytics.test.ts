@@ -266,6 +266,17 @@ describe('VisitorSaltService', () => {
     expect(await w.salts.saltFor(morning)).toHaveLength(SALT_BYTES);
   });
 
+  it("forgets a past day's salt after midnight, and keeps today's", async () => {
+    const w = world();
+    await w.salts.saltFor(morning);
+    w.salts.forgetPast(night);
+    await w.salts.saltFor(night);
+    expect(w.client.analyticsSalt.findUnique).toHaveBeenCalledTimes(1);
+    w.salts.forgetPast(tomorrow);
+    // The prune has deleted yesterday's row by now; nothing in memory still holds it.
+    expect(Reflect.get(w.salts, 'cached')).toBeUndefined();
+  });
+
   it('does not touch the salt table for an event without an address', async () => {
     const w = world();
     expect(await w.service.record(view, { userAgent: BROWSER }, morning)).toBe(true);

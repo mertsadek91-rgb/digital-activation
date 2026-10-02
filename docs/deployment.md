@@ -121,6 +121,16 @@ S3-compatible target — not to the same server's disk. Verify a restore once
 before the cutover, because an unverified backup is a belief rather than a
 backup.
 
+**Retention decides how private the analytics are.** The day's visitor id is an
+HMAC of the visitor's address and user agent under a random salt kept in the
+`AnalyticsSalt` table (TASK-0097). The prune deletes each salt by 03:29 UTC the
+next day, which is what makes old ids impossible to link back to an address —
+but every backup taken while a salt existed holds it next to that day's events,
+and with the salt the ids can be brute-forced over the IPv4 space. The real
+irreversibility window is therefore the backup retention, not the day: keep it
+as short as recovery allows, and treat backups as personal data for as long as
+they are kept.
+
 ## 2. Redis
 
 A Coolify resource, **internal only** — no published port, no domain.
