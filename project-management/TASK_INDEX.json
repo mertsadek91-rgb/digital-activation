@@ -1904,7 +1904,7 @@
       "id": "TASK-0092",
       "title": "pm CLI: let a reviewer or manager formally invalidate a review (append-only), so a fake PASS stops counting",
       "type": "tooling",
-      "status": "BACKLOG",
+      "status": "IN_PROGRESS",
       "stage": "ANALYSIS",
       "priority": "MEDIUM",
       "progress": 0,
@@ -1934,9 +1934,9 @@
         "agent-os/tools/lib/rules.mjs"
       ],
       "created_at": "2026-10-01",
-      "updated_at": "2026-10-01",
+      "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/backlog/TASK-0092.md"
+      "file": "tasks/active/TASK-0092.md"
     },
     {
       "id": "TASK-0093",

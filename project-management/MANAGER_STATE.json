@@ -216,7 +216,8 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0092"
       ],
       "owned_tasks": [
         "TASK-0011",
@@ -249,7 +250,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-01T12:54:47Z"
+      "last_activity": "2026-10-02T07:00:10Z"
     },
     {
       "id": "pm-07",

@@ -13,7 +13,7 @@
     "TASK-0083 is BLOCKED"
   ],
   "total_tasks": 51,
-  "active_tasks": 13,
+  "active_tasks": 14,
   "blocked_tasks": 4,
   "review_tasks": 2,
   "qa_tasks": 0,
@@ -39,12 +39,12 @@
   "opportunities_open": 2,
   "opportunities_ready_for_decision": 1,
   "watchlist": 1,
-  "reviews_recorded": 104,
-  "independent_reviews": 104,
+  "reviews_recorded": 105,
+  "independent_reviews": 105,
   "owner_attention": 9,
   "active_agents": 11,
   "file_collisions": 0,
   "validation_problems": 0,
-  "canonical_events": 499,
-  "last_activity": "2026-10-02T06:52:45Z"
+  "canonical_events": 503,
+  "last_activity": "2026-10-02T07:00:28Z"
 }
