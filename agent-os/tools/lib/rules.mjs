@@ -96,6 +96,13 @@ const linked = (state, a, b) => state.links.some((l) => (l.from === a && l.to ==
 
 // ------------------------------------------------------------ write guards
 
+/** A CR that records an opportunity's approval (source_opportunity) is owner-class state. */
+function approvalArtifact(ev) {
+  if (!String(ev.entity).startsWith('CR-')) return false;
+  const f = ev.data?.fields ?? {};
+  return (ev.type === 'entity_created' || ev.type === 'entity_updated') && f.source_opportunity != null;
+}
+
 export function writeGuards(before, after, events, ctx = {}) {
   const errs = [];
   const P = people();
@@ -112,7 +119,14 @@ export function writeGuards(before, after, events, ctx = {}) {
     // Owner channel ⇒ owner proof, verified against the key only the owner's paths create (REV-0004 H1).
     if (ev.channel === 'migration' && !(ev.type === 'v1_imported' && ev.actor === 'system'))
       errs.push('the migration channel carries only the V1 import (v1_imported by system)');
-    if (isOwner(ev.actor) && OWNER_CHANNELS.has(ev.channel)) {
+    // An owner-class event needs a proof on EVERY channel, not only the owner
+    // channels (REV-0005 H1: system/pm-01 on cli, owner on migration). The V1
+    // import is the one exception, and replay confines it to the log's prefix.
+    const artifact = approvalArtifact(ev);
+    const ownerClass = ev.type !== 'v1_imported' && (ownerOnly || isOwner(ev.actor) || artifact);
+    if (artifact && !(isOwner(ev.actor) && OWNER_CHANNELS.has(ev.channel)))
+      errs.push(`${ev.entity}: a change request created from an opportunity (source_opportunity) is the owner's approval; only the owner's decision creates it (got actor "${ev.actor}" via ${ev.channel})`);
+    if (ownerClass) {
       const v = verifyOwnerProof(ev);
       // Replay in CI has no owner key: presence is checked there, validity wherever the key exists.
       if (v !== 'valid' && !(ctx.replay && v === 'unverifiable')) errs.push(`owner event ${ev.type} ${ev.entity} has ${v === 'unverifiable' ? 'a proof but no owner key on this machine to verify it' : v === 'missing' ? 'no owner proof' : 'an invalid owner proof'} — owner decisions are recorded only through the owner's dashboard or \`pm owner\``);
@@ -391,12 +405,18 @@ export function checkProblems(state, ctx = {}) {
 
 export function replayProblems(events, ctx = {}) {
   const out = [];
+  let pastImport = false;
   for (let i = 0; i < events.length; i++) {
     const ev = events[i];
     if (ev.type === 'v1_imported') {
       if (ev.channel !== 'migration' || ev.actor !== 'system') out.push(`event ${ev.id} (${ev.type} ${ev.entity}) would be refused: v1_imported is only valid from the migration`);
+      // The import ran once, on an empty log (REV-0005 H1): an unguarded
+      // v1_imported appended later could create an APPROVED opportunity or an
+      // approval CR with no proof.
+      else if (pastImport) out.push(`event ${ev.id} (${ev.type} ${ev.entity}) would be refused: v1_imported after the V1 import finished; the import is the log's prefix only`);
       continue;
     }
+    pastImport = true;
     if (ev.channel === 'migration') {
       out.push(`event ${ev.id} (${ev.type} ${ev.entity}) would be refused: only v1_imported events may use the migration channel`);
       continue;

@@ -52,3 +52,7 @@
 ## Current tasks
 
 - TASK-0063 — Server-side session gate for admin pages (IN_PROGRESS, 50%)
+
+## Supporting
+
+- TASK-0101 — Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again (BACKLOG, 0%)

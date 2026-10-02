@@ -121,6 +121,16 @@ S3-compatible target — not to the same server's disk. Verify a restore once
 before the cutover, because an unverified backup is a belief rather than a
 backup.
 
+**Retention decides how private the analytics are.** The day's visitor id is an
+HMAC of the visitor's address and user agent under a random salt kept in the
+`AnalyticsSalt` table (TASK-0097). The prune deletes each salt by 03:29 UTC the
+next day, which is what makes old ids impossible to link back to an address —
+but every backup taken while a salt existed holds it next to that day's events,
+and with the salt the ids can be brute-forced over the IPv4 space. The real
+irreversibility window is therefore the backup retention, not the day: keep it
+as short as recovery allows, and treat backups as personal data for as long as
+they are kept.
+
 ## 2. Redis
 
 A Coolify resource, **internal only** — no published port, no domain.
@@ -266,6 +276,10 @@ but nothing is emailed: lines wait in the admin fulfilment queue for staff to
 send. Any other value refuses the boot. Set it in Coolify and **restart the
 API**; the API logs a warning at boot while it is off. While it is `on`, staff
 confirming a bank transfer sends the keys at once.
+
+**`CRON_JOBS`** (optional, `on`|`off`, default `on`) registers the API's cron
+sweeps. `off` is for an API that is only being measured, such as the Lighthouse
+CI job; the API refuses to boot with it in production. Never set it in Coolify.
 
 Stocked lines are sent automatically on payment (BUG-0021), so `/health/delivery`
 fires only when a send fails or an order is held for risk; on-demand and

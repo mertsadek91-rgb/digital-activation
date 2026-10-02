@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- TASK-0086 — Replace hardcoded colours in footer.css (then catalog, contact, account, warranty CSS) with tokens; fix failing contrast pairs (IN_PROGRESS, 40%)
+- none

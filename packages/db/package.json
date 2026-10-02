@@ -42,6 +42,7 @@
     "blog-fix": "tsx scripts/seo/written/blog/corrections.ts",
     "bodies": "tsx scripts/seo/bodies.ts",
     "demo": "tsx scripts/demo.ts",
+    "ci-fixture": "tsx scripts/ci-fixture.ts",
     "redirects": "tsx scripts/legacy/redirects.ts",
     "articles": "tsx scripts/legacy/articles.ts",
     "article-links": "tsx scripts/legacy/article-links.ts"

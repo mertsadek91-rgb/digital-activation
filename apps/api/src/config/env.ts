@@ -33,6 +33,17 @@ const envSchema = z.object({
    */
   AUTO_DELIVERY: z.enum(['on', 'off']).default('on'),
 
+  /**
+   * `off` registers none of the cron sweeps (cart recovery, renewals, review
+   * invites, back-in-stock, stranded orders, pruning). For an API booted only
+   * to be measured — CI's Lighthouse job (TASK-0089) — where a sweep firing
+   * mid-audit would move the numbers and has nobody to serve. The
+   * integration suite stops the same jobs in its harness. Refused in
+   * production, where the sweeps are how a paid order gets its key. Read
+   * once at boot.
+   */
+  CRON_JOBS: z.enum(['on', 'off']).default('on'),
+
   // Two roles, two URLs. The vault URL is read only by the licence-vault module.
   DATABASE_URL: z.string().min(1),
   DATABASE_URL_VAULT: z.string().min(1),
@@ -255,6 +266,11 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     if (env.MAIL_TRANSPORT === 'capture') {
       throw new Error(
         'MAIL_TRANSPORT=capture is not allowed in production. It writes message bodies to disk, and one of those bodies is a customer licence key.',
+      );
+    }
+    if (env.CRON_JOBS === 'off') {
+      throw new Error(
+        'CRON_JOBS=off is not allowed in production. The sweeps deliver stranded orders and expire drafts; without them a paid customer can wait for a key forever.',
       );
     }
     if (env.MAIL_TRANSPORT === 'resend' && !env.RESEND_API_KEY) {

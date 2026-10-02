@@ -49,7 +49,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0086 — Replace hardcoded colours in footer.css (then catalog, contact, account, warranty CSS) with tokens; fix failing contrast pairs (IN_PROGRESS, 40%)

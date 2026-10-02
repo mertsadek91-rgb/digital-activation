@@ -75,10 +75,11 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
         storage,
       }),
     }),
-    // The one scheduled thing in this system so far: the review invitation
-    // sweep. It guards itself with a Postgres advisory lock, so registering it
-    // here is safe on more than one replica.
-    ScheduleModule.forRoot(),
+    // The cron sweeps. Each guards itself with a Postgres advisory lock, so
+    // registering them is safe on more than one replica. CRON_JOBS=off
+    // (refused in production, see config/env.ts) registers none of them; read
+    // here, after ConfigModule above has loaded the env file.
+    ScheduleModule.forRoot({ cronJobs: process.env.CRON_JOBS !== 'off' }),
     PrismaModule,
     CatalogModule,
     CartModule,

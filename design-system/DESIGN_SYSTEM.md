@@ -42,10 +42,15 @@ throughout" (`tokens.css` header comment).
 | `--color-accent`       | `#faa21b` |
 | `--color-accent-hover` | `#e08f0d` |
 | `--color-accent-soft`  | `#fdf1dc` |
+| `--color-accent-ink`   | `#3a2400` |
 
 Do not use amber for navigation, generic CTAs or decoration. Text on an amber
-fill is dark: `.btn-accent` uses `color: #3a2400` (`apps/storefront/src/app/home.css`,
-a hardcoded value — see "Known debt").
+fill is `--color-accent-ink` (added in TASK-0086 for `.card-discount-tag`,
+which was a hardcoded `#2e1c00`). `.btn-accent` in `home.css` still writes the
+same value as a literal `#3a2400` (see "Known debt"). Amber-family text on
+white or on `--color-accent-soft` (`.stock-low`, `.badge-accent`,
+`.draft-flag`, the warranty notice) uses `--color-gold-ink`, which keeps the
+warm hue.
 
 ### Semantic
 
@@ -118,42 +123,59 @@ Computed with the WCAG 2 relative-luminance formula from the hex values in
 `tokens.css`. AA needs 4.5:1 for normal text and 3:1 for large text (24 px, or
 18.66 px bold) and for non-text UI such as borders and icons.
 
-| Foreground              | Background               | Ratio   | Normal text    |
-| ----------------------- | ------------------------ | ------- | -------------- |
-| `ink` `#1c2422`         | `bg` `#ffffff`           | 15.85:1 | Pass           |
-| `ink-body` `#4a4a4a`    | `bg` `#ffffff`           | 8.86:1  | Pass           |
-| `ink-body` `#4a4a4a`    | `surface-2` `#eeefef`    | 7.69:1  | Pass           |
-| `ink-muted` `#606967`   | `bg` `#ffffff`           | 5.65:1  | Pass           |
-| `ink-muted` `#606967`   | `surface-2` `#eeefef`    | 4.91:1  | Pass           |
-| `ink-muted` `#606967`   | `brand-soft` `#e1f0ed`   | 4.82:1  | Pass           |
-| `brand-ink` `#0a544b`   | `brand-soft` `#e1f0ed`   | 7.51:1  | Pass           |
-| `ink-inverse` `#ffffff` | `brand` `#148576`        | 4.52:1  | Pass (barely)  |
-| `brand` `#148576`       | `bg` `#ffffff`           | 4.52:1  | Pass (barely)  |
-| `#3a2400`               | `accent` `#faa21b`       | 7.16:1  | Pass           |
-| `success` `#127658`     | `success-soft` `#e0f0ea` | 4.74:1  | Pass           |
-| `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee` | 4.70:1  | Pass           |
-| `danger` `#d93a12`      | `bg` `#ffffff`           | 4.60:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `bg` `#ffffff`           | 6.48:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `danger-soft` `#fdeae4`  | 5.57:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `brand-soft` `#e1f0ed`   | 5.52:1  | Pass           |
-| `#075e54` (WhatsApp)    | `#25d366` (WhatsApp)     | 3.87:1  | Non-text pass  |
-| `gold-ink` `#8a5300`    | `bg` `#ffffff`           | 6.33:1  | Pass           |
-| `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`    | 6.01:1  | Pass           |
-| `gold-ink` `#8a5300`    | `surface` `#f6f6f6`      | 5.86:1  | Pass           |
-| `info-ink` `#0369a1`    | `info-soft` `#e0f2fe`    | 5.17:1  | Pass           |
-| `purple-ink` `#6d28d9`  | `purple-soft` `#ede9fe`  | 5.98:1  | Pass           |
-| `brand-ink` `#0a544b`   | `surface` `#f6f6f6`      | 8.16:1  | Pass           |
-| `ink-inverse` `#ffffff` | `success` `#127658`      | 5.59:1  | Pass           |
-| `brand` `#148576`       | `surface` `#f6f6f6`      | 4.18:1  | **Fail**       |
-| `danger` `#d93a12`      | `danger-soft` `#fdeae4`  | 3.96:1  | **Fail**       |
-| `danger` `#d93a12`      | `brand-soft` `#e1f0ed`   | 3.92:1  | **Fail**       |
-| `ink-inverse` `#ffffff` | `#25d366` (WhatsApp)     | 1.98:1  | **Fail** (all) |
-| `gold` `#b37400`        | `bg` `#ffffff`           | 3.88:1  | **Fail**       |
-| `brand` `#148576`       | `brand-soft` `#e1f0ed`   | 3.85:1  | **Fail**       |
-| `gold` `#b37400`        | `gold-soft` `#fff9e6`    | 3.68:1  | **Fail**       |
-| `warning` `#b8860b`     | `bg` `#ffffff`           | 3.25:1  | **Fail**       |
-| `warning` `#b8860b`     | `accent-soft` `#fdf1dc`  | 2.91:1  | **Fail**       |
-| `accent` `#faa21b`      | `bg` `#ffffff`           | 2.05:1  | **Fail** (all) |
+| Foreground              | Background                | Ratio   | Normal text                   |
+| ----------------------- | ------------------------- | ------- | ----------------------------- |
+| `ink` `#1c2422`         | `bg` `#ffffff`            | 15.85:1 | Pass                          |
+| `ink-body` `#4a4a4a`    | `bg` `#ffffff`            | 8.86:1  | Pass                          |
+| `ink-body` `#4a4a4a`    | `surface-2` `#eeefef`     | 7.69:1  | Pass                          |
+| `ink-muted` `#606967`   | `bg` `#ffffff`            | 5.65:1  | Pass                          |
+| `ink-muted` `#606967`   | `surface-2` `#eeefef`     | 4.91:1  | Pass                          |
+| `ink-muted` `#606967`   | `brand-soft` `#e1f0ed`    | 4.82:1  | Pass                          |
+| `brand-ink` `#0a544b`   | `brand-soft` `#e1f0ed`    | 7.51:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `brand` `#148576`         | 4.52:1  | Pass (barely)                 |
+| `brand` `#148576`       | `bg` `#ffffff`            | 4.52:1  | Pass (barely)                 |
+| `accent-ink` `#3a2400`  | `accent` `#faa21b`        | 7.16:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `accent-soft` `#fdf1dc`   | 5.66:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `gold-ink` `#8a5300`      | 6.33:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `danger-ink` `#b02e0e`    | 6.48:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `surface` `#f6f6f6`       | 5.99:1  | Pass                          |
+| `info-ink` `#0369a1`    | `bg` `#ffffff`            | 5.93:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `info-ink` `#0369a1`      | 5.93:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `instant` `#0b7a5a`       | 5.32:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `bg` `#ffffff`            | 7.67:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 6.91:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `#075e54` (WhatsApp)      | 7.67:1  | Pass                          |
+| `#128c7e` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 3.73:1  | Non-text pass                 |
+| `#0088cc` (Telegram)    | `#e8f4fb` (Telegram tint) | 3.48:1  | Non-text pass (fails as text) |
+| `success` `#127658`     | `success-soft` `#e0f0ea`  | 4.74:1  | Pass                          |
+| `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee`  | 4.70:1  | Pass                          |
+| `danger` `#d93a12`      | `bg` `#ffffff`            | 4.60:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `bg` `#ffffff`            | 6.48:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `danger-soft` `#fdeae4`   | 5.57:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `brand-soft` `#e1f0ed`    | 5.52:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `#25d366` (WhatsApp)      | 3.87:1  | Non-text pass                 |
+| `gold-ink` `#8a5300`    | `bg` `#ffffff`            | 6.33:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`     | 6.01:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `surface` `#f6f6f6`       | 5.86:1  | Pass                          |
+| `info-ink` `#0369a1`    | `info-soft` `#e0f2fe`     | 5.17:1  | Pass                          |
+| `purple-ink` `#6d28d9`  | `purple-soft` `#ede9fe`   | 5.98:1  | Pass                          |
+| `brand-ink` `#0a544b`   | `surface` `#f6f6f6`       | 8.16:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `success` `#127658`       | 5.59:1  | Pass                          |
+| `brand` `#148576`       | `surface` `#f6f6f6`       | 4.18:1  | **Fail**                      |
+| `danger` `#d93a12`      | `surface` `#f6f6f6`       | 4.26:1  | **Fail**                      |
+| `danger` `#d93a12`      | `danger-soft` `#fdeae4`   | 3.96:1  | **Fail**                      |
+| `danger` `#d93a12`      | `brand-soft` `#e1f0ed`    | 3.92:1  | **Fail**                      |
+| `ink-inverse` `#ffffff` | `#25d366` (WhatsApp)      | 1.98:1  | **Fail** (all)                |
+| `gold` `#b37400`        | `bg` `#ffffff`            | 3.88:1  | **Fail**                      |
+| `brand` `#148576`       | `brand-soft` `#e1f0ed`    | 3.85:1  | **Fail**                      |
+| `gold` `#b37400`        | `gold-soft` `#fff9e6`     | 3.68:1  | **Fail**                      |
+| `warning` `#b8860b`     | `bg` `#ffffff`            | 3.25:1  | **Fail**                      |
+| `warning` `#b8860b`     | `accent-soft` `#fdf1dc`   | 2.91:1  | **Fail**                      |
+| `accent` `#faa21b`      | `bg` `#ffffff`            | 2.05:1  | **Fail** (all)                |
+| `accent` `#faa21b`      | `accent-soft` `#fdf1dc`   | 1.83:1  | **Fail** (all)                |
+| `ink-inverse` `#ffffff` | `#0088cc` (Telegram)      | 3.89:1  | **Fail**                      |
+| `#128c7e` (WhatsApp)    | `bg` `#ffffff`            | 4.14:1  | **Fail**                      |
+| `ink-inverse` `#ffffff` | `brand` at 92% opacity    | 4.07:1  | **Fail**                      |
 
 Rules that follow from the table:
 
@@ -166,14 +188,38 @@ Rules that follow from the table:
   on white but fails on `--color-danger-soft` and `--color-brand-soft`; it
   stays the border, stripe and icon colour. Gold text likewise uses
   `--color-gold-ink`.
-  Not yet migrated: `.error` in `account.css` is `--color-danger` on
-  `--color-danger-soft` (3.96:1), used by every storefront form. Text uses of
-  `--color-danger` whose background was not measured: `.licence-deadline`
-  (`account.css`), `.stock-out`, `.variant-out`, `.card-buy-error`
-  (`catalog.css`). Each passes only on white.
+  TASK-0086 moved every danger text in the storefront stylesheets to
+  `--color-danger-ink`. That covers `.error`, which every form uses and which
+  was 3.96:1 on `--color-danger-soft` and is now 5.57:1. It also covers four
+  texts measured in the browser on their real backgrounds. `.licence-deadline`
+  sits on white, or on `--color-surface` for a line still being prepared, where
+  `--color-danger` was 4.26:1. `.stock-out` and `.card-buy-error` sit on white.
+  `.variant-out` was at 0.55 opacity inside a sold-out variant, which made it
+  2.35:1. The fade now skips the note, so it renders at 6.48:1.
+- **Gold is a border, stripe, icon or graphic colour.** The gold stars
+  (`.stars`, `role="img"`) and the gold icons are 3.88:1 on white, above the
+  3:1 that non-text needs. Gold text and gold fills behind white text use
+  `--color-gold-ink`.
+- **Third-party icons on their own tints clear only the non-text bar.**
+  WhatsApp `#128c7e` and Telegram `#0088cc` stay on the contact page's icon
+  tiles. A text badge beside them uses WhatsApp's dark teal `#075e54` or
+  `--color-info-ink`.
 - **Brand-colour fills keep a dark icon when the fill is light.** The footer
   WhatsApp hover is WhatsApp's own dark teal `#075e54` on `#25d366` (3.87:1);
   white on that green is 1.98:1.
+- **Colours TASK-0086 changed rather than only tokenised.** Each one now uses
+  the nearest token, and all still pass AA (pm-03 review REV-0114):
+  - Renewal-row stripes moved from `#a07c1a` to `--color-gold` `#b37400`, and
+    from `#b4231d` to `--color-danger` `#d93a12`.
+  - The lapsed-row background moved from `#fdf6f5` to `--color-danger-soft`
+    `#fdeae4`.
+  - Critical warning text is now `--color-danger-ink` at 5.57:1 (was 8.97:1).
+  - The warning note is `--color-gold-ink` at 6.01:1 (was 6.84:1).
+  - The warranty notice moved from `#7a4a00` to `--color-gold-ink` `#8a5300`.
+  - The discount tag moved from `#2e1c00` to `--color-accent-ink` `#3a2400`.
+  - The mega-panel shadow went from 22% to 18% alpha, as `--shadow-card-hover`.
+  - A sold-out variant's border and background no longer fade with its text.
+  - The stars moved from amber to gold.
 - The `tokens.css` header comment gives `#4a4a4a` as "8.6:1"; the computed value
   is 8.86:1.
 
@@ -379,23 +425,53 @@ disagree, the JSON wins.
 Hex literals that bypass the tokens, counted with
 `grep -oE '#[0-9a-fA-F]{3,8}\b'` in `apps/storefront/src/app/`:
 
-| File                                                               | Hex literals |
-| ------------------------------------------------------------------ | ------------ |
-| `footer.css`                                                       | 15           |
-| `catalog.css`                                                      | 21           |
-| `contact.css`                                                      | 16           |
-| `account.css`                                                      | 7            |
-| `warranty.css`                                                     | 7            |
-| `home.css`                                                         | 4            |
-| `cart.css`                                                         | 2            |
-| `globals.css`, `growth.css`, `marketing-signals.css`, `offers.css` | 0            |
+| File                                                               | Hex literals | In code | In comments |
+| ------------------------------------------------------------------ | ------------ | ------- | ----------- |
+| `footer.css`                                                       | 15           | 13      | 2           |
+| `contact.css`                                                      | 16           | 11      | 5           |
+| `catalog.css`                                                      | 7            | 4       | 3           |
+| `home.css`                                                         | 4            | 4       | 0           |
+| `cart.css`                                                         | 2            | 2       | 0           |
+| `account.css`, `warranty.css`                                      | 0            | 0       | 0           |
+| `globals.css`, `growth.css`, `marketing-signals.css`, `offers.css` | 0            | 0       | 0           |
 
-Some are legitimate third-party brand colours (WhatsApp `#25d366` on
-`.whatsapp-fab`, and the `.social-btn` WhatsApp, Telegram, X and Instagram
-hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 15
-remaining matches are 13 brand values (TASK-0093 added WhatsApp's dark teal
-`#075e54` as the hover icon colour) plus two in a comment. The rest of the
-table still maps to tokens.
+TASK-0086 tokenised `footer.css`, `catalog.css` (21 before), `contact.css`,
+`account.css` (7 before) and `warranty.css` (7 before). Every literal left in
+code in those five files is a documented third-party brand colour:
+
+- WhatsApp `#25d366`, `#075e54`, `#128c7e`, and the contact page's tints of
+  them, `#e7f7ed` and `#bcead0`. These appear on `.whatsapp-fab`,
+  `.drawer-link-wa`, the contact channel card and the footer `.social-btn`.
+- Telegram `#0088cc`, and its tints `#e8f4fb` and `#c2e2f6` on the contact
+  page.
+- X and Apple black `#000000`.
+- The Instagram gradient stops in `footer.css`.
+
+`contact.css` keeps 11 literals in code even after the migration, because each
+of them is a brand value. Its count of 16 looks unchanged, but that is
+coincidence: 5 of the literals come from the new explanatory comment.
+
+`home.css` (`.btn-accent` `#3a2400`, which is now the value of
+`--color-accent-ink`, plus `#7a4a00` and `#ffffff`) and `cart.css` (`#fff`,
+`#7a4a00`) have not been migrated. `--color-accent-ink` and `--color-gold-ink`
+cover their values.
+
+Other residue in the TASK-0086 files that is not a hex literal:
+
+- The drawer and modal scrims, `rgb(0 0 0 / 0.55)` and `0.45`.
+- One drawer shadow, `0 0 32px rgb(0 0 0 / 0.18)`.
+- The WhatsApp FAB's green glow.
+- `var(--space-3|4|5, …)` in `account.css` and `catalog.css`. These tokens do
+  not exist, so the fallback pixel values always apply.
+
+`account.css` referenced an undefined `--shadow-elevated`, so its order-card
+hover lost its shadow. It now uses `--shadow-card-hover`.
+
+The metrics, pillars, steps, notice and CTA rules in `warranty.css` have no
+markup: no component uses them, and only `.warranty-emblem-badge` renders.
+They were tokenised and their ratios fixed on paper only. Two fixes there:
+`.warranty-step-num` is now on a `--color-gold-ink` fill, and the CTA paragraph
+no longer has `opacity: 0.92`, which put it at 4.07:1.
 
 ## Known debt — font weights
 

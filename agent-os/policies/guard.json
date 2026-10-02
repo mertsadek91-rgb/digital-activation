@@ -9,7 +9,8 @@
   },
   "protected_segments": {
     "segments": ["Old Website", ".cache"],
-    "why": "Legacy WordPress backup and extracted uploads: read-only migration input holding plaintext customer secrets, protected wherever the checkout lives."
+    "why": "Legacy WordPress backup and extracted uploads: read-only migration input holding plaintext customer secrets, protected wherever the checkout lives.",
+    "not_directly_under": ["node_modules"]
   },
   "write_deny": [
     {
@@ -90,9 +91,10 @@
       "why": "Destroys history."
     },
     {
-      "pattern": "\\bgit\\b[^;&|]*\\sclean\\b(?![^;&|]*(\\s-n\\b|--dry-run))",
-      "rule": "git-clean",
-      "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` to preview; delete specific paths instead."
+      "pattern": "\\bxargs\\b[^;&|\\n]*\\b(rm|rmdir|unlink|shred|Remove-Item|ri|del|erase|rd|mv|find)\\b|\\|\\s*(Remove-Item|ri|del|erase|rd|rmdir)\\b|\\|\\s*(ForEach-Object|foreach|%)\\s*\\{[^}]*\\b(Remove-Item|ri|del|erase|rd|rmdir|rm)\\b|\\bparallel\\b[^;&|\\n]*\\brm\\b",
+      "flags": "i",
+      "rule": "pipeline-delete",
+      "why": "Deletes paths computed from a pipeline (xargs rm, Get-ChildItem | Remove-Item), which cannot be checked against the protected roots. Delete literal paths instead."
     },
     {
       "pattern": "\\bprisma\\b.*\\bmigrate\\s+reset\\b|\\bdb\\s+push\\b.*--accept-data-loss|--force-reset",
@@ -129,8 +131,39 @@
       "why": "Production infrastructure is changed by the owner or an approved release task, not ad hoc."
     }
   ],
+  "git_destructive": {
+    "$comment": "Parsed by gitCheck() in guard.mjs (options and their values, not a regex), REV-0115. These destroy uncommitted work, as in the 2026-09-30 incident. Commit a WIP instead, or `git stash push -m <tag>` for tracked changes.",
+    "clean": {
+      "rule": "git-clean",
+      "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` (or `-nfd`) to preview; delete specific paths instead."
+    },
+    "reset_hard": {
+      "rule": "git-reset-hard",
+      "why": "`git reset --hard` discards uncommitted work. Commit a WIP first, or reset without --hard."
+    },
+    "stash_untracked": {
+      "rule": "git-stash-untracked",
+      "why": "Stashing untracked files removes them from the working tree, and the stash stack is shared with every worktree and session. Commit a WIP instead."
+    },
+    "stash_clear": {
+      "rule": "git-stash-clear",
+      "why": "`git stash clear` drops every stash, including other sessions' entries."
+    },
+    "checkout_force": {
+      "rule": "git-checkout-force",
+      "why": "A forced checkout or switch discards uncommitted changes. Commit a WIP first."
+    },
+    "index": {
+      "rule": "git-index-tamper",
+      "why": "Writing the index or the working tree from raw objects (`update-index --cacheinfo/--index-info`, `checkout-index -f`, `read-tree -u/--reset`) bypasses the path checks."
+    }
+  },
   "bash_ask": [
-    { "pattern": "^\\s*git\\s+push\\b", "rule": "push", "why": "Publishes to GitHub." },
+    {
+      "pattern": "^\\s*git\\s+push\\b",
+      "rule": "push",
+      "why": "Publishes to GitHub."
+    },
     {
       "pattern": "\\bpnpm\\s+(db:migrate|db:seed|db:import\\s+--apply|db:media\\s+--apply|db:redirects|db:staff|db:demo)\\b|\\bprisma\\s+migrate\\s+(deploy|dev)\\b",
       "rule": "db-write",
