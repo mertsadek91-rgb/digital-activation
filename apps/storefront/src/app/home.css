@@ -289,16 +289,19 @@
 }
 
 /* The family's illustration, on a soft podium of light. */
+/* 400px wide and up to 400px tall: at that box every family's picture
+   draws at 384px or wider, which is the srcset candidate the slider asks
+   for (see hero-slider.tsx). */
 .hero-art {
   display: grid;
   place-items: center;
-  max-width: 440px;
+  max-width: 400px;
   margin-inline: auto;
 }
 .hero-art img {
   inline-size: 100%;
   block-size: auto;
-  max-block-size: 380px;
+  max-block-size: 400px;
   object-fit: contain;
   filter: drop-shadow(0 16px 20px rgb(4 79 70 / 0.16));
 }

@@ -102,7 +102,11 @@ export function HeroSlider({ slides, children }: { slides: HeroSlide[]; children
                 alt=""
                 width={slide.image.width}
                 height={slide.image.height}
-                sizes="(max-width: 767px) 70vw, 440px"
+                // The candidate `next/image` serves must not exceed the drawn width, or
+                // Lighthouse's responsive-images budget fails: the art box is
+                // 400px wide on a desktop (every family draws at >= 384px) and
+                // 260px on a phone, so the 384w and 256w candidates are asked for.
+                sizes="(max-width: 767px) 256px, 384px"
                 priority={index === 0}
               />
             </div>
