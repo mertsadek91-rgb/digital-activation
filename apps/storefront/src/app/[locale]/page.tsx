@@ -31,7 +31,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation
 export const revalidate = 300;
 
 /**
- * Home page, after the UI Kit (`03_Homepage_Sections`, TASK-0100).
+ * Home page, after the UI Kit (`03_Homepage_Sections`, TASK-0102).
  *
  * The kit's order, with the sections the catalog can actually fill: hero,
  * benefits, categories, best sellers, one row per category, new arrivals,

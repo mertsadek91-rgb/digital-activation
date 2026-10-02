@@ -194,16 +194,14 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0086",
-      "assignments": [
-        "TASK-0086"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-02T11:23:57Z"
     },
@@ -275,13 +273,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0086"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 2,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-02T11:21:29Z"
     },
@@ -298,11 +294,13 @@
       "assignments": [
         "TASK-0063"
       ],
-      "supporting": [],
+      "supporting": [
+        "TASK-0101"
+      ],
       "reviews": [],
       "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-10-02T11:03:56Z"
     },
@@ -333,21 +331,19 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0097",
+      "state": "AVAILABLE",
+      "current_task": "TASK-0021",
       "assignments": [
         "TASK-0021",
-        "TASK-0034",
-        "TASK-0097"
+        "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004",
-        "TASK-0080"
+        "TASK-0004"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 2.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -592,13 +588,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0097"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-02T06:14:11Z"
     },
@@ -775,14 +769,14 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0080"
+        "TASK-0100"
       ],
       "reviews": [],
-      "reviews_recorded": 22,
+      "reviews_recorded": 24,
       "opportunities": [],
       "workload": 7.5,
       "blockers": [],
-      "last_activity": "2026-10-02T11:03:48Z"
+      "last_activity": "2026-10-02T11:07:15Z"
     },
     {
       "id": "performance-engineer",
@@ -796,15 +790,16 @@
       "current_task": "TASK-0051",
       "assignments": [
         "TASK-0051",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0101"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 3,
       "blockers": [],
-      "last_activity": "2026-09-30T13:41:53Z"
+      "last_activity": "2026-10-02T11:55:16Z"
     },
     {
       "id": "devops-engineer",
@@ -814,13 +809,11 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "BLOCKED",
+      "state": "AVAILABLE",
       "current_task": "TASK-0033",
       "assignments": [
         "TASK-0033",
-        "TASK-0080",
-        "TASK-0082",
-        "TASK-0098"
+        "TASK-0100"
       ],
       "supporting": [
         "TASK-0004",
@@ -831,12 +824,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 6,
-      "blockers": [
-        "TASK-0080",
-        "TASK-0082"
-      ],
-      "last_activity": "2026-10-02T07:29:34Z"
+      "workload": 4,
+      "blockers": [],
+      "last_activity": "2026-10-02T11:07:16Z"
     },
     {
       "id": "sre",
@@ -900,13 +890,11 @@
         "TASK-0081",
         "TASK-0083"
       ],
-      "supporting": [
-        "TASK-0080"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 2,
       "blockers": [
         "TASK-0081",
         "TASK-0083"

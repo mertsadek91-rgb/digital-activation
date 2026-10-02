@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -53,9 +53,7 @@
 
 - TASK-0021 — Implement Final Processor for checkout and admin (MANAGER_REVIEW, 90%)
 - TASK-0034 — Decide where scheduled work runs: API process or the BullMQ worker (BACKLOG, 0%)
-- TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (IN_PROGRESS, 0%)
 
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)

@@ -13,7 +13,7 @@ import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
 /**
- * Site footer, after the UI Kit (`03_Homepage_Sections/<lang>/.../home_footer`, TASK-0100).
+ * Site footer, after the UI Kit (`03_Homepage_Sections/<lang>/.../home_footer`, TASK-0102).
  *
  * The kit's footer is four columns on the page ground — the brand and a line
  * about the shop, the products, customer service, useful links — and a

@@ -1379,10 +1379,10 @@
       "id": "TASK-0080",
       "title": "Agent OS V2 migration (CR-0003, stages M0–M11)",
       "type": "process",
-      "status": "BLOCKED",
-      "stage": "TECHNICAL_REVIEW",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "HIGH",
-      "progress": 90,
+      "progress": 100,
       "authority_level": 3,
       "risk": "MEDIUM",
       "primary_agent": "devops-engineer",
@@ -1422,7 +1422,6 @@
         ".claude/launch.json",
         "project-management/dashboard/",
         "project-management/tools/",
-        ".github/workflows/ci.yml",
         "package.json",
         "eslint.config.mjs",
         ".prettierignore",
@@ -1430,9 +1429,9 @@
         ".gitattributes"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/blocked/TASK-0080.md"
+      "file": "tasks/completed/TASK-0080.md"
     },
     {
       "id": "TASK-0081",
@@ -1472,10 +1471,10 @@
       "id": "TASK-0082",
       "title": "Guard: detect script-based writes (node -e, python -c) to protected paths, or document an allowlist",
       "type": "security",
-      "status": "BLOCKED",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 60,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "devops-engineer",
@@ -1499,12 +1498,16 @@
       "affected_pages": [],
       "affected_files": [
         ".claude/hooks/guard.mjs",
-        "agent-os/policies/guard.json"
+        "agent-os/policies/guard.json",
+        "agent-os/tools/lib/rules.mjs",
+        "agent-os/evals/guard.test.mjs",
+        "agent-os/evals/opportunity.test.mjs",
+        "agent-os/THREAT_MODEL.md"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/blocked/TASK-0082.md"
+      "file": "tasks/completed/TASK-0082.md"
     },
     {
       "id": "TASK-0083",
@@ -1630,10 +1633,10 @@
       "id": "TASK-0086",
       "title": "Replace hardcoded colours in footer.css (then catalog, contact, account, warranty CSS) with tokens; fix failing contrast pairs",
       "type": "design-system",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 40,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "design-system-architect",
@@ -1662,9 +1665,9 @@
         "packages/ui/src/tokens.css"
       ],
       "created_at": "2026-09-30",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0086.md"
+      "file": "tasks/completed/TASK-0086.md"
     },
     {
       "id": "TASK-0087",
@@ -1778,9 +1781,16 @@
         "ci"
       ],
       "affected_pages": [],
-      "affected_files": [],
+      "affected_files": [
+        ".github/workflows/ci.yml",
+        "apps/storefront/lighthouserc.json",
+        "packages/db/scripts/ci-fixture.ts",
+        "packages/db/package.json",
+        "apps/api/src/app.module.ts",
+        "apps/api/src/config/env.ts"
+      ],
       "created_at": "2026-09-30",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/active/TASK-0089.md"
     },
@@ -2109,10 +2119,10 @@
       "id": "TASK-0097",
       "title": "Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET",
       "type": "privacy",
-      "status": "IN_PROGRESS",
-      "stage": "ANALYSIS",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 0,
+      "progress": 100,
       "authority_level": 4,
       "risk": "LOW",
       "primary_agent": "backend-architect",
@@ -2143,16 +2153,16 @@
       "created_at": "2026-10-02",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0097.md"
+      "file": "tasks/completed/TASK-0097.md"
     },
     {
       "id": "TASK-0098",
       "title": "pm CLI: refuse same-status transitions and unknown flags so no-op and accidental events never reach the log",
       "type": "tooling",
-      "status": "MANAGER_REVIEW",
-      "stage": "MANAGER_REVIEW",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 90,
+      "progress": 100,
       "authority_level": 2,
       "risk": "LOW",
       "primary_agent": "devops-engineer",
@@ -2181,7 +2191,7 @@
       "created_at": "2026-10-02",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/review/TASK-0098.md"
+      "file": "tasks/completed/TASK-0098.md"
     },
     {
       "id": "TASK-0099",
@@ -2235,6 +2245,91 @@
     },
     {
       "id": "TASK-0100",
+      "title": "Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed",
+      "type": "security",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "HIGH",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-06",
+        "pm-04",
+        "security-engineer"
+      ],
+      "related_change_request": "CR-0003",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "agent-os"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        ".claude/settings.json"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0100.md"
+    },
+    {
+      "id": "TASK-0101",
+      "title": "Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again",
+      "type": "performance",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "performance-engineer",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-architect"
+      ],
+      "required_reviewers": [
+        "pm-03",
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront"
+      ],
+      "affected_pages": [
+        "/",
+        "/en",
+        "/store/[slug]",
+        "/collections/[slug]",
+        "/cart"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0101.md"
+    },
+    {
+      "id": "TASK-0102",
       "title": "Adopt the UI Kit (AR/EN) in the storefront — stage 1 foundations (tokens, Inter for EN, 8px grid, kit icons) and stage 2 home page, header, footer and product card",
       "type": "feature",
       "status": "COMPLETED",
@@ -2288,7 +2383,7 @@
       "created_at": "2026-10-02",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/completed/TASK-0100.md"
+      "file": "tasks/completed/TASK-0102.md"
     }
   ]
 }
