@@ -75,6 +75,45 @@ test('REV-0005: an event that reaches the log by any route (raw append, no-op gu
   }
 });
 
+test('REV-0005 H1: an approval plus its CR, with no proof, fails pm check on every channel and actor; so does a late v1_imported', () => {
+  const CR = (actor, channel) =>
+    `newEvent({type:'entity_created',entity:'CR-0001',actor:'${actor}',channel:'${channel}',data:{fields:{title:'x',status:'APPROVED',authority_level:3,risk:'LOW',responsible_manager:'pm-01',departments:['Product'],consensus_required:false,tasks:[],source_opportunity:'OPP-0001'}}})`;
+  const DECIDE = (actor, channel) => `newEvent({type:'opportunity_decided',entity:'OPP-0001',actor:'${actor}',channel:'${channel}',data:{decision:'APPROVE',reason:'x',related_change_request:'CR-0001'}})`;
+  const routes = {
+    'system-cli': [CR('system', 'cli'), DECIDE('system', 'cli')],
+    'pm-01-cli': [CR('pm-01', 'cli'), DECIDE('pm-01', 'cli')],
+    'owner-migration': [CR('owner', 'migration'), DECIDE('owner', 'migration')],
+    'owner-cli': [CR('owner', 'cli'), DECIDE('owner', 'cli')],
+    'owner-dashboard-unsigned': [CR('owner', 'dashboard'), DECIDE('owner', 'dashboard')],
+    // An agent CR that claims to come from the opportunity, without any decision event.
+    'pm-01-cr-only': [CR('pm-01', 'cli')],
+  };
+  for (const [name, evs] of Object.entries(routes)) {
+    const s = sandbox();
+    try {
+      shaped(s);
+      s.js(`import {commit, newEvent} from '${s.lib('state.mjs')}'; commit([${evs.join(',')}], () => []);`);
+      const c = s.pm('check');
+      assert.equal(c.code, 1, `${name}: ${c.all}`);
+      assert.match(c.all, /would be refused/, name);
+    } finally {
+      s.cleanup();
+    }
+  }
+  // A v1_imported appended after the import: an APPROVED opportunity out of nowhere.
+  const s = sandbox();
+  try {
+    shaped(s);
+    const ev = { id: 'E20991231000000-abcdef', ts: '2099-12-31T00:00:00Z', type: 'v1_imported', actor: 'system', channel: 'migration', entity: 'OPP-0002', data: { fields: JSON.parse(OPP({ status: 'APPROVED', title: 'Forged approval out of nowhere' })), v1_file: 'x.md' } };
+    s.write('agent-os/state/events.jsonl', s.read('agent-os/state/events.jsonl') + JSON.stringify(ev) + '\n');
+    const c = s.pm('check');
+    assert.equal(c.code, 1, c.all);
+    assert.match(c.all, /v1_imported after the V1 import finished/);
+  } finally {
+    s.cleanup();
+  }
+});
+
 test('REV-0004 M2: assumptions alone cannot be labelled MIXED', () => {
   const s = sandbox();
   try {
