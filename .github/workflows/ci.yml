@@ -128,6 +128,8 @@ jobs:
     name: Performance budget
     runs-on: ubuntu-latest
     needs: verify
+    # A hung API or browser must not hold the runner for GitHub's 6-hour default.
+    timeout-minutes: 30
     # A real API on a real database, so the product, category and cart pages
     # render what a shopper sees rather than their empty states. The same
     # Postgres major as the schema job; Redis because the API's rate limits
@@ -240,12 +242,12 @@ jobs:
         run: |
           nohup node dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
           for attempt in $(seq 1 30); do
-            if curl -fsS http://localhost:4000/health/ready; then
+            if curl -fsS --max-time 5 http://localhost:4000/health/ready; then
               echo
               # The three audited pages' data: fail here, with the API log,
               # rather than as a Lighthouse score on a 404 page.
-              curl -fsS -o /dev/null "http://localhost:4000/v1/catalog/products/ci-fixture-product?locale=ar&currency=USD"
-              curl -fsS -o /dev/null "http://localhost:4000/v1/catalog/collections/ci-fixture-category?locale=ar&currency=USD"
+              curl -fsS --max-time 10 -o /dev/null "http://localhost:4000/v1/catalog/products/ci-fixture-product?locale=ar&currency=USD"
+              curl -fsS --max-time 10 -o /dev/null "http://localhost:4000/v1/catalog/collections/ci-fixture-category?locale=ar&currency=USD"
               exit 0
             fi
             sleep 2

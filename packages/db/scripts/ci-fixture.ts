@@ -38,6 +38,8 @@ const CI_PRODUCTS = ['ci-fixture-product', 'ci-fixture-product-two'] as const;
 /** Fixed ids, unlike the catalogue's cuids, so the audited cart URL is known in advance. */
 const CI_VARIANT_IDS = ['ci-fixture-variant-1', 'ci-fixture-variant-2'] as const;
 
+// A host name check, not a proof: an SSH tunnel on localhost that forwards to a
+// real server would pass it. Never open one to staging while running this.
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1', 'postgres']);
 
 function assertLocalDatabase(): void {
