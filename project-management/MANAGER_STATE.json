@@ -216,7 +216,8 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0098"
       ],
       "owned_tasks": [
         "TASK-0011",
@@ -230,7 +231,8 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0098"
       ],
       "reviews": [],
       "blocked_work": [

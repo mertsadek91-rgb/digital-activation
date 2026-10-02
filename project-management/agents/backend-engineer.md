@@ -61,3 +61,4 @@
 - TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
 - TASK-0031 — Error reporting and alerting, including the delivery-latency target (WAITING_INFORMATION, 20%)
 - TASK-0041 — Import legacy customers and orders with forced password reset (BACKLOG, 0%)
+- TASK-0098 — Newsletter confirm/unsubscribe links: sign with LINK_SIGNING_SECRET under their own purposes; confirm expires in 7 days, unsubscribe never (WAITING_DEPENDENCY, 0%)

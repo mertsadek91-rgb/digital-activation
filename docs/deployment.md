@@ -500,8 +500,9 @@ be verified is money taken for an order that never learns it was paid.
 
 `JWT_ACCESS_SECRET` must be generated (`pnpm secrets:generate`); production
 refuses to start with a value that looks like the `.env.example` placeholder.
-It also signs the newsletter confirmation links, so rotating it retires those
-(customers can still sign in). `JWT_REFRESH_SECRET` is gone: nothing ever read
+Newsletter links sent before TASK-0098 were signed with it, and their
+unsubscribe links are honoured for good (below), so rotating it retires the
+unsubscribe links in those older emails. `JWT_REFRESH_SECRET` is gone: nothing ever read
 it (refresh tokens are opaque rows, not JWTs). Delete it from the API resource;
 a leftover value is ignored.
 
@@ -551,6 +552,28 @@ for TASK-0017, the pay-from-another-device link; nothing mints or accepts it yet
 
 Rotating `LINK_SIGNING_SECRET` later retires every order and cart link already
 sent; customers then sign in.
+
+### Newsletter links (TASK-0098)
+
+The confirm and unsubscribe links are signed with `LINK_SIGNING_SECRET` too,
+each under its own purpose (`apps/api/src/subscriptions/newsletter-link.ts`),
+so a confirm link never passes for an unsubscribe one, or the other way round.
+
+- **Confirm links** (the footer box and the welcome window) **expire after 7
+  days.** Nobody confirms a subscription weeks later; asking again sends a
+  fresh link. Ones emailed before this release keep working until the cutoff
+  above, like the order links.
+- **Unsubscribe links never expire, and neither do the old ones.** Links
+  signed with `JWT_ACCESS_SECRET` before this release, and links signed with
+  the fallback key, stay valid past the cutoff. Withdrawing consent must stay
+  as easy as giving it (GDPR art. 7(3)), CAN-SPAM wants an opt-out to work
+  after the message is sent, and Gmail and Yahoo expect a working one-click
+  unsubscribe. The worst a non-expiring link allows is that whoever holds the
+  email takes that one address off the list, and its owner can subscribe again.
+- So **rotating either `LINK_SIGNING_SECRET` or `JWT_ACCESS_SECRET` breaks the
+  unsubscribe links already in people's mailboxes.** Rotate only for a real
+  compromise (the owner's call), and expect to handle opt-outs by reply for a
+  while afterwards.
 
 ### The Stripe webhook
 

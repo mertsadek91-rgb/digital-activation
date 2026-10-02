@@ -83,6 +83,18 @@ export function legacyLinkSecret(now: Date): string | null {
   return accessSecret();
 }
 
+/**
+ * Keys a link that must never stop working is accepted under, with no cutoff:
+ * the unsubscribe link (`subscriptions/newsletter-link.ts`). `v2` holds the
+ * derived fallback once a real LINK_SIGNING_SECRET has replaced it; `v1` is the
+ * access secret the pre-TASK-0018 links were signed with. Every other link is
+ * refused under these at LEGACY_LINK_CUTOFF; this one is not.
+ */
+export function retiredLinkSecrets(): { v2: string[]; v1: string | null } {
+  const derived = linkSecretIsFallback() ? null : derivedFromAccess();
+  return { v2: derived ? [derived] : [], v1: accessSecret() };
+}
+
 /** Constant-time string equality; unequal lengths are simply unequal. */
 export function safeEqual(given: string, expected: string): boolean {
   const a = Buffer.from(given);
