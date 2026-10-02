@@ -1942,10 +1942,10 @@
       "id": "TASK-0093",
       "title": "WhatsApp social-button hover: white icon on #25d366 is 1.98:1 (WCAG 1.4.11 needs 3:1); use a dark icon or a border-only hover",
       "type": "accessibility",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "stage": "ANALYSIS",
       "priority": "LOW",
-      "progress": 0,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "design-system-architect",
@@ -1962,9 +1962,7 @@
       "related_epic": null,
       "related_milestone": null,
       "related_opportunity": null,
-      "dependencies": [
-        "TASK-0086"
-      ],
+      "dependencies": [],
       "blocks": [],
       "affected_modules": [
         "storefront"
@@ -1974,16 +1972,16 @@
       "created_at": "2026-10-01",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0093.md"
+      "file": "tasks/completed/TASK-0093.md"
     },
     {
       "id": "TASK-0094",
       "title": "Newsletter error text is 3.92:1 where the card fades to teal (WCAG 1.4.3); add --color-danger-ink and use it",
       "type": "accessibility",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETED",
       "stage": "ANALYSIS",
       "priority": "LOW",
-      "progress": 0,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "design-system-architect",
@@ -2000,9 +1998,7 @@
       "related_epic": null,
       "related_milestone": null,
       "related_opportunity": null,
-      "dependencies": [
-        "TASK-0086"
-      ],
+      "dependencies": [],
       "blocks": [],
       "affected_modules": [
         "storefront"
@@ -2012,7 +2008,7 @@
       "created_at": "2026-10-01",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0094.md"
+      "file": "tasks/completed/TASK-0094.md"
     },
     {
       "id": "TASK-0095",

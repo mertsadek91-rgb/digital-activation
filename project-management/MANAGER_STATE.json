@@ -106,14 +106,10 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0086",
-        "TASK-0093",
-        "TASK-0094"
+        "TASK-0086"
       ],
       "owned_tasks": [
-        "TASK-0086",
-        "TASK-0093",
-        "TASK-0094"
+        "TASK-0086"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -123,7 +119,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T06:51:48Z"
+      "last_activity": "2026-10-02T06:52:45Z"
     },
     {
       "id": "pm-04",
