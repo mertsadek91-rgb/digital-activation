@@ -123,7 +123,7 @@ that names `events.jsonl` and also contains a write-like token (including a
 bare `>` comparison) is refused. Use `pnpm pm show` or `cat` instead. A
 recursive delete of a variable path is refused even when it is harmless.
 
-## Revision 5: REV-0113, TASK-0080 round 2 (not yet re-reviewed)
+## Revision 5: REV-0113, TASK-0080 round 2 (re-reviewed in REV-0115)
 
 REV-0113 (security re-test, BLOCKING_OBJECTION) listed inputs the guard still
 allowed. The objection stays open until a fresh security review clears it.
@@ -160,6 +160,38 @@ Each input below has a regression eval in `guard.test.mjs`.
 **What did not change.** The guard is still a command parser. It denies the
 shapes it models and accepts some false positives to do so. It is not a
 sandbox, and the limits below are what it cannot see.
+
+## Revision 6: REV-0115, residual risk accepted by the owner
+
+The re-test of round 2 (REV-0115, BLOCKING_OBJECTION) confirmed every
+REV-0113 input is denied and found new bypasses in all three classes. They come
+from wrappers and parser shapes the guard reads as data:
+
+- PowerShell path arrays (`x, ......`), `.Delete($true)`, script blocks
+  and `try {}`, and abbreviated `-comm`
+- `eval`, `bash -lc`, `echo … | bash`, and `env`/`nice`/`timeout`
+  prefixes
+- the `cmd` caret escape (`r^d`) and `wsl`
+- `git worktree remove --force .`
+- `.env` loaded by Node itself (`process.loadEnvFile`, `-r dotenv/config`)
+- `ac -Va/-Pa` and `Tee-Object`
+- writes into a sibling worktree's log
+
+**What this means.** A deny-list parser cannot be made complete. After five
+review rounds the governor's limit escalated the item to the owner. The owner
+accepted the residual risk on 2026-10-02, recorded as `risk_accepted` on
+TASK-0080. Two consequences follow:
+
+- The guard is a **best-effort tripwire** against accidents and casual
+  misuse, not a security boundary against a determined agent.
+- Real containment is TASK-0098: an OS-level sandbox or an allowlisted shell.
+
+**Until TASK-0098 lands:**
+
+- `pm check` replay is the backstop for state forgery, on a machine holding
+  the owner key.
+- Commits and the remote are the backstop for destroyed work.
+- The main checkout's `.env` stays outside every worktree.
 
 ## Remaining limits (recorded, not hidden)
 

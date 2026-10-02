@@ -766,12 +766,13 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0080"
+        "TASK-0080",
+        "TASK-0098"
       ],
       "reviews": [],
       "reviews_recorded": 24,
       "opportunities": [],
-      "workload": 6.5,
+      "workload": 7,
       "blockers": [],
       "last_activity": "2026-10-02T08:47:34Z"
     },
@@ -810,7 +811,8 @@
       "assignments": [
         "TASK-0033",
         "TASK-0080",
-        "TASK-0082"
+        "TASK-0082",
+        "TASK-0098"
       ],
       "supporting": [
         "TASK-0004",
@@ -821,12 +823,12 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 5,
+      "workload": 6,
       "blockers": [
         "TASK-0080",
         "TASK-0082"
       ],
-      "last_activity": "2026-10-02T08:14:50Z"
+      "last_activity": "2026-10-02T08:51:20Z"
     },
     {
       "id": "sre",

@@ -56,6 +56,7 @@
 - TASK-0033 — Reproducible deploys: container definitions or Coolify config as code (BACKLOG, 0%)
 - TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)
 - TASK-0082 — Guard: detect script-based writes (node -e, python -c) to protected paths, or document an allowlist (BLOCKED, 60%)
+- TASK-0098 — Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed (BACKLOG, 0%)
 
 ## Supporting
 
