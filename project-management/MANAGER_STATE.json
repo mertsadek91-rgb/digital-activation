@@ -39,7 +39,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T06:46:07Z"
+      "last_activity": "2026-10-02T07:03:33Z"
     },
     {
       "id": "pm-01",
@@ -69,7 +69,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T05:57:52Z"
+      "last_activity": "2026-10-02T07:03:43Z"
     },
     {
       "id": "pm-02",
@@ -165,7 +165,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T06:12:27Z"
+      "last_activity": "2026-10-02T07:03:44Z"
     },
     {
       "id": "pm-05",
@@ -216,8 +216,7 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089",
-        "TASK-0092"
+        "TASK-0089"
       ],
       "owned_tasks": [
         "TASK-0011",
@@ -231,8 +230,7 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089",
-        "TASK-0092"
+        "TASK-0089"
       ],
       "reviews": [],
       "blocked_work": [
@@ -250,7 +248,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T07:00:10Z"
+      "last_activity": "2026-10-02T07:03:44Z"
     },
     {
       "id": "pm-07",
