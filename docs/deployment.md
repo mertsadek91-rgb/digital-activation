@@ -500,8 +500,57 @@ be verified is money taken for an order that never learns it was paid.
 
 `JWT_ACCESS_SECRET` must be generated (`pnpm secrets:generate`); production
 refuses to start with a value that looks like the `.env.example` placeholder.
-It also signs the order links in emails and the newsletter confirmation
-links, so rotating it retires those links (customers can still sign in).
+It also signs the newsletter confirmation links, so rotating it retires those
+(customers can still sign in). `JWT_REFRESH_SECRET` is gone: nothing ever read
+it (refresh tokens are opaque rows, not JWTs). Delete it from the API resource;
+a leftover value is ignored.
+
+### `LINK_SIGNING_SECRET` — the order and cart links in emails
+
+Signs the `?key=` on every order link (the pay link in the bank-transfer
+instructions, the receipt, the delivery email, staff resends) and the
+`?restore=` on abandoned-cart links (TASK-0018). **API resource only**, its own
+value: the API refuses to boot if it equals `JWT_ACCESS_SECRET`, is under 32
+characters, or (in production) looks like a placeholder. Generate it with
+`pnpm secrets:generate --print` and add it in Coolify → API → Environment
+Variables, then redeploy.
+
+**Unset, the API still boots.** It derives a link key from `JWT_ACCESS_SECRET`
+under a label of its own and logs a `LINK_SIGNING_SECRET is not set` warning at
+boot. Refusing to boot would take checkout and licence delivery down on the
+first deploy that lands before the owner adds the variable; the fallback is no
+weaker than the shared key it replaces. Add the variable anyway — until then a
+leaked session key also opens every order page, and the two cannot be rotated
+apart.
+
+**Order links expire after 30 days.** An unpaid order is cancelled after 14, so
+the pay link outlives its use; a delivered key is looked at in the first weeks.
+After that the page — which shows the licence key — opens only by signing in
+(the emailed sign-in link works for every order's address), or staff resend the
+message from the order screen, which mints a fresh link. Cart links keep their
+30 days.
+
+The key names its purpose inside the signed part (`v2.<purpose>.<expiry>.<mac>`),
+and each purpose has its own lifetime. Every emailed link today is `view`: it
+shows that one order, keys included once delivered, and cannot pay or open
+anything else — a forwarded email reveals what the delivery email already
+holds, for at most 30 days. A short-lived `pay` purpose (48 hours) is reserved
+for TASK-0017, the pay-from-another-device link; nothing mints or accepts it yet.
+
+**Transition, until 2026-11-15 00:00 UTC** (`LEGACY_LINK_CUTOFF` in
+`apps/api/src/common/link-secret.ts`):
+
+- Order links emailed before this release (v1: no expiry, signed with
+  `JWT_ACCESS_SECRET`) and cart links signed with `JWT_ACCESS_SECRET` keep
+  working. From the cutoff they are refused, however recent.
+- Links signed with the fallback while the variable was missing keep working
+  after it is added — also only until the cutoff. Add it before then.
+- The date gives every link sent up to the release at least the 30 days a new
+  one gets, assuming the release ships by 2026-10-16. If it slips, move the
+  constant and this paragraph together.
+
+Rotating `LINK_SIGNING_SECRET` later retires every order and cart link already
+sent; customers then sign in.
 
 ### The Stripe webhook
 

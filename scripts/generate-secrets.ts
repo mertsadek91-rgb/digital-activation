@@ -58,10 +58,14 @@ const SPECS: SecretSpec[] = [
     note: 'signs short-lived access tokens',
   },
   {
-    key: 'JWT_REFRESH_SECRET',
+    key: 'LINK_SIGNING_SECRET',
     bytes: 48,
     encoding: 'base64url',
-    note: 'signs refresh tokens — must differ from the access secret',
+    note: 'signs the order and cart links in emails — API only, must differ from the access secret',
+    // Added after most .env files were written. Unset, the API derives a link
+    // key from the access secret and warns at boot, so a missing line is out
+    // of date, not broken.
+    optional: true,
   },
   {
     key: 'INTERNAL_API_KEY',
@@ -155,6 +159,8 @@ function main(): void {
     console.warn('');
     console.warn('INTERNAL_API_KEY goes on the API and the storefront, with the same value.');
     console.warn('MONITOR_API_KEY goes on the API only, and into the uptime monitor.');
+    console.warn('LINK_SIGNING_SECRET goes on the API only. Changing it later retires every');
+    console.warn('order and cart link already emailed.');
     console.warn('KEK_LOCAL_BASE64 is for local development only. Production must use');
     console.warn('KEK_PROVIDER=aws-kms; the API refuses to start otherwise.');
     return;
