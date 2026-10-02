@@ -158,6 +158,33 @@ describe('validateEnv — AUTO_DELIVERY, the incident switch', () => {
   });
 });
 
+describe('validateEnv — CRON_JOBS (TASK-0089)', () => {
+  const development = (overrides: Record<string, string> = {}) =>
+    production({
+      NODE_ENV: 'development',
+      KEK_PROVIDER: 'local',
+      KEK_LOCAL_BASE64: Buffer.alloc(32).toString('base64'),
+      ...overrides,
+    });
+
+  it('defaults to on, and a blank value is unset', () => {
+    expect(validateEnv(production()).CRON_JOBS).toBe('on');
+    expect(validateEnv(production({ CRON_JOBS: '' })).CRON_JOBS).toBe('on');
+  });
+
+  it('refuses off in production, where the sweeps deliver paid orders', () => {
+    expect(() => validateEnv(production({ CRON_JOBS: 'off' }))).toThrow(/CRON_JOBS=off/);
+  });
+
+  it('keeps off outside production, for the Lighthouse CI job', () => {
+    expect(validateEnv(development({ CRON_JOBS: 'off' })).CRON_JOBS).toBe('off');
+  });
+
+  it('refuses a mistyped value rather than guessing', () => {
+    expect(() => validateEnv(development({ CRON_JOBS: 'of' }))).toThrow(/CRON_JOBS/);
+  });
+});
+
 describe('validateEnv — Final Processor', () => {
   const fp = {
     FP_BASE_URL: 'https://processor.example.test/payment',

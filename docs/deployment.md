@@ -267,6 +267,10 @@ send. Any other value refuses the boot. Set it in Coolify and **restart the
 API**; the API logs a warning at boot while it is off. While it is `on`, staff
 confirming a bank transfer sends the keys at once.
 
+**`CRON_JOBS`** (optional, `on`|`off`, default `on`) registers the API's cron
+sweeps. `off` is for an API that is only being measured, such as the Lighthouse
+CI job; the API refuses to boot with it in production. Never set it in Coolify.
+
 Stocked lines are sent automatically on payment (BUG-0021), so `/health/delivery`
 fires only when a send fails or an order is held for risk; on-demand and
 manual-setup lines carry their own, longer delivery promise.

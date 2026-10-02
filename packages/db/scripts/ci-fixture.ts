@@ -10,20 +10,33 @@
  * product page has a "related" row), each with a published default variant and
  * a USD price, and both locales.
  *
- * The slugs are what `apps/storefront/lighthouserc.json` lists. Change one and
- * change the other.
+ * The slugs, and the first variant's id (the cart is audited as
+ * `/cart?add=<id>`, which fills it the way a renewal link does), are what
+ * `apps/storefront/lighthouserc.json` and the desktop step in
+ * `.github/workflows/ci.yml` list. Change one and change the others.
  *
  * CI only. It refuses any database that is not on this machine: the database
  * in the repo-root `.env` is the live staging store, and nothing here belongs
  * in it. It deliberately does not load that file either — every connection
  * value must be passed in the environment.
  *
- * Idempotent: upserts by slug and SKU, so a second run changes nothing.
+ * Idempotent and convergent: every row is upserted by a fixed key (slug, SKU,
+ * variant id) and its update writes the same values as its create, so a
+ * second run changes nothing and a run over an edited row puts it back.
  */
-import { prisma, Locale, PublishStatus, Prisma, refreshProductPrice } from '../src/index.js';
+import {
+  prisma,
+  FulfillmentMode,
+  Locale,
+  PublishStatus,
+  Prisma,
+  refreshProductPrice,
+} from '../src/index.js';
 
 const CI_CATEGORY = 'ci-fixture-category';
 const CI_PRODUCTS = ['ci-fixture-product', 'ci-fixture-product-two'] as const;
+/** Fixed ids, unlike the catalogue's cuids, so the audited cart URL is known in advance. */
+const CI_VARIANT_IDS = ['ci-fixture-variant-1', 'ci-fixture-variant-2'] as const;
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1', 'postgres']);
 
@@ -85,10 +98,16 @@ async function main(): Promise<void> {
     create: { code: 'USD', symbol: '$', symbolPosition: 'left', decimals: 2, roundingRule: 'none' },
   });
 
+  const categoryData = {
+    status: PublishStatus.PUBLISHED,
+    position: 0,
+    parentId: null,
+    imageId: null,
+  };
   const category = await prisma.category.upsert({
     where: { slug: CI_CATEGORY },
-    update: { status: PublishStatus.PUBLISHED },
-    create: { slug: CI_CATEGORY, status: PublishStatus.PUBLISHED, position: 0 },
+    update: categoryData,
+    create: { slug: CI_CATEGORY, ...categoryData },
   });
   for (const [locale, name, headline] of [
     [Locale.AR, 'برامج الحماية', 'مفاتيح أصلية تصلك خلال دقائق'],
@@ -111,16 +130,17 @@ async function main(): Promise<void> {
 
   const publishedAt = new Date('2026-01-01T00:00:00Z');
   for (const [index, slug] of CI_PRODUCTS.entries()) {
+    const productData = {
+      status: PublishStatus.PUBLISHED,
+      publishedAt,
+      seoReady: true,
+      primaryCategoryId: category.id,
+      brandId: null,
+    };
     const product = await prisma.product.upsert({
       where: { slug },
-      update: { status: PublishStatus.PUBLISHED, primaryCategoryId: category.id },
-      create: {
-        slug,
-        status: PublishStatus.PUBLISHED,
-        publishedAt,
-        seoReady: true,
-        primaryCategoryId: category.id,
-      },
+      update: productData,
+      create: { slug, ...productData },
     });
 
     for (const [locale, name] of [
@@ -145,19 +165,22 @@ async function main(): Promise<void> {
       });
     }
 
-    const sku = `CI-FIXTURE-${String(index + 1)}`;
-    const priceUsd = new Prisma.Decimal(index === 0 ? '19.90' : '29.90');
+    // ON_DEMAND (the column's default, written out): always sellable, with no
+    // stock and no licence keys, so the cart link works on an empty vault.
+    const id = CI_VARIANT_IDS[index];
+    const variantData = {
+      productId: product.id,
+      sku: `CI-FIXTURE-${String(index + 1)}`,
+      priceUsd: new Prisma.Decimal(index === 0 ? '19.90' : '29.90'),
+      compareAtUsd: new Prisma.Decimal(index === 0 ? '39.90' : '49.90'),
+      status: PublishStatus.PUBLISHED,
+      fulfillmentMode: FulfillmentMode.ON_DEMAND,
+      isDefault: true,
+    };
     await prisma.variant.upsert({
-      where: { sku },
-      update: { priceUsd, status: PublishStatus.PUBLISHED },
-      create: {
-        productId: product.id,
-        sku,
-        priceUsd,
-        compareAtUsd: new Prisma.Decimal(index === 0 ? '39.90' : '49.90'),
-        status: PublishStatus.PUBLISHED,
-        isDefault: true,
-      },
+      where: { id },
+      update: variantData,
+      create: { id, ...variantData },
     });
 
     await prisma.productCategory.upsert({
@@ -171,6 +194,7 @@ async function main(): Promise<void> {
 
   console.log(`ci fixture: category /collections/${CI_CATEGORY}`);
   for (const slug of CI_PRODUCTS) console.log(`ci fixture: product  /store/${slug}`);
+  console.log(`ci fixture: cart     /cart?add=${CI_VARIANT_IDS[0]}`);
 }
 
 main()

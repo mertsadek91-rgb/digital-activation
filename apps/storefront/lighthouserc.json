@@ -8,7 +8,7 @@
         "http://localhost:3000/en?ff=mobile",
         "http://localhost:3000/store/ci-fixture-product?ff=mobile",
         "http://localhost:3000/collections/ci-fixture-category?ff=mobile",
-        "http://localhost:3000/cart?ff=mobile"
+        "http://localhost:3000/cart?add=ci-fixture-variant-1&ff=mobile"
       ],
       "numberOfRuns": 3,
       "settings": {
@@ -18,7 +18,7 @@
     "assert": {
       "assertMatrix": [
         {
-          "matchingUrlPattern": "^(?!.*/cart?).*$",
+          "matchingUrlPattern": "^(?!.*/cart([?/#]|$)).*$",
           "assertions": {
             "categories:performance": [
               "error",
@@ -99,7 +99,7 @@
           }
         },
         {
-          "matchingUrlPattern": "/cart?",
+          "matchingUrlPattern": "/cart([?/#]|$)",
           "assertions": {
             "categories:performance": [
               "error",

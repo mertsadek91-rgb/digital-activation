@@ -171,9 +171,14 @@ jobs:
     # pages other than the one measured, which Lighthouse counts as unused.
     #
     # Mobile (Lighthouse's default, simulated slow 4G and 4x CPU) and desktop
-    # run as two steps over the same five pages. The URLs carry `?ff=mobile`
-    # or `?ff=desktop` only so lighthouserc.json can hold one budget per form
-    # factor in its assertMatrix; no page reads the parameter.
+    # run as two steps over the same five pages. The URLs carry `ff=mobile`
+    # or `ff=desktop` only so lighthouserc.json can hold one budget per form
+    # factor in its assertMatrix; no page reads the parameter. The cart is
+    # opened as `/cart?add=<fixture variant>`, the renewal-link form, so it is
+    # measured with a line in it rather than as its empty state. Lighthouse
+    # resets storage before every run, so each run starts a fresh cart.
+    # The Lighthouse CLI is pinned to an exact version: a new audit or a
+    # changed scoring curve should arrive as a pull request, not as a red run.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -197,32 +202,50 @@ jobs:
       - name: Build the API
         run: pnpm turbo run build --filter=@da/api
 
-      # Throwaway values generated per run: nothing here is a real secret,
-      # and nothing in this job sends mail, takes a payment or holds a key.
-      # NODE_ENV=development for the API alone, because the capture mail
-      # transport and the local KEK are refused in production; the storefront
-      # is still built and served as production.
+      # CI-only dummy values, fixed like the integration suite's
+      # (apps/api/src/integration/env.ts): nothing here is a real secret, and
+      # a fixed value keeps one run like the next. NODE_ENV=development for
+      # the API alone, because the capture mail transport and the local KEK
+      # are refused in production; the storefront is still built and served
+      # as production.
+      #
+      # Nothing here can email anyone, three times over. CRON_JOBS=off
+      # registers none of the sweeps (cart recovery, renewals, review invites,
+      # back-in-stock, stranded orders), as the integration harness stops them,
+      # so none fires mid-audit either; MAIL_TRANSPORT=capture writes a message
+      # to a file and has no network path; and the database holds no customer,
+      # order or subscriber, only the seed's reference data and the fixture.
+      # No SMTP or Resend credential exists in this job (no .env on the runner,
+      # none passed). FX_REFRESH=off keeps the API off the exchange-rate feed.
       - name: Start the API
         working-directory: apps/api
+        env:
+          NODE_ENV: development
+          STOREFRONT_URL: http://localhost:3000
+          ADMIN_URL: http://localhost:3001
+          REDIS_URL: redis://localhost:6379
+          JWT_ACCESS_SECRET: ci-lighthouse-only-not-a-secret-access
+          JWT_REFRESH_SECRET: ci-lighthouse-only-not-a-secret-refresh
+          KEK_PROVIDER: local
+          # 32 zero bytes, base64: a dummy KEK for a vault that holds nothing.
+          KEK_LOCAL_BASE64: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          MAIL_TRANSPORT: capture
+          MAIL_FROM_TRANSACTIONAL: orders@example.com
+          MAIL_FROM_MARKETING: news@example.com
+          STORE_TIMEZONE: UTC
+          CRON_JOBS: 'off'
+          FX_REFRESH: 'off'
+          AUTO_DELIVERY: 'off'
+          LOG_LEVEL: warn
         run: |
-          export NODE_ENV=development
-          export STOREFRONT_URL=http://localhost:3000
-          export ADMIN_URL=http://localhost:3001
-          export REDIS_URL=redis://localhost:6379
-          export JWT_ACCESS_SECRET="$(openssl rand -hex 32)"
-          export JWT_REFRESH_SECRET="$(openssl rand -hex 32)"
-          export KEK_PROVIDER=local
-          export KEK_LOCAL_BASE64="$(openssl rand -base64 32)"
-          export MAIL_TRANSPORT=capture
-          export MAIL_FROM_TRANSACTIONAL=ci@example.com
-          export MAIL_FROM_MARKETING=ci@example.com
-          export FX_REFRESH=off
-          export AUTO_DELIVERY=off
           nohup node dist/main.js > "$RUNNER_TEMP/api.log" 2>&1 &
           for attempt in $(seq 1 30); do
             if curl -fsS http://localhost:4000/health/ready; then
               echo
+              # The three audited pages' data: fail here, with the API log,
+              # rather than as a Lighthouse score on a 404 page.
               curl -fsS -o /dev/null "http://localhost:4000/v1/catalog/products/ci-fixture-product?locale=ar&currency=USD"
+              curl -fsS -o /dev/null "http://localhost:4000/v1/catalog/collections/ci-fixture-category?locale=ar&currency=USD"
               exit 0
             fi
             sleep 2
@@ -242,7 +265,7 @@ jobs:
       # it does not open a ticket.
       - name: Lighthouse CI (mobile)
         id: lhci-mobile
-        run: npx --yes @lhci/cli@0.15.x autorun
+        run: npx --yes @lhci/cli@0.15.1 autorun
         working-directory: apps/storefront
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
@@ -253,13 +276,13 @@ jobs:
       - name: Lighthouse CI (desktop)
         if: ${{ !cancelled() && (steps.lhci-mobile.outcome == 'success' || steps.lhci-mobile.outcome == 'failure') }}
         run: >-
-          npx --yes @lhci/cli@0.15.x autorun
+          npx --yes @lhci/cli@0.15.1 autorun
           --collect.settings.preset=desktop
           --collect.url='http://localhost:3000/?ff=desktop'
           --collect.url='http://localhost:3000/en?ff=desktop'
           --collect.url='http://localhost:3000/store/ci-fixture-product?ff=desktop'
           --collect.url='http://localhost:3000/collections/ci-fixture-category?ff=desktop'
-          --collect.url='http://localhost:3000/cart?ff=desktop'
+          --collect.url='http://localhost:3000/cart?add=ci-fixture-variant-1&ff=desktop'
         working-directory: apps/storefront
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
