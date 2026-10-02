@@ -336,13 +336,12 @@
         "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004",
-        "TASK-0080"
+        "TASK-0004"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 3,
+      "workload": 2.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -768,13 +767,12 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0080",
         "TASK-0100"
       ],
       "reviews": [],
       "reviews_recorded": 24,
       "opportunities": [],
-      "workload": 8,
+      "workload": 7.5,
       "blockers": [],
       "last_activity": "2026-10-02T11:07:15Z"
     },
@@ -812,7 +810,6 @@
       "current_task": "TASK-0033",
       "assignments": [
         "TASK-0033",
-        "TASK-0080",
         "TASK-0082",
         "TASK-0100"
       ],
@@ -825,9 +822,8 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 6,
+      "workload": 5,
       "blockers": [
-        "TASK-0080",
         "TASK-0082"
       ],
       "last_activity": "2026-10-02T11:07:16Z"
@@ -894,13 +890,11 @@
         "TASK-0081",
         "TASK-0083"
       ],
-      "supporting": [
-        "TASK-0080"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 2,
       "blockers": [
         "TASK-0081",
         "TASK-0083"

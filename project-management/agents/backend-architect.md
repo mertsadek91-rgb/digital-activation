@@ -57,4 +57,3 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)

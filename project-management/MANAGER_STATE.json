@@ -10,13 +10,11 @@
       ],
       "active_tasks": [
         "TASK-0004",
-        "TASK-0080",
         "TASK-0081",
         "TASK-0083"
       ],
       "owned_tasks": [
         "TASK-0004",
-        "TASK-0080",
         "TASK-0081",
         "TASK-0083"
       ],
@@ -24,7 +22,6 @@
         "TASK-0004"
       ],
       "blocked_work": [
-        "TASK-0080",
         "TASK-0081",
         "TASK-0083"
       ],
@@ -39,7 +36,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T11:07:14Z"
+      "last_activity": "2026-10-02T11:40:28Z"
     },
     {
       "id": "pm-01",
