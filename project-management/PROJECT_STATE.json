@@ -10,7 +10,8 @@
     "TASK-0080 is BLOCKED",
     "TASK-0081 is BLOCKED",
     "TASK-0082 is BLOCKED",
-    "TASK-0083 is BLOCKED"
+    "TASK-0083 is BLOCKED",
+    "1 governance validation problem(s)"
   ],
   "total_tasks": 51,
   "active_tasks": 11,
@@ -39,12 +40,12 @@
   "opportunities_open": 2,
   "opportunities_ready_for_decision": 1,
   "watchlist": 1,
-  "reviews_recorded": 78,
-  "independent_reviews": 78,
+  "reviews_recorded": 79,
+  "independent_reviews": 79,
   "owner_attention": 10,
   "active_agents": 9,
   "file_collisions": 0,
-  "validation_problems": 0,
-  "canonical_events": 554,
-  "last_activity": "2026-10-02T08:19:23Z"
+  "validation_problems": 1,
+  "canonical_events": 555,
+  "last_activity": "2026-10-02T08:20:30Z"
 }
