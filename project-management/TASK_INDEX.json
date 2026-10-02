@@ -498,7 +498,7 @@
       "affected_pages": [],
       "affected_files": [],
       "created_at": "2026-09-29",
-      "updated_at": "2026-10-02",
+      "updated_at": "2026-09-29",
       "reaudit": "VALID_BUT_REWRITE",
       "file": "tasks/backlog/TASK-0017.md"
     },
@@ -543,7 +543,7 @@
         "scripts/generate-secrets.ts"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-10-02",
+      "updated_at": "2026-09-29",
       "reaudit": "VALID",
       "file": "tasks/backlog/TASK-0018.md"
     },
@@ -2157,6 +2157,94 @@
     },
     {
       "id": "TASK-0098",
+      "title": "pm CLI: refuse same-status transitions and unknown flags so no-op and accidental events never reach the log",
+      "type": "tooling",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
+      "priority": "MEDIUM",
+      "progress": 90,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "agent-os"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "agent-os/tools/pm.mjs",
+        "agent-os/tools/lib/rules.mjs",
+        "agent-os/evals/cli-guards.test.mjs"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/review/TASK-0098.md"
+    },
+    {
+      "id": "TASK-0099",
+      "title": "Newsletter confirm/unsubscribe links: sign with LINK_SIGNING_SECRET under their own purposes; confirm expires in 7 days, unsubscribe never",
+      "type": "security",
+      "status": "WAITING_DEPENDENCY",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "security-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [
+        "backend-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0018"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/subscriptions",
+        "api/common",
+        "api/retention"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/subscriptions/newsletter-link.ts",
+        "apps/api/src/subscriptions/newsletter-link.test.ts",
+        "apps/api/src/subscriptions/subscriptions.service.ts",
+        "apps/api/src/subscriptions/subscriptions.test.ts",
+        "apps/api/src/retention/links.ts",
+        "apps/api/src/retention/retention.controller.ts",
+        "apps/api/src/common/link-secret.ts",
+        "docs/deployment.md"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0099.md"
+    },
+    {
+      "id": "TASK-0100",
       "title": "Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed",
       "type": "security",
       "status": "BACKLOG",
@@ -2193,7 +2281,7 @@
       "created_at": "2026-10-02",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/backlog/TASK-0098.md"
+      "file": "tasks/backlog/TASK-0100.md"
     }
   ]
 }

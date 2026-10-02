@@ -55,6 +55,7 @@
 - TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (WAITING_INFORMATION, 20%)
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
 - TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
+- TASK-0099 — Newsletter confirm/unsubscribe links: sign with LINK_SIGNING_SECRET under their own purposes; confirm expires in 7 days, unsubscribe never (WAITING_DEPENDENCY, 0%)
 
 ## Supporting
 
@@ -63,4 +64,4 @@
 - TASK-0040 — Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002) (BACKLOG, 0%)
 - TASK-0043 — Owner decision — which legacy customers, orders and licence keys migrate (WAITING_INFORMATION, 20%)
 - TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)
-- TASK-0098 — Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed (BACKLOG, 0%)
+- TASK-0100 — Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed (BACKLOG, 0%)

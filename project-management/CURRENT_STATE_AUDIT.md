@@ -6,7 +6,7 @@
 > **This is a snapshot of 2026-09-29.** The legacy and migration-data sections
 > still hold. For the new application, these statements have since been
 > superseded (checked on 2026-10-02 against `main` after PR #11; pm-04 review
-> REV-0110):
+> REV-0112):
 >
 > - **Meilisearch** is no longer required at boot. It was dropped entirely
 >   (DEC-0009, TASK-0035), and BUG-0008 is fixed.

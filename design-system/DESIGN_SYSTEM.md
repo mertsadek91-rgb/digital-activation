@@ -208,7 +208,7 @@ Rules that follow from the table:
   WhatsApp hover is WhatsApp's own dark teal `#075e54` on `#25d366` (3.87:1);
   white on that green is 1.98:1.
 - **Colours TASK-0086 changed rather than only tokenised.** Each one now uses
-  the nearest token, and all still pass AA (pm-03 review REV-0112):
+  the nearest token, and all still pass AA (pm-03 review REV-0114):
   - Renewal-row stripes moved from `#a07c1a` to `--color-gold` `#b37400`, and
     from `#b4231d` to `--color-danger` `#d93a12`.
   - The lapsed-row background moved from `#fdf6f5` to `--color-danger-soft`

@@ -361,12 +361,13 @@
         "TASK-0016",
         "TASK-0018",
         "TASK-0031",
-        "TASK-0041"
+        "TASK-0041",
+        "TASK-0099"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 2.5,
       "blockers": [],
       "last_activity": "2026-09-30T12:03:43Z"
     },
@@ -759,7 +760,8 @@
         "TASK-0004",
         "TASK-0011",
         "TASK-0016",
-        "TASK-0018"
+        "TASK-0018",
+        "TASK-0099"
       ],
       "supporting": [
         "TASK-0017",
@@ -767,14 +769,14 @@
         "TASK-0040",
         "TASK-0043",
         "TASK-0080",
-        "TASK-0098"
+        "TASK-0100"
       ],
       "reviews": [],
       "reviews_recorded": 24,
       "opportunities": [],
-      "workload": 7,
+      "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-02T08:47:34Z"
+      "last_activity": "2026-10-02T11:07:15Z"
     },
     {
       "id": "performance-engineer",
@@ -796,7 +798,7 @@
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-02T08:35:29Z"
+      "last_activity": "2026-10-02T11:07:12Z"
     },
     {
       "id": "devops-engineer",
@@ -812,7 +814,8 @@
         "TASK-0033",
         "TASK-0080",
         "TASK-0082",
-        "TASK-0098"
+        "TASK-0098",
+        "TASK-0100"
       ],
       "supporting": [
         "TASK-0004",
@@ -823,12 +826,12 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 6,
+      "workload": 7,
       "blockers": [
         "TASK-0080",
         "TASK-0082"
       ],
-      "last_activity": "2026-10-02T08:51:20Z"
+      "last_activity": "2026-10-02T11:07:16Z"
     },
     {
       "id": "sre",

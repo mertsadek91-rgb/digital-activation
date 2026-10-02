@@ -117,7 +117,7 @@ export class CheckoutController {
     @Query('key') key: string | undefined,
     @Req() request: FastifyRequest,
   ): Promise<Order> {
-    if (verifyOrderAccessKey(number, key)) {
+    if (verifyOrderAccessKey(number, key, 'view')) {
       return this.checkout.renderOrder(number, query, { skipOwnerCheck: true });
     }
     const session = await this.account.sessionFor(request.cookies?.da_customer);

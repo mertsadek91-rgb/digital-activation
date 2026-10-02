@@ -160,7 +160,7 @@ export class OffersService {
       ),
     ];
     const suggestions = await this.suggestions(slugs, 'confirmation', query);
-    return { ...suggestions, accessKey: orderAccessKey(number) };
+    return { ...suggestions, accessKey: orderAccessKey(number, 'view') };
   }
 
   // --- panel ----------------------------------------------------------------

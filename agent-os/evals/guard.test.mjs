@@ -544,11 +544,11 @@ test('TASK-0082: script-based writes (node -e, python -c, deno, bun) to protecte
   }
 });
 
-// TASK-0080 round 2: every input REV-0113 reported as allowed, plus near variants.
+// TASK-0080 round 2: every input REV-0115 reported as allowed, plus near variants.
 const ps = (command) => ({ tool_name: 'PowerShell', tool_input: { command } });
 const LOG = 'agent-os/state/events.jsonl';
 
-test('REV-0113 H3: cmd /c, robocopy, rsync --delete, child-process deletes, parsed git clean, find without a path', () => {
+test('REV-0115 H3: cmd /c, robocopy, rsync --delete, child-process deletes, parsed git clean, find without a path', () => {
   for (const c of [
     'cmd /c rd /s /q agent-os',
     'cmd /c del /s /q *.jsonl',
@@ -615,7 +615,7 @@ test('REV-0113 H3: cmd /c, robocopy, rsync --delete, child-process deletes, pars
     assert.equal(verdict(ps(c)), 'allow', c);
 });
 
-test('REV-0113 H3 MEDIUM: git commands that destroy uncommitted work are denied; everyday git is not', () => {
+test('REV-0115 H3 MEDIUM: git commands that destroy uncommitted work are denied; everyday git is not', () => {
   for (const c of [
     'git reset --hard',
     'git reset --hard HEAD~1',
@@ -655,7 +655,7 @@ test('REV-0113 H3 MEDIUM: git commands that destroy uncommitted work are denied;
   assert.equal(verdict(bash('git push origin feature')), 'ask');
 });
 
-test('REV-0113 H2: globs that can expand to a secret name are reads of it, whatever the first character', () => {
+test('REV-0115 H2: globs that can expand to a secret name are reads of it, whatever the first character', () => {
   const E = '.e' + 'nv';
   for (const c of [
     'gc ..\\..\\..\\*env',
@@ -709,7 +709,7 @@ test('REV-0113 H2: globs that can expand to a secret name are reads of it, whate
   assert.equal(verdict({ tool_name: 'Glob', tool_input: { pattern: '**/*' } }), 'allow');
 });
 
-test('REV-0113 H1: directory targets, -t, Copy-Item/Move-Item destinations, sed --in-place, globbed paths and the git index', () => {
+test('REV-0115 H1: directory targets, -t, Copy-Item/Move-Item destinations, sed --in-place, globbed paths and the git index', () => {
   for (const c of [
     'cp -t agent-os/state x.jsonl',
     'cp -rt agent-os/state x',

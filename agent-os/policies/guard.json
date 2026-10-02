@@ -132,7 +132,7 @@
     }
   ],
   "git_destructive": {
-    "$comment": "Parsed by gitCheck() in guard.mjs (options and their values, not a regex), REV-0113. These destroy uncommitted work, as in the 2026-09-30 incident. Commit a WIP instead, or `git stash push -m <tag>` for tracked changes.",
+    "$comment": "Parsed by gitCheck() in guard.mjs (options and their values, not a regex), REV-0115. These destroy uncommitted work, as in the 2026-09-30 incident. Commit a WIP instead, or `git stash push -m <tag>` for tracked changes.",
     "clean": {
       "rule": "git-clean",
       "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` (or `-nfd`) to preview; delete specific paths instead."

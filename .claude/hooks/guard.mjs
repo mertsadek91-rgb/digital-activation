@@ -99,7 +99,7 @@ function deletesProtected(rel) {
 
 // ------------------------------------------------------------------ globs
 //
-// TASK-0080 round 2 (REV-0113): a shell or a Windows program expands globs, so
+// TASK-0080 round 2 (REV-0115): a shell or a Windows program expands globs, so
 // `gc ..\*env`, `cat .[[:alpha:]]nv`, `cp x agent-os/sta*/` reach files whose
 // names never appear in the command. Globs are compiled the way a shell would
 // match them (braces, `*`, `?`, `[...]` with `!`/`^` and POSIX classes) and
@@ -250,7 +250,7 @@ export function writeTargets(cmd) {
     const verb = name.replace(/\.exe$/i, '');
     if (verb === 'perl' && toks.some((t) => /^-[a-zA-Z]*i/.test(t))) out.push(...args.slice(1).map((path) => ({ path, op: 'write', cwd })));
     const add = (paths, op) => out.push(...paths.filter(Boolean).map((path) => ({ path, op, cwd })));
-    // A destination may be a directory: the copy lands at dest/<source name> (REV-0113 H1: `cp x.jsonl agent-os/state/`).
+    // A destination may be a directory: the copy lands at dest/<source name> (REV-0115 H1: `cp x.jsonl agent-os/state/`).
     const addDest = (dest, sources, tree) => {
       if (!dest) return;
       add([dest, ...sources.map((s) => posix.join(dest.replace(/\\/g, '/'), basename(s.replace(/\\/g, '/')) || '_')), posix.join(dest.replace(/\\/g, '/'), '_')], 'write');
@@ -305,7 +305,7 @@ export function writeTargets(cmd) {
     if (verb === 'sed' && toks.some((t) => /^-[a-zA-Z]*i/.test(t) || /^--in-place(=|$)/.test(t))) add(args.slice(1), 'write');
     if (verb === 'dd') add(toks.filter((t) => t.startsWith('of=')).map((t) => t.slice(3)), 'write');
     if (verb === 'find') {
-      // Start points are the operands before the first expression token; none means `.` (REV-0113: bare `find -delete`).
+      // Start points are the operands before the first expression token; none means `.` (REV-0115: bare `find -delete`).
       const firstExpr = toks.findIndex((t, i) => i > 0 && /^(-|\(|!|\\\()/.test(t) && !/^-[HLP]$/.test(t));
       const roots = toks.slice(1, firstExpr < 0 ? undefined : firstExpr).filter((t) => !/^-[HLP]$/.test(t));
       const execs = toks.flatMap((t, i) => (/^-(exec|execdir|ok|okdir)$/.test(t) ? [(toks[i + 1] ?? '').replace(/^.*[\\/]/, '')] : []));
@@ -412,7 +412,7 @@ const READ_VERB = /^(gc|Get-Content|cat|type|sls|Select-String|findstr|find|more
 const LIST_VERB = /^(ls|dir|gci|Get-ChildItem|tree|echo|printf|Write-Output|Write-Host|stat|du)$/i;
 
 /**
- * REV-0113 H2: a glob argument that could expand to a secret file name is a read of it, whatever
+ * REV-0115 H2: a glob argument that could expand to a secret file name is a read of it, whatever
  * the first character (`*env`, `?env`, `.[a-z]nv`, `.[[:alpha:]]nv`, `.{e,x}nv`). Matching is
  * dotglob-style except a bare `*` in bash (no dotglob), which never matches a dotfile.
  */
@@ -459,7 +459,7 @@ const INLINE =/\b(?:node|nodejs|deno|bun|python[23]?|py|perl|ruby|php)(?:\.exe)?
 const SCRIPT_WRITE = /\b(?:write\w*|append\w*|createWriteStream|truncate\w*|rename\w*|copy\w*|cp(?:Sync)?|rm\w*|unlink\w*|move\w*|os\.replace|Set-Content|Add-Content|Out-File|syswrite|print\s*\(?\s*\w+\s*,|open\s*\(|fopen|file_put_contents|IO\.write|File\.write)\b|(?<![=\-<>])>>?(?![=>])/i;
 const SCRIPT_DELETE_CALL = /(?:\b(?:rmSync|rmdirSync|unlinkSync|rimraf(?:\.sync)?|rmtree|remove_tree|rm_rf|rm_r|removedirs|os\.(?:remove|unlink|rmdir)|Deno\.remove(?:Sync)?|(?:fs|fsp|promises)\.(?:rm|rmdir|unlink)|unlink|rmdir)|::Delete|\.Delete)\s*\(\s*(?!["'][^"'$`{}]*["']\s*[,)])/i;
 
-/** Delete primitives and child-process launchers in an inline program (REV-0113 H3). */
+/** Delete primitives and child-process launchers in an inline program (REV-0115 H3). */
 const SCRIPT_DEL_OR_SPAWN = /\b(rmtree|remove_tree|rm_rf|rm_r|rm_f|rmSync|rmdirSync|unlinkSync|rimraf|removedirs|unlink|rmdir|remove|rm|Delete|FileUtils|system|exec\w*|spawn\w*|popen\w*|subprocess|child_process|check_call|check_output|call|run|Process\.Start|Start-Process|qx)\b|%x[({[]/i;
 /** A string literal that reads as a shell command, not a path. */
 const LOOKS_LIKE_COMMAND = /^\s*(rm|rmdir|del|erase|rd|mv|move|cp|copy|find|git|Remove-Item|ri|robocopy|xcopy|rsync|sh|bash|zsh|cmd|powershell|pwsh|xargs|unlink|shred|truncate|sed|perl|node|python3?)(\.exe)?\s/i;
@@ -513,7 +513,7 @@ function scriptShape(c, depth = 0, ps = false) {
 
 // ------------------------------------------------------------------ git
 //
-// REV-0113 H3: options are parsed, not pattern-matched, so `git clean -fdx -e -n` (where `-n` is the
+// REV-0115 H3: options are parsed, not pattern-matched, so `git clean -fdx -e -n` (where `-n` is the
 // value of `-e`) is not a dry run. Commands that destroy uncommitted work (the 2026-09-30 incident)
 // are refused: `reset --hard`, `stash -u/-a`, `stash clear`, `checkout -f`, `switch -f`, index rewrites.
 
@@ -591,7 +591,7 @@ function checkTarget(raw, c) {
     return null;
   }
   if (t.op === 'tree') {
-    // A recursive copy or sync writes everything below its destination (REV-0113 H1: `cp -r foo/agent-os .`).
+    // A recursive copy or sync writes everything below its destination (REV-0115 H1: `cp -r foo/agent-os .`).
     const p = relPath(t.path, t.cwd);
     if (p === null) {
       // Outside: a `.claude` directory itself, or an ancestor of ~/.claude or of this checkout (the main checkout's .claude and .env).
@@ -666,7 +666,7 @@ function checkBash(cmd, depth = 0, ps = false) {
       const inner = checkBash(m[2].slice(1, -1), depth + 1, /^(pwsh|powershell|cmd)$/i.test(m[1]));
       if (inner) return inner;
     }
-    // Unquoted: cmd /c and powershell -Command run the rest of the line (REV-0113 H3: `cmd /c rd /s /q agent-os`).
+    // Unquoted: cmd /c and powershell -Command run the rest of the line (REV-0115 H3: `cmd /c rd /s /q agent-os`).
     for (const m of c.matchAll(/\b(?:cmd|pwsh|powershell)(?:\.exe)?\b[^\n]*?\s(?:\/[ckCK]|-c|-Command)\s+(?!["'])([^\n]+)/gi)) {
       const inner = checkBash(m[1], depth + 1, true);
       if (inner) return inner;
@@ -755,7 +755,7 @@ export function decide(payload) {
   if (['Read', 'Grep', 'Glob', 'NotebookRead'].includes(tool)) {
     for (const p of [input.file_path, input.path, input.notebook_path, input.glob, input.pattern && tool === 'Glob' ? input.pattern : null])
       if (p && (isSecretFile(p) || (/\.sql(\.gz)?$/i.test(p) && inProtectedSegment(p)))) return { decision: 'deny', rule: 'secret-read', why: policy.secret_files.why };
-    // REV-0113 H2: a Grep glob or a globbed read path that could match a secret name (`*env`, `.{e,x}nv`).
+    // REV-0115 H2: a Grep glob or a globbed read path that could match a secret name (`*env`, `.{e,x}nv`).
     // The Glob tool only lists names, so its pattern is not a read.
     for (const p of [input.glob, input.path, input.file_path].filter((x) => typeof x === 'string'))
       if (globHitsSecret(p.split(/[\\/]/).pop()))

@@ -23,6 +23,8 @@ const STAGES = ['ANALYSIS', 'RESEARCH', 'IMPACT_REVIEW', 'APPROVAL', 'IMPLEMENTA
 const PASSING = new Set(['PASS', 'RECOMMENDATION', 'CONCERN', 'ACCEPTED_RISK']);
 const BLOCKING = new Set(['VETO', 'BLOCKING_OBJECTION']);
 const EXPLORATORY = new Set(['RESEARCH', 'VALIDATE_WITH_USERS', 'WATCH', 'EXPERIMENT', 'PROTOTYPE', 'DO_NOT_BUILD']);
+// TASK-0092 IN_PROGRESS → IN_PROGRESS twice on 2026-10-02 (branch claude/next-batch).
+const PRE_RULE_NOOP_TRANSITIONS = new Set(['E20261002070015-10d006', 'E20261002070028-aaad98']);
 export const PACK_SECTIONS = ['Problem', 'Evidence Against', 'Alternatives', 'Why Now', 'Why Not Now', 'Cost of Doing Nothing', 'Technical Feasibility', 'Risks', 'Success Criteria', 'Validation Plan', 'Recommendation'];
 
 export const list = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
@@ -137,6 +139,14 @@ export function writeGuards(before, after, events, ctx = {}) {
     const a = after.entities.get(ev.entity);
 
     if (ev.type === 'entity_created' && b) errs.push(`${ev.entity} already exists`);
+
+    // A transition must change something (TASK-0098). The log is append-only,
+    // so the no-ops written before this rule existed stay and are exempt.
+    if (ev.type === 'status_changed' && b && ev.data.to === b.status && !PRE_RULE_NOOP_TRANSITIONS.has(ev.id)) {
+      const changes = ['stage', 'progress'].filter((k) => ev.data[k] !== undefined && ev.data[k] !== b[k]);
+      if (!changes.length)
+        errs.push(`${ev.entity} is already ${b.status}${['stage', 'progress'].some((k) => ev.data[k] !== undefined) ? ' with that stage and progress' : ''} — a transition to the same status must change --stage or --progress; use \`pm note\` to record something without a state change`);
+    }
 
     if (ev.type === 'status_changed' && a?.id.startsWith('OPP-')) {
       const allowed = OPP_AGENT_TRANSITIONS[ev.data.from] ?? [];

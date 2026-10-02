@@ -16,7 +16,7 @@ function production(overrides: Record<string, string | undefined> = {}): Record<
     DATABASE_URL_VAULT: 'postgresql://vault@localhost/db',
     REDIS_URL: 'redis://localhost:6379',
     JWT_ACCESS_SECRET: crypto.randomBytes(48).toString('base64url'),
-    JWT_REFRESH_SECRET: crypto.randomBytes(48).toString('base64url'),
+    LINK_SIGNING_SECRET: crypto.randomBytes(48).toString('base64url'),
     KEK_PROVIDER: 'aws-kms',
     AWS_KMS_KEY_ID: 'arn:aws:kms:us-east-2:000000000000:key/test',
     AWS_REGION: 'us-east-2',
@@ -237,5 +237,32 @@ describe('validateEnv — Final Processor', () => {
     } catch (error) {
       expect(String(error)).not.toContain(fp.FP_SECRET);
     }
+  });
+});
+
+describe('validateEnv — the link signing key (TASK-0018)', () => {
+  it('boots in production without it (links fall back, with a boot warning)', () => {
+    expect(() => validateEnv(production({ LINK_SIGNING_SECRET: undefined }))).not.toThrow();
+  });
+
+  it('no longer asks for JWT_REFRESH_SECRET, and drops a leftover value', () => {
+    const env = validateEnv(production({ JWT_REFRESH_SECRET: 'x'.repeat(48) }));
+    expect('JWT_REFRESH_SECRET' in env).toBe(false);
+  });
+
+  it('refuses the session key reused as the link key', () => {
+    const shared = crypto.randomBytes(48).toString('base64url');
+    expect(() =>
+      validateEnv(production({ JWT_ACCESS_SECRET: shared, LINK_SIGNING_SECRET: shared })),
+    ).toThrow(/LINK_SIGNING_SECRET must differ/);
+  });
+
+  it('refuses a placeholder or a short value in production', () => {
+    expect(() =>
+      validateEnv(production({ LINK_SIGNING_SECRET: 'change_me_min_32_chars_______________' })),
+    ).toThrow(/LINK_SIGNING_SECRET looks like a placeholder/);
+    expect(() => validateEnv(production({ LINK_SIGNING_SECRET: 'too-short' }))).toThrow(
+      /LINK_SIGNING_SECRET/,
+    );
   });
 });
