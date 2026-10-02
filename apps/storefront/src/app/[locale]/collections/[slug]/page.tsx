@@ -16,7 +16,7 @@ import {
   ListingSorts,
 } from '../../../../components/listing-filters';
 import { ProductCard } from '../../../../components/product-card';
-import { getCollection } from '../../../../lib/api';
+import { getCollection, recordEvent } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import {
   apiFilters,
@@ -96,6 +96,14 @@ export default async function CollectionPage({ params, searchParams }: Props) {
 
   const prefix = ar ? '' : `/${locale}`;
   const listPath = `${prefix}${ROUTES.collection(slug)}`;
+  // First-party analytics: one row per view, sent from here and not awaited.
+  recordEvent({
+    type: 'CATEGORY_VIEW',
+    path: listPath,
+    locale,
+    categorySlug: slug,
+    searchParams: await searchParams,
+  });
   // With the locale prefix: the English list used to identify itself by the
   // Arabic URL, so its `@id` collided with the Arabic page's.
   const pageUrl = paginatedUrl(new URL(listPath, SITE_URL).toString(), page);

@@ -21,7 +21,12 @@ import { TrustBlock } from '../../../../components/trust-block';
 import { isArabic } from '../../../../i18n/locale';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
-import { getMarketingPublic, getProduct, getProductReviews } from '../../../../lib/api';
+import {
+  getMarketingPublic,
+  getProduct,
+  getProductReviews,
+  recordEvent,
+} from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
 import { deliveryPromise, localText } from '../../../../lib/trust';
@@ -57,6 +62,7 @@ function priceRangeOf(variants: { price: { amount: string } }[]): {
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -87,7 +93,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('product');
@@ -116,6 +122,15 @@ export default async function ProductPage({ params }: Props) {
 
   const prefix = ar ? '' : `/${locale}`;
   const pageUrl = new URL(`${prefix}${ROUTES.product(slug)}`, SITE_URL).toString();
+
+  // First-party analytics: one row per view, sent from here and not awaited.
+  recordEvent({
+    type: 'PRODUCT_VIEW',
+    path: `${prefix}${ROUTES.product(slug)}`,
+    locale,
+    productSlug: slug,
+    searchParams: (await searchParams) ?? {},
+  });
 
   /**
    * The price handed to the structured data is the same object the page
@@ -286,8 +301,11 @@ export default async function ProductPage({ params }: Props) {
               <StockAlert variantId={selected.id} locale={locale} />
               <a
                 className="notify"
-                href={whatsappLink(t('whatsappWhenBack', { name: product.name, url: pageUrl }))}
-                rel="noopener noreferrer"
+                href={whatsappLink(
+                  t('whatsappWhenBack', { name: product.name, url: pageUrl }),
+                  'product_back_in_stock',
+                )}
+                rel="noopener"
               >
                 {t('askWhenBack')}
               </a>
@@ -393,8 +411,11 @@ export default async function ProductPage({ params }: Props) {
                 an answer rather than "which product?". */}
             <a
               className="btn btn-ghost"
-              href={whatsappLink(t('whatsappQuestion', { name: product.name, url: pageUrl }))}
-              rel="noopener noreferrer"
+              href={whatsappLink(
+                t('whatsappQuestion', { name: product.name, url: pageUrl }),
+                'product_question',
+              )}
+              rel="noopener"
             >
               {t('getHelp')}
             </a>

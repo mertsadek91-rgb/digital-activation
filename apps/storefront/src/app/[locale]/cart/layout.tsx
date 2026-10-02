@@ -1,6 +1,10 @@
+import { ROUTES } from '@da/contracts';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+
+import { isArabic } from '../../../i18n/locale';
+import { recordEvent } from '../../../lib/api';
 
 /**
  * Never indexed, and not because it is secret.
@@ -27,6 +31,24 @@ export async function generateMetadata({
   };
 }
 
-export default function Layout({ children }: { children: ReactNode }) {
+/**
+ * The cart page is a client component, and the cart API it calls is also what
+ * the header's badge calls on every page, so neither can tell a cart view from
+ * a page load. This server layout renders once per visit to the cart, which is
+ * where the view is recorded (TASK-0096), fire and forget.
+ */
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  recordEvent({
+    type: 'CART_VIEW',
+    path: isArabic(locale) ? ROUTES.cart : `/${locale}${ROUTES.cart}`,
+    locale,
+  });
   return children;
 }

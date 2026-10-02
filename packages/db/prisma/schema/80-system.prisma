@@ -65,3 +65,51 @@ model LegacyMap {
   @@index([legacyUrl])
   @@schema("public")
 }
+
+// --- first-party analytics (TASK-0096) ----------------------------------------
+
+/// What the storefront records about browsing. The commerce half of the funnel
+/// (carts, checkout, payment, delivery) is already in its own tables and is
+/// deliberately not copied here.
+enum AnalyticsEventType {
+  PRODUCT_VIEW
+  CATEGORY_VIEW
+  WHATSAPP_CLICK
+  CART_VIEW
+
+  @@schema("public")
+}
+
+/// One browsing event, written by the API (`apps/api/src/analytics/`), fed by
+/// the storefront's server. No browser script and no cookie.
+///
+/// Holds no personal data by construction: no email, name or IP. The
+/// referrer is reduced to its host before it is stored, the path carries no
+/// query string, and `visitorId` is a keyed hash of IP + user agent that
+/// rotates every UTC day, so a visitor can be counted within a day but not
+/// followed across days. Rows older than 13 months are pruned daily
+/// (`AnalyticsPruneService`). `productId` / `categoryId` are plain ids with no
+/// foreign key: an event must never stand in the way of deleting a product.
+model AnalyticsEvent {
+  id           String             @id @default(cuid())
+  type         AnalyticsEventType
+  /// Storefront path without query string or fragment.
+  path         String
+  productId    String?
+  categoryId   String?
+  /// Where a WhatsApp click came from (fab, header, product_question, ...).
+  placement    String?
+  locale       Locale
+  /// Host only, never the full URL: a referrer URL can carry tokens.
+  referrerHost String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  /// Daily-rotating HMAC of IP + user agent; null when the caller sent no address.
+  visitorId    String?
+  createdAt    DateTime           @default(now())
+
+  @@index([type, createdAt])
+  @@index([createdAt])
+  @@schema("public")
+}

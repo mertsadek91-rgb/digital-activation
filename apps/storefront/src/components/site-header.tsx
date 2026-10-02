@@ -198,7 +198,7 @@ export function SiteHeader({
               <MailIcon />
               <span dir="ltr">{SUPPORT_EMAIL}</span>
             </a>
-            <a className="utility-link" href={whatsappLink()} rel="noopener noreferrer">
+            <a className="utility-link" href={whatsappLink(undefined, 'header')} rel="noopener">
               <SupportIcon />
               <span dir="ltr">{WHATSAPP_SHOWN}</span>
             </a>
@@ -401,10 +401,10 @@ export function SiteHeader({
               <span>{t('licencesOrders')}</span>
             </Link>
             <a
-              href={whatsappLink()}
+              href={whatsappLink(undefined, 'header')}
               className="drawer-link drawer-link-wa"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
             >
               <SupportIcon />
               <span dir="ltr">{WHATSAPP_SHOWN}</span>
