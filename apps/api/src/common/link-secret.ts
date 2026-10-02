@@ -41,14 +41,23 @@ function derivedFromAccess(): string | null {
   return crypto.createHmac('sha256', access).update(FALLBACK_LABEL).digest('base64url');
 }
 
+/**
+ * LINK_SIGNING_SECRET as set, or undefined when blank: env validation drops a
+ * whitespace-only value, so signing must not treat it as a key either.
+ */
+function configuredLinkSecret(): string | undefined {
+  const value = process.env.LINK_SIGNING_SECRET;
+  return value && value.trim() !== '' ? value : undefined;
+}
+
 /** True when LINK_SIGNING_SECRET is unset and links are signed with the derived fallback. */
 export function linkSecretIsFallback(): boolean {
-  return !process.env.LINK_SIGNING_SECRET;
+  return !configuredLinkSecret();
 }
 
 /** The key new links are signed with. */
 export function linkSigningSecret(): string {
-  const value = process.env.LINK_SIGNING_SECRET || derivedFromAccess();
+  const value = configuredLinkSecret() ?? derivedFromAccess();
   if (!value) {
     throw new Error(
       'LINK_SIGNING_SECRET (or JWT_ACCESS_SECRET) is required to sign emailed links.',

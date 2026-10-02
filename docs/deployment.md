@@ -507,7 +507,7 @@ a leftover value is ignored.
 
 ### `LINK_SIGNING_SECRET` — the order and cart links in emails
 
-Signs the `?key=` on every order link (the pay link in the bank-transfer
+Signs the `?key=` on every order link (the view link carrying the bank-transfer
 instructions, the receipt, the delivery email, staff resends) and the
 `?restore=` on abandoned-cart links (TASK-0018). **API resource only**, its own
 value: the API refuses to boot if it equals `JWT_ACCESS_SECRET`, is under 32
@@ -524,7 +524,7 @@ leaked session key also opens every order page, and the two cannot be rotated
 apart.
 
 **Order links expire after 30 days.** An unpaid order is cancelled after 14, so
-the pay link outlives its use; a delivered key is looked at in the first weeks.
+the link carrying the payment instructions outlives its use; a delivered key is looked at in the first weeks.
 After that the page — which shows the licence key — opens only by signing in
 (the emailed sign-in link works for every order's address), or staff resend the
 message from the order screen, which mints a fresh link. Cart links keep their
