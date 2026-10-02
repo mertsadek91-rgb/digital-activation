@@ -1008,6 +1008,20 @@
       "ts": "2026-10-02T07:02:24Z",
       "actor": "pm-06",
       "event": "E20261002070224-f264a6"
+    },
+    {
+      "review_id": "REV-0107",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "No escape through review-invalidate: blocks only by own reviewer, owner records refused, primary agent cannot strike, strikes visible in show/history/index and replay re-checks authority. --by is unauthenticated CLI-wide (not specific). Minor: dashboard review panels lack an invalidated list.",
+      "round": 1,
+      "target": "TASK-0092",
+      "ts": "2026-10-02T07:04:49Z",
+      "actor": "security-engineer",
+      "event": "E20261002070449-10ca0e"
     }
   ],
   "invalidated_reviews": [
