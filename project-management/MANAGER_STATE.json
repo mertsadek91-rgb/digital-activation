@@ -106,7 +106,9 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0086"
+        "TASK-0086",
+        "TASK-0093",
+        "TASK-0094"
       ],
       "owned_tasks": [
         "TASK-0086",
@@ -121,7 +123,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-01T13:06:53Z"
+      "last_activity": "2026-10-02T06:51:48Z"
     },
     {
       "id": "pm-04",
@@ -143,7 +145,8 @@
       ],
       "active_tasks": [
         "TASK-0021",
-        "TASK-0063"
+        "TASK-0063",
+        "TASK-0097"
       ],
       "owned_tasks": [
         "TASK-0021",

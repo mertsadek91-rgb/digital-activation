@@ -207,7 +207,7 @@
       "opportunities": [],
       "workload": 3,
       "blockers": [],
-      "last_activity": "2026-10-01T13:06:41Z"
+      "last_activity": "2026-10-02T06:51:40Z"
     },
     {
       "id": "responsive-design-specialist",
@@ -337,8 +337,8 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": "TASK-0021",
+      "state": "WORKING",
+      "current_task": "TASK-0097",
       "assignments": [
         "TASK-0021",
         "TASK-0034",
@@ -353,7 +353,7 @@
       "opportunities": [],
       "workload": 4,
       "blockers": [],
-      "last_activity": "2026-10-02T06:15:39Z"
+      "last_activity": "2026-10-02T06:50:36Z"
     },
     {
       "id": "backend-engineer",
@@ -780,11 +780,11 @@
         "TASK-0080"
       ],
       "reviews": [],
-      "reviews_recorded": 24,
+      "reviews_recorded": 25,
       "opportunities": [],
       "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-02T06:46:39Z"
+      "last_activity": "2026-10-02T06:50:43Z"
     },
     {
       "id": "performance-engineer",
