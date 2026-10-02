@@ -1499,10 +1499,14 @@
       "affected_pages": [],
       "affected_files": [
         ".claude/hooks/guard.mjs",
-        "agent-os/policies/guard.json"
+        "agent-os/policies/guard.json",
+        "agent-os/tools/lib/rules.mjs",
+        "agent-os/evals/guard.test.mjs",
+        "agent-os/evals/opportunity.test.mjs",
+        "agent-os/THREAT_MODEL.md"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/blocked/TASK-0082.md"
     },
