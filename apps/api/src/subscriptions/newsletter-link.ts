@@ -102,7 +102,8 @@ export function readNewsletterToken(
   let payload: string;
   if (parts.length === 4 && parts[0] === 'v2') {
     const [, body = '', digits = '', mac = ''] = parts;
-    if (!body || !/^\d{1,12}$/.test(digits)) return null;
+    // Canonical digits only, so one link has exactly one spelling.
+    if (!body || !/^(0|[1-9]\d{0,11})$/.test(digits)) return null;
     const seconds = Number(digits);
     const secrets = [
       linkSigningSecret(),

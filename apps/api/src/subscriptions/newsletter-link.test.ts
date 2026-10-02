@@ -84,6 +84,30 @@ describe('newsletter links — v2', () => {
     expect(readNewsletterToken(`v2.${own}.${later}.${mac}`, 'newsletter-confirm')).toBeNull();
   });
 
+  it('refuses an expiry written with leading zeros', () => {
+    const token = newsletterToken(EMAIL, 'newsletter-unsubscribe');
+    expect(readNewsletterToken(token.replace('.0.', '.00.'), 'newsletter-unsubscribe')).toBeNull();
+  });
+
+  it('fits the longest address the form accepts within the 1000-character token limit', () => {
+    const long = `${'a'.repeat(64)}@${'b'.repeat(251)}.com`;
+    expect(long).toHaveLength(320);
+    for (const purpose of Object.keys(NEWSLETTER_LINK_TTL_MS) as NewsletterPurpose[]) {
+      const token = newsletterToken(long, purpose, BEFORE_CUTOFF);
+      expect(token.length).toBeLessThanOrEqual(1000);
+      expect(readNewsletterToken(token, purpose, BEFORE_CUTOFF)).toBe(long);
+    }
+  });
+
+  it('honours a confirm link signed with the fallback key only until the cutoff', () => {
+    vi.stubEnv('LINK_SIGNING_SECRET', '');
+    const issued = new Date(LEGACY_LINK_CUTOFF.getTime() - 2 * DAY);
+    const token = newsletterToken(EMAIL, 'newsletter-confirm', issued);
+    vi.stubEnv('LINK_SIGNING_SECRET', link);
+    expect(readNewsletterToken(token, 'newsletter-confirm', issued)).toBe(EMAIL);
+    expect(readNewsletterToken(token, 'newsletter-confirm', LEGACY_LINK_CUTOFF)).toBeNull();
+  });
+
   it('refuses garbage', () => {
     for (const token of ['nope', 'v2.x.1', 'v2..0.abc', 'v2.YQ.abc.def', 'a.b.c', '']) {
       expect(readNewsletterToken(token, 'newsletter-unsubscribe')).toBeNull();
