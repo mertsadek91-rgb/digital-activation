@@ -5,10 +5,10 @@
       "id": "TASK-0001",
       "title": "Stand up the project-management system and dashboard",
       "type": "process",
-      "status": "MANAGER_REVIEW",
-      "stage": "MANAGER_REVIEW",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "HIGH",
-      "progress": 80,
+      "progress": 100,
       "authority_level": 2,
       "risk": "LOW",
       "primary_agent": "documentation-architect",
@@ -35,9 +35,9 @@
         "project-management/"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-29",
+      "updated_at": "2026-10-02",
       "reaudit": "VALID",
-      "file": "tasks/review/TASK-0001.md"
+      "file": "tasks/completed/TASK-0001.md"
     },
     {
       "id": "TASK-0002",

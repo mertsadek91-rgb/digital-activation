@@ -1372,6 +1372,35 @@
       "ts": "2026-10-02T06:15:38Z",
       "actor": "security-engineer",
       "event": "E20261002061538-af1884"
+    },
+    {
+      "review_id": "REV-0099",
+      "reviewer": "exec-director",
+      "executor": "subagent:general-purpose (exec-director reviewer brief)",
+      "review_type": "QA",
+      "result": "PASS",
+      "independent": true,
+      "findings": "pm sync rebuilds projections and reports problems; pm check exits 1 on stale/invalid (eval-proved), passes today, runs in CI; all 16 dashboard pages exist; no secrets (one sk_live_ placeholder). §61 folders uncheckable (constitution not in repo) - not blocking at L2.",
+      "round": 1,
+      "target": "TASK-0001",
+      "ts": "2026-10-02T06:46:05Z",
+      "actor": "exec-director",
+      "event": "E20261002064605-4bd801"
+    },
+    {
+      "review_id": "REV-0100",
+      "reviewer": "exec-director",
+      "executor": "subagent:general-purpose (exec-director reviewer brief)",
+      "review_type": "QA",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "affected_system on tasks unachievable as written (task schema has no such field; only bugs require it) - reworded. TASK-0080..0084 created after the 12:26Z V1 import, need no re-audit section. Missing: pm-04 review; TASK-0043/0044 lack a reaudit verdict; owner review of the corrected audit.",
+      "round": 1,
+      "target": "TASK-0004",
+      "ts": "2026-10-02T06:46:07Z",
+      "actor": "exec-director",
+      "event": "E20261002064607-054e8b"
     }
-  ]
+  ],
+  "invalidated_reviews": []
 }

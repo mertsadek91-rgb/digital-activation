@@ -703,13 +703,12 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0001",
         "TASK-0060"
       ],
       "reviews": [],
       "reviews_recorded": 10,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-01T11:44:33Z"
     },
@@ -785,7 +784,7 @@
       "opportunities": [],
       "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-02T06:15:38Z"
+      "last_activity": "2026-10-02T06:46:39Z"
     },
     {
       "id": "performance-engineer",
@@ -898,9 +897,8 @@
       "executor": "main",
       "squads": [],
       "state": "BLOCKED",
-      "current_task": "TASK-0001",
+      "current_task": "TASK-0081",
       "assignments": [
-        "TASK-0001",
         "TASK-0081",
         "TASK-0083"
       ],
@@ -910,12 +908,12 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 3.5,
+      "workload": 2.5,
       "blockers": [
         "TASK-0081",
         "TASK-0083"
       ],
-      "last_activity": "2026-09-30T13:42:10Z"
+      "last_activity": "2026-10-02T06:46:06Z"
     },
     {
       "id": "product-opportunity-lead",
