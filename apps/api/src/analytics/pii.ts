@@ -10,39 +10,27 @@ import { isIP } from 'node:net';
  */
 
 /**
- * The key the daily visitor hash is made with.
+ * The visitor's identifier for one UTC day, or null with no usable address or
+ * no salt.
  *
- * Derived from `JWT_ACCESS_SECRET` with a label of its own rather than read
- * from a new variable: the environment schema is owned elsewhere, and
- * `JWT_ACCESS_SECRET` is the one secret that is always set (INTERNAL_API_KEY is
- * optional). The label makes the derived key useless for anything the access
- * secret signs, and rotating the access secret simply starts new visitor ids.
- */
-const VISITOR_KEY_LABEL = 'da:analytics:visitor-id:v1';
-
-function visitorKey(): Buffer {
-  const secret = process.env.JWT_ACCESS_SECRET;
-  if (!secret) throw new Error('JWT_ACCESS_SECRET is required to derive analytics visitor ids.');
-  return createHmac('sha256', secret).update(VISITOR_KEY_LABEL).digest();
-}
-
-/**
- * The visitor's identifier for one UTC day, or null with no usable address.
- *
- * HMAC(HMAC(key, day), ip + user agent): the same browser on the same day is
- * one visitor, the next day it is a stranger, and the address itself is never
- * stored. Truncated to 128 bits, which is plenty to count distinct visitors.
+ * HMAC(salt of the day, ip + user agent), the salt being 32 random bytes kept
+ * in the database for that day only (`VisitorSaltService`, TASK-0097). The
+ * same browser on the same day is one visitor, the next day it is a stranger,
+ * and once the day's salt is deleted nobody can recompute or brute-force the
+ * id from an address, whatever secrets they hold. Truncated to 128 bits, which
+ * is plenty to count distinct visitors.
  */
 export function visitorId(
   ip: string | undefined,
   userAgent: string | undefined,
-  now: Date,
+  salt: Uint8Array | null,
 ): string | null {
-  if (!ip || isIP(ip) === 0) return null;
-  const day = now.toISOString().slice(0, 10);
-  const daily = createHmac('sha256', visitorKey()).update(day).digest();
-  return createHmac('sha256', daily)
-    .update(`${ip}\n${userAgent ?? ''}`)
+  if (!ip || isIP(ip) === 0 || !salt || salt.length === 0) return null;
+  return createHmac('sha256', salt)
+    .update(
+      `${ip}
+${userAgent ?? ''}`,
+    )
     .digest('base64url')
     .slice(0, 22);
 }

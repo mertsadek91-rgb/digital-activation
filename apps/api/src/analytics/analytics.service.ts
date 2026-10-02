@@ -4,6 +4,7 @@ import type { AnalyticsSummary, RecordAnalyticsEvent } from '@da/contracts';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { isBot, referrerHost, visitorId } from './pii.js';
+import { VisitorSaltService } from './visitor-salt.service.js';
 
 /** Who the event is about, as the request carried it. Used, then dropped. */
 export interface VisitorContext {
@@ -22,7 +23,10 @@ const SUMMARY_DAYS = 30;
  */
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly salts: VisitorSaltService,
+  ) {}
 
   /** False when the event was not recorded (a bot, a link previewer). */
   async record(
@@ -33,13 +37,15 @@ export class AnalyticsService {
     if (isBot(visitor.userAgent)) return false;
 
     const client = this.prisma.client;
-    const [product, category] = await Promise.all([
+    const [product, category, salt] = await Promise.all([
       event.productSlug
         ? client.product.findUnique({ where: { slug: event.productSlug }, select: { id: true } })
         : null,
       event.categorySlug
         ? client.category.findUnique({ where: { slug: event.categorySlug }, select: { id: true } })
         : null,
+      // Only needed when there is an address to hash; never throws.
+      visitor.ip ? this.salts.saltFor(now) : null,
     ]);
 
     await client.analyticsEvent.create({
@@ -54,7 +60,7 @@ export class AnalyticsService {
         utmSource: event.utmSource ?? null,
         utmMedium: event.utmMedium ?? null,
         utmCampaign: event.utmCampaign ?? null,
-        visitorId: visitorId(visitor.ip, visitor.userAgent, now),
+        visitorId: visitorId(visitor.ip, visitor.userAgent, salt),
         createdAt: now,
       },
     });
