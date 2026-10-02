@@ -27,7 +27,6 @@ const PLACEHOLDERS: Record<string, string> = {
   DATABASE_URL_VAULT: 'postgresql://openapi:openapi@localhost:1/openapi',
   REDIS_URL: 'redis://localhost:1',
   JWT_ACCESS_SECRET: 'openapi-document-only-not-a-secret-a',
-  JWT_REFRESH_SECRET: 'openapi-document-only-not-a-secret-b',
   KEK_PROVIDER: 'local',
   KEK_LOCAL_BASE64: Buffer.alloc(32).toString('base64'),
   MAIL_TRANSPORT: 'capture',

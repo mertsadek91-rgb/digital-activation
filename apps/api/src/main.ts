@@ -5,6 +5,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module.js';
+import { LEGACY_LINK_CUTOFF, linkSecretIsFallback } from './common/link-secret.js';
 import { buildOpenApiDocument } from './common/openapi.js';
 import { registerPanelLocale } from './common/panel-locale.js';
 import { PrismaErrorFilter } from './common/prisma-error.filter.js';
@@ -49,6 +50,16 @@ async function bootstrap(): Promise<void> {
   // `bufferLogs` above — is flushed through it too.
   const logger = app.get(Logger);
   app.useLogger(logger);
+
+  // Booting without the link key is allowed so a deploy that lands before the
+  // variable does not take checkout down (`link-secret.ts`). It is said here,
+  // once per boot, where the deploy log shows it.
+  if (linkSecretIsFallback()) {
+    logger.warn(
+      `LINK_SIGNING_SECRET is not set: order and cart links are signed with a key derived from JWT_ACCESS_SECRET. Generate one with \`pnpm secrets:generate --print\` and add it to the API resource before ${LEGACY_LINK_CUTOFF.toISOString().slice(0, 10)}.`,
+      'Bootstrap',
+    );
+  }
 
   // No global ValidationPipe: it is built on class-validator, which would mean
   // a second definition of every shape @da/contracts already describes in zod.

@@ -53,7 +53,14 @@ const envSchema = z.object({
    */
   MONITOR_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
   JWT_ACCESS_SECRET: z.string().min(32, 'must be at least 32 characters'),
-  JWT_REFRESH_SECRET: z.string().min(32, 'must be at least 32 characters'),
+  /**
+   * Signs the order and cart links the store emails (TASK-0018), apart from
+   * the staff-session key so the two can leak and rotate separately. Optional
+   * so a deploy that lands before the variable does still boots: unset, the
+   * key is derived from JWT_ACCESS_SECRET and the boot logs a warning. Set,
+   * it must be generated — see the production checks below.
+   */
+  LINK_SIGNING_SECRET: z.string().min(32, 'must be at least 32 characters').optional(),
   JWT_ACCESS_TTL: z.string().default('15m'),
   JWT_REFRESH_TTL: z.string().default('30d'),
   TOTP_ISSUER: z.string().default('Digital Activation'),
@@ -226,6 +233,14 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     );
   }
 
+  // A link key equal to the session key is the sharing this variable exists
+  // to end — and a link key is something the customer's mailbox holds proof of.
+  if (env.LINK_SIGNING_SECRET && env.LINK_SIGNING_SECRET === env.JWT_ACCESS_SECRET) {
+    throw new Error(
+      'LINK_SIGNING_SECRET must differ from JWT_ACCESS_SECRET — generate its own with `pnpm secrets:generate`.',
+    );
+  }
+
   const missing: string[] = [];
 
   // A local KEK is a development convenience and must never reach production:
@@ -255,6 +270,13 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     if (looksLikePlaceholder(env.JWT_ACCESS_SECRET)) {
       throw new Error(
         'JWT_ACCESS_SECRET looks like a placeholder. Generate one with `pnpm secrets:generate` — anyone who knows this value can sign in as the owner.',
+      );
+    }
+    // Unset is allowed (a derived key and a boot warning); a placeholder is
+    // not. Whoever knows the link key can open any order page, licence and all.
+    if (env.LINK_SIGNING_SECRET && looksLikePlaceholder(env.LINK_SIGNING_SECRET)) {
+      throw new Error(
+        'LINK_SIGNING_SECRET looks like a placeholder. Generate one with `pnpm secrets:generate` — anyone who knows this value can open any order page.',
       );
     }
     // Card payments are optional: a store can open on bank transfer alone, and

@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
@@ -10,6 +8,8 @@ import { MailService } from '../mail/mail.service.js';
 import { backInStock, newsletterConfirm } from '../mail/templates.js';
 import { withAdvisoryLock } from '../common/advisory-lock.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+
+import { newsletterToken, readNewsletterToken } from './newsletter-link.js';
 
 /**
  * The two things a visitor can ask to be told about: a product coming back,
@@ -27,36 +27,6 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 const PER_PASS = 50;
 const LOCK_KEY = 761_204_004;
-
-/** Distinct labels, so a confirm link can never be replayed as an unsubscribe. */
-type Purpose = 'newsletter-confirm' | 'newsletter-unsubscribe' | 'welcome-confirm';
-
-function secret(): string {
-  const value = process.env.JWT_ACCESS_SECRET;
-  if (!value) throw new Error('JWT_ACCESS_SECRET is required to sign newsletter links.');
-  return value;
-}
-
-/** `<email, base64url>.<hmac>`: self-contained, nothing stored until it is used. */
-export function newsletterToken(email: string, purpose: Purpose): string {
-  const payload = Buffer.from(email).toString('base64url');
-  const mac = crypto
-    .createHmac('sha256', secret())
-    .update(`${purpose}:v1:${payload}`)
-    .digest('base64url');
-  return `${payload}.${mac}`;
-}
-
-export function readNewsletterToken(token: string, purpose: Purpose): string | null {
-  const [payload, mac] = token.split('.');
-  if (!payload || !mac) return null;
-  const expected = Buffer.from(
-    crypto.createHmac('sha256', secret()).update(`${purpose}:v1:${payload}`).digest('base64url'),
-  );
-  const given = Buffer.from(mac);
-  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
-  return Buffer.from(payload, 'base64url').toString('utf8');
-}
 
 @Injectable()
 export class SubscriptionsService {

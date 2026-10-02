@@ -218,11 +218,41 @@ function checkDatabaseUrlsAgree(env: Map<string, string>): void {
   });
 }
 
+/**
+ * The link key (TASK-0018) exists to stop the order and cart links sharing the
+ * staff-session key. The same value in both would quietly undo that, and the
+ * API refuses to boot on it. JWT_REFRESH_SECRET was never read by anything and
+ * is gone; a leftover line gets a message that says so rather than "stale".
+ */
+function checkLinkSecret(env: Map<string, string>): void {
+  const link = env.get('LINK_SIGNING_SECRET');
+  if (link && !PLACEHOLDERS.has(link) && link === env.get('JWT_ACCESS_SECRET')) {
+    findings.push({
+      severity: 'error',
+      key: 'LINK_SIGNING_SECRET',
+      message:
+        'equals JWT_ACCESS_SECRET — it must be its own value. `pnpm secrets:generate --force`.',
+    });
+  }
+  if (link && !PLACEHOLDERS.has(link) && link.length < 32) {
+    findings.push({
+      severity: 'error',
+      key: 'LINK_SIGNING_SECRET',
+      message: 'shorter than 32 characters — the API refuses to boot on it.',
+    });
+  }
+}
+
+const RETIRED: Record<string, string> = {
+  JWT_REFRESH_SECRET: 'no longer used (TASK-0018) — delete the line here and in Coolify',
+};
+
 function main(): void {
   checkForTruncation();
   const example = parseEnvFile(path.join(ROOT, '.env.example'));
   const actual = parseEnvFile(path.join(ROOT, '.env'));
   checkDatabaseUrlsAgree(actual);
+  checkLinkSecret(actual);
 
   if (actual.size === 0) {
     console.error('No .env found at the repo root. Start with: cp .env.example .env');
@@ -256,7 +286,7 @@ function main(): void {
     findings.push({
       severity: 'warn',
       key,
-      message: 'not in .env.example — stale, or undocumented',
+      message: RETIRED[key] ?? 'not in .env.example — stale, or undocumented',
     });
   }
 

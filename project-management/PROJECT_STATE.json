@@ -10,8 +10,7 @@
     "TASK-0080 is BLOCKED",
     "TASK-0081 is BLOCKED",
     "TASK-0082 is BLOCKED",
-    "TASK-0083 is BLOCKED",
-    "1 governance validation problem(s)"
+    "TASK-0083 is BLOCKED"
   ],
   "total_tasks": 54,
   "active_tasks": 14,
@@ -45,7 +44,7 @@
   "owner_attention": 10,
   "active_agents": 11,
   "file_collisions": 0,
-  "validation_problems": 1,
+  "validation_problems": 0,
   "canonical_events": 566,
   "last_activity": "2026-10-02T11:23:57Z"
 }

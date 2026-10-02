@@ -64,7 +64,7 @@ export class OffersPublicController {
     @Query('key') key: string | undefined,
     @Req() request: FastifyRequest,
   ): Promise<OrderSuggestions> {
-    if (verifyOrderAccessKey(number, key)) {
+    if (verifyOrderAccessKey(number, key, 'view')) {
       return this.offers.forOrder(number, query, { skipOwnerCheck: true });
     }
     const session = await this.account.sessionFor(request.cookies?.da_customer);

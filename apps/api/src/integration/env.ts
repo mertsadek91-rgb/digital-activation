@@ -28,7 +28,7 @@ const fixed: Record<string, string> = {
   ADMIN_URL: 'http://localhost:3001',
   REDIS_URL: 'redis://localhost:1',
   JWT_ACCESS_SECRET: 'integration-tests-only-4f8a1c9e2b7d6053',
-  JWT_REFRESH_SECRET: 'integration-tests-only-9d2e7b1a4c8f3065',
+  LINK_SIGNING_SECRET: 'integration-tests-only-links-9d2e7b1a4c8f3065',
   KEK_PROVIDER: 'local',
   KEK_LOCAL_BASE64: Buffer.alloc(32, 7).toString('base64'),
   // Writes each message to .cache/mail and sends nothing; the assertions read
