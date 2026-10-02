@@ -1106,6 +1106,20 @@
       "ts": "2026-10-02T08:20:30Z",
       "actor": "security-engineer",
       "event": "E20261002082030-3de687"
+    },
+    {
+      "review_id": "REV-0114",
+      "reviewer": "pm-06",
+      "executor": "subagent:general-purpose",
+      "review_type": "RELEASE",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Cron switch gates all 15 @Cron sites via ScheduleModule cronJobs, refused in production, tested (44/44); CI secrets dummy, mail captured; fixture local-only, idempotent, slugs match. Concerns: mobile LCP only a warning; app.module reads raw env, no wiring test; no job/curl timeouts (fixed); localhost guard trusts tunnels (commented); service images pinned to major only.",
+      "round": 1,
+      "target": "TASK-0089",
+      "ts": "2026-10-02T08:35:28Z",
+      "actor": "pm-06",
+      "event": "E20261002083528-a7228e"
     }
   ],
   "invalidated_reviews": [

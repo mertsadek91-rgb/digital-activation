@@ -1422,7 +1422,6 @@
         ".claude/launch.json",
         "project-management/dashboard/",
         "project-management/tools/",
-        ".github/workflows/ci.yml",
         "package.json",
         "eslint.config.mjs",
         ".prettierignore",
@@ -1430,7 +1429,7 @@
         ".gitattributes"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/blocked/TASK-0080.md"
     },
@@ -1782,9 +1781,16 @@
         "ci"
       ],
       "affected_pages": [],
-      "affected_files": [],
+      "affected_files": [
+        ".github/workflows/ci.yml",
+        "apps/storefront/lighthouserc.json",
+        "packages/db/scripts/ci-fixture.ts",
+        "packages/db/package.json",
+        "apps/api/src/app.module.ts",
+        "apps/api/src/config/env.ts"
+      ],
       "created_at": "2026-09-30",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/active/TASK-0089.md"
     },
