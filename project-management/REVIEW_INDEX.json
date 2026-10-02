@@ -1064,6 +1064,20 @@
       "ts": "2026-10-02T07:57:56Z",
       "actor": "pm-04",
       "event": "E20261002075756-0229fd"
+    },
+    {
+      "review_id": "REV-0111",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "d2bf391: MAC binds purpose, order and expiry; constant-time compare over all candidate keys; expiry server-side; legacy bounded by the 2026-11-15 cutoff with distinct labels; fallback domain-separated; JWT_REFRESH_SECRET unused; all link sites migrated; 644/644. Follow-ups: whitespace-only secret and pay-link wording fixed in 4f7fb72; newsletter tokens still on the access secret (separate task).",
+      "round": 1,
+      "target": "TASK-0018",
+      "ts": "2026-10-02T08:11:06Z",
+      "actor": "pm-04",
+      "event": "E20261002081106-a3f709"
     }
   ],
   "invalidated_reviews": [
