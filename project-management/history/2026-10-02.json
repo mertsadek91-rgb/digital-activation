@@ -40,12 +40,12 @@
   "opportunities_open": 2,
   "opportunities_ready_for_decision": 1,
   "watchlist": 1,
-  "reviews_recorded": 80,
-  "independent_reviews": 80,
+  "reviews_recorded": 81,
+  "independent_reviews": 81,
   "owner_attention": 10,
   "active_agents": 9,
   "file_collisions": 0,
   "validation_problems": 1,
-  "canonical_events": 558,
-  "last_activity": "2026-10-02T08:35:46Z"
+  "canonical_events": 559,
+  "last_activity": "2026-10-02T08:47:34Z"
 }

@@ -1120,6 +1120,20 @@
       "ts": "2026-10-02T08:35:28Z",
       "actor": "pm-06",
       "event": "E20261002083528-a7228e"
+    },
+    {
+      "review_id": "REV-0115",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose",
+      "review_type": "SECURITY",
+      "result": "BLOCKING_OBJECTION",
+      "independent": true,
+      "findings": "Re-test of 6d3ff70: every REV-0113 input denied, legitimate commands pass, 68/68 evals. New HIGH bypasses in all three classes: PowerShell path arrays (x, ..\\..\\..), .Delete($true), scriptblocks/try, powershell -comm, eval, bash -lc, env/nice/timeout prefixes, echo|bash, cmd r^d and rd/s/q, wsl rm, git worktree remove --force .; .env via process.loadEnvFile / node -r dotenv/config, gci -Filter *nv | gc; log writes via ac -Va/-Pa, Tee-Object -FilePath, sibling worktree paths. THREAT_MODEL overclaims wrapper coverage. A deny-list parser cannot be complete; escalate.",
+      "round": 4,
+      "target": "TASK-0080",
+      "ts": "2026-10-02T08:47:34Z",
+      "actor": "security-engineer",
+      "event": "E20261002084734-d5002b"
     }
   ],
   "invalidated_reviews": [
