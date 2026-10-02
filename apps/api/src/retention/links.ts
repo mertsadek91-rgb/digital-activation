@@ -1,4 +1,4 @@
-import { newsletterToken } from '../subscriptions/subscriptions.service.js';
+import { newsletterToken } from '../subscriptions/newsletter-link.js';
 
 /** Where the storefront is, and the locale prefix its routes take (Arabic has none). */
 export function storefrontUrl(path: string, locale: 'ar' | 'en'): URL {

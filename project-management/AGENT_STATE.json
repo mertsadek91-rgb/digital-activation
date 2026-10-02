@@ -366,12 +366,13 @@
         "TASK-0016",
         "TASK-0018",
         "TASK-0031",
-        "TASK-0041"
+        "TASK-0041",
+        "TASK-0099"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 2.5,
       "blockers": [],
       "last_activity": "2026-09-30T12:03:43Z"
     },
@@ -766,7 +767,8 @@
         "TASK-0004",
         "TASK-0011",
         "TASK-0016",
-        "TASK-0018"
+        "TASK-0018",
+        "TASK-0099"
       ],
       "supporting": [
         "TASK-0017",
@@ -778,9 +780,9 @@
       "reviews": [],
       "reviews_recorded": 22,
       "opportunities": [],
-      "workload": 6.5,
+      "workload": 7.5,
       "blockers": [],
-      "last_activity": "2026-10-02T07:04:49Z"
+      "last_activity": "2026-10-02T11:03:48Z"
     },
     {
       "id": "performance-engineer",

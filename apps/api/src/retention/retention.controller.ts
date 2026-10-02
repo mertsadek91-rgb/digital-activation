@@ -22,7 +22,7 @@ import { CartService } from '../cart/cart.service.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { readNewsletterToken } from '../subscriptions/subscriptions.service.js';
+import { readNewsletterToken } from '../subscriptions/newsletter-link.js';
 
 import { CartRecoveryService } from './cart-recovery.service.js';
 import { RetentionStatsService } from './retention-stats.service.js';
@@ -107,7 +107,7 @@ export class RetentionPublicController {
   @HttpCode(200)
   @ApiOperation({ summary: 'One-click unsubscribe from promotional email' })
   async oneClick(
-    @Query(new ZodPipe(z.object({ token: z.string().min(10).max(400) }))) query: { token: string },
+    @Query(new ZodPipe(z.object({ token: z.string().min(10).max(1000) }))) query: { token: string },
   ): Promise<{ ok: true }> {
     const email = readNewsletterToken(query.token, 'newsletter-unsubscribe');
     if (email) {
