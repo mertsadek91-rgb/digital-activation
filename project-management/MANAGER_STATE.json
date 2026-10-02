@@ -165,7 +165,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T07:03:44Z"
+      "last_activity": "2026-10-02T11:03:47Z"
     },
     {
       "id": "pm-05",
@@ -216,7 +216,9 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0098",
+        "TASK-0099"
       ],
       "owned_tasks": [
         "TASK-0011",
@@ -230,9 +232,13 @@
         "TASK-0051",
         "TASK-0060",
         "TASK-0082",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0098",
+        "TASK-0099"
       ],
-      "reviews": [],
+      "reviews": [
+        "TASK-0098"
+      ],
       "blocked_work": [
         "TASK-0082"
       ],
@@ -248,7 +254,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T07:03:44Z"
+      "last_activity": "2026-10-02T11:03:48Z"
     },
     {
       "id": "pm-07",

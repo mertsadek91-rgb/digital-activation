@@ -1,0 +1,616 @@
+/*
+ * The header, after the UI Kit (TASK-0100): announcement bar, shop row,
+ * navigation row, the category menu, the search box and the mobile drawer.
+ *
+ * Logical properties throughout, so one stylesheet serves the Arabic RTL
+ * store and the English LTR one. Controls are 48px tall, as the kit
+ * specifies; the smallest touch target is 44px.
+ */
+
+.site-header {
+  background: var(--color-bg);
+  border-block-end: 1px solid var(--color-border);
+}
+
+/* --- the announcement bar ------------------------------------------------- */
+
+.topbar {
+  min-block-size: var(--utility-height);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+  font-size: var(--text-xs);
+}
+.topbar-inner {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: 8px var(--spacing-1);
+  min-block-size: var(--utility-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-1);
+}
+.topbar-text {
+  margin: 0;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+}
+.topbar-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 24px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.topbar-link:hover {
+  text-decoration: underline;
+}
+.topbar-link svg {
+  flex: none;
+}
+/* The currency control is a native select, drawn as the text beside it. */
+.topbar .currency-switcher select {
+  font: inherit;
+  font-family: var(--font-latin);
+  font-weight: 600;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.topbar .currency-switcher option {
+  color: var(--color-ink);
+}
+.topbar-link:focus-visible,
+.topbar .currency-switcher select:focus-visible {
+  outline: 3px solid var(--color-ink-inverse);
+  outline-offset: 2px;
+}
+
+/* --- the shop row ---------------------------------------------------------- */
+
+.header-main-inner {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: 20px var(--spacing-1) 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+.logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  color: var(--color-ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.header-search {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+/* A 48px square button with a 1px border: the kit's `iconbutton`. */
+.icon-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 48px;
+  block-size: 48px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+.icon-button:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand-ink);
+  background: var(--color-brand-soft);
+}
+.cart-count {
+  position: absolute;
+  inset-block-start: -6px;
+  inset-inline-end: -6px;
+  display: grid;
+  place-items: center;
+  min-inline-size: 20px;
+  block-size: 20px;
+  padding-inline: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+  font-family: var(--font-latin);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid var(--color-bg);
+}
+
+/* --- the search box -------------------------------------------------------- */
+
+/* The kit's `input`: 48px, 8px radius, a magnifier at the start. */
+.search-box {
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: var(--control-height);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  overflow: hidden;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.search-box:focus-within {
+  border-color: var(--color-brand);
+}
+.search-box input {
+  flex: 1;
+  min-inline-size: 0;
+  font: inherit;
+  font-size: var(--text-sm);
+  padding-inline: 14px;
+  padding-block: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-ink);
+}
+.search-box input::placeholder {
+  color: var(--color-ink-muted);
+}
+.search-box input:focus {
+  outline: none;
+}
+/* The browser's own clear button, which lands in the wrong place inside a
+   field and cannot be styled. The Escape key still clears the field. */
+.search-box input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.search-box button {
+  display: grid;
+  place-items: center;
+  min-inline-size: 44px;
+  padding-inline: 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.search-box button:hover {
+  color: var(--color-brand);
+}
+/*
+ * The glass mirrors with the page.
+ *
+ * A magnifier drawn with its handle to the lower right reads as backwards in a
+ * right-to-left layout — it is a physical object held in a hand, and the hand
+ * changes sides with the text.
+ */
+[dir='rtl'] .search-box button svg {
+  transform: scaleX(-1);
+}
+
+/* --- the navigation row ---------------------------------------------------- */
+
+.header-nav-inner {
+  max-inline-size: var(--container-max);
+  margin-inline: auto;
+  padding: 0 var(--spacing-1) 16px;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+.site-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px var(--spacing-2);
+  flex-wrap: wrap;
+}
+.site-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 32px;
+  color: var(--color-ink);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.site-nav a:hover {
+  color: var(--color-brand-ink);
+}
+.site-nav-warranty {
+  color: var(--color-gold-ink) !important;
+  font-weight: 700 !important;
+}
+
+/* --- the product menu ------------------------------------------------------ */
+
+.mega {
+  position: relative;
+  flex: none;
+}
+/* The kit's primary button with the menu glyph: 48px, 8px radius. */
+.mega-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: var(--control-height);
+  padding: 10px 20px;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: var(--color-ink-inverse);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 160ms ease;
+}
+.mega-button:hover,
+.mega-button.is-open {
+  background: var(--color-brand-hover);
+}
+.mega-button svg:last-child {
+  transition: transform 160ms ease;
+}
+.mega-button.is-open svg:last-child {
+  transform: rotate(180deg);
+}
+
+/*
+ * The panel: the kit's `menu`. Absolutely positioned so opening it does not
+ * push the page down — a menu that reflows the document under the pointer is
+ * a menu that moves the thing somebody was about to click.
+ */
+.mega-panel {
+  position: absolute;
+  inset-block-start: calc(100% + 8px);
+  inset-inline-start: 0;
+  z-index: 30;
+  min-inline-size: 20rem;
+  max-inline-size: min(92vw, 28rem);
+  max-block-size: min(70vh, 32rem);
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.mega-panel ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.mega-panel li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: var(--control-height);
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-size: var(--text-sm);
+}
+.mega-panel li a:hover {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+.mega-name {
+  margin-inline-end: auto;
+}
+/* The count is information, not emphasis: a category with one product should
+   not look like a category with twenty-six. */
+.mega-count {
+  font-family: var(--font-latin);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.cat-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.mega-all {
+  display: block;
+  margin-block-start: 6px;
+  padding: 12px 16px;
+  border-block-start: 1px solid var(--color-border);
+  color: var(--color-brand-ink);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+/* --- narrow screens -------------------------------------------------------- */
+
+.mobile-menu-btn {
+  display: none;
+}
+
+@media (max-width: 1023.98px) {
+  .header-main-inner {
+    gap: var(--spacing-1);
+  }
+  .site-nav {
+    gap: 4px var(--spacing-1);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .topbar-inner {
+    padding-inline: var(--spacing-1);
+    font-size: 0.6875rem;
+  }
+  /* The tagline keeps the bar; the controls are in the drawer. */
+  .topbar-controls {
+    display: none;
+  }
+  .header-main-inner {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px var(--spacing-1);
+  }
+  .mobile-menu-btn {
+    display: inline-grid;
+    order: 0;
+  }
+  .logo {
+    order: 1;
+    margin-inline-end: auto;
+  }
+  .header-actions {
+    order: 2;
+  }
+  .header-search {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .icon-button {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+  .header-nav {
+    display: none;
+  }
+}
+
+/* --- the mobile drawer (the kit's `mobile-menu`) --------------------------- */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: rgb(23 33 43 / 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 260ms var(--ease-out),
+    visibility 260ms var(--ease-out);
+}
+.drawer-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer-panel {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: 999;
+  inline-size: min(85vw, 340px);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-drawer);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(105%);
+  /* `visibility` rides along so the closed panel is not painted at the edge
+     on a wide phone. It switches off only once the slide-out has finished,
+     and switches ON at once: a panel that is still hidden when it opens
+     cannot take focus, and the header moves focus into it on open. */
+  visibility: hidden;
+  transition:
+    transform 300ms var(--ease-out),
+    visibility 0s linear 300ms;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+[dir='rtl'] .drawer-panel {
+  transform: translateX(105%);
+}
+[dir='ltr'] .drawer-panel {
+  transform: translateX(-105%);
+}
+.drawer-panel.is-open {
+  transform: translateX(0) !important;
+  visibility: visible;
+  transition:
+    transform 300ms var(--ease-out),
+    visibility 0s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel,
+  .drawer-overlay {
+    transition: none;
+  }
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-block-end: 1px solid var(--color-border);
+}
+.drawer-close {
+  inline-size: 44px;
+  block-size: 44px;
+}
+
+.drawer-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  flex: 1;
+}
+
+.drawer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.drawer-section-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-ink-muted);
+  margin-block-end: 6px;
+  padding-inline-start: 4px;
+}
+
+/* The kit's `menuitem`: 48px, 8px radius, mint when selected or hovered. */
+.drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: var(--control-height);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  color: var(--color-ink);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: var(--text-sm);
+  transition: background 150ms ease;
+}
+.drawer-link:hover {
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+.drawer-link-gold {
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
+  border: 1px solid var(--color-gold-border);
+  font-weight: 700;
+}
+.gold-pill {
+  font-family: var(--font-latin);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-gold-ink);
+  color: var(--color-ink-inverse);
+}
+
+.drawer-cat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.drawer-cat-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: var(--control-height);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  transition: background 150ms ease;
+}
+.drawer-cat-link:hover {
+  background: var(--color-brand-soft);
+}
+.drawer-cat-name {
+  margin-inline-end: auto;
+}
+.drawer-cat-count {
+  font-family: var(--font-latin);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  background: var(--color-surface-2);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.drawer-account {
+  margin-block-start: auto;
+  border-block-start: 1px solid var(--color-border);
+  padding-block-start: var(--spacing-1);
+}
+.drawer-link-wa {
+  color: var(--color-success);
+  font-weight: 700;
+}
+.drawer-lang {
+  justify-content: flex-start;
+  color: var(--color-brand-ink);
+  font-weight: 700;
+}
+.drawer-link.currency-switcher select {
+  font: inherit;
+  font-family: var(--font-latin);
+  font-weight: 600;
+  color: var(--color-ink);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  min-block-size: 40px;
+}
+
+/* --- the forward arrow, mirrored on the Arabic page ------------------------- */
+
+.icon-flip {
+  display: inline-flex;
+  align-items: center;
+}
+[dir='rtl'] .icon-flip {
+  transform: scaleX(-1);
+}

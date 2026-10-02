@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Tajawal } from 'next/font/google';
+import { Inter, Tajawal } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -23,18 +23,25 @@ import { routing } from '../../i18n/routing';
 import '../globals.css';
 
 /**
- * The store's typeface, self-hosted by next/font at build time.
+ * The store's typefaces, self-hosted by next/font at build time.
  *
- * Arabic and Latin subsets, and only the weights the stylesheets use: 400 for
- * body, 500 and 700 for labels and headings, 800 for the heaviest display text.
- * The CSS also asks for 600 and 900 in a few places; Tajawal has no 600, and
- * the browser picks the nearest face for both rather than faking a weight.
+ * Tajawal for Arabic (400 body, 500 labels, 700 headings, as the UI Kit
+ * specifies; 800 for the heaviest display text that is still set). Inter for
+ * English, and for prices, codes and addresses in both languages. The CSS
+ * binds them in globals.css: `--font-sans` is Tajawal under `html[lang=ar]`
+ * and Inter under `html[lang=en]`; `--font-latin` is always Inter.
  */
 const tajawal = Tajawal({
   subsets: ['arabic', 'latin'],
   weight: ['400', '500', '700', '800'],
   display: 'swap',
   variable: '--font-tajawal',
+});
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-inter',
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
@@ -117,7 +124,7 @@ export default async function LocaleLayout({
   ]);
 
   return (
-    <html lang={locale} dir={DIRECTION[locale]} className={tajawal.variable}>
+    <html lang={locale} dir={DIRECTION[locale]} className={`${tajawal.variable} ${inter.variable}`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: siteGraph }} />
         <NextIntlClientProvider>

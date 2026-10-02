@@ -6,14 +6,24 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { BRAND } from '@da/ui';
 
-import { CategoryMark, StepMark } from '../../components/icons';
+import {
+  ArrowIcon,
+  BookIcon,
+  CartIcon,
+  CategoryMark,
+  CreditCardIcon,
+  DownloadIcon,
+  HeadsetIcon,
+  KeyIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+} from '../../components/icons';
 import { HeroSlider } from '../../components/hero-slider';
 import { MotionFadeIn } from '../../components/motion-wrapper';
 import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
 import { isArabic } from '../../i18n/locale';
 import { getHome } from '../../lib/api';
-import { loadHeroSlides } from '../../lib/hero-slides';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -21,24 +31,26 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation
 export const revalidate = 300;
 
 /**
- * Home page.
+ * Home page, after the UI Kit (`03_Homepage_Sections`, TASK-0100).
  *
- * The shape follows the store the owner already has — a hero, a trust strip,
- * then a row of products per category — because that layout works and the
- * owner likes it. Three things are deliberately different.
+ * The kit's order, with the sections the catalog can actually fill: hero,
+ * benefits, categories, best sellers, one row per category, new arrivals,
+ * brands, the dark promo panel (which here carries the Golden Warranty — the
+ * one promise this shop makes that the kit's sample store did not), how it
+ * works, the blog as the kit's "resources" cards, and the FAQ. The newsletter
+ * card sits above the footer on every page.
+ *
+ * Three things are deliberately absent.
  *
  * There is no reviews section. The legacy home page showed a 4.9 rating and
  * two testimonials drawn from 565 reviews that no purchase stands behind, and
  * `Review.orderItemId` in this schema is required precisely so that cannot
  * happen again. The section returns when there are real reviews to put in it.
  *
- * There is no carousel. The legacy hero was a slider, which puts the largest
- * image on the page behind a script and makes the headline arrive late; a
- * static hero whose LCP element is text is simply faster.
+ * There is no plan-comparison table: the shop sells licences, not tiers.
  *
- * And there is an FAQ, which the legacy home page did not have. It is the part
- * of a home page an answer engine can actually quote, and every answer here is
- * one the store can stand behind — including what the warranty does not cover.
+ * And there is no carousel. The hero's picture is the four product families
+ * the shop is known for, drawn once; the LCP element stays the headline.
  */
 export async function generateMetadata({
   params,
@@ -66,6 +78,14 @@ export async function generateMetadata({
   };
 }
 
+/** The four product families on the hero, as the kit's banner draws them. */
+const HERO_ART = [
+  { name: 'windows', width: 560, height: 506 },
+  { name: 'office', width: 560, height: 489 },
+  { name: 'adobe', width: 560, height: 552 },
+  { name: 'autodesk', width: 560, height: 569 },
+] as const;
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -73,13 +93,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const tf = await getTranslations('format');
   const tk = await getTranslations('catalog');
 
-  // The hero's featured products are read with the same cache window as the
-  // rest of the page, so the price on the first screen is the price at
-  // checkout — see `hero-slides.ts` for why that was not always true.
-  const [home, slides] = await Promise.all([
-    getHome({ locale, revalidate: 300 }),
-    loadHeroSlides(locale),
-  ]);
+  const home = await getHome({ locale, revalidate: 300 });
 
   const faq = ([1, 2, 3, 4, 5] as const).map((n) => ({
     q: t(`faq${n}Q`),
@@ -87,6 +101,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   }));
 
   const href = (path: string): string => (isArabic(locale) ? path : `/${locale}${path}`);
+
+  // One slide per family. Each links to its category when the catalog has
+  // one (matched by slug prefix, as the category marks are), else the store.
+  const slides = HERO_ART.map((art) => {
+    const category = home?.categories.find((entry) => entry.slug.startsWith(art.name));
+    return {
+      key: art.name,
+      name: t(`slides.${art.name}.name`),
+      title: t(`slides.${art.name}.title`),
+      body: t(`slides.${art.name}.body`),
+      cta: t(`slides.${art.name}.cta`),
+      href: href(category ? category.href : ROUTES.store),
+      image: { src: `/home/${art.name}.webp`, width: art.width, height: art.height },
+    };
+  });
 
   // One graph, one script tag. Assembled through buildGraph so a second
   // Product/ItemList/Article entity on the same page throws in development —
@@ -114,11 +143,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       : null,
   ]);
 
-  const trust = [
-    { key: 'Genuine', icon: '⌘' },
-    { key: 'Delivery', icon: '↯' },
-    { key: 'Warranty', icon: '✦' },
-    { key: 'Support', icon: '✆' },
+  const benefits = [
+    { key: 'Genuine', icon: <KeyIcon /> },
+    { key: 'Delivery', icon: <DownloadIcon /> },
+    { key: 'Warranty', icon: <ShieldCheckIcon size={24} /> },
+    { key: 'Support', icon: <HeadsetIcon /> },
+  ] as const;
+
+  const steps = [
+    { n: 1, icon: <CartIcon /> },
+    { n: 2, icon: <CreditCardIcon size={24} /> },
+    { n: 3, icon: <DownloadIcon /> },
   ] as const;
 
   return (
@@ -127,65 +162,49 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {home?.isPreview ? <p className="preview-bar">{t('previewNotice')}</p> : null}
 
-      <section className="hero">
-        <div className="hero-inner">
-          <div className="hero-content">
-            <h1>{t('heroHeadline')}</h1>
-            <p className="hero-body">{t('heroBody')}</p>
-
-            <div className="hero-actions">
-              <Link href={href(ROUTES.store)} className="btn btn-primary">
-                {t('heroCta')}
-              </Link>
-              <Link href={href(ROUTES.goldenWarranty)} className="btn btn-ghost">
-                {t('heroCtaSecondary')}
-              </Link>
+      {/* --- hero: a slide per product family, the kit's mint card ----------- */}
+      <div className="section hero-section">
+        <HeroSlider slides={slides}>
+          <Link href={href(ROUTES.goldenWarranty)} className="btn btn-outline">
+            {t('heroCtaSecondary')}
+          </Link>
+        </HeroSlider>
+        {home ? (
+          <dl className="hero-stats">
+            <div>
+              <dt>{home.productCount}</dt>
+              <dd>{t('statProducts')}</dd>
             </div>
-
-            {home ? (
-              <dl className="hero-stats">
-                <div>
-                  <dt>{home.productCount}</dt>
-                  <dd>{t('statProducts')}</dd>
-                </div>
-                <div>
-                  <dt>{home.brands.length}</dt>
-                  <dd>{t('statBrands')}</dd>
-                </div>
-                <div>
-                  <dt>5</dt>
-                  <dd>{t('statDelivery')}</dd>
-                </div>
-              </dl>
-            ) : null}
-          </div>
-
-          {/* Nothing here when the catalog has none of the featured products:
-              an empty card beside the headline would be a frame around a
-              missing picture. */}
-          {slides.length > 0 ? (
-            <div className="hero-slider-container">
-              <HeroSlider slides={slides} locale={locale} />
+            <div>
+              <dt>{home.brands.length}</dt>
+              <dd>{t('statBrands')}</dd>
             </div>
-          ) : null}
-        </div>
-      </section>
+            <div>
+              <dt>5</dt>
+              <dd>{t('statDelivery')}</dd>
+            </div>
+          </dl>
+        ) : null}
+      </div>
 
+      {/* --- benefits: the kit's four-up strip under the hero ----------------- */}
       <MotionFadeIn>
-        <section className="trust" aria-labelledby="trust-title">
+        <section className="section trust" aria-labelledby="trust-title">
           <h2 id="trust-title" className="visually-hidden">
             {t('trustTitle')}
           </h2>
           <ul className="trust-grid">
-            {trust.map((entry) => (
-              <li key={entry.key}>
-                <span className="trust-icon" aria-hidden="true">
+            {benefits.map((entry) => (
+              <li key={entry.key} className="benefit">
+                <span className="iconbox" aria-hidden="true">
                   {entry.icon}
                 </span>
-                <h3>{t(`trust${entry.key}Title`)}</h3>
-                {/* A label alone is decoration. The sentence under it is the
-                    part a buyer — or an answer engine — can act on. */}
-                <p>{t(`trust${entry.key}Body`)}</p>
+                <div>
+                  <h3>{t(`trust${entry.key}Title`)}</h3>
+                  {/* A label alone is decoration. The sentence under it is the
+                      part a buyer — or an answer engine — can act on. */}
+                  <p>{t(`trust${entry.key}Body`)}</p>
+                </div>
               </li>
             ))}
           </ul>
@@ -198,34 +217,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       ) : (
         <>
+          {/* --- categories: the kit's mint tiles ----------------------------- */}
           {home.categories.length > 0 ? (
             <MotionFadeIn>
               <section className="section" aria-labelledby="categories-title">
                 <header className="section-head">
                   <h2 id="categories-title">{t('categoriesTitle')}</h2>
-                  <p>{t('categoriesBody')}</p>
+                  <Link className="section-more" href={href(ROUTES.store)}>
+                    <span>{t('viewAll')}</span>
+                    <ArrowIcon size={18} />
+                  </Link>
                 </header>
                 <ul className="category-grid">
                   {home.categories.map((category) => (
-                    <li key={category.slug} className="category-card-item">
-                      <Link href={href(category.href)} className="category-card-link">
-                        <div className="cat-icon-badge">
-                          <CategoryMark slug={category.slug} size={30} />
-                        </div>
-                        <div className="cat-card-body">
-                          <strong className="cat-name">{category.name}</strong>
-                          {category.headline ? (
-                            <span className="cat-headline">{category.headline}</span>
-                          ) : null}
-                        </div>
-                        <div className="cat-card-footer">
-                          <span className="cat-count-badge">
-                            {tk('productCount', { count: category.productCount })}
-                          </span>
-                          <span className="cat-arrow" aria-hidden="true">
-                            {isArabic(locale) ? '←' : '→'}
-                          </span>
-                        </div>
+                    <li key={category.slug}>
+                      <Link href={href(category.href)} className="category">
+                        <CategoryMark slug={category.slug} size={36} />
+                        <span className="category-name">{category.name}</span>
+                        <span className="category-count">
+                          {tk('productCount', { count: category.productCount })}
+                        </span>
                       </Link>
                     </li>
                   ))}
@@ -234,13 +245,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </MotionFadeIn>
           ) : null}
 
+          {/* --- best sellers, on the page ground like the kit's row --------- */}
           {home.bestSellers.length > 0 ? (
-            <Rail
-              title={t('bestSellersTitle')}
-              body={t('bestSellersBody')}
-              cards={home.bestSellers}
-              locale={locale}
-            />
+            <div className="band band-soft">
+              <Rail
+                title={t('bestSellersTitle')}
+                body={t('bestSellersBody')}
+                cards={home.bestSellers}
+                locale={locale}
+                more={{ href: href(ROUTES.store), label: t('viewAll') }}
+              />
+            </div>
           ) : null}
 
           {home.rails.map((entry) => (
@@ -258,41 +273,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           ))}
 
           {home.newest.length > 0 ? (
-            <Rail title={t('newestTitle')} cards={home.newest} locale={locale} />
-          ) : null}
-
-          {/* The blog, where somebody can find it.
-              Before this row the only link to seven articles was one line in
-              the footer, which is how editorial content gets crawled once and
-              read by nobody. Absent on the English home page, because the
-              posts are Arabic and the API does not pretend otherwise. */}
-          {home.posts.length > 0 ? (
-            <section className="section posts-rail" aria-labelledby="posts-title">
-              <header className="section-head">
-                <h2 id="posts-title">{t('postsTitle')}</h2>
-                <p>{t('postsBody')}</p>
-                <Link className="section-more" href={href(ROUTES.blog)}>
-                  {t('postsAll')}
-                </Link>
-              </header>
-              <ul className="post-strip">
-                {home.posts.map((post) => (
-                  <li key={post.slug}>
-                    <Link href={href(ROUTES.post(post.slug))}>
-                      <strong>{post.title}</strong>
-                      {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
-                    </Link>
-                    {post.readingMinutes > 0 ? (
-                      <span className="post-meta">{readingLabel(post.readingMinutes, tf)}</span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <div className="band band-soft">
+              <Rail title={t('newestTitle')} cards={home.newest} locale={locale} />
+            </div>
           ) : null}
 
           {home.brands.length > 0 ? (
-            <section className="section" aria-labelledby="brands-title">
+            <section className="section brands" aria-labelledby="brands-title">
               <header className="section-head">
                 <h2 id="brands-title">{t('brandsTitle')}</h2>
               </header>
@@ -311,27 +298,92 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </>
       )}
 
+      {/* --- the dark promo panel: the Golden Warranty ------------------------ */}
       <MotionFadeIn>
-        <section className="section steps" aria-labelledby="steps-title">
-          <header className="section-head">
-            <h2 id="steps-title">{t('stepsTitle')}</h2>
-          </header>
-          <ol className="steps-grid">
-            {([1, 2, 3] as const).map((n) => (
-              <li key={n}>
-                <span className="step-art" aria-hidden="true">
-                  <StepMark step={n} />
-                  <span className="step-number">{n}</span>
-                </span>
-                <h3>{t(`step${n}Title`)}</h3>
-                <p>{t(`step${n}Body`)}</p>
-              </li>
-            ))}
-          </ol>
+        <section className="section" aria-labelledby="promo-title">
+          <div className="promo">
+            <div className="promo-content">
+              <p className="eyebrow">{t('promoEyebrow')}</p>
+              <h2 id="promo-title">{t('promoTitle')}</h2>
+              <p>{t('promoBody')}</p>
+              <div className="hero-actions">
+                <Link href={href(ROUTES.goldenWarranty)} className="btn btn-light">
+                  <ArrowIcon />
+                  <span>{t('promoCta')}</span>
+                </Link>
+              </div>
+            </div>
+            <div className="promo-art" aria-hidden="true">
+              <ShieldCheckIcon size={160} />
+            </div>
+          </div>
         </section>
       </MotionFadeIn>
 
-      {/* Rendered as text, and the same objects feed the FAQPage node above, so
+      {/* --- how it works: the kit's tinted band with three numbered steps ----- */}
+      <MotionFadeIn>
+        <div className="band band-tint">
+          <section className="section steps" aria-labelledby="steps-title">
+            <header className="section-head">
+              <h2 id="steps-title">{t('stepsTitle')}</h2>
+            </header>
+            <ol className="steps-grid">
+              {steps.map((step) => (
+                <li key={step.n} className="step">
+                  <span className="stepnum" dir="ltr">
+                    {`0${String(step.n)}`}
+                  </span>
+                  <span className="iconbox" aria-hidden="true">
+                    {step.icon}
+                  </span>
+                  <h3>{t(`step${step.n}Title`)}</h3>
+                  <p>{t(`step${step.n}Body`)}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </div>
+      </MotionFadeIn>
+
+      {/* --- the blog, as the kit's "resources" cards --------------------------
+          Absent on the English home page, because the posts are Arabic and the
+          API does not pretend otherwise. */}
+      {home && home.posts.length > 0 ? (
+        <section className="section posts-rail" aria-labelledby="posts-title">
+          <header className="section-head">
+            <h2 id="posts-title">{t('postsTitle')}</h2>
+            <Link className="section-more" href={href(ROUTES.blog)}>
+              <span>{t('postsAll')}</span>
+              <ArrowIcon size={18} />
+            </Link>
+          </header>
+          <ul className="post-strip">
+            {home.posts.map((post) => (
+              <li key={post.slug} className="article">
+                <Link href={href(ROUTES.post(post.slug))}>
+                  <span className="article-art" aria-hidden="true">
+                    <BookIcon size={72} />
+                  </span>
+                  <span className="eyebrow">
+                    {post.readingMinutes > 0
+                      ? readingLabel(post.readingMinutes, tf)
+                      : t('postsTitle')}
+                  </span>
+                  <strong>{post.title}</strong>
+                  {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
+                  <span className="article-more">
+                    <span>{t('postRead')}</span>
+                    <ArrowIcon size={16} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* --- FAQ: the kit's accordion rows ------------------------------------
+          Rendered as text, and the same objects feed the FAQPage node above, so
           the markup cannot answer a question the page does not show. */}
       <MotionFadeIn>
         <section className="section faq" aria-labelledby="faq-title">
@@ -340,8 +392,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </header>
           <div className="faq-list">
             {faq.map((item) => (
-              <details key={item.q}>
-                <summary>{item.q}</summary>
+              <details key={item.q} className="faqrow">
+                <summary>
+                  <span>{item.q}</span>
+                  <span className="faq-toggle" aria-hidden="true">
+                    <PlusIcon />
+                  </span>
+                </summary>
                 <p>{item.a}</p>
               </details>
             ))}
@@ -370,11 +427,14 @@ function Rail({
     <MotionFadeIn>
       <section className="section rail">
         <header className="section-head">
-          <h2>{title}</h2>
-          {body ? <p>{body}</p> : null}
+          <div className="section-head-text">
+            <h2>{title}</h2>
+            {body ? <p>{body}</p> : null}
+          </div>
           {more ? (
             <Link href={more.href} className="section-more">
-              {more.label}
+              <span>{more.label}</span>
+              <ArrowIcon size={18} />
             </Link>
           ) : null}
         </header>

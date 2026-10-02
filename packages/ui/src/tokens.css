@@ -1,14 +1,25 @@
 /*
- * Design tokens, carried over from the existing store.
+ * Design tokens — the Digital Activation UI Kit (2026-10-02, TASK-0100).
  *
- * The brand system is kept deliberately: the owner likes the current look, and
- * these values were extracted from the live site — teal #148576 for the header
- * and buy buttons, amber #faa21b for offers, a 15px spacing grid, Tajawal
- * throughout.
+ * The values are the kit's `07_Handoff/source/tokens.json` and `style.css`,
+ * reviewed in `docs/ui-kit-review.md`. The token *names* are the ones the
+ * storefront and the admin already use, so every stylesheet keeps working;
+ * only the values moved.
  *
- * One value is corrected rather than copied: body text was #777777 on white,
- * which is 4.48:1 and fails WCAG AA for normal-size text. It becomes #4a4a4a
- * (8.6:1) with the same neutral character.
+ * What changed against the store this replaces, and why:
+ * - The teal is the kit's #087F70 with its own hover and pressed steps.
+ * - The amber accent is gone (owner decision, 2026-10-02). `--color-accent`
+ *   now carries the kit's warning hue, which is what "offer / urgency" means
+ *   in that palette: #B54708 on white is 5.4:1, on its soft tint 4.97:1.
+ * - Spacing moves from a 15px grid to the kit's 4/8/12/16/24/32/48/64.
+ * - Radii are 8px on controls, 12px on cards, 999 on pills.
+ * - English is set in Inter, Arabic in Tajawal; prices and codes are Inter in
+ *   both (`--font-latin`). The storefront binds the families in globals.css.
+ *
+ * Every contrast pair below is the kit's own `validation.json` or was
+ * measured here: brand 4.91:1 on white; brand-ink 5.82:1 on brand-soft;
+ * ink-muted 5.33:1 on brand-soft and 6.0:1 on white; success 4.58:1,
+ * warning 4.97:1, danger 5.76:1 and info 5.5:1 on their soft tints.
  *
  * All layout properties are logical (inline-start / inline-end), so one
  * stylesheet serves the Arabic RTL storefront and the English LTR one.
@@ -16,116 +27,138 @@
 
 @theme {
   /* --- brand ------------------------------------------------------------- */
-  --color-brand: #148576;
-  --color-brand-hover: #0f6a5e;
-  --color-brand-soft: #e1f0ed;
-  --color-brand-ink: #0a544b;
+  --color-brand: #087f70;
+  --color-brand-hover: #066a5d;
+  --color-brand-pressed: #04584d;
+  /* The mint. Tinted sections, secondary buttons, icon boxes, category tiles. */
+  --color-brand-soft: #e9f5f1;
+  /* Text and icons on the mint, and the hover colour of brand text. */
+  --color-brand-ink: #066a5d;
+  /* The dark promo panel ("bundle" / "offers" hero in the kit). */
+  --color-brand-deep: #064f46;
+  /* Hover of a mint surface (secondary and outline buttons, category tiles). */
+  --color-brand-soft-hover: #d3ebe4;
+  /* The hero gradient's two ends, and the tile border on the mint. */
+  --color-brand-tint: #f0faf6;
+  --color-brand-tint-deep: #d7eee8;
+  --color-brand-tint-border: #e2eeea;
+  /* Body copy on the hero gradient (6.6:1 on #d7eee8). */
+  --color-ink-on-mint: #435d58;
+  /* Copy on the deep panel. */
+  --color-ink-on-deep: #d4eee7;
 
   /* Offers, discounts and urgency only. Not a general-purpose accent. */
-  --color-accent: #faa21b;
-  --color-accent-hover: #e08f0d;
-  --color-accent-soft: #fdf1dc;
+  --color-accent: #b54708;
+  --color-accent-hover: #96390a;
+  --color-accent-soft: #fff3e8;
 
   /* --- semantic ---------------------------------------------------------- */
-  --color-danger: #d93a12;
-  --color-danger-soft: #fdeae4;
-  /* Danger as small text on a tint. --color-danger is 4.60:1 on white but
-     3.92:1 on --color-brand-soft (the newsletter card's gradient end) and
-     3.96:1 on --color-danger-soft. This is the same red, darker: 5.52:1 on
-     brand-soft, 5.57:1 on danger-soft, 6.48:1 on white. */
-  --color-danger-ink: #b02e0e;
-  --color-warning: #b8860b;
-  /* #147d5f was 4.32:1 on --color-success-soft, the background it is shown on
-     (the added-to-cart note, the support chip); this clears 4.5:1 there. */
-  --color-success: #127658;
-  --color-success-soft: #e0f0ea;
+  --color-danger: #b42318;
+  --color-danger-soft: #feece9;
+  --color-danger-ink: #b42318;
+  --color-warning: #b54708;
+  --color-warning-soft: #fff3e8;
+  --color-success: #157f50;
+  --color-success-soft: #ecf7f1;
+  --color-success-border: #b6e4d0;
 
   /* --- surfaces ---------------------------------------------------------- */
   --color-bg: #ffffff;
-  --color-surface: #f6f6f6;
-  --color-surface-2: #eeefef;
-  --color-border: #e2e5e4;
-  --color-border-strong: #cbd2d0;
+  /* The page ground: cards are white on it. */
+  --color-surface: #f8faf9;
+  /* Disabled fields and quiet chips. */
+  --color-surface-2: #f2f4f7;
+  --color-border: #dce5e3;
+  --color-border-strong: #b6c2be;
+  /* Disabled buttons and fields. */
+  --color-disabled: #e4e7ec;
+  /* The product picture's ground, the soft end of its gradient. */
+  --color-media-tint: #eef4f1;
 
   /* --- text -------------------------------------------------------------- */
-  --color-ink: #1c2422;
-  --color-ink-body: #4a4a4a; /* was #777777 — failed contrast */
-  /* #6b7472 measured 4.17–4.45:1 on the tinted surfaces (Lighthouse, CI):
-     under the 4.5:1 small text needs. This is the lightest shade of the same
-     grey that clears every surface token. */
-  --color-ink-muted: #606967;
+  --color-ink: #17212b;
+  --color-ink-body: #475467;
+  /* The kit's muted text on mint (#5B6475), which also clears white and the
+     page ground; the plain #667085 is 4.3:1 on the mint and fails there. */
+  --color-ink-muted: #5b6475;
   --color-ink-inverse: #ffffff;
 
   /* --- type -------------------------------------------------------------- */
-  /* Self-hosted, subset to Arabic + Latin, preloaded. Not fetched from
-     Google Fonts: the legacy site made three separate requests to
-     fonts.googleapis.com before it could paint text. */
-  --font-sans: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Arabic: Tajawal. English: Inter. The storefront repoints these at the
+     next/font variables; the admin inherits the literal families. */
+  --font-sans: 'Tajawal', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
+  /* 13 / 14 / 16 / 18 / 22 (price) / 24 (h3) / 32 (h2) / 48 (h1) */
   --text-xs: 0.8125rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.375rem;
   --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
+  --text-3xl: 2rem;
+  --text-4xl: 3rem;
 
-  --leading-tight: 1.25;
-  --leading-normal: 1.6;
+  --leading-tight: 1.2;
+  --leading-normal: 1.65;
 
-  /* --- spacing: the existing 15px grid ----------------------------------- */
-  --spacing-unit: 15px;
-  --spacing-half: 7.5px;
-  --spacing-1: 15px;
-  --spacing-2: 30px;
-  --spacing-3: 45px;
-  --spacing-4: 60px;
-  --spacing-5: 90px;
+  /* --- spacing: the kit's 8px grid ------------------------------------------ */
+  --spacing-unit: 8px;
+  --spacing-half: 4px;
+  --spacing-1: 16px;
+  --spacing-2: 24px;
+  --spacing-3: 32px;
+  --spacing-4: 48px;
+  --spacing-5: 64px;
 
   /* --- radii & elevation ------------------------------------------------- */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-pill: 999px;
 
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
-  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -2px rgb(0 0 0 / 0.04);
-  --shadow-lg: 0 12px 32px -12px rgb(0 0 0 / 0.18);
-  --shadow-card: 0 2px 8px -2px rgb(0 0 0 / 0.05), 0 1px 3px rgb(0 0 0 / 0.03);
-  --shadow-card-hover: 0 12px 28px -6px rgb(0 0 0 / 0.1), 0 4px 10px -2px rgb(0 0 0 / 0.05);
-  --shadow-drawer: 0 20px 40px -10px rgb(0 0 0 / 0.28);
+  /* Flat by default; a lift on hover, a real shadow only on floating panels. */
+  --shadow-xs: 0 1px 2px 0 rgb(23 33 43 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(23 33 43 / 0.06);
+  --shadow-md: 0 4px 12px 0 rgb(23 33 43 / 0.07);
+  --shadow-lg: 0 8px 24px 0 rgb(23 33 43 / 0.07);
+  --shadow-card: 0 0 0 0 transparent;
+  --shadow-card-hover: 0 4px 12px 0 rgb(23 33 43 / 0.07);
+  --shadow-drawer: 0 16px 48px 0 rgb(0 0 0 / 0.13);
 
-  /* Gold & Instant delivery specific accents */
+  /* --- focus ------------------------------------------------------------- */
+  --focus-ring: 3px solid #175cd3;
+  --focus-offset: 3px;
+
+  /* Gold & Instant delivery specific accents (the Golden Warranty is a named
+     product feature; its gold stays, calibrated as before). */
   --color-gold: #b37400;
   --color-gold-soft: #fff9e6;
   --color-gold-border: #f2dc99;
-  /* Gold as text. --color-gold is 3.88:1 on white and 3.68:1 on gold-soft, so
-     it stays a border/icon colour; this is 6.01:1 on gold-soft, 5.86:1 on
-     --color-surface (the footer's warranty link and guarantee badge). */
   --color-gold-ink: #8a5300;
-  --color-instant: #0b7a5a;
-  --color-instant-soft: #e3f5ee;
+  --color-instant: #157f50;
+  --color-instant-soft: #ecf7f1;
 
-  /* Footer guarantee badges (delivery, support). -ink is text/icon on -soft:
-     info 5.17:1, purple 5.98:1. The base value is a stripe/border only. */
-  --color-info: #0284c7;
-  --color-info-soft: #e0f2fe;
-  --color-info-ink: #0369a1;
+  /* Footer guarantee badges (delivery, support). -ink is text/icon on -soft. */
+  --color-info: #175cd3;
+  --color-info-soft: #eff6ff;
+  --color-info-ink: #175cd3;
   --color-purple: #7c3aed;
   --color-purple-soft: #ede9fe;
   --color-purple-ink: #6d28d9;
 
   /* --- layout ------------------------------------------------------------ */
-  --container-max: 1400px;
-  --header-height: 72px;
-  /** The contact bar above the header, which scrolls away while it pins. */
-  --utility-height: 34px;
+  --container-max: 1200px;
+  /* The kit's header does not stick, so nothing offsets itself by it. */
+  --header-height: 0px;
+  /** The announcement bar above the header. */
+  --utility-height: 40px;
   /* The mobile sticky buy bar the current store already has, and which works. */
   --sticky-buy-height: 64px;
+  /* Controls are 48px tall; the smallest touch target is 44px. */
+  --control-height: 48px;
 
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import '@da/ui/tokens.css';
+@import './header.css';
 @import './catalog.css';
 @import './home.css';
 @import './cart.css';
@@ -12,21 +13,25 @@
 @import './offers.css';
 
 /*
- * Tajawal, through next/font (see `[locale]/layout.tsx`).
+ * The two typefaces, through next/font (see `[locale]/layout.tsx`).
  *
- * The three @font-face rules that were here pointed at /fonts/*.woff2 files
- * that were never added, so every page load asked for them, got three 404s
- * and rendered in the system stack. next/font downloads the Arabic + Latin
- * subsets at build time and serves them from this origin — still no request
- * to fonts.googleapis.com, which is what the legacy site paid for before it
- * could paint any text — and exposes the family as `--font-tajawal`.
+ * The kit sets Arabic in Tajawal and English in Inter, and keeps prices,
+ * licence codes and email addresses in Inter in both languages (they read
+ * left to right whatever the page does). next/font downloads the subsets at
+ * build time and serves them from this origin — no request to
+ * fonts.googleapis.com, which is what the legacy site paid for before it could
+ * paint any text — and exposes each family as a CSS variable.
  *
- * The token from @da/ui names 'Tajawal' literally; next/font registers the
- * face under a generated name, so the storefront points the token at the
- * variable instead. Unlayered, so it wins over the token's theme layer.
+ * The tokens from @da/ui name the families literally; next/font registers
+ * each face under a generated name, so the storefront points the tokens at
+ * the variables instead. Unlayered, so it wins over the token's theme layer.
  */
 :root {
-  --font-sans: var(--font-tajawal), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: var(--font-tajawal), 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-latin: var(--font-inter), 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+html[lang='en'] {
+  --font-sans: var(--font-inter), 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 html {
@@ -62,10 +67,10 @@ summary {
   cursor: pointer;
 }
 
-/* UI/UX Pro Max: Accessible keyboard navigation focus ring */
+/* The kit's focus ring: 3px blue, 3px off the edge, the same on every control. */
 :focus-visible {
-  outline: 2px solid var(--color-brand);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 /* UI/UX Pro Max: Brand selection color */
@@ -136,6 +141,7 @@ summary {
 .totals dd {
   unicode-bidi: isolate;
   direction: ltr;
+  font-family: var(--font-latin);
 }
 
 /*

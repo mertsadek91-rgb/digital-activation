@@ -702,3 +702,112 @@ export function ProductGlyph({ slug, label }: { slug: string; label?: string }) 
     </svg>
   );
 }
+
+/* --- the UI Kit's set (07_Handoff/source/assets/icons), 24px, 1.75 stroke --- */
+
+export function HeartIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" />
+    </Svg>
+  );
+}
+
+export function DownloadIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" />
+    </Svg>
+  );
+}
+
+export function GridIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </Svg>
+  );
+}
+
+export function HeadsetIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M3 14v-3a9 9 0 0 1 18 0v3M3 11h4v8H3Zm14 0h4v8h-4ZM21 19c0 3-6 3-6 3" />
+    </Svg>
+  );
+}
+
+export function InfoIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 11v6M12 7h.01" />
+    </Svg>
+  );
+}
+
+export function KeyIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <circle cx="8" cy="8" r="5" />
+      <circle cx="8" cy="8" r="1.5" />
+      <path d="m12 12 9 9-3 1-1-4-3-1-2-5" />
+    </Svg>
+  );
+}
+
+export function LockIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <rect x="4" y="10" width="16" height="12" rx="2" />
+      <path d="M8 10V6a4 4 0 0 1 8 0v4" />
+    </Svg>
+  );
+}
+
+export function FileIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M14 2H5v20h14V7Z" />
+      <path d="M14 2v5h5M8 12h8M8 16h6" />
+    </Svg>
+  );
+}
+
+export function BookIcon({ size = 24 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M12 5c-3-3-9-2-9-2v16s6-1 9 2c3-3 9-2 9-2V3s-6-1-9 2Zm0 0v16" />
+    </Svg>
+  );
+}
+
+/**
+ * The forward arrow, which points the way the text runs: it is drawn
+ * pointing right and the Arabic page mirrors it with `[dir='rtl'] .icon-flip`.
+ */
+export function ArrowIcon({ size = 20 }: { size?: number }) {
+  return (
+    <span className="icon-flip">
+      <Svg size={size}>
+        <path d="M4 12h16m-6-6 6 6-6 6" />
+      </Svg>
+    </span>
+  );
+}
+
+/**
+ * A chevron that points right (the kit's `chevron`). The one above points
+ * down, for menus; this one is for "next" controls, and the stylesheet
+ * mirrors it for "previous" and for the Arabic page.
+ */
+export function ChevronRightIcon({ size = 16 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="m9 5 7 7-7 7" />
+    </Svg>
+  );
+}
