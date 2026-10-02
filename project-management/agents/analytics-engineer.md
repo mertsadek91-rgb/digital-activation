@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -48,8 +48,9 @@
 
 ## Current tasks
 
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (IN_PROGRESS, 20%)
+- none
 
 ## Supporting
 
 - TASK-0096 — First-party analytics: a server-fed events table for the funnel, no browser scripts (IN_PROGRESS, 10%)
+- TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (BACKLOG, 0%)

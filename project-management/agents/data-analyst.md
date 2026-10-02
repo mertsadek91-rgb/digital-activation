@@ -49,7 +49,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (IN_PROGRESS, 20%)

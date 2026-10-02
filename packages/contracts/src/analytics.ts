@@ -31,7 +31,8 @@ export const whatsappPlacementSchema = z.enum(WHATSAPP_PLACEMENTS);
 export type WhatsappPlacement = z.infer<typeof whatsappPlacementSchema>;
 
 /** The characters a UTM value may hold. Anything else is dropped, not stored. */
-const UTM_VALUE = /^[A-Za-z0-9._~+\- ]{1,100}$/;
+// 50 is long enough for any campaign label and too short for most tokens.
+const UTM_VALUE = /^[A-Za-z0-9._~+\- ]{1,50}$/;
 
 /**
  * A UTM parameter as it may be stored, or undefined.

@@ -154,7 +154,8 @@
         "TASK-0034",
         "TASK-0041",
         "TASK-0063",
-        "TASK-0096"
+        "TASK-0096",
+        "TASK-0097"
       ],
       "reviews": [
         "TASK-0021"
@@ -186,12 +187,10 @@
         "cro-specialist"
       ],
       "active_tasks": [
-        "TASK-0042",
-        "TASK-0050"
+        "TASK-0042"
       ],
       "owned_tasks": [
-        "TASK-0042",
-        "TASK-0050"
+        "TASK-0042"
       ],
       "reviews": [],
       "blocked_work": [],

@@ -7,6 +7,26 @@ import { whatsappDirect } from '../../../../lib/contact';
 /** WhatsApp caps a prefilled message well below this; a longer one is not ours. */
 const MAX_TEXT = 1000;
 
+/**
+ * Paths that carry something personal in a segment: an order number, a
+ * referral code, a reset token. Stored as their route template, so a click
+ * from an order page is not tied to that order (TASK-0096 review).
+ */
+const PERSONAL_SEGMENTS: [RegExp, string][] = [
+  [/^((?:\/en)?\/orders)\/[^/]+/, '$1/:number'],
+  [/^((?:\/en)?\/checkout\/return)\/[^/]+/, '$1/:number'],
+  [/^((?:\/en)?\/r)\/[^/]+/, '$1/:code'],
+  [/^((?:\/en)?\/account)\/.+/, '$1/*'],
+  [/^((?:\/en)?\/(?:reset|verify|unsubscribe)[^/]*)\/.+/, '$1/*'],
+];
+
+function routeTemplate(path: string): string {
+  for (const [pattern, template] of PERSONAL_SEGMENTS) {
+    if (pattern.test(path)) return path.replace(pattern, template);
+  }
+  return path;
+}
+
 /** `/store/<slug>`, with or without the `/en` prefix. */
 const PRODUCT_PATH = new RegExp(`^(?:/en)?${ROUTES.product('')}([^/]+)$`);
 
@@ -41,7 +61,11 @@ function origin(request: NextRequest): { path: string; locale: 'ar' | 'en'; prod
   } catch {
     productSlug = undefined;
   }
-  return { path: path.slice(0, 512), locale, ...(productSlug ? { productSlug } : {}) };
+  return {
+    path: routeTemplate(path).slice(0, 512),
+    locale,
+    ...(productSlug ? { productSlug } : {}),
+  };
 }
 
 /**
@@ -60,13 +84,22 @@ export function GET(request: NextRequest): NextResponse {
   const placement = whatsappPlacementSchema.safeParse(query.get('p'));
   const from = origin(request);
 
-  recordEvent({
-    type: 'WHATSAPP_CLICK',
-    path: from.path,
-    locale: from.locale,
-    ...(from.productSlug ? { productSlug: from.productSlug } : {}),
-    ...(placement.success ? { placement: placement.data } : {}),
-  });
+  // Counted only for a real click on one of our pages: a cross-site <img> or
+  // link would otherwise inflate the count (browsers send Sec-Fetch-*; a
+  // client that sends none is counted, as before, on the Referer check alone).
+  const site = request.headers.get('sec-fetch-site');
+  const dest = request.headers.get('sec-fetch-dest');
+  const genuine =
+    (site === null || site === 'same-origin') && (dest === null || dest === 'document');
+
+  if (genuine)
+    recordEvent({
+      type: 'WHATSAPP_CLICK',
+      path: from.path,
+      locale: from.locale,
+      ...(from.productSlug ? { productSlug: from.productSlug } : {}),
+      ...(placement.success ? { placement: placement.data } : {}),
+    });
 
   const response = NextResponse.redirect(whatsappDirect(text), 302);
   response.headers.set('Cache-Control', 'no-store');
