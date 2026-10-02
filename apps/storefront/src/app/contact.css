@@ -299,6 +299,15 @@
   font-size: 1.3rem;
 }
 
+/*
+ * WhatsApp and Telegram brand exceptions: their own greens and blue (and light
+ * tints of them) on the icon tiles and hover borders, which are non-text and
+ * clear 3:1 (WhatsApp #128c7e on its tint 3.73:1, Telegram #0088cc 3.48:1).
+ * Their action badges are text, so they use dark shades: WhatsApp dark teal
+ * #075e54 (6.91:1 on the tint, white on it 7.67:1) and --color-info-ink for
+ * Telegram (5.17:1 on --color-info-soft, white on it 5.93:1). White on
+ * #25d366 was 1.98:1 and #0088cc on its tint 3.48:1.
+ */
 .channel-whatsapp .channel-icon-wrap {
   background: #e7f7ed;
   color: #128c7e;
@@ -354,12 +363,13 @@
 }
 
 .channel-whatsapp .channel-action-badge {
-  background: #25d366;
-  color: #ffffff;
+  background: #e7f7ed;
+  color: #075e54;
 }
 
 .channel-whatsapp:hover .channel-action-badge {
-  background: #1eb957;
+  background: #075e54;
+  color: var(--color-ink-inverse);
 }
 
 .channel-email .channel-action-badge {
@@ -369,17 +379,17 @@
 
 .channel-email:hover .channel-action-badge {
   background: var(--color-brand);
-  color: #ffffff;
+  color: var(--color-ink-inverse);
 }
 
 .channel-telegram .channel-action-badge {
-  background: #e8f4fb;
-  color: #0088cc;
+  background: var(--color-info-soft);
+  color: var(--color-info-ink);
 }
 
 .channel-telegram:hover .channel-action-badge {
-  background: #0088cc;
-  color: #ffffff;
+  background: var(--color-info-ink);
+  color: var(--color-ink-inverse);
 }
 
 /* --- Self-Service Shortcuts Box --- */
@@ -425,7 +435,7 @@
 
 .self-service-link:hover {
   background: var(--color-surface);
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
 }
 
 .self-service-link .shortcut-icon {
