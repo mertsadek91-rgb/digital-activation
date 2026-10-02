@@ -110,6 +110,43 @@ primary agent, and COMPLETED at L3+ without one. Reviews are events with
 reviewer, executor, type, result, findings and evidence. V1's six "REVIEW"
 comments were self-authored and are labelled as such.
 
+### Invalidating a review (TASK-0092)
+
+A review that should not count, such as one recorded for work nobody
+reviewed, is struck with
+`pm review-invalidate <REV-ID> --by <role> --reason "…"`. This appends a
+`review_invalidated` event. The original `review_recorded` line is never
+edited.
+
+- **Effect.** `materialize()` moves the review from `reviews` to
+  `invalidated_reviews`. Everything that counts reviews reads `reviews`:
+  - the L3+ completion check;
+  - open VETO and BLOCKING_OBJECTION results;
+  - opportunity readiness;
+  - governor rounds;
+  - `REVIEW_INDEX.json`, the dashboard, agent profiles and project counts.
+    `pm show` lists invalidated reviews separately, with who struck them, when
+    and why. If you strike a later PASS, the reviewer's earlier result, such as
+    a BLOCKING_OBJECTION, applies again. Review ids are never reused.
+- **Who may invalidate.** Authority is judged against state at the time of the
+  event.
+  - Any review except a blocking one: the original reviewer, `exec-director`,
+    the target's `responsible_manager`, the reviewer's own manager
+    (`reports_to`), or a manager in the decision class's owner and escalation
+    chain (`decision-rights.json`).
+  - A VETO or BLOCKING_OBJECTION: only the reviewer who recorded it. Otherwise
+    the block is lifted by a later review or by the owner's accept-risk.
+  - The target's primary agent can never strike someone else's review of its
+    own work.
+  - Owner records are out of reach for every agent.
+- **Final.** You cannot invalidate an invalidation, and you cannot strike the
+  same review twice. To restore a review, record a new review.
+- **Replay.** `pm check` replays the event through the write guards with the
+  authority in force at the time, so a hand-appended invalidation is caught. A
+  task that was completed on a review that was later struck stays completed in
+  history. Its current state is then reported as "COMPLETED … without a
+  passing independent review" until a real review is recorded.
+
 ## Governor
 
 - **Limits** (in `governor.json`):

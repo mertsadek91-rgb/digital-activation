@@ -74,6 +74,7 @@ test('an unknown flag on a write is refused before anything is written', () => {
     assert.equal(c.code, 1, c.all);
     assert.match(c.all, /--dry-run/);
     assert.match(s.pm('note', 'TASK-0001', ...R, '--txt', 'typo').all, /unknown flag\(s\) for note: --txt/);
+    assert.match(s.pm('review-invalidate', 'REV-0001', ...R, '--dry-run').all, /unknown flag\(s\) for review-invalidate: --dry-run/);
     assert.equal(s.read(LOG), before);
     assert.equal(JSON.parse(s.pm('show', 'TASK-0001').out).entity.status, 'READY');
   } finally {

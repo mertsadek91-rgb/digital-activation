@@ -56,7 +56,6 @@
 - TASK-0033 — Reproducible deploys: container definitions or Coolify config as code (BACKLOG, 0%)
 - TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)
 - TASK-0082 — Guard: detect script-based writes (node -e, python -c) to protected paths, or document an allowlist (BLOCKED, 60%)
-- TASK-0092 — pm CLI: let a reviewer or manager formally invalidate a review (append-only), so a fake PASS stops counting (BACKLOG, 0%)
 - TASK-0098 — pm CLI: refuse same-status transitions and unknown flags so no-op and accidental events never reach the log (MANAGER_REVIEW, 90%)
 
 ## Supporting

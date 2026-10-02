@@ -52,4 +52,4 @@
 
 ## Supporting
 
-- TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (BACKLOG, 0%)
+- TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (IN_PROGRESS, 0%)

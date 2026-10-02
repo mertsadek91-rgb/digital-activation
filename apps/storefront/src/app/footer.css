@@ -282,9 +282,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* WhatsApp's own dark teal on its green: 3.87:1 (WCAG 1.4.11 needs 3:1).
+   White on that green was 1.98:1. */
 .social-btn.is-whatsapp:hover {
   background: #25d366;
-  color: var(--color-ink-inverse);
+  color: #075e54;
   border-color: #25d366;
 }
 
@@ -697,10 +699,12 @@
   cursor: not-allowed;
 }
 
+/* -ink, not --color-danger: the card fades to --color-brand-soft, where
+   --color-danger is 3.92:1. --color-danger-ink is 5.52:1 there. */
 .newsletter-error-msg {
   margin: 0;
   font-size: var(--text-xs);
-  color: var(--color-danger);
+  color: var(--color-danger-ink);
   font-weight: 700;
 }
 

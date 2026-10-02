@@ -53,6 +53,7 @@ a hardcoded value — see "Known debt").
 | ---------------------- | --------- | ---------------------------------------------------------------------------------------------- |
 | `--color-danger`       | `#d93a12` |                                                                                                |
 | `--color-danger-soft`  | `#fdeae4` |                                                                                                |
+| `--color-danger-ink`   | `#b02e0e` | Danger as small text on a tint (TASK-0094); `--color-danger` stays for white, borders, icons   |
 | `--color-warning`      | `#b8860b` | No `-soft` pair exists                                                                         |
 | `--color-success`      | `#127658` | Replaced `#147d5f`, which was 4.32:1 on `--color-success-soft`; this clears 4.5:1 on that tint |
 | `--color-success-soft` | `#e0f0ea` | Background of the added-to-cart note and the support chip                                      |
@@ -132,6 +133,10 @@ Computed with the WCAG 2 relative-luminance formula from the hex values in
 | `success` `#127658`     | `success-soft` `#e0f0ea` | 4.74:1  | Pass           |
 | `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee` | 4.70:1  | Pass           |
 | `danger` `#d93a12`      | `bg` `#ffffff`           | 4.60:1  | Pass           |
+| `danger-ink` `#b02e0e`  | `bg` `#ffffff`           | 6.48:1  | Pass           |
+| `danger-ink` `#b02e0e`  | `danger-soft` `#fdeae4`  | 5.57:1  | Pass           |
+| `danger-ink` `#b02e0e`  | `brand-soft` `#e1f0ed`   | 5.52:1  | Pass           |
+| `#075e54` (WhatsApp)    | `#25d366` (WhatsApp)     | 3.87:1  | Non-text pass  |
 | `gold-ink` `#8a5300`    | `bg` `#ffffff`           | 6.33:1  | Pass           |
 | `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`    | 6.01:1  | Pass           |
 | `gold-ink` `#8a5300`    | `surface` `#f6f6f6`      | 5.86:1  | Pass           |
@@ -141,6 +146,8 @@ Computed with the WCAG 2 relative-luminance formula from the hex values in
 | `ink-inverse` `#ffffff` | `success` `#127658`      | 5.59:1  | Pass           |
 | `brand` `#148576`       | `surface` `#f6f6f6`      | 4.18:1  | **Fail**       |
 | `danger` `#d93a12`      | `danger-soft` `#fdeae4`  | 3.96:1  | **Fail**       |
+| `danger` `#d93a12`      | `brand-soft` `#e1f0ed`   | 3.92:1  | **Fail**       |
+| `ink-inverse` `#ffffff` | `#25d366` (WhatsApp)     | 1.98:1  | **Fail** (all) |
 | `gold` `#b37400`        | `bg` `#ffffff`           | 3.88:1  | **Fail**       |
 | `brand` `#148576`       | `brand-soft` `#e1f0ed`   | 3.85:1  | **Fail**       |
 | `gold` `#b37400`        | `gold-soft` `#fff9e6`    | 3.68:1  | **Fail**       |
@@ -155,8 +162,18 @@ Rules that follow from the table:
   border, stripe or icon colour, not a text colour.
 - **Teal text sits on white only.** On `--color-surface` or `--color-brand-soft`
   use `--color-brand-ink`.
-- **Danger and gold text** on their own `-soft` tints fail; use them for large
-  text, icons and borders, or darken the token (an L3 token change).
+- **Danger text on a tint uses `--color-danger-ink`.** `--color-danger` is fine
+  on white but fails on `--color-danger-soft` and `--color-brand-soft`; it
+  stays the border, stripe and icon colour. Gold text likewise uses
+  `--color-gold-ink`.
+  Not yet migrated: `.error` in `account.css` is `--color-danger` on
+  `--color-danger-soft` (3.96:1), used by every storefront form. Text uses of
+  `--color-danger` whose background was not measured: `.licence-deadline`
+  (`account.css`), `.stock-out`, `.variant-out`, `.card-buy-error`
+  (`catalog.css`). Each passes only on white.
+- **Brand-colour fills keep a dark icon when the fill is light.** The footer
+  WhatsApp hover is WhatsApp's own dark teal `#075e54` on `#25d366` (3.87:1);
+  white on that green is 1.98:1.
 - The `tokens.css` header comment gives `#4a4a4a` as "8.6:1"; the computed value
   is 8.86:1.
 
@@ -364,7 +381,7 @@ Hex literals that bypass the tokens, counted with
 
 | File                                                               | Hex literals |
 | ------------------------------------------------------------------ | ------------ |
-| `footer.css`                                                       | 14           |
+| `footer.css`                                                       | 15           |
 | `catalog.css`                                                      | 21           |
 | `contact.css`                                                      | 16           |
 | `account.css`                                                      | 7            |
@@ -375,12 +392,10 @@ Hex literals that bypass the tokens, counted with
 
 Some are legitimate third-party brand colours (WhatsApp `#25d366` on
 `.whatsapp-fab`, and the `.social-btn` WhatsApp, Telegram, X and Instagram
-hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 14
-remaining matches are those 12 brand values plus two in a comment. The rest of
-the table still maps to tokens. Known residue: the WhatsApp hover puts a white
-icon on `#25d366` (1.98:1, under the 3:1 non-text floor), and
-`.newsletter-error-msg` (`--color-danger`) is 3.92:1 where the newsletter card
-fades to `--color-brand-soft`.
+hovers in `footer.css`). `footer.css` was tokenised in TASK-0086: its 15
+remaining matches are 13 brand values (TASK-0093 added WhatsApp's dark teal
+`#075e54` as the hover icon colour) plus two in a comment. The rest of the
+table still maps to tokens.
 
 ## Known debt — font weights
 

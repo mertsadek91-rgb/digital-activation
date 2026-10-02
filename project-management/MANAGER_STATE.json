@@ -9,21 +9,18 @@
         "documentation-architect"
       ],
       "active_tasks": [
-        "TASK-0001",
         "TASK-0004",
         "TASK-0080",
         "TASK-0081",
         "TASK-0083"
       ],
       "owned_tasks": [
-        "TASK-0001",
         "TASK-0004",
         "TASK-0080",
         "TASK-0081",
         "TASK-0083"
       ],
       "reviews": [
-        "TASK-0001",
         "TASK-0004"
       ],
       "blocked_work": [
@@ -42,7 +39,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T05:57:54Z"
+      "last_activity": "2026-10-02T07:03:33Z"
     },
     {
       "id": "pm-01",
@@ -72,7 +69,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T05:57:52Z"
+      "last_activity": "2026-10-02T07:03:43Z"
     },
     {
       "id": "pm-02",
@@ -112,9 +109,7 @@
         "TASK-0086"
       ],
       "owned_tasks": [
-        "TASK-0086",
-        "TASK-0093",
-        "TASK-0094"
+        "TASK-0086"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -124,7 +119,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-01T13:06:53Z"
+      "last_activity": "2026-10-02T06:52:45Z"
     },
     {
       "id": "pm-04",
@@ -146,7 +141,8 @@
       ],
       "active_tasks": [
         "TASK-0021",
-        "TASK-0063"
+        "TASK-0063",
+        "TASK-0097"
       ],
       "owned_tasks": [
         "TASK-0021",
@@ -169,7 +165,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T06:12:27Z"
+      "last_activity": "2026-10-02T07:03:44Z"
     },
     {
       "id": "pm-05",
@@ -236,7 +232,6 @@
         "TASK-0060",
         "TASK-0082",
         "TASK-0089",
-        "TASK-0092",
         "TASK-0098"
       ],
       "reviews": [
@@ -257,7 +252,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-01T12:54:47Z"
+      "last_activity": "2026-10-02T07:03:44Z"
     },
     {
       "id": "pm-07",

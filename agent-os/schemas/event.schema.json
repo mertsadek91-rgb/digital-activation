@@ -21,6 +21,7 @@
         "entity_updated",
         "status_changed",
         "review_recorded",
+        "review_invalidated",
         "evidence_added",
         "link_added",
         "opportunity_decided",

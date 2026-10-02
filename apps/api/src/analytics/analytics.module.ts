@@ -5,6 +5,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { AnalyticsAdminController, AnalyticsController } from './analytics.controller.js';
 import { AnalyticsPruneService } from './analytics-prune.service.js';
 import { AnalyticsService } from './analytics.service.js';
+import { VisitorSaltService } from './visitor-salt.service.js';
 
 /**
  * First-party analytics (TASK-0096): product, category and cart views and
@@ -14,6 +15,6 @@ import { AnalyticsService } from './analytics.service.js';
 @Module({
   imports: [AuthModule],
   controllers: [AnalyticsController, AnalyticsAdminController],
-  providers: [AnalyticsService, AnalyticsPruneService],
+  providers: [AnalyticsService, AnalyticsPruneService, VisitorSaltService],
 })
 export class AnalyticsModule {}
