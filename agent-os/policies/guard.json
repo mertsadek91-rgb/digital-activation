@@ -9,7 +9,8 @@
   },
   "protected_segments": {
     "segments": ["Old Website", ".cache"],
-    "why": "Legacy WordPress backup and extracted uploads: read-only migration input holding plaintext customer secrets, protected wherever the checkout lives."
+    "why": "Legacy WordPress backup and extracted uploads: read-only migration input holding plaintext customer secrets, protected wherever the checkout lives.",
+    "not_directly_under": ["node_modules"]
   },
   "write_deny": [
     {
@@ -90,9 +91,15 @@
       "why": "Destroys history."
     },
     {
-      "pattern": "\\bgit\\b[^;&|]*\\sclean\\b(?![^;&|]*(\\s-n\\b|--dry-run))",
+      "pattern": "\\bgit\\b[^;&|]*\\sclean\\b(?![^;&|]*(\\s-[a-zA-Z]*n[a-zA-Z]*\\b|--dry-run))",
       "rule": "git-clean",
-      "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` to preview; delete specific paths instead."
+      "why": "Deletes untracked files — here that includes the uncommitted Agent OS state and, in the main checkout, .env, Old Website/ and .cache/. Use `git clean -n` (or `-nfd`) to preview; delete specific paths instead."
+    },
+    {
+      "pattern": "\\bxargs\\b[^;&|\\n]*\\b(rm|rmdir|unlink|shred|Remove-Item|ri|del|erase|rd|mv|find)\\b|\\|\\s*(Remove-Item|ri|del|erase|rd|rmdir)\\b|\\|\\s*(ForEach-Object|foreach|%)\\s*\\{[^}]*\\b(Remove-Item|ri|del|erase|rd|rmdir|rm)\\b|\\bparallel\\b[^;&|\\n]*\\brm\\b",
+      "flags": "i",
+      "rule": "pipeline-delete",
+      "why": "Deletes paths computed from a pipeline (xargs rm, Get-ChildItem | Remove-Item), which cannot be checked against the protected roots. Delete literal paths instead."
     },
     {
       "pattern": "\\bprisma\\b.*\\bmigrate\\s+reset\\b|\\bdb\\s+push\\b.*--accept-data-loss|--force-reset",
@@ -130,7 +137,11 @@
     }
   ],
   "bash_ask": [
-    { "pattern": "^\\s*git\\s+push\\b", "rule": "push", "why": "Publishes to GitHub." },
+    {
+      "pattern": "^\\s*git\\s+push\\b",
+      "rule": "push",
+      "why": "Publishes to GitHub."
+    },
     {
       "pattern": "\\bpnpm\\s+(db:migrate|db:seed|db:import\\s+--apply|db:media\\s+--apply|db:redirects|db:staff|db:demo)\\b|\\bprisma\\s+migrate\\s+(deploy|dev)\\b",
       "rule": "db-write",

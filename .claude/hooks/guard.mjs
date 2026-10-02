@@ -17,7 +17,8 @@
 // agent-os/THREAT_MODEL.md.
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { homedir, tmpdir } from 'node:os';
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(process.env.CLAUDE_PROJECT_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '..', '..'));
@@ -47,8 +48,30 @@ function isSecretFile(p) {
   return SECRET_EXT.some((r) => r.test(name)) && segs.some((s) => under.includes(lc(s)));
 }
 function inProtectedSegment(p) {
-  const segs = segmentsOf(p).map(lc);
-  return policy.protected_segments.segments.map(lc).some((s) => segs.includes(s));
+  // Resolve `..` first, so `node_modules/../.cache` is still the legacy `.cache`.
+  const segs = posix.normalize(String(p).replace(/\\/g, '/')).split('/').filter(Boolean).map(normName).map(lc);
+  const prot = policy.protected_segments.segments.map(lc);
+  const notUnder = (policy.protected_segments.not_directly_under ?? []).map(lc);
+  // A tool cache inside a dependency folder (`node_modules/.cache`) is build output, not the legacy `.cache/`.
+  return segs.some((s, i) => prot.includes(s) && !(i > 0 && notUnder.includes(segs[i - 1])));
+}
+/** MSYS / WSL / Cygwin drive spellings (`/d/…`, `/mnt/d/…`, `/cygdrive/d/…`) of a Windows path. */
+const WIN_ROOT = /^[A-Za-z]:\//.test(String(ROOT).replace(/\\/g, '/'));
+function driveFix(p) {
+  const s = String(p).replace(/\\/g, '/');
+  if (!WIN_ROOT) return s;
+  const m = /^\/(?:mnt\/|cygdrive\/)?([A-Za-z])(\/.*|$)/.exec(s);
+  return m && !/^\/(tmp|usr|etc|var|bin|dev|opt|home|proc)(\/|$)/i.test(s) ? `${m[1].toUpperCase()}:${m[2] || '/'}` : s;
+}
+/** `$PWD/x`, `${PWD}/x`, `$(pwd)/x`, `%CD%\x` are the working directory, i.e. relative. */
+const stripPwd = (p) => String(p).replace(/^["']?(\$\{?PWD\}?|\$\(pwd\)|%CD%|\(Get-Location\)|\$pwd\.Path)["']?[\\/]/i, '');
+/** A target the guard cannot resolve statically: variables, substitutions, globs of variables. */
+const nonLiteral = (p) => /[$`%]|\(|\)/.test(String(p));
+/** Scratch locations a recursive delete outside the repository may touch. */
+function isTempPath(p) {
+  const s = lc(String(p).replace(/\\/g, '/'));
+  const tmp = lc(tmpdir().replace(/\\/g, '/'));
+  return /^\/(var\/)?tmp\//.test(s) || s.startsWith(tmp + '/') || /\/appdata\/local\/temp\//.test(s) || /^[a-z]:\/(windows\/)?te?mp\//.test(s);
 }
 /** Repo-relative POSIX path, or null when the path is outside the project. */
 function relPath(p, cwd = '') {
@@ -97,7 +120,8 @@ export function writeTargets(cmd) {
   // `>|` (clobber) is a redirect, not a pipe; normalise before splitting on `|`.
   const text = expandHeredocs(String(cmd)).replace(/>\|/g, '>');
   for (const seg of text.split(/\n|;|&&|\|\||\|/)) {
-    const s = seg.trim();
+    // Wrappers that run the rest of the line as the command: `( … )`, `{ … }`, sudo, exec, env, VAR=x.
+    const s = seg.trim().replace(/^(?:[({!]\s*|(?:sudo|exec|nohup|time|command|builtin|env)\s+|[A-Za-z_]\w*=\S*\s+)+/, '');
     if (!s) continue;
     // Redirections: >, >>, >|, 1>, 1>>, &>, &>> (2> to /dev/null resolves outside the repo and is harmless).
     for (const m of s.matchAll(/(?:^|[^<>])(?:\d|&)?>>?\|?\s*("[^"]+"|'[^']+'|[^\s;&|<>]+)/g)) out.push({ path: unquote(m[1]), op: 'write', cwd });
@@ -117,11 +141,12 @@ export function writeTargets(cmd) {
     // Deno & Bun file APIs: Deno.writeTextFile('path', …), Bun.write('path', …), Deno.remove(…)
     for (const m of s.matchAll(/\b(?:Deno\.(?:writeTextFile|writeFile|remove)(?:Sync)?|Bun\.write)\(\s*["'`]([^"'`]+)["'`]/gi))
       out.push({ path: m[1], op: /remove/i.test(m[0]) ? 'delete' : 'write', cwd });
-    const toks = (s.match(/"[^"]+"|'[^']+'|[^\s]+/g) ?? []).map(unquote);
+    // `Old\ Website` is one argument, not two.
+    const toks = (s.match(/"[^"]+"|'[^']+'|(?:\\ |\S)+/g) ?? []).map((t) => unquote(t).replace(/\\ /g, ' '));
     const name = (toks[0] ?? '').replace(/^.*[\\/]/, '');
     const args = toks.slice(1).filter((t) => !t.startsWith('-'));
     if (/^(cd|pushd|Set-Location|sl|chdir)$/i.test(name) && args[0]) {
-      const target = args[0].replace(/\\/g, '/');
+      const target = driveFix(stripPwd(args[0]));
       // An absolute cd replaces the working directory (REV-0005 M4: `D:` must not become `D`).
       cwd = isAbsolute(target) || /^[A-Za-z]:\//.test(target) ? target : join(cwd, target).split('\\').join('/');
       continue;
@@ -178,6 +203,34 @@ function mentionsSecret(cmd) {
 // Guardrail files wherever they live: this repo, the main checkout, the user's ~/.claude (REV-0005).
 const isGuardrailFile = (p) => /(^|[\\/])\.claude[\\/](settings(\.local)?\.json|hooks([\\/]|$))/i.test(String(p));
 
+// ---------------------------------------------------------- inline scripts
+//
+// TASK-0082 / REV-0005: an inline program (`node -e`, `python -c`, `perl -e`,
+// `ruby -e`, a heredoc into an interpreter, PowerShell .NET IO) can build its
+// target at runtime, so literal-path extraction alone is not enough. Deny by
+// default for the shapes that matter, accepting false positives:
+//   - an inline program that names the event log and can write;
+//   - an inline program that deletes anything it does not name literally.
+// A script FILE (`node x.mjs`) is not inspected: THREAT_MODEL.md limit 1.
+
+/** The canonical event log, however the path is spelled or assembled. */
+const STATE_MENTION = /events\.jsonl|agent-os[\\/]+state\b|['"`]agent-os['"`]\s*,\s*['"`]state['"`]/i;
+const GUARD_MENTION = /\.claude['"`]?\s*[\\/,+]+\s*['"`]?(settings|hooks)\b|agent-os['"`]?\s*[\\/,+]+\s*['"`]?policies\b|Old Website/i;
+const INLINE =/\b(?:node|nodejs|deno|bun|python[23]?|py|perl|ruby|php)(?:\.exe)?\b[^;&|\n]*?(?:\s-[A-Za-z]*[ecpE]\b|\s--eval\b|\s--print\b|\seval\b|\s-\s|<<)|\[(?:System\.)?IO\.(?:File|Directory|FileInfo|DirectoryInfo|StreamWriter)\]|New-Object\s+(?:System\.)?IO\./i;
+const SCRIPT_WRITE = /\b(?:write\w*|append\w*|createWriteStream|truncate\w*|rename\w*|copy\w*|cp(?:Sync)?|rm\w*|unlink\w*|move\w*|os\.replace|Set-Content|Add-Content|Out-File|syswrite|print\s*\(?\s*\w+\s*,|open\s*\(|fopen|file_put_contents|IO\.write|File\.write)\b|(?<![=\-<>])>>?(?![=>])/i;
+const SCRIPT_DELETE_CALL = /(?:\b(?:rmSync|rmdirSync|unlinkSync|rimraf(?:\.sync)?|rmtree|remove_tree|rm_rf|rm_r|removedirs|os\.(?:remove|unlink|rmdir)|Deno\.remove(?:Sync)?|(?:fs|fsp|promises)\.(?:rm|rmdir|unlink)|unlink|rmdir)|::Delete|\.Delete)\s*\(\s*(?!["'][^"'$`{}]*["']\s*[,)])/i;
+
+function scriptShape(c) {
+  if (!INLINE.test(c)) return null;
+  if (STATE_MENTION.test(c) && SCRIPT_WRITE.test(c))
+    return { decision: 'deny', rule: 'canonical-state', why: 'An inline program that names the event log and can write to it. Canonical state changes only through `node agent-os/tools/pm.mjs`; read it with `pnpm pm show` or `cat`.' };
+  if (GUARD_MENTION.test(c) && SCRIPT_WRITE.test(c))
+    return { decision: 'deny', rule: 'guard-tamper', why: 'An inline program that names the guardrails (Claude settings, hooks, agent-os/policies) or the legacy backup and can write. Use the Edit tool so the owner confirms.' };
+  if (SCRIPT_DELETE_CALL.test(c))
+    return { decision: 'deny', rule: 'destructive-delete', why: 'An inline program deletes a path it computes at runtime, which cannot be checked against the protected roots. Delete a literal path with rm instead.' };
+  return null;
+}
+
 function checkBash(cmd, depth = 0) {
   const c = String(cmd ?? '');
   // A command string handed to another shell is checked as a command (REV-0005: bash -c "rm -rf agent-os").
@@ -191,9 +244,26 @@ function checkBash(cmd, depth = 0) {
     if (r.unless && new RegExp(r.unless).test(c)) continue;
     return { decision: 'deny', rule: r.rule, why: r.why };
   }
+  // Command substitutions run too: `echo $(rm -rf agent-os)`, `` `rm -rf agent-os` ``.
+  if (depth < 3)
+    for (const m of c.matchAll(/\$\(([^()]+)\)|`([^`]+)`/g)) {
+      const inner = checkBash(m[1] ?? m[2], depth + 1);
+      if (inner && inner.decision === 'deny') return inner;
+    }
   const secret = mentionsSecret(c);
   if (secret) return { decision: 'deny', rule: 'secret-file', why: `${policy.secret_files.why} (command references ${secret})` };
-  for (const t of writeTargets(c)) {
+  const script = scriptShape(c);
+  if (script) return script;
+  for (const raw of writeTargets(c)) {
+    const t = { ...raw, path: driveFix(stripPwd(raw.path)).replace(/^~(?=\/|$)/, homedir().replace(/\\/g, '/')), cwd: driveFix(raw.cwd) };
+    // A computed target cannot be checked, so it is refused where it could matter (deny by default, REV-0005).
+    if (nonLiteral(t.path)) {
+      if (t.op === 'delete')
+        return { decision: 'deny', rule: 'destructive-delete', why: `Deleting a computed path (${t.path}) cannot be checked against the protected roots; name the path literally.` };
+      if (STATE_MENTION.test(c) || isGuardrailFile(t.path))
+        return { decision: 'deny', rule: 'canonical-state', why: `A computed write target (${t.path}) in a command that names the canonical state or the guardrails; change state only through \`node agent-os/tools/pm.mjs\`.` };
+      continue;
+    }
     if (isSecretFile(t.path) || inProtectedSegment(t.path))
       return { decision: 'deny', rule: isSecretFile(t.path) ? 'secret-file' : 'legacy-backup', why: `${isSecretFile(t.path) ? policy.secret_files.why : policy.protected_segments.why} (shell ${t.op} of ${t.path})` };
     if (isGuardrailFile(t.path) || isGuardrailFile(join(t.cwd, t.path)))
@@ -212,7 +282,17 @@ function checkBash(cmd, depth = 0) {
         return { decision: 'deny', rule: 'destructive-delete', why: `Deleting ${t.path} removes the repository or a directory containing it (the main checkout holds .env, Old Website/ and .cache/).` };
     }
     const p = relPath(t.path, t.cwd);
-    if (p === null) continue;
+    if (p === null) {
+      // Outside the repository only scratch space may be deleted: a sibling worktree, the main checkout
+      // (.env, Old Website/, .cache/) or ~/.agent-os is never build output (REV-0005 H3; relPath is null there).
+      if (t.op === 'delete') {
+        const clean = t.path.replace(/\\/g, '/');
+        const abs = isAbsolute(clean) || /^[A-Za-z]:\//.test(clean) ? resolve(clean) : resolve(ROOT, t.cwd, clean);
+        if (!isTempPath(clean) && !isTempPath(abs))
+          return { decision: 'deny', rule: 'destructive-delete', why: `Deleting ${t.path} outside the repository (only the temp directory is scratch space).` };
+      }
+      continue;
+    }
     if (t.op === 'delete' && /[*?]/.test(p.split('/').pop() ?? '')) {
       const root = deletesProtected(p.split('/').slice(0, -1).join('/'));
       if (root) return { decision: 'deny', rule: 'destructive-delete', why: `Wildcard delete in ${root}.` };

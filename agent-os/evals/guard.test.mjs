@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { REPO } from '../tools/lib/paths.mjs';
@@ -82,8 +83,11 @@ test('REV-0004 H3: deleting protected roots, their contents or their ancestors i
   for (const c of ['rm -rf ./agent-os/state/', 'rm -r -f agent-os/state', 'rm -rf agent-os', 'rm -rf project-management', 'find agent-os/state -delete', 'git clean -fdx', 'git clean -fd', 'mv agent-os/state /tmp/x', 'rm -rf .', 'rm -rf "Old Website"'])
     assert.equal(verdict(bash(c)), 'deny', c);
   assert.equal(verdict({ tool_name: 'PowerShell', tool_input: { command: 'Remove-Item -Recurse -Force agent-os/state' } }), 'deny');
+  // A tool cache under node_modules is build output, not the legacy `.cache/` (REV-0005 follow-up).
   for (const c of ['rm -rf apps/storefront/.next', 'rm -rf node_modules/.cache/x', 'git clean -n'])
-    assert.equal(verdict(bash(c)), c.includes('.cache/') ? 'deny' : 'allow', c);
+    assert.equal(verdict(bash(c)), 'allow', c);
+  for (const c of ['rm -rf .cache', 'rm -rf node_modules/../.cache', 'rm -rf apps/.cache/../../.cache/x'])
+    assert.equal(verdict(bash(c)), 'deny', c);
 });
 
 test('REV-0004 M3–M5, L3: case, cd, heredoc-to-shell, git checkout, backslashes; no false positive on 2>/dev/null', () => {
@@ -107,6 +111,41 @@ test('REV-0005: backslash paths, wildcards, numbered redirects, absolute cd, anc
   assert.equal(verdict({ tool_name: 'Write', tool_input: { file_path: 'D:\\Cloude\\digital-activation\\.claude\\settings.local.json', content: '{}' } }), 'deny');
   for (const c of ['rm -rf apps/storefront/.next', 'rm -rf /tmp/scratch-dir', 'echo x 2>/dev/null', 'git checkout -b feature'])
     assert.equal(verdict(bash(c)), 'allow', c);
+});
+
+test('REV-0005 round 3: every reported bypass shape is denied (deny by default for computed targets)', () => {
+  const ps = (command) => ({ tool_name: 'PowerShell', tool_input: { command } });
+  const E = '.e' + 'nv'; // the dotenv name, kept out of the source text
+  const LOG = 'agent-os/state/events.jsonl';
+  const SIBLING = join(PARENT, 'some-other-worktree');
+  // H1, guard side: shell and script writes to the event log outside pm.
+  const h1 = [`echo {} 1>> ${LOG}`, `echo {} &>> ${LOG}`, `echo {} 1> ${LOG}`, `echo {} &> ${LOG}`, `echo {} >| ${LOG}`, `printf x >> $PWD/${LOG}`, `F=${LOG}; echo x >> $F`, `(echo x >> ${LOG})`, `echo $(echo x >> ${LOG})`,
+    `node -e "require('fs').appendFileSync('${LOG}','x')"`, `node -e "const p='${LOG}';require('fs').appendFileSync(p,'x')"`, `node -e "require('fs').appendFileSync(require('path').join('agent-os','state','events.jsonl'),'x')"`, `node -e "require('fs').appendFileSync(process.argv[1],'x')" ${LOG}`,
+    `python3 -c "import sys; open(sys.argv[1],'a').write('x')" ${LOG}`, `perl -e 'open(F,">>${LOG}")'`, `node <<'JS'\nrequire('fs').appendFileSync('${LOG}','x')\nJS`];
+  for (const c of h1) assert.equal(verdict(bash(c)), 'deny', c);
+  for (const c of [`[IO.File]::AppendAllText("$PWD\\agent-os\\state\\events.jsonl",'x')`, `$p='${LOG}'; [IO.File]::AppendAllText($p,'x')`, `"x" | Out-File -Append agent-os\\state\\events.jsonl`])
+    assert.equal(verdict(ps(c)), 'deny', c);
+  // H2: dotenv through backslash paths, PowerShell and bash.
+  for (const c of [`gc .\\${E}`, `Get-Content -Path D:\\Cloude\\digital-activation\\${E}`, `Get-Content ..\\..\\..\\${E}`, `Select-String -Path D:\\Cloude\\digital-activation\\${E} -Pattern K`])
+    assert.equal(verdict(ps(c)), 'deny', c);
+  for (const c of [`cat D:\\\\Cloude\\\\digital-activation\\\\${E}`, `cat .\\\\${E}`, `cat ..\\\\..\\\\${E}`]) assert.equal(verdict(bash(c)), 'deny', c);
+  // H3: destructive commands.
+  const h3 = [`git -C ${PARENT_FWD} clean -fdx`, 'git -C . clean -fdx', 'rm -rf ../../..', `rm -rf ${PARENT_FWD}`, `rm -rf ${SIBLING.replace(/\\/g, '/')}`, 'rm -rf ./*', 'rm -rf *', 'bash -c "rm -rf agent-os"', "sh -c 'cd agent-os && rm -rf state'",
+    'echo agent-os | xargs rm -rf', 'find . -name x | xargs rm', `node -e "require('fs').rmSync(process.cwd(),{recursive:true})"`, `node -e "require('fs').rmSync('agent-os',{recursive:true})"`, `python -c "import shutil,os; shutil.rmtree(os.getcwd())"`,
+    'rm -rf "$DIR"', 'rm -rf ~', 'rm -rf ~/.agent-os', 'rm -rf ../../../Old\\ Website', '`rm -rf agent-os`'];
+  if (/^[A-Za-z]:/.test(REPO)) h3.push(`rm -rf /${REPO[0].toLowerCase()}${PARENT_FWD.slice(2)}`); // MSYS spelling of the parent
+  for (const c of h3) assert.equal(verdict(bash(c)), 'deny', c);
+  for (const c of [`Remove-Item -Recurse -Force ${PARENT}`, `Remove-Item -Recurse ${SIBLING}`, 'Remove-Item .\\*', 'Get-ChildItem agent-os | Remove-Item -Recurse', 'gci | ri -r', 'gci -Recurse | % { Remove-Item $_ }', '[IO.Directory]::Delete($pwd.Path, $true)'])
+    assert.equal(verdict(ps(c)), 'deny', c);
+  // M4 escapes.
+  for (const c of [`cd ${REPO_FWD}/agent-os/state && echo x >> events.jsonl`, `cd ${REPO.replace(/\\/g, '\\\\')}/agent-os && rm -rf state`, 'git checkout agent-os', 'git checkout HEAD project-management', 'git restore .', 'git restore --source=HEAD~3 agent-os'])
+    assert.equal(verdict(bash(c)), 'deny', c);
+  // Legitimate work stays allowed.
+  for (const c of ['rm -rf node_modules/.cache', 'rm -rf apps/storefront/.next', 'git clean -n', 'git clean -nfd', 'git clean --dry-run -fdx', 'pnpm pm check', 'pnpm pm show TASK-0080', 'node agent-os/tools/pm.mjs transition TASK-0010 IN_PROGRESS --by backend-architect --reason x',
+    `cat ${LOG} | tail -3`, `wc -l ${LOG}`, `grep TASK-0080 ${LOG} > /tmp/hits.txt`, 'rm -rf /tmp/scratch-dir', `rm -rf ${join(tmpdir(), 'agent-os-eval-x').replace(/\\/g, '/')}`, `node -e "require('fs').rmSync('/tmp/x',{recursive:true,force:true})"`,
+    'node -e "console.log(1 + 1)"', 'git checkout main', 'git checkout -- apps/api/src/main.ts', 'git restore --staged apps/api/src/main.ts', 'pnpm format:check', 'git diff > /tmp/d.patch'])
+    assert.equal(verdict(bash(c)), 'allow', c);
+  for (const c of ['Remove-Item -Recurse -Force apps\\storefront\\.next', 'Get-ChildItem apps -Recurse -Filter *.log']) assert.equal(verdict(ps(c)), 'allow', c);
 });
 
 test('generated projections cannot be hand-edited', () => {
@@ -167,9 +206,22 @@ test('TASK-0082: script-based writes (node -e, python -c, deno, bun) to protecte
     "python3 -c \"with open('agent-os/state/events.jsonl', 'a') as f: f.write('{}')\"",
     "python -c \"import os; os.remove('agent-os/state/events.jsonl')\"",
     "node -e \"require('fs').writeFileSync('.env', 'SECRET=1')\"",
+    "perl -pi -e 's/a/b/' agent-os/state/events.jsonl",
+    "perl -i.bak -pe 's/a/b/' .claude/settings.json",
+    "ruby -e \"File.write('agent-os/state/events.jsonl', 'x')\"",
+    "node -e \"require('fs').writeFileSync(require('os').homedir() + '/.claude/settings.json', '{}')\"",
+    "python -c \"import os; open(os.path.join('.claude', 'hooks', 'guard.mjs'), 'w').write('')\"",
+    "node -e \"require('fs').writeFileSync(require('path').join('Old Website', 'x'), '')\"",
   ]) {
     assert.equal(verdict(bash(c)), 'deny', c);
   }
+  for (const c of [
+    "[IO.File]::WriteAllText('agent-os/state/events.jsonl', 'x')",
+    "[System.IO.File]::WriteAllText('.claude\\hooks\\guard.mjs', '')",
+    "$w = New-Object System.IO.StreamWriter('agent-os/state/events.jsonl', $true); $w.Write('x')",
+    "[IO.File]::Delete($target)",
+  ])
+    assert.equal(verdict({ tool_name: 'PowerShell', tool_input: { command: c } }), 'deny', c);
   for (const c of [
     "node -e \"require('fs').writeFileSync('/tmp/scratch.txt', 'hello')\"",
     "python -c \"open('/tmp/test.txt', 'w').write('ok')\"",

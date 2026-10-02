@@ -80,26 +80,81 @@ ended blocking, so TASK-0080 is BLOCKED and escalated to PM-06 and the owner.
 The objection stays open. It is not cleared by this document or by the
 implementer.
 
+## Revision 4: REV-0005 re-work and TASK-0082 (not yet re-reviewed)
+
+The REV-0005 objection stays open until a fresh security review clears it.
+This revision records what changed and what is still out of reach.
+
+**H1, `pm check` side.** Replay now checks an owner proof on **every**
+owner-class event, on any channel: owner-only event types, any event by the
+owner actor, and any CR carrying `source_opportunity` (the approval
+artifact). A CR with `source_opportunity` from anyone but the owner on an
+owner channel is refused. `v1_imported` is valid only as the log's prefix.
+Before this change, a later unguarded `v1_imported` could create an APPROVED
+opportunity with no proof.
+
+**H1, guard side.** The guard handles these shapes:
+
+- Redirects (`1>`, `1>>`, `&>`, `&>>`, `>|`) are resolved, including through
+  `$PWD/…`, `( … )`, `{ … }`, `$( … )` and backticks.
+- A computed write target (`$F`, `$(…)`) is refused when the command names the
+  event log or the guardrails.
+- An **inline program** that names the event log and can write is refused.
+  This covers `node -e`, `python -c`, `perl -e`, `ruby -e`, heredocs into an
+  interpreter, and PowerShell `[IO.File]`/`StreamWriter`. It applies even
+  when the path is assembled (`join('agent-os','state',…)`) or passed as
+  `argv`.
+
+**H3.** These deletes are refused:
+
+- Any delete outside the repository except under the temp directory. This
+  covers sibling worktrees, the main checkout and `~/.agent-os`.
+- MSYS spellings (`/d/…`).
+- Any delete whose target is computed (`rm -rf "$DIR"`, `rmSync(process.cwd())`,
+  `[IO.Directory]::Delete($p)`).
+- Pipeline deletes (`xargs rm`, `… | Remove-Item`, `% { Remove-Item }`).
+- `` `rm …` `` and `$(rm …)` substitutions.
+
+`git clean -nfd` counts as a dry run. `node_modules/.cache` is build output,
+not the legacy `.cache/`, and `..` is resolved before that rule applies.
+
+**Deny by default, false positives accepted.** A read-only inline script
+that names `events.jsonl` and also contains a write-like token (including a
+bare `>` comparison) is refused. Use `pnpm pm show` or `cat` instead. A
+recursive delete of a variable path is refused even when it is harmless.
+
 ## Remaining limits (recorded, not hidden)
 
 0. **Pattern rules scan the whole command, quoted text included.** A note or
    commit message that contains `git … clean` or `.env` is refused. That is
    a false positive, not a bypass; reword the text.
-   0b. **Indirect execution with computed targets is not followed.** `xargs rm`,
-   `Get-ChildItem | Remove-Item` over computed paths, `find … -exec` with computed
-   targets, and 8.3 short names (`AGENT-~1`) can still delete or write. Inline
-   scripts (`node -e`, `python -c`, `deno`, `bun`) writing to static paths are
-   inspected and denied by `writeTargets` (TASK-0082). For state, `pm check` replay
-   catches the effect. For deletions of untracked files nothing can restore them,
-   which is why committing the governance state matters (limit 6).
+   0b. **Computed targets are refused by shape, not followed.** Revision 4
+   refuses pipeline deletes, computed delete targets and inline programs that
+   name the log. It still cannot see through names that never appear in the
+   command text:
+   - 8.3 short names (`AGENT-~1`)
+   - names decoded at runtime (base64, `chr()` concatenation, `'events' + '.jsonl'`)
+   - a computed write target in a command that never names the log or the
+     guardrails
+   - `find … -exec` over a computed root
+   - writes by tools the guard does not model (`git apply`, `tar -x`, `unzip`,
+     an editor)
+
+   For state, `pm check` replay catches the effect. For deletions of untracked
+   files nothing can restore them, which is why committing the governance
+   state matters (limit 6).
    0c. **CI cannot verify owner proofs,** because the key is on the owner's machine.
    CI checks that a proof is present; the owner's machine checks that it is
    valid. A random "proof" therefore passes CI, and fails `pm check` wherever
    the key exists.
 
-1. **A standalone script file that writes or reads is not inspected.** Running
-   `node scratch/x.mjs` executes code the guard never sees. Inline one-liners
-   (`node -e`, `python -c`, `deno`, `bun`) are inspected by `writeTargets` (TASK-0082).
+1. **A standalone script file that writes or reads is not inspected (TASK-0082
+   explicit limit).** Running `node scratch/x.mjs`, `python x.py`,
+   `pwsh -File x.ps1`, or a package script executes code the guard never sees. Detection
+   there cannot be complete: the guard would have to read and understand an
+   arbitrary program. Inline one-liners are inspected by shape (revision 4):
+   `node -e`, `python -c`, `perl -e`/`-pi`, `ruby -e`, `deno`, `bun`, heredocs
+   into an interpreter, and PowerShell `[IO.File]`.
    - For state, projections and front matter, `pm check` catches the effect in
      CI.
    - Secrets are protected by keeping them out of reach of external scripts.
