@@ -61,4 +61,3 @@
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 - TASK-0030 — Backup policy and a recorded restore drill (IN_PROGRESS, 30%)
 - TASK-0044 — Plan the staging-to-production transition of the single Coolify environment (WAITING_INFORMATION, 70%)
-- TASK-0089 — Give the Lighthouse CI job a database, API and fixed seed; cover product, category and cart on mobile and desktop (IN_PROGRESS, 30%)

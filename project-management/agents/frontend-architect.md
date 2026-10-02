@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -51,7 +51,7 @@
 
 ## Current tasks
 
-- TASK-0063 — Server-side session gate for admin pages (IN_PROGRESS, 50%)
+- none
 
 ## Supporting
 
