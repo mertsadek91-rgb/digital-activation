@@ -140,3 +140,21 @@ test('replay: an authorised invalidation replays cleanly; a forged unauthorised 
     s.cleanup();
   }
 });
+
+test('dissent short of a block (CONCERN, OBJECTION) is struck only by its reviewer or exec-director', () => {
+  const s = sandbox();
+  try {
+    s.pm('create', 'TASK', '--by', 'auth-rbac-specialist', ...R, '--json', auth);
+    const concern = s.pm('review', 'TASK-0001', '--by', 'security-engineer', ...IND, '--type', 'SECURITY', '--result', 'CONCERN', '--findings', 'rotation window too long').out.trim().split(/\s+/).at(-1);
+    // pm-04 answers for the task (responsible manager) and may strike a PASS, not another reviewer's dissent.
+    for (const by of ['pm-04', 'pm-06']) {
+      const r = invalidate(s, concern, by);
+      assert.equal(r.code, 2, `${by}: ${r.all}`);
+      assert.match(r.all, /may not invalidate/);
+    }
+    assert.equal(invalidate(s, concern, 'exec-director').code, 0);
+    assert.equal(show(s).invalidated_reviews[0].invalidated.by, 'exec-director');
+  } finally {
+    s.cleanup();
+  }
+});

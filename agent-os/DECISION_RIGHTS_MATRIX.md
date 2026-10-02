@@ -16,6 +16,23 @@ an item escalates; it does not loop.
 | ACCEPTED_RISK                 | a risk accepted on the record                                                                 | the owner (`risk_accepted` is owner-only)                                                 |
 | USER_DECISION_REQUIRED        | the decision belongs to the owner                                                             | any reviewer                                                                              |
 
+## Striking a review (`pm review-invalidate`, TASK-0092)
+
+A review that should not count (recorded by another tool, never actually run)
+is struck by appending a `review_invalidated` event; the original stays in the
+log and `pm show` lists it as invalidated. Who may strike it depends on what it
+says:
+
+| Struck review                              | Who may strike it                                                                                                                      |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| any review recorded by the owner           | nobody: an agent cannot unsay the owner                                                                                                |
+| BLOCKING_OBJECTION / VETO                  | only the reviewer who recorded it                                                                                                      |
+| any other non-PASS (OBJECTION, CONCERN, …) | the reviewer, or exec-director — never the task's responsible manager, so dissent cannot be erased and the round count cannot be reset |
+| PASS                                       | the reviewer, exec-director, the task's responsible manager, the reviewer's manager, or the class owner/escalation chain               |
+
+The task's primary agent can never strike another reviewer's review of its own
+work. Every invalidation needs a reason, and `pm check` replays the authority.
+
 ## Classes
 
 | Class                  | Owner                    | Required reviewers                             | Veto                                         | Max rounds | Escalation                    |

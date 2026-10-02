@@ -199,7 +199,10 @@ export function writeGuards(before, after, events, ctx = {}) {
  *   - never an owner record: an agent cannot unsay the owner;
  *   - VETO / BLOCKING_OBJECTION only by the reviewer who recorded it — anyone
  *     else lifts a block through a later review or the owner's accept-risk;
- *   - otherwise: the original reviewer, exec-director, the target's responsible
+ *   - any other non-PASS result (OBJECTION, CONCERN, RECOMMENDATION…) only by
+ *     the reviewer or exec-director: dissent must be answered, and the manager
+ *     who answers for the task cannot erase it or reset the round count;
+ *   - a PASS: the original reviewer, exec-director, the target's responsible
  *     manager, the reviewer's own manager (reports_to), or a manager in the
  *     decision class's owner/escalation chain (decision-rights.json);
  *   - never the target's primary agent striking someone else's review of its work.
@@ -211,6 +214,7 @@ export function reviewInvalidators(state, r) {
   const cls = classRights(target);
   const chain = [cls?.owner, ...(cls?.escalation ?? [])];
   const out = new Set([r.reviewer, 'exec-director']);
+  if (r.result !== 'PASS') return out;
   for (const m of [target.responsible_manager, P[r.reviewer]?.reports_to, ...chain]) if (m && managers[m]) out.add(m);
   return out;
 }

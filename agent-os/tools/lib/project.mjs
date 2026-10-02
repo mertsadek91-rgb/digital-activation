@@ -323,7 +323,11 @@ function summarize(ev, state) {
   switch (ev.type) {
     case 'status_changed': return `${d.from} → ${d.to}${ev.reason ? ' — ' + ev.reason : ''}`;
     case 'review_recorded': return `${d.review_type} review by ${d.reviewer}${d.independent ? ' (independent)' : ''}: ${d.result}${d.findings ? ' — ' + d.findings : ''}`;
-    case 'review_invalidated': return `${d.review_id} (${d.result ?? '?'} by ${d.reviewer ?? '?'}) invalidated — no longer counts${ev.reason ? ' — ' + ev.reason : ''}`;
+    case 'review_invalidated': {
+      // From the struck review itself, not from what the event claims about it.
+      const r = state.invalidated_reviews.find((x) => x.review_id === d.review_id);
+      return `${d.review_id} (${r?.result ?? '?'} by ${r?.reviewer ?? '?'}) invalidated by ${ev.actor} — no longer counts${ev.reason ? ' — ' + ev.reason : ''}`;
+    }
     case 'opportunity_decided': return `owner: ${d.decision}${d.reason ? ' — ' + d.reason : ''}`;
     case 'evidence_added': return `${d.stance} · ${d.quality} · ${d.claim}`;
     case 'link_added': return `${d.relation} ${d.target}`;
