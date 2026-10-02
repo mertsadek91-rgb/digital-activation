@@ -52,12 +52,15 @@ export class AnalyticsController {
   @HttpCode(202)
   @ApiOperation({ summary: 'Record a storefront browsing event (storefront server only)' })
   async record(
-    @Body(new ZodPipe(recordAnalyticsEventSchema)) body: RecordAnalyticsEvent,
+    @Body() raw: unknown,
     @Headers(INTERNAL_KEY_HEADER) key?: string,
     @Headers(CLIENT_IP_HEADER) clientIp?: string,
     @Headers(CLIENT_UA_HEADER) clientUa?: string,
   ): Promise<{ recorded: boolean }> {
+    // The key first, the body second: a caller without the key learns nothing,
+    // not even what a valid event looks like.
     if (!internalKeyMatches(key, process.env.INTERNAL_API_KEY)) throw new UnauthorizedException();
+    const body: RecordAnalyticsEvent = new ZodPipe(recordAnalyticsEventSchema).transform(raw);
     const ip = typeof clientIp === 'string' && isIP(clientIp) !== 0 ? clientIp : undefined;
     const userAgent = typeof clientUa === 'string' ? clientUa.slice(0, 512) : undefined;
     return { recorded: await this.analytics.record(body, { ip, userAgent }) };

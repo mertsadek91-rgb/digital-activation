@@ -165,6 +165,18 @@ describe('POST /v1/analytics/events', () => {
     expect(w.client.analyticsEvent.create).not.toHaveBeenCalled();
   });
 
+  it('checks the key before the body: no key and a junk body is 401, not 400', async () => {
+    const w = world();
+    const controller = new AnalyticsController(w.service);
+    await expect(controller.record({}, undefined, IP, BROWSER)).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    // With the key, the same junk body is refused as invalid.
+    await expect(controller.record({}, INTERNAL_KEY, IP, BROWSER)).rejects.not.toBeInstanceOf(
+      UnauthorizedException,
+    );
+  });
+
   it('records with the key, ignoring a forwarded address that is not one', async () => {
     const w = world();
     const controller = new AnalyticsController(w.service);

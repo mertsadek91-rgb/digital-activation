@@ -153,6 +153,15 @@ const config: NextConfig = {
         source,
         headers: [{ key: 'Referrer-Policy', value: 'same-origin' }],
       })),
+      /**
+       * The WhatsApp click redirect (TASK-0096) sends nothing at all onward:
+       * the header the route sets on its own response is overridden by the
+       * global rule above, so it is restated here, last, where it wins.
+       */
+      ...['/go/:path*', '/:locale(ar|en)/go/:path*'].map((source) => ({
+        source,
+        headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+      })),
     ];
   },
 };
