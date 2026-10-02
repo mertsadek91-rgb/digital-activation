@@ -11,7 +11,10 @@
  * front of that too, so the printed string alone is not a working credential.
  *
  * Re-running for the same email resets the password and clears the TOTP
- * enrolment, which is also the recovery path for a lost authenticator.
+ * enrolment, which is also the recovery path for a lost authenticator. It is
+ * also how a deactivated account is reactivated, so it revokes every session
+ * the account still has, in the same transaction: a credential reset leaves
+ * nothing signed in, and reactivating never revives a session (TASK-0088).
  */
 import crypto from 'node:crypto';
 import path from 'node:path';
@@ -59,24 +62,30 @@ async function main(): Promise<void> {
 
   const existing = await prisma.staffUser.findUnique({ where: { email } });
 
-  await prisma.staffUser.upsert({
-    where: { email },
-    update: {
-      name,
-      role,
-      passwordHash,
-      isActive: true,
-      // Printed below, so it is an enrolment token rather than a password. The
-      // API issues a session with it and refuses every route except changing
-      // it, until the owner sets one of their own.
-      mustChangePassword: true,
-      passwordChangedAt: null,
-      // Clearing these is the recovery path for a lost authenticator: the next
-      // login walks through enrolment again.
-      totpSecret: null,
-      totpEnabledAt: null,
-    },
-    create: { email, name, role, passwordHash, isActive: true, mustChangePassword: true },
+  await prisma.$transaction(async (tx) => {
+    const staff = await tx.staffUser.upsert({
+      where: { email },
+      update: {
+        name,
+        role,
+        passwordHash,
+        isActive: true,
+        // Printed below, so it is an enrolment token rather than a password. The
+        // API issues a session with it and refuses every route except changing
+        // it, until the owner sets one of their own.
+        mustChangePassword: true,
+        passwordChangedAt: null,
+        // Clearing these is the recovery path for a lost authenticator: the next
+        // login walks through enrolment again.
+        totpSecret: null,
+        totpEnabledAt: null,
+      },
+      create: { email, name, role, passwordHash, isActive: true, mustChangePassword: true },
+    });
+    await tx.staffSession.updateMany({
+      where: { staffId: staff.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   });
 
   console.log('');

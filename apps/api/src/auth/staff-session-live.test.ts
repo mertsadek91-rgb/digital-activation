@@ -192,6 +192,43 @@ describe('StaffGuard checks the session on every request', () => {
     await expect(call(accessToken)).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
+  // TASK-0088. `pnpm --filter @da/db staff:deactivate` leaves exactly this
+  // state — the account off and every one of its sessions revoked — and
+  // `pnpm db:staff` reactivates by flipping isActive back. Nothing the API does
+  // may let an old session through after that: not its access token, and not
+  // its refresh token minting a new one.
+  it('a deactivated account stays signed out of every session after reactivation', async () => {
+    const { auth, signIn, call, person, sessions } = build();
+    const first = await signIn();
+    const second = await signIn();
+    const bystander = await signIn('staff_2');
+    await call(first.accessToken);
+
+    const staff = person('staff_1');
+    if (staff) staff.isActive = false;
+    const revokedAt = new Date();
+    for (const row of sessions) if (row.staffId === 'staff_1') row.revokedAt = revokedAt;
+
+    await expect(call(first.accessToken)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(call(second.accessToken)).rejects.toBeInstanceOf(UnauthorizedException);
+
+    if (staff) staff.isActive = true;
+
+    await expect(call(first.accessToken)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(call(second.accessToken)).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(auth.refresh(first.refreshToken, {})).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    await expect(auth.refresh(second.refreshToken, {})).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    );
+    expect(sessions.filter((row) => row.staffId === 'staff_1').map((row) => row.revokedAt)).toEqual(
+      [revokedAt, revokedAt],
+    );
+    // Someone else's session is not collateral.
+    expect((await call(bystander.accessToken))?.sub).toBe('staff_2');
+  });
+
   it('refuses the access cookie after logout', async () => {
     const { auth, signIn, call } = build();
     const { accessToken, refreshToken } = await signIn();

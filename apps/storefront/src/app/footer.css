@@ -6,7 +6,7 @@
 
 .site-footer {
   margin-block-start: clamp(40px, 6vw, 80px);
-  background: linear-gradient(180deg, #fafbfb 0%, #f3f6f5 100%);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 100%);
   border-block-start: 1px solid var(--color-border);
   color: var(--color-ink);
   font-family: var(--font-sans);
@@ -80,25 +80,25 @@
 
 /* Themed badges for the 4 guarantees */
 .footer-promise-card.is-gold {
-  border-inline-start: 3px solid #f59e0b;
+  border-inline-start: 3px solid var(--color-gold);
 }
 .footer-promise-card.is-gold .promise-icon-bubble {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
 }
 .footer-promise-card.is-gold:hover {
-  border-color: #f59e0b;
+  border-color: var(--color-gold);
 }
 
 .footer-promise-card.is-sky {
-  border-inline-start: 3px solid #0284c7;
+  border-inline-start: 3px solid var(--color-info);
 }
 .footer-promise-card.is-sky .promise-icon-bubble {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--color-info-soft);
+  color: var(--color-info-ink);
 }
 .footer-promise-card.is-sky:hover {
-  border-color: #0284c7;
+  border-color: var(--color-info);
 }
 
 .footer-promise-card.is-teal {
@@ -113,14 +113,14 @@
 }
 
 .footer-promise-card.is-purple {
-  border-inline-start: 3px solid #7c3aed;
+  border-inline-start: 3px solid var(--color-purple);
 }
 .footer-promise-card.is-purple .promise-icon-bubble {
-  background: #ede9fe;
-  color: #6d28d9;
+  background: var(--color-purple-soft);
+  color: var(--color-purple-ink);
 }
 .footer-promise-card.is-purple:hover {
-  border-color: #7c3aed;
+  border-color: var(--color-purple);
 }
 
 .promise-text-block {
@@ -186,7 +186,7 @@
 .footer-brand-symbol {
   display: inline-flex;
   border-radius: var(--radius-md);
-  box-shadow: 0 4px 10px rgba(20, 133, 118, 0.2);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--color-brand) 20%, transparent);
   transition: transform 200ms ease;
 }
 
@@ -231,7 +231,7 @@
   align-items: center;
   gap: 6px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--color-surface);
@@ -284,19 +284,19 @@
 
 .social-btn.is-whatsapp:hover {
   background: #25d366;
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   border-color: #25d366;
 }
 
 .social-btn.is-telegram:hover {
   background: #0088cc;
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   border-color: #0088cc;
 }
 
 .social-btn.is-x:hover {
   background: #000000;
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   border-color: #000000;
 }
 
@@ -309,13 +309,13 @@
     #d6249f 60%,
     #285aeb 90%
   );
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   border-color: transparent;
 }
 
 .social-btn.is-mail:hover {
   background: var(--color-brand);
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   border-color: var(--color-brand);
 }
 
@@ -363,7 +363,8 @@
 }
 
 .footer-nav-list a:hover {
-  color: var(--color-brand);
+  /* --color-brand is 4.16-4.36:1 on the footer background; brand-ink clears it. */
+  color: var(--color-brand-ink);
   transform: translateX(calc(-3px * var(--direction-multiplier, 1)));
 }
 
@@ -383,12 +384,15 @@
 }
 
 .special-policy-link {
-  color: #b45309 !important;
+  color: var(--color-gold-ink) !important;
   font-weight: 700;
 }
 
 .special-policy-link:hover {
-  color: #d97706 !important;
+  /* The old hover lightened to an amber at 2.93:1. Keep the ink, underline. */
+  color: var(--color-gold-ink) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Col 5: Support Hub */
@@ -420,7 +424,7 @@
      3.57:1, and this is 12px bold text. */
   color: var(--color-success);
   background: var(--color-success-soft);
-  border: 1px solid #a7f3d0;
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
   padding: 3px 8px;
   border-radius: var(--radius-pill);
 }
@@ -429,23 +433,23 @@
   inline-size: 8px;
   block-size: 8px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+  background: var(--color-success);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-success) 30%, transparent);
   animation: pulsePing 2s infinite ease-in-out;
 }
 
 @keyframes pulsePing {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success) 60%, transparent);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-success) 0%, transparent);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-success) 0%, transparent);
   }
 }
 
@@ -494,8 +498,8 @@
 }
 
 .footer-contact-card.is-whatsapp .footer-contact-card-icon {
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--color-success-soft);
+  color: var(--color-success);
 }
 
 .footer-contact-card.is-email .footer-contact-card-icon {
@@ -512,7 +516,7 @@
 .footer-contact-card-label {
   font-size: var(--text-xs);
   color: var(--color-ink-muted);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .footer-contact-card-val {
@@ -528,8 +532,8 @@
   gap: 10px;
   padding: 12px;
   border-radius: var(--radius-md);
-  background: #f0fdf4;
-  border: 1px dashed #86efac;
+  background: var(--color-success-soft);
+  border: 1px dashed color-mix(in srgb, var(--color-success) 40%, transparent);
 }
 
 .remote-icon {
@@ -546,13 +550,13 @@
 
 .remote-text strong {
   font-size: var(--text-xs);
-  color: #166534;
+  color: var(--color-success);
   font-weight: 700;
 }
 
 .remote-text span {
   font-size: 0.725rem;
-  color: #15803d;
+  color: var(--color-ink-body);
   line-height: 1.4;
 }
 
@@ -572,9 +576,9 @@
   gap: 20px;
   padding: clamp(20px, 3vw, 32px);
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, #ffffff 0%, var(--color-brand-soft) 100%);
+  background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-brand-soft) 100%);
   border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
-  box-shadow: 0 4px 16px -4px rgba(20, 133, 118, 0.08);
+  box-shadow: 0 4px 16px -4px color-mix(in srgb, var(--color-brand) 8%, transparent);
 }
 
 @media (min-width: 54rem) {
@@ -602,7 +606,7 @@
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-brand-ink);
-  background: #ffffff;
+  background: var(--color-bg);
   padding: 2px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
@@ -647,7 +651,7 @@
   font-family: inherit;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: #ffffff;
+  background: var(--color-bg);
   color: var(--color-ink);
   outline: none;
   transition:
@@ -673,9 +677,9 @@
   border: none;
   border-radius: var(--radius-md);
   background: var(--color-brand);
-  color: #ffffff;
+  color: var(--color-ink-inverse);
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(20, 133, 118, 0.25);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-brand) 25%, transparent);
   transition:
     background 160ms ease,
     transform 160ms ease,
@@ -685,7 +689,7 @@
 .newsletter-submit:hover:not(:disabled) {
   background: var(--color-brand-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(20, 133, 118, 0.35);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand) 35%, transparent);
 }
 
 .newsletter-submit:disabled {
@@ -697,7 +701,7 @@
   margin: 0;
   font-size: var(--text-xs);
   color: var(--color-danger);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .newsletter-success {
@@ -706,11 +710,11 @@
   gap: 10px;
   padding: 10px 16px;
   border-radius: var(--radius-md);
-  background: #ecfdf5;
-  border: 1px solid #6ee7b7;
-  color: #065f46;
+  background: var(--color-success-soft);
+  border: 1px solid color-mix(in srgb, var(--color-success) 40%, transparent);
+  color: var(--color-success);
   font-size: var(--text-sm);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .success-icon {
@@ -719,8 +723,8 @@
   inline-size: 22px;
   block-size: 22px;
   border-radius: 50%;
-  background: #10b981;
-  color: #ffffff;
+  background: var(--color-success);
+  color: var(--color-ink-inverse);
   font-size: 0.8rem;
   font-weight: bold;
 }
@@ -772,7 +776,7 @@
   align-items: center;
   gap: 6px;
   font-size: var(--text-xs);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-brand-ink);
   background: var(--color-brand-soft);
   padding: 3px 8px;
@@ -793,7 +797,7 @@
   padding: 4px 10px;
   block-size: 34px;
   border-radius: var(--radius-sm);
-  background: #ffffff;
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition:
@@ -821,7 +825,7 @@
 
 /* --- 5. Bottom Copyright & Locale Switcher Bar ---------------------------- */
 .footer-bottom-bar {
-  background: #f1f5f4;
+  background: var(--color-surface);
   padding-block: 16px;
 }
 
@@ -854,7 +858,7 @@
   margin: 0;
   font-size: var(--text-xs);
   color: var(--color-ink-body);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .footer-lang-switcher {

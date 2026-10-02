@@ -28,6 +28,7 @@
     "import": "tsx scripts/import/index.ts",
     "media": "tsx scripts/media/index.ts",
     "staff": "tsx scripts/create-staff.ts",
+    "staff:deactivate": "tsx scripts/deactivate-staff.ts",
     "pages": "tsx scripts/legacy/pages.ts",
     "seo": "tsx scripts/seo/index.ts",
     "seo-audit": "tsx scripts/seo/audit.ts",
