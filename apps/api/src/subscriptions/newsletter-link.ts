@@ -12,7 +12,7 @@ import {
  * The newsletter links: confirm a subscription, and leave it.
  *
  * Self-contained, nothing stored until one is used: an HMAC over the purpose,
- * the address and an expiry. Until TASK-0098 they were signed with
+ * the address and an expiry. Until TASK-0099 they were signed with
  * JWT_ACCESS_SECRET and never expired; they now use LINK_SIGNING_SECRET like
  * the order and cart links (`common/link-secret.ts`), each under its own
  * purpose, so a confirm link can never be replayed as an unsubscribe.

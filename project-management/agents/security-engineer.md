@@ -55,7 +55,7 @@
 - TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (WAITING_INFORMATION, 20%)
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
 - TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
-- TASK-0098 — Newsletter confirm/unsubscribe links: sign with LINK_SIGNING_SECRET under their own purposes; confirm expires in 7 days, unsubscribe never (WAITING_DEPENDENCY, 0%)
+- TASK-0099 — Newsletter confirm/unsubscribe links: sign with LINK_SIGNING_SECRET under their own purposes; confirm expires in 7 days, unsubscribe never (WAITING_DEPENDENCY, 0%)
 
 ## Supporting
 

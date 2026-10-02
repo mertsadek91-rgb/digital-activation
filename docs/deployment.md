@@ -500,7 +500,7 @@ be verified is money taken for an order that never learns it was paid.
 
 `JWT_ACCESS_SECRET` must be generated (`pnpm secrets:generate`); production
 refuses to start with a value that looks like the `.env.example` placeholder.
-Newsletter links sent before TASK-0098 were signed with it, and their
+Newsletter links sent before TASK-0099 were signed with it, and their
 unsubscribe links are honoured for good (below), so rotating it retires the
 unsubscribe links in those older emails. `JWT_REFRESH_SECRET` is gone: nothing ever read
 it (refresh tokens are opaque rows, not JWTs). Delete it from the API resource;
@@ -553,7 +553,7 @@ for TASK-0017, the pay-from-another-device link; nothing mints or accepts it yet
 Rotating `LINK_SIGNING_SECRET` later retires every order and cart link already
 sent; customers then sign in.
 
-### Newsletter links (TASK-0098)
+### Newsletter links (TASK-0099)
 
 The confirm and unsubscribe links are signed with `LINK_SIGNING_SECRET` too,
 each under its own purpose (`apps/api/src/subscriptions/newsletter-link.ts`),

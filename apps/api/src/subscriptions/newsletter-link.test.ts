@@ -11,7 +11,7 @@ import {
 } from './newsletter-link.js';
 
 /**
- * Guards the newsletter links (TASK-0098). A token that verified when it
+ * Guards the newsletter links (TASK-0099). A token that verified when it
  * should not would subscribe or unsubscribe an address its holder does not
  * own; one that stopped verifying too soon would break an opt-out promise.
  *
@@ -27,7 +27,7 @@ const EMAIL = 'a@example.com';
 let access: string;
 let link: string;
 
-/** How tokens were minted before TASK-0098 — written out, not imported. */
+/** How tokens were minted before TASK-0099 — written out, not imported. */
 function v1Token(secret: string, email: string, purpose: NewsletterPurpose): string {
   const payload = Buffer.from(email).toString('base64url');
   const mac = crypto
