@@ -58,6 +58,6 @@
 ## Supporting
 
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
-- TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (IN_PROGRESS, 0%)
+- TASK-0018 — Separate and expire the order/cart link HMAC; drop the unused refresh secret (BACKLOG, 0%)
 - TASK-0031 — Error reporting and alerting, including the delivery-latency target (WAITING_INFORMATION, 20%)
 - TASK-0041 — Import legacy customers and orders with forced password reset (BACKLOG, 0%)

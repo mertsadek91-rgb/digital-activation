@@ -757,8 +757,8 @@
       "staffed": true,
       "executor": "subagent:security-reviewer",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0018",
+      "state": "WAITING",
+      "current_task": "TASK-0004",
       "assignments": [
         "TASK-0004",
         "TASK-0011",
@@ -777,7 +777,7 @@
       "opportunities": [],
       "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-02T07:55:02Z"
+      "last_activity": "2026-10-02T07:58:29Z"
     },
     {
       "id": "performance-engineer",

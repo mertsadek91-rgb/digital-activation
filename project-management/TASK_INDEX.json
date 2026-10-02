@@ -506,8 +506,8 @@
       "id": "TASK-0018",
       "title": "Separate and expire the order/cart link HMAC; drop the unused refresh secret",
       "type": "security",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
       "priority": "LOW",
       "progress": 0,
       "authority_level": 4,
@@ -545,7 +545,7 @@
       "created_at": "2026-09-29",
       "updated_at": "2026-10-02",
       "reaudit": "VALID",
-      "file": "tasks/active/TASK-0018.md"
+      "file": "tasks/backlog/TASK-0018.md"
     },
     {
       "id": "TASK-0020",
