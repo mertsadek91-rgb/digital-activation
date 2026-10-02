@@ -123,60 +123,59 @@ Computed with the WCAG 2 relative-luminance formula from the hex values in
 `tokens.css`. AA needs 4.5:1 for normal text and 3:1 for large text (24 px, or
 18.66 px bold) and for non-text UI such as borders and icons.
 
-| Foreground              | Background                | Ratio   | Normal text    |
-| ----------------------- | ------------------------- | ------- | -------------- |
-| `ink` `#1c2422`         | `bg` `#ffffff`            | 15.85:1 | Pass           |
-| `ink-body` `#4a4a4a`    | `bg` `#ffffff`            | 8.86:1  | Pass           |
-| `ink-body` `#4a4a4a`    | `surface-2` `#eeefef`     | 7.69:1  | Pass           |
-| `ink-muted` `#606967`   | `bg` `#ffffff`            | 5.65:1  | Pass           |
-| `ink-muted` `#606967`   | `surface-2` `#eeefef`     | 4.91:1  | Pass           |
-| `ink-muted` `#606967`   | `brand-soft` `#e1f0ed`    | 4.82:1  | Pass           |
-| `brand-ink` `#0a544b`   | `brand-soft` `#e1f0ed`    | 7.51:1  | Pass           |
-| `ink-inverse` `#ffffff` | `brand` `#148576`         | 4.52:1  | Pass (barely)  |
-| `brand` `#148576`       | `bg` `#ffffff`            | 4.52:1  | Pass (barely)  |
-| `accent-ink` `#3a2400`  | `accent` `#faa21b`        | 7.16:1  | Pass           |
-| `gold-ink` `#8a5300`    | `accent-soft` `#fdf1dc`   | 5.66:1  | Pass           |
-| `ink-inverse` `#ffffff` | `gold-ink` `#8a5300`      | 6.33:1  | Pass           |
-| `ink-inverse` `#ffffff` | `danger-ink` `#b02e0e`    | 6.48:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `surface` `#f6f6f6`       | 5.99:1  | Pass           |
-| `info-ink` `#0369a1`    | `bg` `#ffffff`            | 5.93:1  | Pass           |
-| `ink-inverse` `#ffffff` | `info-ink` `#0369a1`      | 5.93:1  | Pass           |
-| `ink-inverse` `#ffffff` | `instant` `#0b7a5a`       | 5.32:1  | Pass           |
-| `#075e54` (WhatsApp)    | `bg` `#ffffff`            | 7.67:1  | Pass           |
-| `#075e54` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 6.91:1  | Pass           |
-| `ink-inverse` `#ffffff` | `#075e54` (WhatsApp)      | 7.67:1  | Pass           |
-| `#128c7e` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 3.73:1  | Non-text pass  |
-| `#0088cc` (Telegram)    | `#e8f4fb` (Telegram tint) | 3.48:1  | Non-text pass  |
-| `success` `#127658`     | `success-soft` `#e0f0ea`  | 4.74:1  | Pass           |
-| `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee`  | 4.70:1  | Pass           |
-| `danger` `#d93a12`      | `bg` `#ffffff`            | 4.60:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `bg` `#ffffff`            | 6.48:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `danger-soft` `#fdeae4`   | 5.57:1  | Pass           |
-| `danger-ink` `#b02e0e`  | `brand-soft` `#e1f0ed`    | 5.52:1  | Pass           |
-| `#075e54` (WhatsApp)    | `#25d366` (WhatsApp)      | 3.87:1  | Non-text pass  |
-| `gold-ink` `#8a5300`    | `bg` `#ffffff`            | 6.33:1  | Pass           |
-| `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`     | 6.01:1  | Pass           |
-| `gold-ink` `#8a5300`    | `surface` `#f6f6f6`       | 5.86:1  | Pass           |
-| `info-ink` `#0369a1`    | `info-soft` `#e0f2fe`     | 5.17:1  | Pass           |
-| `purple-ink` `#6d28d9`  | `purple-soft` `#ede9fe`   | 5.98:1  | Pass           |
-| `brand-ink` `#0a544b`   | `surface` `#f6f6f6`       | 8.16:1  | Pass           |
-| `ink-inverse` `#ffffff` | `success` `#127658`       | 5.59:1  | Pass           |
-| `brand` `#148576`       | `surface` `#f6f6f6`       | 4.18:1  | **Fail**       |
-| `danger` `#d93a12`      | `surface` `#f6f6f6`       | 4.26:1  | **Fail**       |
-| `danger` `#d93a12`      | `danger-soft` `#fdeae4`   | 3.96:1  | **Fail**       |
-| `danger` `#d93a12`      | `brand-soft` `#e1f0ed`    | 3.92:1  | **Fail**       |
-| `ink-inverse` `#ffffff` | `#25d366` (WhatsApp)      | 1.98:1  | **Fail** (all) |
-| `gold` `#b37400`        | `bg` `#ffffff`            | 3.88:1  | **Fail**       |
-| `brand` `#148576`       | `brand-soft` `#e1f0ed`    | 3.85:1  | **Fail**       |
-| `gold` `#b37400`        | `gold-soft` `#fff9e6`     | 3.68:1  | **Fail**       |
-| `warning` `#b8860b`     | `bg` `#ffffff`            | 3.25:1  | **Fail**       |
-| `warning` `#b8860b`     | `accent-soft` `#fdf1dc`   | 2.91:1  | **Fail**       |
-| `accent` `#faa21b`      | `bg` `#ffffff`            | 2.05:1  | **Fail** (all) |
-| `accent` `#faa21b`      | `accent-soft` `#fdf1dc`   | 1.83:1  | **Fail** (all) |
-| `#0088cc` (Telegram)    | `#e8f4fb` (Telegram tint) | 3.48:1  | **Fail**       |
-| `ink-inverse` `#ffffff` | `#0088cc` (Telegram)      | 3.89:1  | **Fail**       |
-| `#128c7e` (WhatsApp)    | `bg` `#ffffff`            | 4.14:1  | **Fail**       |
-| `ink-inverse` `#ffffff` | `brand` at 92% opacity    | 4.07:1  | **Fail**       |
+| Foreground              | Background                | Ratio   | Normal text                   |
+| ----------------------- | ------------------------- | ------- | ----------------------------- |
+| `ink` `#1c2422`         | `bg` `#ffffff`            | 15.85:1 | Pass                          |
+| `ink-body` `#4a4a4a`    | `bg` `#ffffff`            | 8.86:1  | Pass                          |
+| `ink-body` `#4a4a4a`    | `surface-2` `#eeefef`     | 7.69:1  | Pass                          |
+| `ink-muted` `#606967`   | `bg` `#ffffff`            | 5.65:1  | Pass                          |
+| `ink-muted` `#606967`   | `surface-2` `#eeefef`     | 4.91:1  | Pass                          |
+| `ink-muted` `#606967`   | `brand-soft` `#e1f0ed`    | 4.82:1  | Pass                          |
+| `brand-ink` `#0a544b`   | `brand-soft` `#e1f0ed`    | 7.51:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `brand` `#148576`         | 4.52:1  | Pass (barely)                 |
+| `brand` `#148576`       | `bg` `#ffffff`            | 4.52:1  | Pass (barely)                 |
+| `accent-ink` `#3a2400`  | `accent` `#faa21b`        | 7.16:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `accent-soft` `#fdf1dc`   | 5.66:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `gold-ink` `#8a5300`      | 6.33:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `danger-ink` `#b02e0e`    | 6.48:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `surface` `#f6f6f6`       | 5.99:1  | Pass                          |
+| `info-ink` `#0369a1`    | `bg` `#ffffff`            | 5.93:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `info-ink` `#0369a1`      | 5.93:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `instant` `#0b7a5a`       | 5.32:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `bg` `#ffffff`            | 7.67:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 6.91:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `#075e54` (WhatsApp)      | 7.67:1  | Pass                          |
+| `#128c7e` (WhatsApp)    | `#e7f7ed` (WhatsApp tint) | 3.73:1  | Non-text pass                 |
+| `#0088cc` (Telegram)    | `#e8f4fb` (Telegram tint) | 3.48:1  | Non-text pass (fails as text) |
+| `success` `#127658`     | `success-soft` `#e0f0ea`  | 4.74:1  | Pass                          |
+| `instant` `#0b7a5a`     | `instant-soft` `#e3f5ee`  | 4.70:1  | Pass                          |
+| `danger` `#d93a12`      | `bg` `#ffffff`            | 4.60:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `bg` `#ffffff`            | 6.48:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `danger-soft` `#fdeae4`   | 5.57:1  | Pass                          |
+| `danger-ink` `#b02e0e`  | `brand-soft` `#e1f0ed`    | 5.52:1  | Pass                          |
+| `#075e54` (WhatsApp)    | `#25d366` (WhatsApp)      | 3.87:1  | Non-text pass                 |
+| `gold-ink` `#8a5300`    | `bg` `#ffffff`            | 6.33:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `gold-soft` `#fff9e6`     | 6.01:1  | Pass                          |
+| `gold-ink` `#8a5300`    | `surface` `#f6f6f6`       | 5.86:1  | Pass                          |
+| `info-ink` `#0369a1`    | `info-soft` `#e0f2fe`     | 5.17:1  | Pass                          |
+| `purple-ink` `#6d28d9`  | `purple-soft` `#ede9fe`   | 5.98:1  | Pass                          |
+| `brand-ink` `#0a544b`   | `surface` `#f6f6f6`       | 8.16:1  | Pass                          |
+| `ink-inverse` `#ffffff` | `success` `#127658`       | 5.59:1  | Pass                          |
+| `brand` `#148576`       | `surface` `#f6f6f6`       | 4.18:1  | **Fail**                      |
+| `danger` `#d93a12`      | `surface` `#f6f6f6`       | 4.26:1  | **Fail**                      |
+| `danger` `#d93a12`      | `danger-soft` `#fdeae4`   | 3.96:1  | **Fail**                      |
+| `danger` `#d93a12`      | `brand-soft` `#e1f0ed`    | 3.92:1  | **Fail**                      |
+| `ink-inverse` `#ffffff` | `#25d366` (WhatsApp)      | 1.98:1  | **Fail** (all)                |
+| `gold` `#b37400`        | `bg` `#ffffff`            | 3.88:1  | **Fail**                      |
+| `brand` `#148576`       | `brand-soft` `#e1f0ed`    | 3.85:1  | **Fail**                      |
+| `gold` `#b37400`        | `gold-soft` `#fff9e6`     | 3.68:1  | **Fail**                      |
+| `warning` `#b8860b`     | `bg` `#ffffff`            | 3.25:1  | **Fail**                      |
+| `warning` `#b8860b`     | `accent-soft` `#fdf1dc`   | 2.91:1  | **Fail**                      |
+| `accent` `#faa21b`      | `bg` `#ffffff`            | 2.05:1  | **Fail** (all)                |
+| `accent` `#faa21b`      | `accent-soft` `#fdf1dc`   | 1.83:1  | **Fail** (all)                |
+| `ink-inverse` `#ffffff` | `#0088cc` (Telegram)      | 3.89:1  | **Fail**                      |
+| `#128c7e` (WhatsApp)    | `bg` `#ffffff`            | 4.14:1  | **Fail**                      |
+| `ink-inverse` `#ffffff` | `brand` at 92% opacity    | 4.07:1  | **Fail**                      |
 
 Rules that follow from the table:
 
@@ -208,6 +207,19 @@ Rules that follow from the table:
 - **Brand-colour fills keep a dark icon when the fill is light.** The footer
   WhatsApp hover is WhatsApp's own dark teal `#075e54` on `#25d366` (3.87:1);
   white on that green is 1.98:1.
+- **Colours TASK-0086 changed rather than only tokenised.** Each one now uses
+  the nearest token, and all still pass AA (pm-03 review REV-0112):
+  - Renewal-row stripes moved from `#a07c1a` to `--color-gold` `#b37400`, and
+    from `#b4231d` to `--color-danger` `#d93a12`.
+  - The lapsed-row background moved from `#fdf6f5` to `--color-danger-soft`
+    `#fdeae4`.
+  - Critical warning text is now `--color-danger-ink` at 5.57:1 (was 8.97:1).
+  - The warning note is `--color-gold-ink` at 6.01:1 (was 6.84:1).
+  - The warranty notice moved from `#7a4a00` to `--color-gold-ink` `#8a5300`.
+  - The discount tag moved from `#2e1c00` to `--color-accent-ink` `#3a2400`.
+  - The mega-panel shadow went from 22% to 18% alpha, as `--shadow-card-hover`.
+  - A sold-out variant's border and background no longer fade with its text.
+  - The stars moved from amber to gold.
 - The `tokens.css` header comment gives `#4a4a4a` as "8.6:1"; the computed value
   is 8.86:1.
 

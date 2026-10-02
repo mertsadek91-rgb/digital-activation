@@ -1634,10 +1634,10 @@
       "id": "TASK-0086",
       "title": "Replace hardcoded colours in footer.css (then catalog, contact, account, warranty CSS) with tokens; fix failing contrast pairs",
       "type": "design-system",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 40,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "design-system-architect",
@@ -1666,9 +1666,9 @@
         "packages/ui/src/tokens.css"
       ],
       "created_at": "2026-09-30",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0086.md"
+      "file": "tasks/completed/TASK-0086.md"
     },
     {
       "id": "TASK-0087",

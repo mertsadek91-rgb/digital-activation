@@ -105,12 +105,8 @@
         "interaction-designer",
         "accessibility-specialist"
       ],
-      "active_tasks": [
-        "TASK-0086"
-      ],
-      "owned_tasks": [
-        "TASK-0086"
-      ],
+      "active_tasks": [],
+      "owned_tasks": [],
       "reviews": [],
       "blocked_work": [],
       "pending_decisions": [],
@@ -119,7 +115,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T06:52:45Z"
+      "last_activity": "2026-10-02T08:19:23Z"
     },
     {
       "id": "pm-04",

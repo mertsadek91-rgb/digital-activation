@@ -194,16 +194,14 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0086",
-      "assignments": [
-        "TASK-0086"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-02T06:51:40Z"
     },
@@ -275,13 +273,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0086"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-09-30T07:53:57Z"
     },
