@@ -73,7 +73,7 @@ function CustomersScreen() {
   const router = useRouter();
   const t = useT('customers');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('customers');
   const [data, setData] = useState<AdminCustomerList | null>(null);
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [page, setPage] = useState(1);

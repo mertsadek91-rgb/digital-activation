@@ -33,7 +33,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const t = useT('orders');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('orders');
   const [data, setData] = useState<AdminOrderList | null>(null);
   const [filter, setFilter] = useState('awaiting-payment');
   const [query, setQuery] = useState('');

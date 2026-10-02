@@ -21,7 +21,8 @@ import { ReviewsService } from '../reviews/reviews.service.js';
  * SUPPORT is on the write routes for the same reason it is on the inbox:
  * reading a review and deciding whether it is a real customer or a link farm
  * is support work, and it should not require the role that can change a price
- * or read a licence key. READONLY can see the queue and move nothing.
+ * or read a licence key. MARKETING can read the queue and move nothing;
+ * READONLY cannot open it, since it carries customer emails (TASK-0095).
  *
  * Every decision is audited. A review is the one thing on this site written by
  * somebody outside it, and "who took this down" has to be answerable — the
@@ -34,6 +35,7 @@ import { ReviewsService } from '../reviews/reviews.service.js';
 export class ReviewsAdminController {
   constructor(private readonly reviews: ReviewsService) {}
 
+  @Roles('ADMIN', 'SUPPORT', 'MARKETING')
   @Get()
   @ZodResponse(adminReviewListSchema)
   @ApiOperation({ summary: 'Reviews by status, oldest first while pending' })

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { LocaleSwitcher } from '../i18n/locale-switcher';
 import { useT } from '../i18n/provider';
 import { api } from '../lib/api';
+import { canOpen } from '../lib/roles';
 import { Icon, initials, type IconName } from './icons';
 import { useAdminTheme } from './theme-provider';
 
@@ -90,8 +91,11 @@ export function Nav({
   const [messages, setMessages] = useState<{ waiting: number; overdue: number } | null>(null);
   const [reviews, setReviews] = useState<number | null>(null);
 
+  // A role that is not offered a screen does not ask for its badge either.
+  const role = me.role;
+
   useEffect(() => {
-    if (given !== undefined) return;
+    if (given !== undefined || !canOpen(role, 'queue')) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -110,10 +114,10 @@ export function Nav({
     return () => {
       cancelled = true;
     };
-  }, [current, given]);
+  }, [current, given, role]);
 
   useEffect(() => {
-    if (givenMessages !== undefined) return;
+    if (givenMessages !== undefined || !canOpen(role, 'messages')) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -126,10 +130,10 @@ export function Nav({
     return () => {
       cancelled = true;
     };
-  }, [current, givenMessages]);
+  }, [current, givenMessages, role]);
 
   useEffect(() => {
-    if (givenReviews !== undefined) return;
+    if (givenReviews !== undefined || !canOpen(role, 'reviews')) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -142,7 +146,7 @@ export function Nav({
     return () => {
       cancelled = true;
     };
-  }, [current, givenReviews]);
+  }, [current, givenReviews, role]);
 
   const reviewsPending = givenReviews ?? reviews ?? null;
   const inboxWaiting = givenMessages ?? messages?.waiting ?? null;
@@ -247,7 +251,7 @@ export function Nav({
 
   /* --- the menu --------------------------------------------------------- */
 
-  const groups: { label: string; items: NavItem[] }[] = [
+  const allGroups: { label: string; items: NavItem[] }[] = [
     {
       label: t('groupOverview'),
       items: [
@@ -315,6 +319,12 @@ export function Nav({
     },
   ];
 
+  // Only the screens this role can load (TASK-0095); the API enforces either way.
+  const groups = allGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => canOpen(role, item.key)) }))
+    .filter((group) => group.items.length > 0);
+  const home = canOpen(role, 'dashboard') ? 'dashboard' : 'products';
+
   const currentLabel = groups.flatMap((g) => g.items).find((item) => item.key === current)?.label;
 
   const shellClass = [
@@ -341,7 +351,7 @@ export function Nav({
         <button
           type="button"
           className="app-sidebar__brand"
-          onClick={() => navigate('dashboard')}
+          onClick={() => navigate(home)}
           aria-label={t('goToDashboard')}
           title={t('panelTitle')}
         >

@@ -4,22 +4,21 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type LaunchReadiness, launchReadinessSchema } from '@da/contracts';
 
 import { ZodResponse } from '../common/openapi.js';
-import { StaffGuard } from '../auth/staff.guard.js';
+import { Roles, StaffGuard } from '../auth/staff.guard.js';
 
 import { LaunchService } from './launch.service.js';
 
 /**
  * Whether the store could take an order right now.
  *
- * Readable by every staff role including READONLY, and there is nothing to
- * write: it is six questions asked of things that already know their own
- * answers. The only sensitive thing on it is the shape of what is not
- * configured yet, which anybody with a panel session can see on the screen
- * that configures it.
+ * OWNER and ADMIN only (TASK-0095). Nothing here is written, but it shows
+ * how the store's infrastructure is configured and where mail delivery is
+ * failing, which is for the people who can fix it.
  */
 @ApiTags('admin')
 @Controller('admin/launch')
 @UseGuards(StaffGuard)
+@Roles('OWNER', 'ADMIN')
 export class LaunchController {
   constructor(private readonly launch: LaunchService) {}
 

@@ -12,7 +12,7 @@ import {
   productImagesSchema,
 } from '@da/contracts';
 
-import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { AnyStaff, Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
@@ -33,6 +33,7 @@ import { MediaService } from './media.service.js';
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
+  @AnyStaff()
   @Get('products/:slug/images')
   @ZodResponse(productImagesSchema)
   @ApiOperation({ summary: "A product's images, in display order" })

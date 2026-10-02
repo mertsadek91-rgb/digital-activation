@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../../i18n/provider';
 import { api, ApiError } from '../../../lib/api';
+import { canReadProductTerms } from '../../../lib/roles';
 import { Nav } from '../../nav';
 import { ContentForm } from '../content-form';
 import { CopyForm } from '../copy-form';
@@ -148,6 +149,13 @@ export default function ProductEditPage() {
   if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canWrite = ['OWNER', 'ADMIN', 'CATALOG'].includes(me.role);
+  // Terms carry costUsd, and stock and SEO copy are read from the same
+  // OWNER/ADMIN/CATALOG routes; other roles are not shown sections that would
+  // only come back 403 (TASK-0095).
+  const seesTerms = canReadProductTerms(me.role);
+  const sections = SECTIONS.filter(
+    (section) => seesTerms || !['terms', 'stock', 'seo'].includes(section.id),
+  );
   const published = row?.status === 'PUBLISHED';
 
   async function togglePublish(): Promise<void> {
@@ -265,7 +273,7 @@ export default function ProductEditPage() {
 
       <div className="edit-layout">
         <nav className="edit-nav" aria-label={t('sectionsLabel')}>
-          {SECTIONS.map((section) => (
+          {sections.map((section) => (
             <a
               key={section.id}
               href={`#section-${section.id}`}
@@ -315,31 +323,37 @@ export default function ProductEditPage() {
             />
           </section>
 
-          <section id="section-terms" className="edit-section">
-            <TermsForm slug={slug} canWrite={canWrite} onSaved={onSaved} onError={onError} />
-          </section>
+          {seesTerms ? (
+            <>
+              <section id="section-terms" className="edit-section">
+                <TermsForm slug={slug} canWrite={canWrite} onSaved={onSaved} onError={onError} />
+              </section>
 
-          <section id="section-stock" className="edit-section">
-            <h3>{t('stockHeading')}</h3>
-            <p className="lede-sm">{t('stockLede')}</p>
-            <StockForm slug={slug} canWrite={canWrite} onSaved={onSaved} onError={onError} />
-          </section>
+              <section id="section-stock" className="edit-section">
+                <h3>{t('stockHeading')}</h3>
+                <p className="lede-sm">{t('stockLede')}</p>
+                <StockForm slug={slug} canWrite={canWrite} onSaved={onSaved} onError={onError} />
+              </section>
+            </>
+          ) : null}
 
           <section id="section-images" className="edit-section">
             <ImagesForm slug={slug} canWrite={canWrite} onChanged={onSaved} onError={onError} />
           </section>
 
-          <section id="section-seo" className="edit-section">
-            <h3>{t('seoCopy')}</h3>
-            <p className="lede-sm">{t('seoLede')}</p>
-            <CopyForm
-              slug={slug}
-              locale={locale}
-              canWrite={canWrite}
-              onSaved={onSaved}
-              onError={onError}
-            />
-          </section>
+          {seesTerms ? (
+            <section id="section-seo" className="edit-section">
+              <h3>{t('seoCopy')}</h3>
+              <p className="lede-sm">{t('seoLede')}</p>
+              <CopyForm
+                slug={slug}
+                locale={locale}
+                canWrite={canWrite}
+                onSaved={onSaved}
+                onError={onError}
+              />
+            </section>
+          ) : null}
 
           <section id="section-content" className="edit-section">
             <ContentForm

@@ -50,7 +50,7 @@ export default function PaymentsPage() {
   const t = useT('payments');
   const c = useT('common');
   const fp = useT('finalProcessor');
-  const me = useStaff();
+  const me = useStaff('payments');
   const [view, setView] = useState<PaymentSettingsView | null>(null);
   const [draft, setDraft] = useState<PaymentSettings | null>(null);
   const [error, setError] = useState<string | null>(null);

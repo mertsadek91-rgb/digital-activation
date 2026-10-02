@@ -14,9 +14,46 @@ import { AuthService, type AccessClaims } from './auth.service.js';
 
 export const ROLES_KEY = 'da:roles';
 export const STALE_PASSWORD_OK_KEY = 'da:stalePasswordOk';
+export const ANY_STAFF_KEY = 'da:anyStaff';
 
 /** Restricts a route to these staff roles. OWNER always passes. */
 export const Roles = (...roles: StaffRole[]) => SetMetadata(ROLES_KEY, roles);
+
+/**
+ * Opens a route to every signed-in staff role, READONLY included (TASK-0095).
+ *
+ * StaffGuard denies by default: a route with neither `@Roles` nor this marker
+ * is refused to everyone but OWNER, so forgetting a decorator closes a route
+ * rather than opening it. Use this only for self-service routes and for
+ * low-sensitivity catalogue and content reads.
+ */
+export const AnyStaff = () => SetMetadata(ANY_STAFF_KEY, true);
+
+/** A route handler or controller class, as Nest's Reflector takes it. */
+export type MetadataTarget = Parameters<Reflector['get']>[1];
+
+/** What a route asks of the caller's role, nearest declaration first. */
+export type RouteAccess =
+  { kind: 'roles'; roles: readonly StaffRole[] } | { kind: 'any-staff' } | { kind: 'unmarked' };
+
+/**
+ * Resolves a route's access rule. A method's own `@Roles` or `@AnyStaff` beats
+ * the controller's; `@Roles` beats `@AnyStaff` at the same level, so the
+ * stricter of two conflicting marks wins.
+ */
+export function routeAccess(
+  reflector: Reflector,
+  handler: MetadataTarget,
+  controller: MetadataTarget,
+): RouteAccess {
+  for (const target of [handler, controller]) {
+    const roles = reflector.get<StaffRole[] | undefined>(ROLES_KEY, target);
+    if (roles) return { kind: 'roles', roles };
+    if (reflector.get<boolean | undefined>(ANY_STAFF_KEY, target) === true)
+      return { kind: 'any-staff' };
+  }
+  return { kind: 'unmarked' };
+}
 
 /**
  * Marks the few routes an account still on its generated password may reach:
@@ -70,13 +107,12 @@ export class StaffGuard implements CanActivate {
       }
     }
 
-    const required = this.reflector.getAllAndOverride<StaffRole[] | undefined>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-
-    if (!required || required.length === 0) return true;
-    if (claims.role === 'OWNER' || required.includes(claims.role)) return true;
+    // Deny by default (TASK-0095): no `@Roles` and no `@AnyStaff` is a route
+    // nobody decided on, and it stays closed to everyone but OWNER.
+    if (claims.role === 'OWNER') return true;
+    const access = routeAccess(this.reflector, context.getHandler(), context.getClass());
+    if (access.kind === 'any-staff') return true;
+    if (access.kind === 'roles' && access.roles.includes(claims.role)) return true;
 
     throw new ForbiddenException('Your role does not allow this.');
   }

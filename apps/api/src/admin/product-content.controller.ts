@@ -10,7 +10,7 @@ import {
 import { Locale } from '@da/db';
 import { z } from 'zod';
 
-import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { AnyStaff, Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
@@ -32,6 +32,7 @@ const localeQuery = z.object({ locale: z.enum(['ar', 'en']).default('ar') });
 export class ProductContentController {
   constructor(private readonly content: ProductContentService) {}
 
+  @AnyStaff()
   @Get('products/:slug/content')
   @ZodResponse(productContentSchema)
   @ApiOperation({ summary: 'The description as blocks, with its word count' })

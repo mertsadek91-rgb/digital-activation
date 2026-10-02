@@ -17,7 +17,7 @@ import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
 import { AuthService, type SessionResult } from './auth.service.js';
-import { StaffGuard, StalePasswordOk, type StaffRequest } from './staff.guard.js';
+import { AnyStaff, StaffGuard, StalePasswordOk, type StaffRequest } from './staff.guard.js';
 
 const ACCESS_COOKIE = 'da_access';
 const REFRESH_COOKIE = 'da_refresh';
@@ -124,6 +124,7 @@ export class AuthController {
   }
 
   @UseGuards(StaffGuard)
+  @AnyStaff()
   @StalePasswordOk()
   @Get('me')
   @ZodResponse(staffMeSchema)
@@ -142,6 +143,7 @@ export class AuthController {
    */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseGuards(StaffGuard)
+  @AnyStaff()
   @Post('step-up')
   @ApiOperation({ summary: 'Re-verify TOTP without signing out' })
   async stepUp(
@@ -166,6 +168,7 @@ export class AuthController {
    */
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @UseGuards(StaffGuard)
+  @AnyStaff()
   @StalePasswordOk()
   @Post('password')
   @ApiOperation({ summary: 'Set a new password; revokes every other session' })

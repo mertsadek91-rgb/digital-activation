@@ -29,7 +29,7 @@ export default function VaultPage() {
   const router = useRouter();
   const t = useT('vault');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('vault');
   const [stock, setStock] = useState<VaultStockRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);

@@ -52,7 +52,7 @@ export default function MessagesPage() {
   const router = useRouter();
   const t = useT('messages');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('messages');
   const [inbox, setInbox] = useState<ContactList | null>(null);
   const [includeHandled, setIncludeHandled] = useState(false);
   const [error, setError] = useState<string | null>(null);

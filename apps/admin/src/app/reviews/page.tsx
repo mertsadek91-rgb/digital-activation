@@ -45,7 +45,7 @@ export default function ReviewsPage() {
   const router = useRouter();
   const t = useT('reviews');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('reviews');
   const [status, setStatus] = useState<ReviewStatus>('PENDING');
   const [list, setList] = useState<AdminReviewList | null>(null);
   const [error, setError] = useState<string | null>(null);
