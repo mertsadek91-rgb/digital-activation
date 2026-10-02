@@ -211,7 +211,6 @@
         "TASK-0060",
         "TASK-0082",
         "TASK-0089",
-        "TASK-0098",
         "TASK-0099"
       ],
       "owned_tasks": [
@@ -227,13 +226,10 @@
         "TASK-0060",
         "TASK-0082",
         "TASK-0089",
-        "TASK-0098",
         "TASK-0099",
         "TASK-0100"
       ],
-      "reviews": [
-        "TASK-0098"
-      ],
+      "reviews": [],
       "blocked_work": [
         "TASK-0082"
       ],
@@ -249,7 +245,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T11:07:12Z"
+      "last_activity": "2026-10-02T11:19:32Z"
     },
     {
       "id": "pm-07",

@@ -814,7 +814,6 @@
         "TASK-0033",
         "TASK-0080",
         "TASK-0082",
-        "TASK-0098",
         "TASK-0100"
       ],
       "supporting": [
@@ -826,7 +825,7 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 7,
+      "workload": 6,
       "blockers": [
         "TASK-0080",
         "TASK-0082"
