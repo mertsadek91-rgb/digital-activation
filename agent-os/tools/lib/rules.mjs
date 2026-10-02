@@ -158,6 +158,12 @@ export function writeGuards(before, after, events, ctx = {}) {
       }
     }
 
+    if (ev.type === 'review_invalidated') {
+      const r = before.reviews.find((x) => x.review_id === ev.data.review_id);
+      if (r && r.target === ev.entity) errs.push(...invalidationRefusals(before, r, ev));
+      // Unknown, already-invalidated or mismatched ids are refused by materialize().
+    }
+
     if (ev.type === 'opportunity_decided' && ['APPROVE', 'APPROVE_AND_PRIORITIZE'].includes(ev.data.decision)) {
       const cr = ev.data.related_change_request && after.entities.get(ev.data.related_change_request);
       if (!cr || cr.source_opportunity !== ev.entity)
@@ -184,6 +190,43 @@ export function writeGuards(before, after, events, ctx = {}) {
       }
     }
   }
+  return errs;
+}
+
+/**
+ * Who may strike a review (TASK-0092). Judged against the state at the time of
+ * the event, so replay applies the same authority the CLI did.
+ *   - never an owner record: an agent cannot unsay the owner;
+ *   - VETO / BLOCKING_OBJECTION only by the reviewer who recorded it — anyone
+ *     else lifts a block through a later review or the owner's accept-risk;
+ *   - otherwise: the original reviewer, exec-director, the target's responsible
+ *     manager, the reviewer's own manager (reports_to), or a manager in the
+ *     decision class's owner/escalation chain (decision-rights.json);
+ *   - never the target's primary agent striking someone else's review of its work.
+ */
+export function reviewInvalidators(state, r) {
+  const managers = permissions().managers;
+  const P = people();
+  const target = state.entities.get(r.target) ?? { id: r.target };
+  const cls = classRights(target);
+  const chain = [cls?.owner, ...(cls?.escalation ?? [])];
+  const out = new Set([r.reviewer, 'exec-director']);
+  for (const m of [target.responsible_manager, P[r.reviewer]?.reports_to, ...chain]) if (m && managers[m]) out.add(m);
+  return out;
+}
+const classRights = (target) => decisionRights().classes[decisionClassOf(target)] ?? null;
+
+function invalidationRefusals(state, r, ev) {
+  const errs = [];
+  const target = state.entities.get(r.target);
+  if (!ev.reason || !String(ev.reason).trim()) errs.push(`${r.review_id}: an invalidation needs a --reason`);
+  if (isOwner(r.reviewer) || isOwner(r.actor)) errs.push(`${r.review_id} is the owner's record; an agent cannot invalidate it`);
+  else if (BLOCKING.has(r.result) && ev.actor !== r.reviewer)
+    errs.push(`${r.review_id} is a ${r.result} by ${r.reviewer}; only ${r.reviewer} can withdraw it (or the owner accepts the risk)`);
+  else if (target?.primary_agent === ev.actor && ev.actor !== r.reviewer)
+    errs.push(`${r.review_id}: ${ev.actor} is the primary agent of ${r.target} and cannot invalidate another reviewer's review of its own work`);
+  else if (!reviewInvalidators(state, r).has(ev.actor))
+    errs.push(`${ev.actor} may not invalidate ${r.review_id} (allowed: ${[...reviewInvalidators(state, r)].join(', ')})`);
   return errs;
 }
 

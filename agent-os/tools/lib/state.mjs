@@ -69,6 +69,9 @@ export function materialize(events) {
     entities: new Map(),
     history: new Map(),
     reviews: [],
+    // Reviews struck by a review_invalidated event (TASK-0092). They stay
+    // visible here and in the history, but nothing that counts reviews sees them.
+    invalidated_reviews: [],
     evidence: new Map(),
     links: [],
     ranking: { order: [], at: null, by: null },
@@ -114,6 +117,23 @@ export function materialize(events) {
         s.reviews.push({ ...clone(d), target: ev.entity, ts: ev.ts, actor: ev.actor, event: ev.id });
         hist(ev.entity, ev, `${d.review_type} review by ${d.reviewer}: ${d.result}`);
         break;
+      case 'review_invalidated': {
+        // Append-only: the original review_recorded line is never edited. The
+        // review moves out of `reviews`, so completion, blocking, governor
+        // rounds, readiness and every projection ignore it from here on.
+        const i = s.reviews.findIndex((r) => r.review_id === d.review_id);
+        if (i < 0) {
+          const gone = s.invalidated_reviews.some((r) => r.review_id === d.review_id);
+          s.errors.push(`${ev.id}: ${d.review_id} ${gone ? 'is already invalidated' : 'is not a recorded review'}`);
+        } else if (s.reviews[i].target !== ev.entity) s.errors.push(`${ev.id}: ${d.review_id} is a review of ${s.reviews[i].target}, not ${ev.entity}`);
+        else {
+          const [r] = s.reviews.splice(i, 1);
+          r.invalidated = { by: ev.actor, ts: ev.ts, reason: ev.reason ?? null, event: ev.id };
+          s.invalidated_reviews.push(r);
+        }
+        hist(ev.entity, ev, `review ${d.review_id} invalidated by ${ev.actor}`);
+        break;
+      }
       case 'evidence_added':
         if (!s.evidence.has(ev.entity)) s.evidence.set(ev.entity, []);
         s.evidence.get(ev.entity).push({ ...clone(d), ts: ev.ts, actor: ev.actor });
@@ -179,6 +199,9 @@ export function nextId(state, prefix) {
   return `${prefix}-${String(max + 1).padStart(4, '0')}`;
 }
 
+/** Every review ever recorded, invalidated or not — for id allocation. */
+export const allReviews = (state) => [...state.reviews, ...state.invalidated_reviews];
+
 export function nextSubId(items, key, prefix) {
   let max = 0;
   for (const i of items) if (i[key]?.startsWith(prefix + '-')) max = Math.max(max, Number(i[key].split('-')[1]));
@@ -188,6 +211,7 @@ export function nextSubId(items, key, prefix) {
 export function eventErrors(ev) {
   const errs = validate(ev, schema('event')).map((e) => `event ${ev.type} ${ev.entity}: ${e}`);
   if (ev.type === 'review_recorded') errs.push(...validate(ev.data, schema('review')).map((e) => `review: ${e}`));
+  if (ev.type === 'review_invalidated' && !/^REV-\d{4}$/.test(ev.data?.review_id ?? '')) errs.push(`review_invalidated ${ev.entity}: data.review_id must be a REV-NNNN id`);
   if (ev.type === 'evidence_added') errs.push(...validate(ev.data, schema('evidence')).map((e) => `evidence: ${e}`));
   return errs;
 }

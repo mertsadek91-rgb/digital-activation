@@ -265,7 +265,7 @@ export function project({ check = false, now = null } = {}) {
   outputs.set('CHANGE_INDEX.json', json({ generated_by: G, change_requests: withFile(changes) }));
   outputs.set('DECISION_INDEX.json', json({ generated_by: G, decisions: withFile(decisions), consensus: withFile(consensus) }));
   outputs.set('OPPORTUNITY_INDEX.json', json({ generated_by: G, opportunities: withFile(opps), signals: withFile(signals), insights: withFile(insights), evidence: Object.fromEntries(state.evidence), links: state.links, ranking: state.ranking, owner_decisions: state.decisions, portfolio: state.portfolio }));
-  outputs.set('REVIEW_INDEX.json', json({ generated_by: G, reviews: state.reviews }));
+  outputs.set('REVIEW_INDEX.json', json({ generated_by: G, reviews: state.reviews, invalidated_reviews: state.invalidated_reviews }));
   outputs.set('PROJECT_STATE.json', json(projectState));
   outputs.set('AGENT_STATE.json', json({ generated_by: G, agents: agentState }));
   outputs.set('MANAGER_STATE.json', json({ generated_by: G, managers: managerState }));
@@ -277,7 +277,7 @@ export function project({ check = false, now = null } = {}) {
     generated_at: nowIso, config, state: projectState, tasks: taskRows, issues: withFile(issues), changes: withFile(changes),
     decisions: withFile(decisions), consensus: withFile(consensus), epics: epicRows, milestones: milestoneRows,
     opportunities: withFile(opps), signals: withFile(signals), insights: withFile(insights), releases: withFile(releases),
-    evidence: Object.fromEntries(state.evidence), reviews: state.reviews, links: state.links, ranking: state.ranking,
+    evidence: Object.fromEntries(state.evidence), reviews: state.reviews, invalidated_reviews: state.invalidated_reviews, links: state.links, ranking: state.ranking,
     owner_decisions: state.decisions, suggestions: state.suggestions, portfolio: state.portfolio, accepted_risks: state.accepted_risks,
     attention: att, agents: agentState, managers: managerState, permissions: permissions(),
     routing: routing(), decision_rights: decisionRights(), governor: governor(), enums: JSON.parse(readFileSync(join(REPO, 'agent-os', 'policies', 'enums.json'), 'utf8')),
@@ -323,6 +323,7 @@ function summarize(ev, state) {
   switch (ev.type) {
     case 'status_changed': return `${d.from} → ${d.to}${ev.reason ? ' — ' + ev.reason : ''}`;
     case 'review_recorded': return `${d.review_type} review by ${d.reviewer}${d.independent ? ' (independent)' : ''}: ${d.result}${d.findings ? ' — ' + d.findings : ''}`;
+    case 'review_invalidated': return `${d.review_id} (${d.result ?? '?'} by ${d.reviewer ?? '?'}) invalidated — no longer counts${ev.reason ? ' — ' + ev.reason : ''}`;
     case 'opportunity_decided': return `owner: ${d.decision}${d.reason ? ' — ' + d.reason : ''}`;
     case 'evidence_added': return `${d.stance} · ${d.quality} · ${d.claim}`;
     case 'link_added': return `${d.relation} ${d.target}`;

@@ -23,7 +23,7 @@ import { route } from './lib/router.mjs';
 import { attention, duplicateCandidates, list, writeGuards } from './lib/rules.mjs';
 import { enums } from './lib/schema.mjs';
 import { ownerEvents } from './lib/owner.mjs';
-import { commit, entitiesOf, materialize, newEvent, nextId, nextSubId, readEvents } from './lib/state.mjs';
+import { allReviews, commit, entitiesOf, materialize, newEvent, nextId, nextSubId, readEvents } from './lib/state.mjs';
 
 const argv = process.argv.slice(2);
 const cmd = argv[0];
@@ -119,7 +119,7 @@ const commands = {
     console.log(`pm — canonical project state (agent-os/state/events.jsonl)
 
 Read
-  pm show <ID>                          entity, reviews, evidence, history
+  pm show <ID>                          entity, reviews (and invalidated reviews), evidence, history
   pm list <PREFIX> [--status S]         e.g. pm list OPP --status DISCOVERY
   pm attention                          what needs the owner, and why
   pm route --paths a,b [--level N] [--type research|audit|opportunity_shaping] [--user-facing] [--visual]
@@ -134,6 +134,12 @@ Write (every write needs --by <role id> and --reason "<why>")
   pm set <ID> --field key=value [--field …]      (not status)
   pm transition <ID> <STATUS> [--stage S] [--progress N]
   pm review <ID> --type <REVIEW_TYPE> --result <RESULT> [--independent] [--executor subagent:x] --findings "…" [--evidence "…"]
+  pm review-invalidate <REV-ID> --reason "…"
+        strike a review that should not count (e.g. it never happened). Append-only: the original
+        line stays; the review stops counting for completion, blocking, rounds and projections.
+        Allowed: the original reviewer, exec-director, the target's responsible manager, the
+        reviewer's manager, or a manager in the decision class's escalation chain. A VETO or
+        BLOCKING_OBJECTION only by its own reviewer. Never the owner's records.
   pm evidence <OPP> --type <EVIDENCE_TYPE> --stance SUPPORTS|OPPOSES --quality FACT|… --claim "…" --source "…" [--date YYYY-MM-DD] [--strength LOW|…]
   pm link <ID> <TARGET> --relation <RELATION>
   pm suggest-priority-review <OPP> --reason "…"     (never reorders the owner's ranking)
@@ -153,7 +159,7 @@ Migration
     const s = materialize(readEvents());
     const id = positional[0] ?? die('pm show <ID>');
     const e = s.entities.get(id) ?? die(`${id}: not found`);
-    console.log(JSON.stringify({ entity: e, reviews: s.reviews.filter((r) => r.target === id), evidence: s.evidence.get(id) ?? [], links: s.links.filter((l) => l.from === id || l.to === id), decisions: s.decisions.filter((d) => d.opportunity === id), history: s.history.get(id) ?? [] }, null, 2));
+    console.log(JSON.stringify({ entity: e, reviews: s.reviews.filter((r) => r.target === id), invalidated_reviews: s.invalidated_reviews.filter((r) => r.target === id), evidence: s.evidence.get(id) ?? [], links: s.links.filter((l) => l.from === id || l.to === id), decisions: s.decisions.filter((d) => d.opportunity === id), history: s.history.get(id) ?? [] }, null, 2));
   },
 
   list() {
@@ -270,7 +276,7 @@ Migration
     const s = materialize(readEvents());
     const by = actor();
     const data = {
-      review_id: nextSubId(s.reviews, 'review_id', 'REV'),
+      review_id: nextSubId(allReviews(s), 'review_id', 'REV'),
       reviewer: by,
       executor: flags.executor ?? null,
       review_type: need('type'),
@@ -281,6 +287,16 @@ Migration
     };
     write([newEvent({ type: 'review_recorded', entity: id, actor: by, channel: CHANNEL, data, reason: flags.reason ?? null, evidence: flags.evidence ? String(flags.evidence).split('|') : null })]);
     console.log(data.review_id);
+  },
+
+  'review-invalidate'() {
+    const rid = positional[0] ?? die('pm review-invalidate <REV-ID> --by <role> --reason "…"');
+    const s = materialize(readEvents());
+    const by = actor();
+    const reason = need('reason');
+    const r = allReviews(s).find((x) => x.review_id === rid) ?? die(`${rid}: not a recorded review`);
+    if (r.invalidated) die(`${rid} is already invalidated (by ${r.invalidated.by} at ${r.invalidated.ts}); an invalidation is final`, 2);
+    write([newEvent({ type: 'review_invalidated', entity: r.target, actor: by, channel: CHANNEL, data: { review_id: rid, reviewer: r.reviewer, result: r.result }, reason })]);
   },
 
   evidence() {
