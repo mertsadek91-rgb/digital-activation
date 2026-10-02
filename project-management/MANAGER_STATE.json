@@ -141,15 +141,13 @@
       ],
       "active_tasks": [
         "TASK-0021",
-        "TASK-0063",
-        "TASK-0097"
+        "TASK-0063"
       ],
       "owned_tasks": [
         "TASK-0021",
         "TASK-0034",
         "TASK-0041",
-        "TASK-0063",
-        "TASK-0097"
+        "TASK-0063"
       ],
       "reviews": [
         "TASK-0021"
@@ -165,7 +163,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T07:03:44Z"
+      "last_activity": "2026-10-02T07:57:56Z"
     },
     {
       "id": "pm-05",
@@ -210,6 +208,7 @@
       ],
       "active_tasks": [
         "TASK-0011",
+        "TASK-0018",
         "TASK-0030",
         "TASK-0031",
         "TASK-0044",
@@ -248,7 +247,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T07:03:44Z"
+      "last_activity": "2026-10-02T07:57:28Z"
     },
     {
       "id": "pm-07",

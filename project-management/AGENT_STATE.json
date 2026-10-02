@@ -333,12 +333,11 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0097",
+      "state": "AVAILABLE",
+      "current_task": "TASK-0021",
       "assignments": [
         "TASK-0021",
-        "TASK-0034",
-        "TASK-0097"
+        "TASK-0034"
       ],
       "supporting": [
         "TASK-0004",
@@ -347,7 +346,7 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 3,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -591,13 +590,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0097"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-02T06:14:11Z"
     },
@@ -760,8 +757,8 @@
       "staffed": true,
       "executor": "subagent:security-reviewer",
       "squads": [],
-      "state": "WAITING",
-      "current_task": "TASK-0004",
+      "state": "WORKING",
+      "current_task": "TASK-0018",
       "assignments": [
         "TASK-0004",
         "TASK-0011",
@@ -780,7 +777,7 @@
       "opportunities": [],
       "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-02T07:04:49Z"
+      "last_activity": "2026-10-02T07:55:02Z"
     },
     {
       "id": "performance-engineer",

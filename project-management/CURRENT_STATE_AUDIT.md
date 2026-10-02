@@ -3,6 +3,31 @@
 **Task:** TASK-0004 under CR-0002 · **Date:** 2026-09-29 · **Commit:** `434fa1c`
 (origin/main) · Supersedes the TASK-0003 audit of the same day.
 
+> **This is a snapshot of 2026-09-29.** The legacy and migration-data sections
+> still hold. For the new application, these statements have since been
+> superseded (checked on 2026-10-02 against `main` after PR #11; pm-04 review
+> REV-0110):
+>
+> - **Meilisearch** is no longer required at boot. It was dropped entirely
+>   (DEC-0009, TASK-0035), and BUG-0008 is fixed.
+> - **Size:** 24 migrations (was 18), 75 models (was 70), 13 `@Cron` sweeps
+>   (was 9).
+> - **Analytics** is no longer missing. First-party, server-fed events live in
+>   `apps/api/src/analytics` (TASK-0096), and the daily visitor id uses a
+>   random salt (TASK-0097).
+> - **Payments:** checkout goes through Final Processor (TASK-0021). It is the
+>   only processor for Release 1 by the owner's decision. Bank transfer is
+>   still offered until the owner switches it off in the admin.
+> - **Staff access:** TASK-0015 is completed. READONLY is restricted to
+>   catalogue reads, and routes without explicit roles are denied (TASK-0095).
+> - **No longer open:** BUG-0001 is fixed and TASK-0010 is completed. They are
+>   not the "only open HIGH" or the next task any more.
+> - **Governance:** the 34 reviews another tool recorded on 2026-09-30
+>   (REV-0036..0069) were invalidated on 2026-10-02 (TASK-0092).
+>
+> For the current state, use `pnpm pm attention` and `PROJECT_STATUS.md`
+> rather than this document.
+
 **Method (read-only throughout):**
 
 - Git: remote, branches, full-history search for legacy artefacts

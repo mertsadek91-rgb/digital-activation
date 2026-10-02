@@ -1022,6 +1022,48 @@
       "ts": "2026-10-02T07:04:49Z",
       "actor": "security-engineer",
       "event": "E20261002070449-10ca0e"
+    },
+    {
+      "review_id": "REV-0108",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Wiring/DI, replica convergence via skipDuplicates+read, non-throwing salt path, advisory-lock cron, additive migration all sound; 28/28 tests. Nits: stale salt lingers in idle replica memory; salt race/DATE mapping only mock-tested, no int test.",
+      "round": 1,
+      "target": "TASK-0097",
+      "ts": "2026-10-02T07:55:44Z",
+      "actor": "pm-04",
+      "event": "E20261002075544-e1f871"
+    },
+    {
+      "review_id": "REV-0109",
+      "reviewer": "pm-06",
+      "executor": "subagent:general-purpose",
+      "review_type": "RELEASE",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Migration additive and rollback-safe; live 401 confirmed; 28/28 tests. Concerns: backup-retention window and the visitor-id design missing from deployment.md and the tracking plan (fixed in 89132ed); a failed prune raises no alert (alerting is TASK-0031, owner decision pending).",
+      "round": 1,
+      "target": "TASK-0097",
+      "ts": "2026-10-02T07:57:28Z",
+      "actor": "pm-06",
+      "event": "E20261002075728-83062c"
+    },
+    {
+      "review_id": "REV-0110",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Contexts cleanly separated; 7 live/code claims hold. Stale 09-29 snapshot: Meilisearch, 18 migrations, 70 models, 9 crons, analytics missing, Stripe-only checkout, TASK-0015 open, TASK-0010 next task all superseded by the 10-02 releases. As-of block added at the top of CURRENT_STATE_AUDIT.md.",
+      "round": 1,
+      "target": "TASK-0004",
+      "ts": "2026-10-02T07:57:56Z",
+      "actor": "pm-04",
+      "event": "E20261002075756-0229fd"
     }
   ],
   "invalidated_reviews": [
