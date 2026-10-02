@@ -2148,6 +2148,44 @@
       "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/backlog/TASK-0097.md"
+    },
+    {
+      "id": "TASK-0098",
+      "title": "pm CLI: refuse same-status transitions and unknown flags so no-op and accidental events never reach the log",
+      "type": "tooling",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
+      "priority": "MEDIUM",
+      "progress": 90,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "devops-engineer",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "agent-os"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "agent-os/tools/pm.mjs",
+        "agent-os/tools/lib/rules.mjs",
+        "agent-os/evals/cli-guards.test.mjs"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/review/TASK-0098.md"
     }
   ]
 }

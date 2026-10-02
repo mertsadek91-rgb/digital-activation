@@ -823,7 +823,8 @@
         "TASK-0033",
         "TASK-0080",
         "TASK-0082",
-        "TASK-0092"
+        "TASK-0092",
+        "TASK-0098"
       ],
       "supporting": [
         "TASK-0004",
@@ -834,12 +835,12 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 6,
+      "workload": 7,
       "blockers": [
         "TASK-0080",
         "TASK-0082"
       ],
-      "last_activity": "2026-10-01T12:54:48Z"
+      "last_activity": "2026-10-02T07:29:34Z"
     },
     {
       "id": "sre",

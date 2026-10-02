@@ -128,11 +128,13 @@ Read
   pm check                              validate everything; exit 1 on any problem (CI)
   pm sync                               rebuild projections (front matter, indexes, dashboard data)
 
+Every command refuses flags it does not read (there is no --dry-run on writes).
+
 Write (every write needs --by <role id> and --reason "<why>")
   pm create <TASK|BUG|CR|DEC|CONSENSUS|EPIC|MILESTONE|OPP|SIG|INS|REL> --json '{…}'
         OPP/SIG also need --relation <ID>:<DUPLICATE|OVERLAPPING|RELATED|DEPENDENT|DISTINCT> for each similar item
   pm set <ID> --field key=value [--field …]      (not status)
-  pm transition <ID> <STATUS> [--stage S] [--progress N]
+  pm transition <ID> <STATUS> [--stage S] [--progress N]   (same status only if stage or progress changes)
   pm review <ID> --type <REVIEW_TYPE> --result <RESULT> [--independent] [--executor subagent:x] --findings "…" [--evidence "…"]
   pm evidence <OPP> --type <EVIDENCE_TYPE> --stance SUPPORTS|OPPOSES --quality FACT|… --claim "…" --source "…" [--date YYYY-MM-DD] [--strength LOW|…]
   pm link <ID> <TARGET> --relation <RELATION>
@@ -170,9 +172,6 @@ Migration
   },
 
   route() {
-    const known = new Set(['paths', 'level', 'type', 'user-facing', 'visual', 'json']);
-    const unknown = Object.keys(flags).filter((k) => !known.has(k));
-    if (unknown.length) die(`unknown flag(s) for route: ${unknown.map((k) => '--' + k).join(', ')} (did you mean --paths?)`);
     const r = route({
       paths: flags.paths ? String(flags.paths).split(',') : [],
       level: flags.level ? Number(flags.level) : null,
@@ -260,8 +259,11 @@ Migration
     const s = materialize(readEvents());
     const e = s.entities.get(id) ?? die(`${id}: not found`);
     const data = { from: e.status, to, updated_at: today() };
-    if (flags.stage) data.stage = flags.stage;
-    if (flags.progress !== undefined) data.progress = Number(flags.progress);
+    if (flags.stage !== undefined) data.stage = flags.stage === true ? die('--stage needs a value') : flags.stage;
+    if (flags.progress !== undefined) {
+      data.progress = Number(flags.progress);
+      if (flags.progress === true || !Number.isFinite(data.progress)) die(`--progress must be a number (got ${flags.progress === true ? 'nothing' : JSON.stringify(flags.progress)})`);
+    }
     write([newEvent({ type: 'status_changed', entity: id, actor: actor(), channel: CHANNEL, data, reason: need('reason') })]);
   },
 
@@ -357,5 +359,37 @@ Migration
   },
 };
 
+// The flags each command reads. Anything else is refused before the command
+// runs: a mistyped or imagined flag (`--dry-run` on a write) used to be
+// ignored silently, so the caller believed one thing and the log got another.
+const WRITE = ['by', 'reason'];
+const FLAGS = {
+  help: [],
+  show: [],
+  list: ['status'],
+  attention: [],
+  route: ['paths', 'level', 'type', 'user-facing', 'visual', 'json'],
+  similar: [],
+  metrics: [],
+  check: [],
+  sync: [],
+  create: [...WRITE, 'json', 'field', 'id', 'relation'],
+  set: [...WRITE, 'json', 'field'],
+  transition: [...WRITE, 'stage', 'progress'],
+  review: [...WRITE, 'type', 'result', 'independent', 'executor', 'findings', 'evidence'],
+  evidence: [...WRITE, 'type', 'stance', 'quality', 'claim', 'source', 'date', 'strength'],
+  link: [...WRITE, 'relation'],
+  'suggest-priority-review': WRITE,
+  'attempt-failed': WRITE,
+  note: [...WRITE, 'text'],
+  owner: ['reason', 'questions', 'invalidated_if', 'revisit_when', 'suggested_priority', 'target_milestone', 'merged_into', 'authority_level', 'preferences'],
+  'migrate-v1': ['dry-run'],
+};
+
 const run = commands[cmd] ?? (cmd ? () => die(`unknown command "${cmd}" — pm help`) : commands.help);
+if (FLAGS[cmd]) {
+  const unknown = Object.keys(flags).filter((k) => !FLAGS[cmd].includes(k));
+  if (unknown.length)
+    die(`unknown flag(s) for ${cmd}: ${unknown.map((k) => '--' + k).join(', ')} — nothing was written. ${cmd} accepts ${FLAGS[cmd].map((k) => '--' + k).join(', ') || 'no flags'}${cmd === 'route' ? ' (did you mean --paths?)' : ''}.`);
+}
 await run();
