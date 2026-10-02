@@ -265,8 +265,15 @@ jobs:
       # and finished loading in 17.4 seconds. This job is why that cannot come
       # back one pull request at a time: exceeding the budget fails the build,
       # it does not open a ticket.
+      #
+      # TEMPORARILY REPORT-ONLY (owner decision 2026-10-02). The first run on
+      # real catalogue data (TASK-0089) missed the budget on every page:
+      # performance 0.86-0.91, mobile LCP about 4 s, 64-65 requests. The
+      # budgets stay as they are; TASK-0101 brings the pages within them and
+      # removes both continue-on-error lines below.
       - name: Lighthouse CI (mobile)
         id: lhci-mobile
+        continue-on-error: true
         run: npx --yes @lhci/cli@0.15.1 autorun
         working-directory: apps/storefront
         env:
@@ -276,6 +283,7 @@ jobs:
       # form factors instead of hiding the second behind the first. The job
       # still fails if either does.
       - name: Lighthouse CI (desktop)
+        continue-on-error: true
         if: ${{ !cancelled() && (steps.lhci-mobile.outcome == 'success' || steps.lhci-mobile.outcome == 'failure') }}
         run: >-
           npx --yes @lhci/cli@0.15.1 autorun

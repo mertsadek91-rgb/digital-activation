@@ -294,11 +294,13 @@
       "assignments": [
         "TASK-0063"
       ],
-      "supporting": [],
+      "supporting": [
+        "TASK-0101"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-09-30T13:41:36Z"
     },
@@ -788,15 +790,16 @@
       "current_task": "TASK-0051",
       "assignments": [
         "TASK-0051",
-        "TASK-0089"
+        "TASK-0089",
+        "TASK-0101"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 3,
       "blockers": [],
-      "last_activity": "2026-10-02T11:07:12Z"
+      "last_activity": "2026-10-02T11:55:16Z"
     },
     {
       "id": "devops-engineer",
@@ -806,11 +809,10 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "BLOCKED",
+      "state": "AVAILABLE",
       "current_task": "TASK-0033",
       "assignments": [
         "TASK-0033",
-        "TASK-0082",
         "TASK-0100"
       ],
       "supporting": [
@@ -822,10 +824,8 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 5,
-      "blockers": [
-        "TASK-0082"
-      ],
+      "workload": 4,
+      "blockers": [],
       "last_activity": "2026-10-02T11:07:16Z"
     },
     {

@@ -1471,10 +1471,10 @@
       "id": "TASK-0082",
       "title": "Guard: detect script-based writes (node -e, python -c) to protected paths, or document an allowlist",
       "type": "security",
-      "status": "BLOCKED",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 60,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "devops-engineer",
@@ -1507,7 +1507,7 @@
       "created_at": "2026-09-29",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/blocked/TASK-0082.md"
+      "file": "tasks/completed/TASK-0082.md"
     },
     {
       "id": "TASK-0083",
@@ -2282,6 +2282,51 @@
       "updated_at": "2026-10-02",
       "reaudit": null,
       "file": "tasks/backlog/TASK-0100.md"
+    },
+    {
+      "id": "TASK-0101",
+      "title": "Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again",
+      "type": "performance",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "performance-engineer",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-architect"
+      ],
+      "required_reviewers": [
+        "pm-03",
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "storefront"
+      ],
+      "affected_pages": [
+        "/",
+        "/en",
+        "/store/[slug]",
+        "/collections/[slug]",
+        "/cart"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0101.md"
     }
   ]
 }

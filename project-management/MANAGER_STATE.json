@@ -103,7 +103,9 @@
         "accessibility-specialist"
       ],
       "active_tasks": [],
-      "owned_tasks": [],
+      "owned_tasks": [
+        "TASK-0101"
+      ],
       "reviews": [],
       "blocked_work": [],
       "pending_decisions": [],
@@ -156,7 +158,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T11:07:07Z"
+      "last_activity": "2026-10-02T11:55:45Z"
     },
     {
       "id": "pm-05",
@@ -206,7 +208,6 @@
         "TASK-0044",
         "TASK-0051",
         "TASK-0060",
-        "TASK-0082",
         "TASK-0089",
         "TASK-0099"
       ],
@@ -221,15 +222,12 @@
         "TASK-0044",
         "TASK-0051",
         "TASK-0060",
-        "TASK-0082",
         "TASK-0089",
         "TASK-0099",
         "TASK-0100"
       ],
       "reviews": [],
-      "blocked_work": [
-        "TASK-0082"
-      ],
+      "blocked_work": [],
       "pending_decisions": [
         "DEC-0012",
         "DEC-0013"
@@ -242,7 +240,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T11:19:32Z"
+      "last_activity": "2026-10-02T11:55:47Z"
     },
     {
       "id": "pm-07",

@@ -1176,6 +1176,34 @@
       "ts": "2026-10-02T11:19:32Z",
       "actor": "pm-06",
       "event": "E20261002111932-3458a4"
+    },
+    {
+      "review_id": "REV-0119",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Inline-script detection sensibly structured (INLINE gate, shared target resolution, computed-delete); no false positives on prettier/pm/node -p/reads; limits honest (0b, 8-10, rev 6); 73/73 evals. Minor: join-assembled path denied under the secret-file label; 0b/0c indentation in THREAT_MODEL.",
+      "round": 1,
+      "target": "TASK-0082",
+      "ts": "2026-10-02T11:55:45Z",
+      "actor": "pm-04",
+      "event": "E20261002115545-acf5b6"
+    },
+    {
+      "review_id": "REV-0120",
+      "reviewer": "pm-06",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Inline writes to events.jsonl and projections denied for node/python/perl/IO.File/Set-Content/nested powershell; pm and read-only scripts pass; shell writes to guard.json now hard-denied (Write/Edit ask is advisory under bypassPermissions, BUG-0018); affected_files match. Low: wrong labels on two denials, IO.File ReadAllText of guard.json false positive; base64 and script files remain documented limits.",
+      "round": 1,
+      "target": "TASK-0082",
+      "ts": "2026-10-02T11:55:46Z",
+      "actor": "pm-06",
+      "event": "E20261002115546-744437"
     }
   ],
   "invalidated_reviews": [
