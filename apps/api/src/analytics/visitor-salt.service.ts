@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import { Injectable, Logger } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -47,6 +48,18 @@ export class VisitorSaltService {
     });
     this.pending = { day: key, salt };
     return salt;
+  }
+
+  /**
+   * Drops a past day's salt from memory just after midnight UTC, on every
+   * replica (no lock: each one holds its own copy). Without it a replica that
+   * sees no traffic after midnight would keep yesterday's salt in memory after
+   * the prune has deleted it from the database.
+   */
+  @Cron('1 0 * * *', { name: 'forget-visitor-salt', timeZone: 'UTC' })
+  forgetPast(now: Date = new Date()): void {
+    const today = utcDay(now).getTime();
+    if (this.cached && this.cached.day < today) this.cached = undefined;
   }
 
   private async load(day: Date): Promise<Uint8Array | null> {

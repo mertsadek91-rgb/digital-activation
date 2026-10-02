@@ -92,7 +92,7 @@ h1 {
 }
 .subnav a:hover {
   border-color: var(--color-brand);
-  color: var(--color-brand);
+  color: var(--color-brand-ink);
   background: var(--color-brand-soft);
 }
 .subnav .count {
@@ -355,7 +355,7 @@ h1 {
 }
 .badge-accent {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-gold-ink);
 }
 
 .stock {
@@ -366,10 +366,10 @@ h1 {
   color: var(--color-success);
 }
 .stock-low {
-  color: var(--color-accent);
+  color: var(--color-gold-ink);
 }
 .stock-out {
-  color: var(--color-danger);
+  color: var(--color-danger-ink);
 }
 
 @media (max-width: 47.99rem) {
@@ -416,7 +416,7 @@ h1 {
   padding: 4px 8px;
   font-size: var(--text-xs);
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-gold-ink);
 }
 
 /* --- product page ---------------------------------------------------------- */
@@ -577,12 +577,12 @@ h1 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 6px 10px;
   min-height: 38px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-xs);
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -594,6 +594,7 @@ h1 {
   border-color: var(--color-brand);
   box-shadow: var(--shadow-sm);
 }
+/* Apple brand exception: the Apple Pay mark is black. */
 .pay-badge.pay-apple {
   color: #000000;
 }
@@ -744,9 +745,14 @@ h1 {
   background: var(--color-brand-soft);
   box-shadow: 0 0 0 1px var(--color-brand);
 }
+/* Faded, except the "sold out" note: it is the reason the line cannot be
+   chosen, and at 0.55 opacity it was 2.35:1 (danger-ink at full strength is
+   6.48:1). */
 .variant.is-out {
-  opacity: 0.55;
   cursor: not-allowed;
+}
+.variant.is-out > :not(.variant-out) {
+  opacity: 0.55;
 }
 .variant-label {
   font-size: var(--text-sm);
@@ -758,7 +764,7 @@ h1 {
 }
 .variant-out {
   font-size: var(--text-xs);
-  color: var(--color-danger);
+  color: var(--color-danger-ink);
 }
 
 /* The price and what comes with it, on one line. */
@@ -776,7 +782,7 @@ h1 {
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-gold-border);
   background: var(--color-gold-soft);
-  color: var(--color-gold);
+  color: var(--color-gold-ink);
   font-size: var(--text-sm);
   font-weight: 700;
   text-decoration: none;
@@ -784,7 +790,7 @@ h1 {
 }
 .warranty-pill:hover {
   border-color: var(--color-gold);
-  background: #fdf1dc;
+  background: var(--color-accent-soft);
 }
 .warranty-pill svg {
   color: var(--color-gold);
@@ -1417,8 +1423,10 @@ h1 {
   border-radius: var(--radius-lg);
   border: 1px dashed var(--color-border-strong);
 }
+/* Gold, not amber: the stars are a graphic (role="img"), and amber is 2.05:1
+   on white against the 3:1 that WCAG 1.4.11 asks; gold is 3.88:1. */
 .stars {
-  color: var(--color-accent);
+  color: var(--color-gold);
   letter-spacing: 2px;
   font-size: var(--text-base);
   unicode-bidi: isolate;
@@ -1471,7 +1479,7 @@ h1 {
   gap: 4px;
   color: var(--color-success);
   font-weight: 600;
-  background: var(--color-success-soft, #e6f7ed);
+  background: var(--color-success-soft);
   padding: 2px 8px;
   border-radius: var(--radius-pill);
 }
@@ -1644,8 +1652,10 @@ h1 {
   inline-size: 54px;
   block-size: 54px;
   border-radius: 50%;
+  /* WhatsApp brand exception, as in footer.css: dark teal icon on its green,
+     3.87:1 (white was 1.98:1). */
   background: #25d366;
-  color: #fff;
+  color: #075e54;
   box-shadow: 0 6px 18px -4px rgb(37 211 102 / 55%);
   transition:
     transform 0.15s ease,
@@ -1733,7 +1743,7 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
 .card-buy-error {
   margin: 6px 0 0;
   font-size: var(--text-xs);
-  color: var(--color-danger);
+  color: var(--color-danger-ink);
 }
 
 /* --- the lower half of a product page -------------------------------------- */
@@ -2604,20 +2614,21 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   font-size: 0.8rem;
 }
 .product-warnings .warning-critical {
-  background: #fdf0ee;
-  border: 1px solid #f0c4bd;
-  color: #7d2119;
+  background: var(--color-danger-soft);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
+  color: var(--color-danger-ink);
 }
 .product-warnings .warning-critical span {
-  background: #b4231d;
-  color: #fff;
+  background: var(--color-danger-ink);
+  color: var(--color-ink-inverse);
 }
+/* The mark was white on #a07c1a (3.89:1); gold-ink takes it to 6.33:1. */
 .product-warnings .warning-note {
-  background: #fdf7e8;
-  border: 1px solid #efdcaf;
-  color: #6b5312;
+  background: var(--color-gold-soft);
+  border: 1px solid var(--color-gold-border);
+  color: var(--color-gold-ink);
 }
 .product-warnings .warning-note span {
-  background: #a07c1a;
-  color: #fff;
+  background: var(--color-gold-ink);
+  color: var(--color-ink-inverse);
 }

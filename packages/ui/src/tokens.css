@@ -51,6 +51,10 @@
   --color-accent: #b54708;
   --color-accent-hover: #96390a;
   --color-accent-soft: #fff3e8;
+  /* Text on an accent fill (.btn-accent and anything else painted with it):
+     white is 5.4:1 on #b54708. Accent-family text on white or on
+     --color-accent-soft is --color-accent itself (5.4:1 / 4.97:1). */
+  --color-accent-ink: #ffffff;
 
   /* --- semantic ---------------------------------------------------------- */
   --color-danger: #b42318;
