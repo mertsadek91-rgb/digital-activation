@@ -63,7 +63,6 @@
 
 ## Open reviews
 
-- TASK-0001 — Stand up the project-management system and dashboard (MANAGER_REVIEW, 80%)
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 
 ## Current risks
@@ -72,7 +71,6 @@
 
 ## Owned tasks
 
-- TASK-0001 — Stand up the project-management system and dashboard (MANAGER_REVIEW, 80%)
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 - TASK-0080 — Agent OS V2 migration (CR-0003, stages M0–M11) (BLOCKED, 90%)
 - TASK-0081 — Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them (BLOCKED, 50%)

@@ -113,3 +113,21 @@ model AnalyticsEvent {
   @@index([createdAt])
   @@schema("public")
 }
+
+/// The random salt the day's analytics `visitorId`s are made with (TASK-0097).
+///
+/// One row per UTC day, created on first use by whichever API replica gets
+/// there first (an insert that ignores a conflict, then a read). The
+/// `visitorId` is HMAC(salt, IP + user agent), so it depends on nothing else:
+/// no deployment secret can recreate it. Salts older than the current UTC day
+/// are deleted by the daily `AnalyticsPruneService` sweep, after which that
+/// day's ids can no longer be linked back to an address by anyone.
+model AnalyticsSalt {
+  /// The UTC day this salt is for.
+  day       DateTime @id @db.Date
+  /// 32 random bytes.
+  salt      Bytes
+  createdAt DateTime @default(now())
+
+  @@schema("public")
+}

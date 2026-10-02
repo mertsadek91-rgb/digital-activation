@@ -55,5 +55,4 @@
 
 ## Supporting
 
-- TASK-0001 — Stand up the project-management system and dashboard (MANAGER_REVIEW, 80%)
 - TASK-0060 — End-to-end test: card order to licence delivered (IN_PROGRESS, 0%)

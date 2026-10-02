@@ -29,6 +29,11 @@
   /* --- semantic ---------------------------------------------------------- */
   --color-danger: #d93a12;
   --color-danger-soft: #fdeae4;
+  /* Danger as small text on a tint. --color-danger is 4.60:1 on white but
+     3.92:1 on --color-brand-soft (the newsletter card's gradient end) and
+     3.96:1 on --color-danger-soft. This is the same red, darker: 5.52:1 on
+     brand-soft, 5.57:1 on danger-soft, 6.48:1 on white. */
+  --color-danger-ink: #b02e0e;
   --color-warning: #b8860b;
   /* #147d5f was 4.32:1 on --color-success-soft, the background it is shown on
      (the added-to-cart note, the support chip); this clears 4.5:1 there. */
