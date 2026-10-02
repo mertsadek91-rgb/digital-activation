@@ -337,12 +337,11 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0096",
+      "state": "AVAILABLE",
+      "current_task": "TASK-0021",
       "assignments": [
         "TASK-0021",
         "TASK-0034",
-        "TASK-0096",
         "TASK-0097"
       ],
       "supporting": [
@@ -352,9 +351,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 5,
+      "workload": 4,
       "blockers": [],
-      "last_activity": "2026-10-02T06:14:10Z"
+      "last_activity": "2026-10-02T06:15:39Z"
     },
     {
       "id": "backend-engineer",
@@ -597,13 +596,12 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0096",
         "TASK-0097"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:14:11Z"
     },
@@ -650,7 +648,7 @@
       ],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-01T13:07:15Z"
+      "last_activity": "2026-10-02T06:15:40Z"
     },
     {
       "id": "content-strategist",
@@ -783,11 +781,11 @@
         "TASK-0080"
       ],
       "reviews": [],
-      "reviews_recorded": 23,
+      "reviews_recorded": 24,
       "opportunities": [],
       "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-02T06:14:10Z"
+      "last_activity": "2026-10-02T06:15:38Z"
     },
     {
       "id": "performance-engineer",

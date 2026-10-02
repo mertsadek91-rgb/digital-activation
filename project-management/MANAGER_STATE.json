@@ -146,15 +146,13 @@
       ],
       "active_tasks": [
         "TASK-0021",
-        "TASK-0063",
-        "TASK-0096"
+        "TASK-0063"
       ],
       "owned_tasks": [
         "TASK-0021",
         "TASK-0034",
         "TASK-0041",
         "TASK-0063",
-        "TASK-0096",
         "TASK-0097"
       ],
       "reviews": [

@@ -52,5 +52,4 @@
 
 ## Supporting
 
-- TASK-0096 — First-party analytics: a server-fed events table for the funnel, no browser scripts (IN_PROGRESS, 10%)
 - TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (BACKLOG, 0%)

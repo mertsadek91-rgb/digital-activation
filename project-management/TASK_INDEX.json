@@ -2068,10 +2068,10 @@
       "id": "TASK-0096",
       "title": "First-party analytics: a server-fed events table for the funnel, no browser scripts",
       "type": "feature",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 10,
+      "progress": 100,
       "authority_level": 4,
       "risk": "MEDIUM",
       "primary_agent": "backend-architect",
@@ -2107,7 +2107,7 @@
       "created_at": "2026-10-02",
       "updated_at": "2026-10-02",
       "reaudit": null,
-      "file": "tasks/active/TASK-0096.md"
+      "file": "tasks/completed/TASK-0096.md"
     },
     {
       "id": "TASK-0097",
