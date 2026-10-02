@@ -73,12 +73,7 @@ function parseEnvFile(file: string): Map<string, string> {
 }
 
 /** Placeholder values shipped in .env.example that mean "not filled in". */
-const PLACEHOLDERS = new Set([
-  '',
-  'change_me_min_32_chars_______________',
-  'da_local_dev',
-  'da_local_dev_master_key',
-]);
+const PLACEHOLDERS = new Set(['', 'change_me_min_32_chars_______________', 'da_local_dev']);
 
 /**
  * Services whose URL carries a credential. Reaching one over plain http:// on
@@ -87,7 +82,6 @@ const PLACEHOLDERS = new Set([
  */
 const SECRET_BEARING_URLS = [
   'REDIS_URL',
-  'MEILI_HOST',
   'DATABASE_URL',
   'DATABASE_URL_MIGRATE',
   'DATABASE_URL_VAULT',
@@ -95,7 +89,7 @@ const SECRET_BEARING_URLS = [
 ];
 
 /** Backing services that should never be reachable from the public internet. */
-const INTERNAL_ONLY = ['REDIS_URL', 'MEILI_HOST', 'DATABASE_URL', 'DATABASE_URL_VAULT'];
+const INTERNAL_ONLY = ['REDIS_URL', 'DATABASE_URL', 'DATABASE_URL_VAULT'];
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '::1', 'host.docker.internal']);
 const IPV4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;

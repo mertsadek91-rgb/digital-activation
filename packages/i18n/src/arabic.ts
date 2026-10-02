@@ -7,8 +7,7 @@
  * vary hamza, alef maksura, ta marbuta and diacritics freely, so the index and
  * the query both get folded to one canonical form.
  *
- * Applied to Meilisearch documents at index time and to the query at search
- * time. Never applied to text shown to a human — folding is for matching only.
+ * Applied to both the searched text and the query at search time. Never applied to text shown to a human — folding is for matching only.
  */
 
 const DIACRITICS = /[ؐ-ًؚ-ٰٟۖ-ۜ۟-۪ۨ-ۭ]/g;

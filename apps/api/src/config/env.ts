@@ -52,16 +52,6 @@ const envSchema = z.object({
    * something to hand a monitoring vendor. Optional: unset, the probes are 404.
    */
   MONITOR_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
-  /**
-   * Optional (BUG-0008): no code reads either key. Catalogue search is in-app
-   * (catalog/search.service.ts, DEC-0009), so a missing search service must not
-   * stop the API from booting. Kept in the schema, with its old shape, so a
-   * later adoption only has to make them required again. Whether Meilisearch
-   * is dropped for good is DEC-0009's call (TASK-0035), not this schema's.
-   */
-  MEILI_HOST: z.string().url().optional(),
-  MEILI_MASTER_KEY: z.string().min(1).optional(),
-
   JWT_ACCESS_SECRET: z.string().min(32, 'must be at least 32 characters'),
   JWT_REFRESH_SECRET: z.string().min(32, 'must be at least 32 characters'),
   JWT_ACCESS_TTL: z.string().default('15m'),

@@ -31,9 +31,8 @@ import type { FxTable } from './pricing.js';
  *
  * Where it stops being right: somewhere past a few thousand products, or as
  * soon as listings need text relevance and filters together. At that point
- * this moves to Meilisearch facets (the env var already exists) or to SQL with
- * `minPriceUsd`-style denormalised columns per filter; the contract the
- * storefront sees — `CatalogFacets` and the query params — does not change.
+ * this moves to SQL with `minPriceUsd`-style denormalised columns per filter;
+ * the contract the storefront sees — `CatalogFacets` and the query params — does not change.
  */
 
 /** What a filter needs to know about one variant, already bucketed. */

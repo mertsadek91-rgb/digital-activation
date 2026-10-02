@@ -23,8 +23,8 @@ import { CatalogService } from './catalog.service.js';
  * knowing exactly what they want, and making them browse for it is the
  * shortest path to them leaving.
  *
- * Not Meilisearch, which this repo has an environment variable for and no
- * running instance of. Seventy-three products with two names each is not a
+ * Not a search service (DEC-0009: Meilisearch was dropped on 2026-10-02).
+ * Seventy-three products with two names each is not a
  * search-engine problem — it is a list — and the matching this needs already
  * exists for the 404 suggester, so both now share one tokenizer in
  * `common/arabic.ts`. If a second tokenizer existed, a visitor could be

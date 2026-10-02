@@ -34,7 +34,6 @@
     "bullmq": "catalog:",
     "fastify": "catalog:",
     "ioredis": "catalog:",
-    "meilisearch": "catalog:",
     "nestjs-pino": "catalog:",
     "nodemailer": "catalog:",
     "otplib": "catalog:",

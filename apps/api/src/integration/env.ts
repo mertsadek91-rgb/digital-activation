@@ -27,8 +27,6 @@ const fixed: Record<string, string> = {
   STOREFRONT_URL: 'http://localhost:3000',
   ADMIN_URL: 'http://localhost:3001',
   REDIS_URL: 'redis://localhost:1',
-  MEILI_HOST: 'http://localhost:1',
-  MEILI_MASTER_KEY: 'integration',
   JWT_ACCESS_SECRET: 'integration-tests-only-4f8a1c9e2b7d6053',
   JWT_REFRESH_SECRET: 'integration-tests-only-9d2e7b1a4c8f3065',
   KEK_PROVIDER: 'local',
