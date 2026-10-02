@@ -18,7 +18,7 @@ import {
   productIdentitySchema,
 } from '@da/contracts';
 
-import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { AnyStaff, Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
@@ -68,6 +68,7 @@ export class CatalogEditController {
     return this.edit.createVariant(slug, body, request.staff?.sub);
   }
 
+  @AnyStaff()
   @Get('products/:slug/identity')
   @ZodResponse(productIdentitySchema)
   @ApiOperation({ summary: 'Name, slug, kind, brand and categories' })
@@ -87,6 +88,7 @@ export class CatalogEditController {
     return this.edit.setIdentity(slug, body, request.staff?.sub);
   }
 
+  @Roles('OWNER', 'ADMIN', 'CATALOG')
   @Get('products/:slug/terms')
   @ZodResponse(productTermsSchema)
   @ApiOperation({ summary: 'Price and licence terms for every variant' })

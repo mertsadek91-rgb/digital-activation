@@ -71,7 +71,7 @@ DB roles: `da` (owner, migrations only) · `da_app` (API, **no grant on vault**)
 Stripe (implemented, optional) · PayPal (not built) · bank transfer / crypto
 (manual confirm by OWNER/ADMIN) · AWS KMS (vault KEK) · Cloudflare R2 via S3 API
 · SMTP / Resend / capture mail (capture refused in production) · WhatsApp Graph
-API v21 · FX feed · Meilisearch (provisioned, unused).
+API v21 · FX feed. (Meilisearch removed 2026-10-02, DEC-0009.)
 
 ## Storefront
 
@@ -107,7 +107,7 @@ third-party requests. Any analytics must be first-party (TASK-0050).
 **Live state, 2026-09-29 (CR-0002):** staging runs on Coolify. Storefront `new.`, admin `admin.`, API `api.digital-activation.com`, with Postgres and Redis up. The apex is still the legacy WordPress site on Hostinger. This one environment becomes production in place (DEC-0011).
 
 Coolify: storefront :3000, admin :3001, api :4000, jobs worker; Postgres 18,
-Redis 7, Meilisearch on the internal network. Migrations run as a release
+Redis 7 on the internal network. Migrations run as a release
 command. `pnpm db:doctor` is the pre-DNS gate. Locally, Postgres is a remote
 host reached through `.env`, not Docker.
 

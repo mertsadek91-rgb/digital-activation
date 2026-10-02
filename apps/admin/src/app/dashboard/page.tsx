@@ -38,7 +38,7 @@ export default function DashboardPage() {
   const c = useT('common');
   const format = useFormatters();
 
-  const me = useStaff();
+  const me = useStaff('dashboard');
   const [data, setData] = useState<AdminDashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WAITING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -48,4 +48,8 @@
 
 ## Current tasks
 
-- TASK-0050 — Analytics tracking plan compatible with the CSP and the third-party budget (WAITING_INFORMATION, 20%)
+- none
+
+## Supporting
+
+- TASK-0097 — Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET (BACKLOG, 0%)

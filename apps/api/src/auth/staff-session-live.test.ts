@@ -9,7 +9,7 @@ import type { KekService } from '../vault/kek.js';
 import type { AuditService } from './audit.service.js';
 import { type AccessClaims, AuthService } from './auth.service.js';
 import { hashToken, newRefreshToken } from './crypto.js';
-import { ROLES_KEY, StaffGuard, type StaffRequest } from './staff.guard.js';
+import { ANY_STAFF_KEY, ROLES_KEY, StaffGuard, type StaffRequest } from './staff.guard.js';
 
 /**
  * TASK-0014 / BUG-0005. The guard used to trust the access JWT's signature and
@@ -139,11 +139,16 @@ function build() {
     return issue(staff, {});
   }
 
-  /** Runs StaffGuard against a request carrying this access cookie. */
+  /**
+   * Runs StaffGuard against a request carrying this access cookie. Without
+   * roles the route is marked `@AnyStaff`, since the guard denies unmarked
+   * routes (TASK-0095).
+   */
   async function call(accessToken: string, roles?: string[]) {
     const request = { cookies: { da_access: accessToken } } as unknown as StaffRequest;
     const handler = () => undefined;
     if (roles) Reflect.defineMetadata(ROLES_KEY, roles, handler);
+    else Reflect.defineMetadata(ANY_STAFF_KEY, true, handler);
     const context = {
       switchToHttp: () => ({ getRequest: () => request }),
       getHandler: () => handler,

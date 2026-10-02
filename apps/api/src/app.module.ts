@@ -7,6 +7,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { AccountModule } from './account/account.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CartModule } from './cart/cart.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
@@ -97,6 +98,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     MarketingSignalsModule,
     OffersModule,
     WhatsappModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],

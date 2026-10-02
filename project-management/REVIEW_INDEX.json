@@ -1316,6 +1316,62 @@
       "ts": "2026-10-01T13:07:15Z",
       "actor": "pm-05",
       "event": "E20261001130715-fe930c"
+    },
+    {
+      "review_id": "REV-0095",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose (independent security-reviewer brief, pm-04/pm-06 lens)",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Guard: authenticate first, mustChange unchanged, method-before-controller, @Roles beats @AnyStaff, empty @Roles = OWNER only, unmarked denied (fail closed). Safety net passes (51 auth tests) and pins READONLY's 14 routes; closes the costUsd exposure. LOW: test scans only *.controller.ts own methods; product list still shows stock/salesCount to READONLY; redirects 404 log open to all staff (path/hits/referer, no IP/UA) acceptable; FULFILLMENT loses per-variant stock view on product page.",
+      "round": 1,
+      "target": "TASK-0095",
+      "ts": "2026-10-02T06:11:54Z",
+      "actor": "security-engineer",
+      "event": "E20261002061154-86f413"
+    },
+    {
+      "review_id": "REV-0096",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose (independent reviewer brief, pm-04/pm-06 lens)",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "No runtime/CI/worker/frontend reference left; lockfile removes only meilisearch@0.62.0 (no deps); zod strips leftover MEILI_* so old hosts still boot (tested); compose and tunnel valid; docs accurate. Stale text elsewhere (plan.html, TASK-0044 report, knowledge base, DEC-0005/0009 metadata) - cleanup.",
+      "round": 2,
+      "target": "TASK-0035",
+      "ts": "2026-10-02T06:12:10Z",
+      "actor": "pm-04",
+      "event": "E20261002061210-fa725a"
+    },
+    {
+      "review_id": "REV-0097",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose (independent security/privacy reviewer brief, pm-04/pm-06 lens)",
+      "review_type": "SECURITY",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "No email/name/IP/UA stored; referrer host only; internal-key endpoint constant-time and refused without key; /go/whatsapp not an open redirect; fire-and-forget never blocks; migration additive and matches the model; prune locked. MEDIUM: click path stores order numbers/referral codes from the Referer. LOW: visitorId reversible by anyone holding JWT_ACCESS_SECRET; cross-site GET can inflate clicks; UTM 100 chars allows tokens.",
+      "round": 1,
+      "target": "TASK-0096",
+      "ts": "2026-10-02T06:14:10Z",
+      "actor": "security-engineer",
+      "event": "E20261002061410-861964"
+    },
+    {
+      "review_id": "REV-0098",
+      "reviewer": "security-engineer",
+      "executor": "subagent:general-purpose (independent security/privacy reviewer brief)",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Round 2: route templates cover every personal segment (orders/:number, checkout/return/:number, r/:code), anchored, /en-aware; view events store server-built paths only; Sec-Fetch logic correct; UTM cap 50; visitorId reversibility acceptable for launch as TASK-0097. LOW: not-found paths stored as typed via the layout FAB; routeTemplate untested (storefront has no test runner).",
+      "round": 2,
+      "target": "TASK-0096",
+      "ts": "2026-10-02T06:15:38Z",
+      "actor": "security-engineer",
+      "event": "E20261002061538-af1884"
     }
   ]
 }

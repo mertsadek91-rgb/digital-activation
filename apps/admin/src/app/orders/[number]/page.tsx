@@ -60,7 +60,7 @@ export default function OrderPage() {
   const t = useT('order');
   const o = useT('orders');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('orders');
 
   const [detail, setDetail] = useState<AdminOrderDetail | null>(null);
   const [keys, setKeys] = useState<OrderKeysRow[] | null>(null);

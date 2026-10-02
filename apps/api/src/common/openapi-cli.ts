@@ -26,8 +26,6 @@ const PLACEHOLDERS: Record<string, string> = {
   DATABASE_URL: 'postgresql://openapi:openapi@localhost:1/openapi',
   DATABASE_URL_VAULT: 'postgresql://openapi:openapi@localhost:1/openapi',
   REDIS_URL: 'redis://localhost:1',
-  MEILI_HOST: 'http://localhost:1',
-  MEILI_MASTER_KEY: 'openapi',
   JWT_ACCESS_SECRET: 'openapi-document-only-not-a-secret-a',
   JWT_REFRESH_SECRET: 'openapi-document-only-not-a-secret-b',
   KEK_PROVIDER: 'local',

@@ -34,3 +34,4 @@ export * from './growth.js';
 export * from './offers.js';
 export * from './whatsapp.js';
 export * from './customers-admin.js';
+export * from './analytics.js';

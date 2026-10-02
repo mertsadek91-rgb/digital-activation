@@ -19,7 +19,7 @@ import {
 } from '@da/contracts';
 import type { z } from 'zod';
 
-import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { AnyStaff, Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
@@ -38,6 +38,7 @@ import { RedirectsService } from './redirects.service.js';
 export class RedirectsController {
   constructor(private readonly redirects: RedirectsService) {}
 
+  @AnyStaff()
   @Get()
   @ZodResponse(redirectsViewSchema)
   @ApiOperation({ summary: 'The redirect map and the unanswered 404s' })

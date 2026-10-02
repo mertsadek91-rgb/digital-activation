@@ -21,7 +21,7 @@ import {
 import { Locale } from '@da/db';
 import { z } from 'zod';
 
-import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
+import { AnyStaff, Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
 import { ZodResponse } from '../common/openapi.js';
 import { ZodPipe } from '../common/zod.pipe.js';
 
@@ -39,6 +39,7 @@ import { AdminService } from './admin.service.js';
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
+  @AnyStaff()
   @Get('products')
   @ZodResponse(adminProductListSchema)
   @ApiOperation({ summary: 'Product list with publish readiness and stock' })
@@ -48,6 +49,7 @@ export class AdminController {
     return this.admin.list(query);
   }
 
+  @AnyStaff()
   @Get('products/:slug')
   @ZodResponse(adminProductRowSchema)
   @ApiOperation({ summary: 'One product, in the shape the list uses' })
@@ -55,6 +57,7 @@ export class AdminController {
     return this.admin.row(slug, locale);
   }
 
+  @AnyStaff()
   @Get('products/:slug/readiness')
   @ZodResponse(readinessSchema)
   @ApiOperation({ summary: 'Why a product can or cannot be published' })
@@ -145,6 +148,7 @@ export class AdminController {
     });
   }
 
+  @AnyStaff()
   @Get('products/:slug/activation-steps')
   @ApiOperation({ summary: 'The activation how-to as it stands' })
   activationSteps(@Param('slug') slug: string, @Query('locale') locale = 'ar') {
@@ -165,6 +169,7 @@ export class AdminController {
     });
   }
 
+  @AnyStaff()
   @Get('locales')
   @ApiOperation({ summary: 'Locales the admin can edit' })
   locales(): { code: string; label: string }[] {

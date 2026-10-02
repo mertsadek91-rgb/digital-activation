@@ -33,8 +33,8 @@ export function WhatsAppButton() {
   return (
     <a
       className="whatsapp-fab"
-      href={whatsappLink()}
-      rel="noopener noreferrer"
+      href={whatsappLink(undefined, 'fab')}
+      rel="noopener"
       aria-label={label}
       title={label}
     >

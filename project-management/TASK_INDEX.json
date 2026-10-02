@@ -386,10 +386,10 @@
       "id": "TASK-0015",
       "title": "Role-scope review of staff routes that carry no @Roles",
       "type": "audit",
-      "status": "WAITING_INFORMATION",
-      "stage": "ANALYSIS",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 60,
+      "progress": 100,
       "authority_level": 1,
       "risk": "LOW",
       "primary_agent": "security-engineer",
@@ -417,9 +417,9 @@
         "project-management/reports/security/TASK-0015-staff-route-role-audit.md"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-10-01",
+      "updated_at": "2026-10-02",
       "reaudit": "VALID",
-      "file": "tasks/active/TASK-0015.md"
+      "file": "tasks/completed/TASK-0015.md"
     },
     {
       "id": "TASK-0016",
@@ -628,11 +628,9 @@
         "apps/api/src/checkout/",
         "apps/api/src/admin/orders.controller.ts",
         "apps/api/src/admin/orders.service.ts",
-        "apps/api/src/config/env.ts",
         "packages/contracts/src/final-processor.ts",
         "packages/contracts/src/checkout.ts",
         "packages/contracts/src/admin.ts",
-        "packages/db/prisma/schema/",
         "packages/db/prisma/migrations/20260930111620_payment_method_config/",
         "packages/db/prisma/migrations/20260930140000_final_processor_payments/",
         "apps/storefront/src/app/[locale]/checkout/",
@@ -641,7 +639,7 @@
         ".env.example"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-10-01",
+      "updated_at": "2026-10-02",
       "reaudit": "VALID",
       "file": "tasks/review/TASK-0021.md"
     },
@@ -847,10 +845,10 @@
       "id": "TASK-0035",
       "title": "Confirm or reverse the Meilisearch replacement (DEC-0009)",
       "type": "architecture",
-      "status": "WAITING_INFORMATION",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "LOW",
-      "progress": 20,
+      "progress": 100,
       "authority_level": 4,
       "risk": "LOW",
       "primary_agent": "backend-architect",
@@ -876,11 +874,23 @@
         "docs"
       ],
       "affected_pages": [],
-      "affected_files": [],
+      "affected_files": [
+        "apps/api/src/config/env.ts",
+        "apps/api/package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml",
+        "docker-compose.yml",
+        "scripts/generate-secrets.ts",
+        "scripts/env-check.ts",
+        "scripts/tunnel.ts",
+        ".env.example",
+        "README.md",
+        "docs/deployment.md"
+      ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": "VALID",
-      "file": "tasks/active/TASK-0035.md"
+      "file": "tasks/completed/TASK-0035.md"
     },
     {
       "id": "TASK-0040",
@@ -1095,10 +1105,10 @@
       "id": "TASK-0050",
       "title": "Analytics tracking plan compatible with the CSP and the third-party budget",
       "type": "analysis",
-      "status": "WAITING_INFORMATION",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 20,
+      "progress": 100,
       "authority_level": 1,
       "risk": "LOW",
       "primary_agent": "analytics-engineer",
@@ -1127,9 +1137,9 @@
         "project-management/ANALYTICS_TRACKING_PLAN.md"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-02",
       "reaudit": "VALID",
-      "file": "tasks/active/TASK-0050.md"
+      "file": "tasks/completed/TASK-0050.md"
     },
     {
       "id": "TASK-0051",
@@ -2003,6 +2013,141 @@
       "updated_at": "2026-10-01",
       "reaudit": null,
       "file": "tasks/backlog/TASK-0094.md"
+    },
+    {
+      "id": "TASK-0095",
+      "title": "Restrict the READONLY role to catalogue reads and make StaffGuard deny routes without explicit roles",
+      "type": "security",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0015"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/auth",
+        "api/admin"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/auth/staff.guard.ts",
+        "apps/api/src/auth/staff-route-roles.test.ts",
+        "apps/api/src/admin/",
+        "apps/api/src/media/media.controller.ts",
+        "apps/api/src/content/redirects.controller.ts",
+        "apps/admin/src/lib/roles.ts",
+        "apps/admin/src/lib/use-staff.ts",
+        "apps/admin/src/app/nav.tsx"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0095.md"
+    },
+    {
+      "id": "TASK-0096",
+      "title": "First-party analytics: a server-fed events table for the funnel, no browser scripts",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "analytics-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0050"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/analytics",
+        "storefront"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "apps/api/src/analytics/",
+        "packages/db/prisma/schema/",
+        "packages/db/prisma/migrations/"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0096.md"
+    },
+    {
+      "id": "TASK-0097",
+      "title": "Analytics visitorId: random daily salt kept in the database and deleted after the day, instead of a key derived from JWT_ACCESS_SECRET",
+      "type": "privacy",
+      "status": "BACKLOG",
+      "stage": "ANALYSIS",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "backend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "analytics-engineer"
+      ],
+      "required_reviewers": [
+        "pm-04",
+        "pm-06",
+        "security-engineer"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [
+        "TASK-0096"
+      ],
+      "blocks": [],
+      "affected_modules": [
+        "api/analytics"
+      ],
+      "affected_pages": [],
+      "affected_files": [],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/backlog/TASK-0097.md"
     }
   ]
 }

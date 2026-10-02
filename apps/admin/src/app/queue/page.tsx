@@ -47,7 +47,7 @@ export default function QueuePage() {
   const router = useRouter();
   const t = useT('queue');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('queue');
   const [queue, setQueue] = useState<Queue | null>(null);
   const [includeDone, setIncludeDone] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -38,7 +38,7 @@ export default function LaunchPage() {
   const router = useRouter();
   const t = useT('launch');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('launch');
   const [data, setData] = useState<LaunchReadiness | null>(null);
   const [error, setError] = useState<string | null>(null);
 

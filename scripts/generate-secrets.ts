@@ -64,12 +64,6 @@ const SPECS: SecretSpec[] = [
     note: 'signs refresh tokens — must differ from the access secret',
   },
   {
-    key: 'MEILI_MASTER_KEY',
-    bytes: 32,
-    encoding: 'base64url',
-    note: 'full read/write on the search index',
-  },
-  {
     key: 'INTERNAL_API_KEY',
     bytes: 32,
     encoding: 'base64url',

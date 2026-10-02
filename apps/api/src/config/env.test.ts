@@ -15,8 +15,6 @@ function production(overrides: Record<string, string | undefined> = {}): Record<
     DATABASE_URL: 'postgresql://app@localhost/db',
     DATABASE_URL_VAULT: 'postgresql://vault@localhost/db',
     REDIS_URL: 'redis://localhost:6379',
-    MEILI_HOST: 'http://localhost:7700',
-    MEILI_MASTER_KEY: 'test',
     JWT_ACCESS_SECRET: crypto.randomBytes(48).toString('base64url'),
     JWT_REFRESH_SECRET: crypto.randomBytes(48).toString('base64url'),
     KEK_PROVIDER: 'aws-kms',
@@ -106,20 +104,15 @@ describe('validateEnv — BUG-0020: keys read directly from process.env', () => 
   });
 });
 
-describe('validateEnv — BUG-0008: Meilisearch is optional', () => {
-  // Nothing reads MEILI_* (search is in-app, DEC-0009), so boot must not need it.
-  it('boots in production with neither Meilisearch key', () => {
-    const env = validateEnv(production({ MEILI_HOST: undefined, MEILI_MASTER_KEY: undefined }));
-    expect(env.MEILI_HOST).toBeUndefined();
-    expect(env.MEILI_MASTER_KEY).toBeUndefined();
-  });
-
-  it('treats blank Meilisearch keys as unset', () => {
-    expect(() => validateEnv(production({ MEILI_HOST: '', MEILI_MASTER_KEY: '' }))).not.toThrow();
-  });
-
-  it('still refuses a malformed host when one is given', () => {
-    expect(() => validateEnv(production({ MEILI_HOST: 'not a url' }))).toThrow(/MEILI_HOST/);
+describe('validateEnv — Meilisearch is gone (DEC-0009, TASK-0035)', () => {
+  // Search runs in the API. A host that still sets the old keys must boot, and
+  // the keys must not reach the validated config.
+  it('ignores leftover MEILI_* keys', () => {
+    const env = validateEnv(
+      production({ MEILI_HOST: 'not a url', MEILI_MASTER_KEY: 'x' }),
+    ) as Record<string, unknown>;
+    expect(env).not.toHaveProperty('MEILI_HOST');
+    expect(env).not.toHaveProperty('MEILI_MASTER_KEY');
   });
 });
 

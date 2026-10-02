@@ -187,9 +187,9 @@ rebuilds. B4 cannot be reversed: HSTS stays cached in browsers.
   cutover blocker.
 - `APP_ENV`, `WEB_PUSH_*` and `DA_*_PASSWORD` are in `.env.example` but not
   read at runtime; none needs a production value.
-- `MEILI_HOST` and `MEILI_MASTER_KEY` are parsed by the env schema
-  (`config/env.ts:47-48`, optional since TASK-0035) but no code uses them;
-  leave them unset in production.
+- `MEILI_HOST` and `MEILI_MASTER_KEY` are gone (TASK-0035, owner decision
+  2026-10-02). The schema ignores them if still set; delete them from Coolify,
+  and delete the Meilisearch resource if one exists.
 
 ## Owner decisions
 

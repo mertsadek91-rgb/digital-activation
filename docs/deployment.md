@@ -1,6 +1,6 @@
 # Deployment — Coolify
 
-Three application containers, three backing services, one Postgres with two
+Three application containers, two backing services, one Postgres with two
 schemas and three roles.
 
 ```
@@ -9,11 +9,11 @@ admin.digital-activation.com  →  admin        (Next.js, port 3001)
 api.digital-activation.com    →  api          (NestJS,  port 4000)
                                  jobs         (worker, no public port)
 
-postgres 18 · redis 7 · meilisearch      (internal network only)
+postgres 18 · redis 7                    (internal network only)
 ```
 
-Only the three web containers get a public domain. Postgres, Redis, Meilisearch
-and the worker stay on Coolify's internal network with no published port.
+Only the three web containers get a public domain. Postgres, Redis and the
+worker stay on Coolify's internal network with no published port.
 
 ---
 
@@ -76,10 +76,10 @@ postgresql://da_app:<encoded>@<service-name>:5432/<db>?schema=public&sslmode=dis
 
 ### Reaching it from a laptop, without exposing it
 
-Nothing outside Coolify legitimately needs Postgres, Redis or Meilisearch: the
+Nothing outside Coolify legitimately needs Postgres or Redis: the
 API, the worker and the storefront all run inside that network, and a
-development machine runs its own stack via `pnpm infra:up`. So none of the three
-gets a public port.
+development machine runs its own stack via `pnpm infra:up`. So neither gets a
+public port.
 
 Two cases do need reaching it from a laptop: the first migration, before any
 application is deployed to run it, and developing against the real services
@@ -90,7 +90,6 @@ Bind each resource to the server's loopback interface — in Ports Mappings:
 ```
 127.0.0.1:5432:5432     postgres
 127.0.0.1:6379:6379     redis
-127.0.0.1:7700:7700     meilisearch
 ```
 
 That makes them reachable from the VPS itself and nowhere else. Then:
@@ -99,7 +98,7 @@ That makes them reachable from the VPS itself and nowhere else. Then:
 pnpm tunnel
 ```
 
-which forwards all three to the same ports locally over SSH. It needs
+which forwards both to the same ports locally over SSH. It needs
 `TUNNEL_SSH_HOST` in `.env`.
 
 The reason to prefer this over a published port is not only exposure. Every URL
@@ -122,30 +121,18 @@ S3-compatible target — not to the same server's disk. Verify a restore once
 before the cutover, because an unverified backup is a belief rather than a
 backup.
 
-## 2. Redis and Meilisearch
+## 2. Redis
 
-Both as Coolify resources, **internal only** — no published port, no domain.
+A Coolify resource, **internal only** — no published port, no domain.
 
 Redis carries BullMQ: licence delivery, transactional mail, the abandoned-cart
 ladder, FX refresh, sitemap regeneration. Enable persistence (`appendonly yes`)
 so a restart does not drop queued key deliveries.
 
-**Meilisearch is optional today.** No code reads `MEILI_HOST` or
-`MEILI_MASTER_KEY` (BUG-0008); catalogue search runs in the API (DEC-0009), and
-the API boots with both unset, so Coolify does not need to provision it. The
-`docker-compose.yml` service stays for local parity until TASK-0035 confirms or
-reverses DEC-0009. If it is provisioned:
-
-Meilisearch needs a master key, which the app reads as `MEILI_MASTER_KEY`. Two
-reasons it must not have a public domain: the master key grants full read and
-write on the index, and Coolify's generated `*.sslip.io` domain serves plain
-HTTP, which would put that key on the wire in cleartext on every request.
-`pnpm env:check` fails on both conditions.
-
-If client-side instant search is ever wanted, that is a different arrangement,
-not a relaxation of this one: expose Meilisearch over HTTPS with a **search-only
-key**, and keep the master key server-side. Until then search goes through the
-API, which is also where Arabic folding has to happen.
+**There is no search service.** Catalogue search, including Arabic folding,
+runs inside the API against PostgreSQL (DEC-0009, confirmed by the owner on
+2026-10-02). Do not provision Meilisearch; the API neither reads `MEILI_*` nor
+needs them, and leftover values in a resource's environment are ignored.
 
 ## 3. Applications
 

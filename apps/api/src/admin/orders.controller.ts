@@ -50,7 +50,7 @@ import { OrdersService } from './orders.service.js';
  * again. Releasing a hold is the same kind of act, and has the same roles.
  *
  * Reading is not open to every staff role either: an order carries the
- * customer's email, address and IP, and a CATALOG or MARKETING account has no
+ * customer's email, address and IP, and a CATALOG, MARKETING or READONLY account has no
  * reason to page through those.
  */
 @ApiTags('admin')
@@ -63,7 +63,7 @@ export class OrdersController {
     private readonly audit: AuditService,
   ) {}
 
-  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT')
   @Get()
   @ZodResponse(adminOrderListSchema)
   @ApiOperation({ summary: 'Orders, newest first' })
@@ -125,7 +125,7 @@ export class OrdersController {
     });
   }
 
-  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT', 'READONLY')
+  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT')
   @Get(':number')
   @ZodResponse(adminOrderDetailSchema)
   @ApiOperation({ summary: 'One order with its lines, payments and notes' })

@@ -4,23 +4,21 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { type AdminDashboard, adminDashboardSchema } from '@da/contracts';
 
 import { ZodResponse } from '../common/openapi.js';
-import { StaffGuard } from '../auth/staff.guard.js';
+import { Roles, StaffGuard } from '../auth/staff.guard.js';
 
 import { DashboardService } from './dashboard.service.js';
 
 /**
  * The panel's front page.
  *
- * Readable by every staff role including READONLY, and there is nothing to
- * write: it is a summary of screens each of which already applies its own
- * permissions. Nothing sensitive is on it — no licence key, no customer
- * address, no payment reference. The one identifying thing it carries is the
- * email on each of the eight newest orders, which is on the orders screen the
- * same session can already open.
+ * OWNER and ADMIN only (TASK-0095). Nothing here is written, but it carries
+ * store revenue and the email on each of the eight newest orders, and the
+ * owner decided on 2026-10-02 that neither belongs with READONLY.
  */
 @ApiTags('admin')
 @Controller('admin/dashboard')
 @UseGuards(StaffGuard)
+@Roles('OWNER', 'ADMIN')
 export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}
 

@@ -337,12 +337,12 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WAITING",
+      "state": "AVAILABLE",
       "current_task": "TASK-0021",
       "assignments": [
         "TASK-0021",
         "TASK-0034",
-        "TASK-0035"
+        "TASK-0097"
       ],
       "supporting": [
         "TASK-0004",
@@ -353,7 +353,7 @@
       "opportunities": [],
       "workload": 4,
       "blockers": [],
-      "last_activity": "2026-10-01T13:07:40Z"
+      "last_activity": "2026-10-02T06:15:39Z"
     },
     {
       "id": "backend-engineer",
@@ -438,16 +438,15 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0015",
         "TASK-0016",
         "TASK-0063"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-01T13:06:54Z"
+      "last_activity": "2026-10-02T06:12:09Z"
     },
     {
       "id": "crm-workflow-architect",
@@ -501,13 +500,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0035"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": null
     },
@@ -560,13 +557,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0050"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": null
     },
@@ -597,18 +592,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WAITING",
-      "current_task": "TASK-0050",
-      "assignments": [
-        "TASK-0050"
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
+      "supporting": [
+        "TASK-0097"
       ],
-      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-09-30T06:27:59Z"
+      "last_activity": "2026-10-02T06:14:11Z"
     },
     {
       "id": "seo-strategist",
@@ -653,7 +648,7 @@
       ],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-01T13:07:15Z"
+      "last_activity": "2026-10-02T06:15:40Z"
     },
     {
       "id": "content-strategist",
@@ -775,7 +770,6 @@
       "assignments": [
         "TASK-0004",
         "TASK-0011",
-        "TASK-0015",
         "TASK-0016",
         "TASK-0018"
       ],
@@ -784,15 +778,14 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0050",
         "TASK-0080"
       ],
       "reviews": [],
-      "reviews_recorded": 21,
+      "reviews_recorded": 24,
       "opportunities": [],
-      "workload": 8,
+      "workload": 6.5,
       "blockers": [],
-      "last_activity": "2026-10-01T13:06:53Z"
+      "last_activity": "2026-10-02T06:15:38Z"
     },
     {
       "id": "performance-engineer",

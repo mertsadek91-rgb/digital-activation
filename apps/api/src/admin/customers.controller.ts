@@ -14,8 +14,8 @@ import { CustomersService } from './customers.service.js';
  * Customers, for staff.
  *
  * SUPPORT reads them because the first question on any message is "who is
- * this and what have they bought"; READONLY reads them like it reads orders.
- * FULFILLMENT, CATALOG and MARKETING do not: a customer record is an email,
+ * this and what have they bought". FULFILLMENT, CATALOG, MARKETING and
+ * READONLY do not (TASK-0095): a customer record is an email,
  * a phone and a purchase history, and none of those jobs needs to browse it.
  *
  * The export is OWNER and ADMIN only — a file of every address the store
@@ -31,7 +31,7 @@ export class CustomersController {
     private readonly audit: AuditService,
   ) {}
 
-  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'READONLY')
+  @Roles('OWNER', 'ADMIN', 'SUPPORT')
   @Get()
   @ApiOperation({ summary: 'Customers, newest first, searchable by email or name' })
   list(
@@ -78,7 +78,7 @@ export class CustomersController {
     );
   }
 
-  @Roles('OWNER', 'ADMIN', 'SUPPORT', 'READONLY')
+  @Roles('OWNER', 'ADMIN', 'SUPPORT')
   @Get(':id')
   @ApiOperation({ summary: 'One customer: profile, consent, orders, licence count' })
   detail(@Param('id') id: string): Promise<AdminCustomerDetail> {

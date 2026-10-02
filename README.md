@@ -20,7 +20,7 @@ missing from every sitemap. That is a structural problem, not a hosting one.
 | API            | NestJS 12 on Fastify                                    |
 | Database       | PostgreSQL 18, Prisma 7 (pg driver adapter)             |
 | Cache / queues | Redis 7, BullMQ                                         |
-| Search         | Meilisearch, with Arabic folding                        |
+| Search         | In the API (PostgreSQL), with Arabic folding (DEC-0009) |
 | Payments       | Stripe + PayPal, bank transfer / crypto as a fallback   |
 | Locales        | `ar` at the root, `en` under `/en`, reciprocal hreflang |
 
@@ -52,7 +52,7 @@ pnpm install
 cp .env.example .env
 pnpm secrets:generate         # fills every empty secret with real randomness
 pnpm env:check                # then fill in the rest, and verify
-pnpm infra:up                 # postgres, redis, meilisearch, mailpit
+pnpm infra:up                 # postgres, redis, mailpit
 pnpm db:migrate               # applies prisma/migrations
 pnpm db:seed                  # currencies, groups, brands, category tree
 pnpm db:doctor                # asserts the setup, including vault isolation
@@ -125,7 +125,7 @@ generated and a partial import can be safely re-run.
 | `pnpm db:migrate`              | create and apply a migration                                                                          |
 | `pnpm db:studio`               | Prisma Studio                                                                                         |
 | `pnpm infra:up` / `infra:down` | local services                                                                                        |
-| `pnpm tunnel`                  | forward the Coolify postgres/redis/meilisearch to localhost over SSH, to develop against real data    |
+| `pnpm tunnel`                  | forward the Coolify postgres/redis to localhost over SSH, to develop against real data                |
 
 Deploying to Coolify: see [`docs/deployment.md`](docs/deployment.md).
 

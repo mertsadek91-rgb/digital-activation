@@ -33,17 +33,6 @@ services:
       timeout: 3s
       retries: 12
 
-  meilisearch:
-    image: getmeili/meilisearch:v1.13
-    restart: unless-stopped
-    environment:
-      MEILI_MASTER_KEY: da_local_dev_master_key
-      MEILI_ENV: development
-    ports:
-      - '7700:7700'
-    volumes:
-      - meilidata:/meili_data
-
   # Catches every outbound email in development so no real customer is ever
   # mailed from a dev machine, and so license-delivery templates are reviewable.
   mailpit:
@@ -56,4 +45,3 @@ services:
 volumes:
   pgdata:
   redisdata:
-  meilidata:

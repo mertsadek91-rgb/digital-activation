@@ -3,9 +3,9 @@
  *
  *   pnpm tunnel
  *
- * Forwards Postgres, Redis and Meilisearch from the server's loopback interface
- * to the same ports on this machine, so development runs against the real
- * services while none of them has a public port.
+ * Forwards Postgres and Redis from the server's loopback interface to the same
+ * ports on this machine, so development runs against the real services while
+ * neither has a public port.
  *
  * The useful side effect: .env keeps pointing at localhost either way, so the
  * same file works whether you are tunnelled to Coolify or running `pnpm
@@ -17,7 +17,6 @@
  *
  *   127.0.0.1:5432:5432     postgres
  *   127.0.0.1:6379:6379     redis
- *   127.0.0.1:7700:7700     meilisearch
  *
  * That makes them reachable from the VPS itself and nowhere else. This tunnel
  * then carries them here over SSH.
@@ -39,7 +38,6 @@ interface Forward {
 const FORWARDS: Forward[] = [
   { name: 'postgres', localPort: 5432, remotePort: 5432 },
   { name: 'redis', localPort: 6379, remotePort: 6379 },
-  { name: 'meilisearch', localPort: 7700, remotePort: 7700 },
 ];
 
 function main(): void {

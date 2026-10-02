@@ -11,6 +11,10 @@
  * neither state needs remembering.
  */
 import {
+  type AnalyticsEventType,
+  type RecordAnalyticsEvent,
+  type WhatsappPlacement,
+  cleanUtm,
   type CatalogBrand,
   type CatalogCollection,
   type CatalogProductWithRelated,
@@ -308,6 +312,114 @@ export function reportNotFound(pathname: string, referer?: string): void {
       }),
     )
     .catch(() => undefined);
+}
+
+/**
+ * A browsing event for first-party analytics (TASK-0096).
+ *
+ * `path` is the page's own path, without its query. `searchParams` is read for
+ * the three UTM tags only, each allow-listed by `cleanUtm`.
+ */
+export interface BrowsingEvent {
+  type: AnalyticsEventType;
+  path: string;
+  locale: string;
+  productSlug?: string;
+  categorySlug?: string;
+  placement?: WhatsappPlacement;
+  searchParams?: Record<string, string | string[] | undefined>;
+}
+
+/** Link prefetches render a page nobody has opened yet; they are not views. */
+function isPrefetch(incoming: Headers): boolean {
+  return (
+    incoming.has('next-router-prefetch') ||
+    incoming.has('next-router-segment-prefetch') ||
+    /prefetch|prerender/i.test(
+      `${incoming.get('purpose') ?? ''} ${incoming.get('sec-purpose') ?? ''}`,
+    )
+  );
+}
+
+/** The referrer, when it is another site. A click inside the shop is not a source. */
+function externalReferrer(incoming: Headers): string | undefined {
+  const referer = incoming.get('referer');
+  if (!referer) return undefined;
+  let host: string;
+  try {
+    host = new URL(referer).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  const own = [
+    incoming.get('x-forwarded-host'),
+    incoming.get('host'),
+    process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : null,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map((value) => value.split(',')[0]!.trim().split(':')[0]!.toLowerCase());
+  // The API keeps only the host; sending only the origin keeps the rest of
+  // the URL off the wire as well.
+  return own.includes(host) ? undefined : new URL(referer).origin;
+}
+
+function first(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+/**
+ * Tells the API about a product, category or cart view, or a WhatsApp click.
+ *
+ * Fire and forget, like `reportNotFound`: never awaited by the render, a
+ * short timeout, every failure swallowed. A page must never be slower or
+ * broken because the store could not count it. Without INTERNAL_API_KEY there
+ * is no way to vouch for the call, so nothing is sent at all.
+ *
+ * The visitor's address and user agent go as headers; the API turns them into
+ * a daily-rotating hash and stores neither.
+ */
+export function recordEvent(event: BrowsingEvent): void {
+  const key = process.env.INTERNAL_API_KEY;
+  if (!key) return;
+  void (async () => {
+    const { headers } = await import('next/headers');
+    const incoming = await headers();
+    if (isPrefetch(incoming)) return;
+
+    const ip = visitorIp(incoming);
+    const userAgent = (incoming.get('user-agent') ?? '').slice(0, 512);
+    const referrer = event.type === 'WHATSAPP_CLICK' ? undefined : externalReferrer(incoming);
+    const params = event.searchParams ?? {};
+    const utmSource = cleanUtm(first(params.utm_source));
+    const utmMedium = cleanUtm(first(params.utm_medium));
+    const utmCampaign = cleanUtm(first(params.utm_campaign));
+    const body: RecordAnalyticsEvent = {
+      type: event.type,
+      path: event.path.split(/[?#]/)[0] || '/',
+      locale: event.locale === 'en' ? 'en' : 'ar',
+      ...(event.productSlug ? { productSlug: event.productSlug } : {}),
+      ...(event.categorySlug ? { categorySlug: event.categorySlug } : {}),
+      ...(event.placement ? { placement: event.placement } : {}),
+      ...(referrer ? { referrer } : {}),
+      ...(utmSource ? { utmSource } : {}),
+      ...(utmMedium ? { utmMedium } : {}),
+      ...(utmCampaign ? { utmCampaign } : {}),
+    };
+
+    await fetch(new URL('/v1/analytics/events', API_URL), {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-da-internal': key,
+        ...(ip ? { 'x-da-client-ip': ip } : {}),
+        // Header values must be Latin-1; anything else is not worth a failed call.
+        ...(/^[ -~]*$/.test(userAgent) ? { 'x-da-client-ua': userAgent } : {}),
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(1500),
+    });
+  })().catch(() => undefined);
 }
 
 export function getPage(slug: string, options: FetchOptions): Promise<ContentPage | null> {

@@ -65,7 +65,7 @@ export default function PromotionsPage() {
   const router = useRouter();
   const t = useT('promotions');
   const c = useT('common');
-  const me = useStaff();
+  const me = useStaff('promotions');
   const [data, setData] = useState<AdminPromotionList | null>(null);
   const [filter, setFilter] = useState('live');
   const [error, setError] = useState<string | null>(null);

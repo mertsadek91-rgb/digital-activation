@@ -102,9 +102,6 @@ catalogs:
     ioredis:
       specifier: ^6.0.0
       version: 6.0.0
-    meilisearch:
-      specifier: ^0.62.0
-      version: 0.62.0
     nestjs-pino:
       specifier: ^5.1.0
       version: 5.1.0
@@ -336,9 +333,6 @@ importers:
       ioredis:
         specifier: 'catalog:'
         version: 6.0.0
-      meilisearch:
-        specifier: 'catalog:'
-        version: 0.62.0
       nestjs-pino:
         specifier: 'catalog:'
         version: 5.1.0(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.0.1(@nestjs/common@12.0.1(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(pino-http@11.0.0)(pino@10.3.1)(rxjs@7.8.2)
@@ -3335,10 +3329,6 @@ packages:
 
   magic-string@1.0.0:
     resolution: {integrity: sha512-CGvjzMN08iv6w1mm4/x3Gh1hLb4VnyRUA15FFpl6CsCIGGoe36k7kY5KNz9QDbSBN5I/fWHM6ZlIkUTa5xdUEA==}
-
-  meilisearch@0.62.0:
-    resolution: {integrity: sha512-/ETDW7mmWI2NcSmtJdTPhbjsIbs3VcuapszX5X6JhdHB0XbszPOhqd3EB2bEylL0HK7dgwh/4Z3MdyuycWVf5A==}
-    engines: {node: ^20.19.0 || >=22.12.0}
 
   mime@3.0.0:
     resolution: {integrity: sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==}
@@ -6796,8 +6786,6 @@ snapshots:
   magic-string@1.0.0:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
-
-  meilisearch@0.62.0: {}
 
   mime@3.0.0: {}
 
