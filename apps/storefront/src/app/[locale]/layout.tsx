@@ -16,7 +16,7 @@ import { AddedDialog } from '../../components/added-dialog';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { WhatsAppButton } from '../../components/whatsapp-button';
-import { getCollections, getMarketingPublic } from '../../lib/api';
+import { getCollections } from '../../lib/api';
 import { isArabic } from '../../i18n/locale';
 import { routing } from '../../i18n/routing';
 
@@ -96,13 +96,9 @@ export default async function LocaleLayout({
   // Required for static rendering of a localised route.
   setRequestLocale(locale);
 
-  // Fetched once here and handed to both the menu and the footer. Two fetches
-  // for the same list on every page would be two cache entries that can
-  // disagree about which categories exist.
-  const [collectionList, marketing] = await Promise.all([
-    getCollections({ locale, revalidate: 900 }),
-    getMarketingPublic({ locale }),
-  ]);
+  // The shelves, handed to the menu and the footer from one fetch so the two
+  // cannot disagree about which categories exist.
+  const collectionList = await getCollections({ locale, revalidate: 900 });
   const collections = collectionList ?? [];
 
   // The store itself, on every page rather than only the home page. A product
@@ -130,7 +126,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           <SiteHeader locale={locale} collections={collections} />
           {children}
-          <SiteFooter locale={locale} collections={collections} trust={marketing?.trust ?? null} />
+          <SiteFooter locale={locale} collections={collections} />
           <WhatsAppButton />
           <GrowthLayer locale={locale} />
           <AddedDialog locale={locale} />

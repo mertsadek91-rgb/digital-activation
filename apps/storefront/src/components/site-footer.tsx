@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { type PublicMarketing, ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts';
 import { BRAND } from '@da/ui';
 
 import { isArabic } from '../i18n/locale';
@@ -8,7 +8,6 @@ import { SUPPORT_EMAIL, WHATSAPP_DIAL, WHATSAPP_SHOWN } from '../lib/contact';
 
 import { GlobeIcon, InstagramIcon, MailIcon, TelegramIcon, WhatsAppIcon, XIcon } from './icons';
 import { PaymentsBar } from './product-trust';
-import { RegistrationDetails, hasRegistration } from './trust-block';
 import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
@@ -20,9 +19,8 @@ import { FooterNewsletter } from './footer-newsletter';
  * bottom row with the copyright and the payment marks. That is what this is,
  * with the shop's own facts in it: the categories the catalog actually has,
  * the ways to reach a person (WhatsApp, email), the policies a buyer looks
- * for before typing a card number, and the registration numbers the store
- * entered. The newsletter card sits above the columns, as the kit's last home
- * section does, on every page.
+ * for before typing a card number. The newsletter card sits above the
+ * columns, as the kit's last home section does, on every page.
  *
  * The five-colour promise band and the contact "cards" that stood here are
  * gone: the benefits are on the home page in the kit's own strip, and a
@@ -46,12 +44,9 @@ const POLICY_PAGES = [
 export function SiteFooter({
   locale,
   collections = [],
-  trust = null,
 }: {
   locale: string;
   collections?: { slug: string; name: string }[];
-  /** The marketing panel's trust settings; null while that feature is off. */
-  trust?: PublicMarketing['trust'];
 }) {
   const t = useTranslations('footer');
   const th = useTranslations('header');
@@ -234,11 +229,9 @@ export function SiteFooter({
             })}
           </p>
 
-          {/* Registration and VAT numbers, as the store entered them. A number
-              a buyer can look up is worth more than any badge. */}
-          {trust && hasRegistration(trust) ? (
-            <RegistrationDetails trust={trust} className="footer-registration" />
-          ) : null}
+          {/* No registration or VAT numbers here: the owner removed them from
+              the storefront on 2026-10-03. They remain in the admin's trust
+              settings and on the checkout, where the trust block reads them. */}
 
           <div className="footer-lang-switcher">
             <Link
