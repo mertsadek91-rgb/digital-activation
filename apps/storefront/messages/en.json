@@ -504,7 +504,7 @@
   },
   "footer": {
     "switchLanguageTitle": "Switch language to Arabic",
-    "support": "Customer Support",
+    "support": "Customer service & support",
     "orderHistory": "Order History",
     "myLicences": "My Licenses",
     "searchKeys": "Search Keys",
@@ -522,18 +522,26 @@
     "whatsappSupport": "WhatsApp Support",
     "brandBio": "Your trusted premier destination in Saudi Arabia & GCC for genuine Windows, Office, and Antivirus activation licenses with instant delivery and full warranty.",
     "policy": {
-      "goldenWarranty": "🛡️ Golden Warranty",
+      "goldenWarranty": "Golden Warranty",
       "terms": "Terms of Service",
       "refunds": "Refund Policy",
       "privacy": "Privacy Policy",
       "contact": "Support Center"
     },
     "copyright": "© {year} {brand}. All rights reserved.",
-    "products": "Products",
-    "customerService": "Customer service",
-    "usefulLinks": "Useful links",
-    "faq": "FAQs",
-    "whatsapp": "WhatsApp"
+    "brandSub": "Official software activation hub",
+    "verifiedStore": "Verified store",
+    "instantDelivery": "Instant delivery",
+    "channels": "Official channels",
+    "siteMap": "Site map",
+    "policies": "Warranty & policies",
+    "online": "Online now, fast replies",
+    "directWhatsapp": "Direct WhatsApp",
+    "supportEmail": "Official support email",
+    "remoteTitle": "Remote setup help",
+    "remoteBody": "If a problem on your machine blocks activation, we help remotely at no charge.",
+    "madeNote": "The first destination for genuine software licences in Saudi Arabia and the Gulf",
+    "sendEmail": "Send an email"
   },
   "newsletter": {
     "error": "Could not subscribe. Check the address and try again.",
