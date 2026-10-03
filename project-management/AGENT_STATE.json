@@ -203,7 +203,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-02T06:51:40Z"
+      "last_activity": "2026-10-02T11:23:57Z"
     },
     {
       "id": "responsive-design-specialist",
@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 5,
+      "reviews_recorded": 6,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-01T11:49:05Z"
+      "last_activity": "2026-10-02T11:06:38Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -275,11 +275,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 2,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-09-30T07:53:57Z"
+      "last_activity": "2026-10-02T11:21:29Z"
     },
     {
       "id": "frontend-architect",
@@ -296,11 +296,11 @@
         "TASK-0101"
       ],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 1,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-09-30T13:41:36Z"
+      "last_activity": "2026-10-02T11:03:56Z"
     },
     {
       "id": "frontend-engineer",

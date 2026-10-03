@@ -1,323 +1,201 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { CONTACT_REPLY_HOURS, type PublicMarketing, ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts';
 import { BRAND } from '@da/ui';
 
 import { isArabic } from '../i18n/locale';
+import { SUPPORT_EMAIL, WHATSAPP_DIAL, WHATSAPP_SHOWN } from '../lib/contact';
 
-import {
-  BoltIcon,
-  CreditCardIcon,
-  GlobeIcon,
-  InstagramIcon,
-  MailIcon,
-  ShieldCheckIcon,
-  SupportIcon,
-  TelegramIcon,
-  WhatsAppIcon,
-  XIcon,
-} from './icons';
+import { GlobeIcon, InstagramIcon, MailIcon, TelegramIcon, WhatsAppIcon, XIcon } from './icons';
 import { PaymentsBar } from './product-trust';
-import { RegistrationDetails, hasRegistration } from './trust-block';
 import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
-const WHATSAPP_DIAL = '966534255367';
-const WHATSAPP_SHOWN = '+966 53 425 5367';
-const SUPPORT_EMAIL = 'help@digital-activation.com';
-
 /**
- * The 4 Core Guarantees with styled themed color badges. The wording is
- * `footer.promise.<kind>` in the message files.
+ * Site footer, after the UI Kit (`03_Homepage_Sections/<lang>/.../home_footer`, TASK-0102).
+ *
+ * The kit's footer is four columns on the page ground — the brand and a line
+ * about the shop, the products, customer service, useful links — and a
+ * bottom row with the copyright and the payment marks. That is what this is,
+ * with the shop's own facts in it: the categories the catalog actually has,
+ * the ways to reach a person (WhatsApp, email), the policies a buyer looks
+ * for before typing a card number. The newsletter card sits above the
+ * columns, as the kit's last home section does, on every page.
+ *
+ * The five-colour promise band and the contact "cards" that stood here are
+ * gone: the benefits are on the home page in the kit's own strip, and a
+ * footer that repeats the home page on every page is a footer nobody reads.
  */
-const PROMISES = [
-  {
-    kind: 'warranty',
-    badgeTheme: 'gold',
-    icon: ShieldCheckIcon,
-  },
-  {
-    kind: 'delivery',
-    badgeTheme: 'sky',
-    icon: BoltIcon,
-  },
-  {
-    kind: 'payments',
-    badgeTheme: 'teal',
-    /*
-     * "ومتعدد" — and several — has gone, because there is one.
-     *
-     * This strip once named five card networks the shop cannot take. Those
-     * were removed and the count survived, which is the same claim with the
-     * evidence taken out. One method is configured today, and a promise of
-     * several on every page of the site is a promise the checkout then breaks.
-     *
-     * The card line went with it for the same reason: "we store no card
-     * details" is perfectly true and tells a reader that cards are taken. The
-     * payment bar lower down is driven by what is actually configured; this
-     * strip now says only what stays true however that bar turns out.
-     */
-    icon: CreditCardIcon,
-  },
-  {
-    kind: 'support',
-    badgeTheme: 'purple',
-    // "24/7" is a staffing claim, and the shop has never made one. What it does
-    // commit to is a reply inside CONTACT_REPLY_HOURS, which is what the contact
-    // form and its acknowledgement email both say.
-    icon: SupportIcon,
-  },
-] as const;
 
 /** Core legal and trust policy pages, labelled by `footer.policy.<key>`. */
 const POLICY_PAGES = [
   { slug: 'golden-warranty', key: 'goldenWarranty', isSpecial: true },
   { slug: 'terms', key: 'terms', isSpecial: false },
   /*
-   * The refund policy, which was published and linked from nowhere.
-   *
-   * It is the page a buyer looks for before typing a card number and the page
-   * a payment provider asks for by URL during onboarding — and on a store
-   * selling a product that cannot be posted back, it is the one policy that
-   * answers the question everybody actually has.
+   * The refund policy: the page a buyer looks for before typing a card number
+   * and the page a payment provider asks for by URL during onboarding — and on
+   * a store selling a product that cannot be posted back, it is the one policy
+   * that answers the question everybody actually has.
    */
   { slug: 'refunds', key: 'refunds', isSpecial: false },
   { slug: 'privacy', key: 'privacy', isSpecial: false },
-  { slug: 'contact', key: 'contact', isSpecial: false },
 ] as const;
 
 export function SiteFooter({
   locale,
   collections = [],
-  trust = null,
 }: {
   locale: string;
   collections?: { slug: string; name: string }[];
-  /** The marketing panel's trust settings; null while that feature is off. */
-  trust?: PublicMarketing['trust'];
 }) {
   const t = useTranslations('footer');
   const th = useTranslations('header');
   const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
   const currentYear = new Date().getFullYear();
+  const brandName = ar ? BRAND.nameAr : BRAND.nameEn;
+
+  const categories =
+    collections.length > 0
+      ? collections.slice(0, 6).map((col) => ({
+          href: `${prefix}${ROUTES.collection(col.slug)}`,
+          label: col.name,
+        }))
+      : [
+          { href: `${prefix}/collections/windows`, label: t('fallbackWindows') },
+          { href: `${prefix}/collections/office`, label: t('fallbackOffice') },
+          { href: `${prefix}/collections/antivirus`, label: t('fallbackAntivirus') },
+          { href: `${prefix}/collections/server`, label: t('fallbackServer') },
+          { href: `${prefix}/collections/subscriptions`, label: t('fallbackDesign') },
+        ];
 
   return (
     <footer className="site-footer" role="contentinfo">
-      {/* 1. Value & Guarantees Band */}
-      <div className="footer-promises-band">
-        <div className="footer-promises-inner">
-          {PROMISES.map((promise) => {
-            const Icon = promise.icon;
-            return (
-              <div key={promise.kind} className={`footer-promise-card is-${promise.badgeTheme}`}>
-                <div className="promise-icon-bubble" aria-hidden="true">
-                  <Icon size={22} />
-                </div>
-                <div className="promise-text-block">
-                  <strong className="promise-title">{t(`promise.${promise.kind}.title`)}</strong>
-                  <span className="promise-desc">
-                    {t(`promise.${promise.kind}.body`, { hours: String(CONTACT_REPLY_HOURS) })}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+      {/* The newsletter, double opt-in: the form sends a confirmation email
+          and says so. */}
+      <div className="footer-newsletter-section">
+        <div className="footer-newsletter-container">
+          <FooterNewsletter locale={locale} />
         </div>
       </div>
 
-      {/* 2. Main Columns Grid */}
       <div className="footer-main">
         <div className="footer-main-container">
-          {/* Col 1: Brand, Trust & Social */}
+          {/* The brand: the real logo, which already contains the name, and
+              the one line that says what the shop is, which the mark does not. */}
           <div className="footer-brand-column">
-            {/* The real logo, which already contains the name — so the name is
-                not set beside it a second time. What stays is the line that
-                says what the shop is, which the mark does not. */}
             <Link
               href={`${prefix}${ROUTES.home}`}
               className="footer-brand-header"
-              aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
+              aria-label={brandName}
             >
-              <BrandLogo locale={locale} width={148} />
+              <BrandLogo locale={locale} width={140} />
             </Link>
-            <p className="footer-brand-sub">{t('brandSub')}</p>
-
             <p className="footer-brand-bio">{t('brandBio')}</p>
 
-            <div className="footer-trust-badges">
-              <span className="trust-pill">🇸🇦 {t('verifiedStore')}</span>
-              <span className="trust-pill">⚡ {t('instantDelivery')}</span>
+            <div className="footer-social-links">
+              <a
+                href={`https://wa.me/${WHATSAPP_DIAL}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('whatsappSupport')}
+                className="icon-button social-btn"
+                title="WhatsApp"
+              >
+                <WhatsAppIcon size={20} />
+              </a>
+              <a
+                href="https://t.me/digitalactivation"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('telegram')}
+                className="icon-button social-btn"
+                title="Telegram"
+              >
+                <TelegramIcon size={20} />
+              </a>
+              <a
+                href="https://x.com/digital_activ"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('x')}
+                className="icon-button social-btn"
+                title="X (Twitter)"
+              >
+                <XIcon size={16} />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={t('instagram')}
+                className="icon-button social-btn"
+                title="Instagram"
+              >
+                <InstagramIcon size={18} />
+              </a>
             </div>
+          </div>
 
-            {/* Social channels */}
-            <div className="footer-social-wrap">
-              <span className="social-label">{t('channels')}</span>
-              <div className="footer-social-links">
+          {/* Products: the categories the catalog actually has. */}
+          <nav className="footer-nav-column" aria-label={t('products')}>
+            <h2 className="footer-col-title">{t('products')}</h2>
+            <ul className="footer-nav-list">
+              {categories.map((entry) => (
+                <li key={entry.href}>
+                  <Link href={entry.href}>{entry.label}</Link>
+                </li>
+              ))}
+              <li>
+                <Link href={`${prefix}${ROUTES.store}`}>{t('softwareStore')}</Link>
+              </li>
+            </ul>
+          </nav>
+
+          {/* Customer service: a person to reach, and the pages about an order. */}
+          <nav className="footer-nav-column" aria-label={t('customerService')}>
+            <h2 className="footer-col-title">{t('customerService')}</h2>
+            <ul className="footer-nav-list">
+              <li>
                 <a
                   href={`https://wa.me/${WHATSAPP_DIAL}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={t('whatsappSupport')}
-                  className="social-btn is-whatsapp"
-                  title="WhatsApp"
+                  className="footer-contact-link"
                 >
-                  <WhatsAppIcon size={18} />
+                  <WhatsAppIcon size={16} />
+                  <span>{t('whatsapp')}</span>
+                  <span className="footer-contact-value" dir="ltr">
+                    {WHATSAPP_SHOWN}
+                  </span>
                 </a>
-                <a
-                  href="https://t.me/digitalactivation"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t('telegram')}
-                  className="social-btn is-telegram"
-                  title="Telegram"
-                >
-                  <TelegramIcon size={18} />
-                </a>
-                <a
-                  href="https://x.com/digital_activ"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t('x')}
-                  className="social-btn is-x"
-                  title="X (Twitter)"
-                >
-                  <XIcon size={16} />
-                </a>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={t('instagram')}
-                  className="social-btn is-instagram"
-                  title="Instagram"
-                >
-                  <InstagramIcon size={17} />
-                </a>
-                <a
-                  href={`mailto:${SUPPORT_EMAIL}`}
-                  aria-label={t('sendEmail')}
-                  className="social-btn is-mail"
-                  title="Email"
-                >
+              </li>
+              <li>
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="footer-contact-link">
                   <MailIcon />
+                  <span className="footer-contact-value" dir="ltr">
+                    {SUPPORT_EMAIL}
+                  </span>
                 </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Col 2: Categories */}
-          <nav className="footer-nav-column" aria-label={t('categories')}>
-            <h2 className="footer-col-title">{t('categories')}</h2>
-            <ul className="footer-nav-list">
-              {collections.length > 0 ? (
-                collections.slice(0, 6).map((col) => (
-                  <li key={col.slug}>
-                    <Link href={`${prefix}${ROUTES.collection(col.slug)}`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{col.name}</span>
-                    </Link>
-                  </li>
-                ))
-              ) : (
-                <>
-                  <li>
-                    <Link href={`${prefix}/collections/windows`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{t('fallbackWindows')}</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href={`${prefix}/collections/office`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{t('fallbackOffice')}</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href={`${prefix}/collections/antivirus`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{t('fallbackAntivirus')}</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href={`${prefix}/collections/server`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{t('fallbackServer')}</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href={`${prefix}/collections/subscriptions`}>
-                      <span className="bullet-dot" aria-hidden="true">
-                        ›
-                      </span>
-                      <span>{t('fallbackDesign')}</span>
-                    </Link>
-                  </li>
-                </>
-              )}
-            </ul>
-          </nav>
-
-          {/* Col 3: Sitemap */}
-          <nav className="footer-nav-column" aria-label={t('siteMapLabel')}>
-            <h2 className="footer-col-title">{t('siteMap')}</h2>
-            <ul className="footer-nav-list">
-              <li>
-                <Link href={`${prefix}${ROUTES.store}`}>
-                  <span className="bullet-dot" aria-hidden="true">
-                    ›
-                  </span>
-                  <span>{t('softwareStore')}</span>
-                </Link>
               </li>
               <li>
-                <Link href={`${prefix}${ROUTES.blog}`}>
-                  <span className="bullet-dot" aria-hidden="true">
-                    ›
-                  </span>
-                  <span>{t('guides')}</span>
-                </Link>
+                <Link href={`${prefix}${ROUTES.contact}`}>{t('policy.contact')}</Link>
               </li>
               <li>
-                <Link href={`${prefix}${ROUTES.search}`}>
-                  <span className="bullet-dot" aria-hidden="true">
-                    ›
-                  </span>
-                  <span>{t('searchKeys')}</span>
-                </Link>
+                <Link href={`${prefix}${ROUTES.licenses}`}>{t('myLicences')}</Link>
               </li>
               <li>
-                <Link href={`${prefix}${ROUTES.licenses}`}>
-                  <span className="bullet-dot" aria-hidden="true">
-                    ›
-                  </span>
-                  <span>{t('myLicences')}</span>
-                </Link>
+                <Link href={`${prefix}${ROUTES.accountOrders}`}>{t('orderHistory')}</Link>
               </li>
               <li>
-                <Link href={`${prefix}${ROUTES.accountOrders}`}>
-                  <span className="bullet-dot" aria-hidden="true">
-                    ›
-                  </span>
-                  <span>{t('orderHistory')}</span>
-                </Link>
+                <Link href={`${prefix}${ROUTES.blog}`}>{t('guides')}</Link>
               </li>
             </ul>
           </nav>
 
-          {/* Col 4: Guarantees & Policies */}
-          <nav className="footer-nav-column" aria-label={t('policies')}>
-            <h2 className="footer-col-title">{t('policies')}</h2>
+          {/* Useful links: the policies, the warranty first. */}
+          <nav className="footer-nav-column" aria-label={t('usefulLinks')}>
+            <h2 className="footer-col-title">{t('usefulLinks')}</h2>
             <ul className="footer-nav-list">
               {POLICY_PAGES.map((page) => (
                 <li key={page.slug}>
@@ -325,112 +203,35 @@ export function SiteFooter({
                     href={`${prefix}/${page.slug}`}
                     className={page.isSpecial ? 'special-policy-link' : undefined}
                   >
-                    <span className="bullet-dot" aria-hidden="true">
-                      ›
-                    </span>
-                    <span>{t(`policy.${page.key}`)}</span>
+                    {t(`policy.${page.key}`)}
                   </Link>
                 </li>
               ))}
+              <li>
+                <Link href={`${prefix}${ROUTES.search}`}>{t('searchKeys')}</Link>
+              </li>
             </ul>
           </nav>
-
-          {/* Col 5: Customer Service Hub */}
-          <div className="footer-support-column">
-            <div className="support-col-header">
-              <h2 className="footer-col-title">{t('support')}</h2>
-              <span className="support-status-chip">
-                <span className="status-ping" aria-hidden="true" />
-                {t('online')}
-              </span>
-            </div>
-
-            <div className="footer-contact-cards">
-              {/* WhatsApp Action */}
-              <a
-                href={`https://wa.me/${WHATSAPP_DIAL}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-contact-card is-whatsapp"
-              >
-                <div className="footer-contact-card-icon">
-                  <WhatsAppIcon size={20} />
-                </div>
-                <div className="footer-contact-card-body">
-                  <span className="footer-contact-card-label">{t('directWhatsapp')}</span>
-                  <span className="footer-contact-card-val" dir="ltr">
-                    {WHATSAPP_SHOWN}
-                  </span>
-                </div>
-              </a>
-
-              {/* Email Action */}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="footer-contact-card is-email">
-                <div className="footer-contact-card-icon">
-                  <MailIcon />
-                </div>
-                <div className="footer-contact-card-body">
-                  <span className="footer-contact-card-label">{t('supportEmail')}</span>
-                  <span className="footer-contact-card-val" dir="ltr">
-                    {SUPPORT_EMAIL}
-                  </span>
-                </div>
-              </a>
-
-              {/* The shop's own offer, in the shop's own terms.
-                  It read "مساعدة مجانية عبر AnyDesk لتفعيل مفتاحك خطوة بخطوة" —
-                  unconditional, on every page. The warranty policy the owner
-                  wrote makes it conditional on a problem that is preventing
-                  activation, and that condition is the whole difference between
-                  a support offer and free desktop support for anything. */}
-              <div className="remote-support-badge">
-                <span className="remote-icon" aria-hidden="true">
-                  💻
-                </span>
-                <div className="remote-text">
-                  <strong>{t('remoteTitle')}</strong>
-                  <span>{t('remoteBody')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* The newsletter, double opt-in: the form sends a confirmation email
-          and says so. The strip that stood here before announced a coupon
-          and stored nothing. */}
-      <div className="footer-newsletter-section">
-        <div className="footer-newsletter-container">
-          <FooterNewsletter locale={locale} />
-        </div>
-      </div>
-
-      {/* The payment bar, on every page of the site.
-          It listed mada, Apple Pay, Visa, Mastercard, stc pay and bank transfer
-          under the heading "طرق الدفع الآمنة والمعتمدة" while the shop had no
-          payment method configured at all — six marks, none of which it could
-          take. `PaymentMarks` draws only what is configured and renders nothing
-          when nothing is, which is why the whole bar hangs off it. */}
+      {/* The payment bar: `PaymentMarks` draws only what is configured and
+          renders nothing when nothing is, which is why the whole bar hangs
+          off it. */}
       <PaymentsBar />
 
-      {/* 5. Bottom Copyright & Locale Switcher Bar */}
       <div className="footer-bottom-bar">
         <div className="footer-bottom-container">
           <p className="copyright-notice">
             {t('copyright', {
               year: String(currentYear),
-              brand: ar ? BRAND.nameAr : BRAND.nameEn,
+              brand: brandName,
             })}
           </p>
 
-          {/* Registration and VAT numbers, as the store entered them. A number
-              a buyer can look up is worth more than any badge. */}
-          {trust && hasRegistration(trust) ? (
-            <RegistrationDetails trust={trust} className="footer-registration" />
-          ) : null}
-
-          <p className="footer-made-note">{t('madeNote')}</p>
+          {/* No registration or VAT numbers here: the owner removed them from
+              the storefront on 2026-10-03. They remain in the admin's trust
+              settings and on the checkout, where the trust block reads them. */}
 
           <div className="footer-lang-switcher">
             <Link
