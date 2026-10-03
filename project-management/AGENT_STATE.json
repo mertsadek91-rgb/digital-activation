@@ -795,7 +795,7 @@
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-02T11:55:16Z"
+      "last_activity": "2026-10-03T06:01:50Z"
     },
     {
       "id": "devops-engineer",
@@ -879,7 +879,7 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "BLOCKED",
+      "state": "WORKING",
       "current_task": "TASK-0081",
       "assignments": [
         "TASK-0081",
@@ -890,11 +890,8 @@
       "reviews_recorded": 0,
       "opportunities": [],
       "workload": 2,
-      "blockers": [
-        "TASK-0081",
-        "TASK-0083"
-      ],
-      "last_activity": "2026-10-02T06:46:06Z"
+      "blockers": [],
+      "last_activity": "2026-10-03T06:01:49Z"
     },
     {
       "id": "product-opportunity-lead",

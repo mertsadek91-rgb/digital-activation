@@ -1437,7 +1437,7 @@
       "id": "TASK-0081",
       "title": "Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them",
       "type": "verification",
-      "status": "BLOCKED",
+      "status": "IN_PROGRESS",
       "stage": "IMPLEMENTATION",
       "priority": "MEDIUM",
       "progress": 50,
@@ -1463,9 +1463,9 @@
       "affected_pages": [],
       "affected_files": [],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-03",
       "reaudit": null,
-      "file": "tasks/blocked/TASK-0081.md"
+      "file": "tasks/active/TASK-0081.md"
     },
     {
       "id": "TASK-0082",
@@ -1513,7 +1513,7 @@
       "id": "TASK-0083",
       "title": "Remove PROJECT_CONFIG.file_ownership (superseded by routing.json domains) and the V1 sync entry point after one release",
       "type": "chore",
-      "status": "BLOCKED",
+      "status": "IN_PROGRESS",
       "stage": "IMPLEMENTATION",
       "priority": "LOW",
       "progress": 60,
@@ -1542,9 +1542,9 @@
         "project-management/tools/sync.mjs"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-03",
       "reaudit": null,
-      "file": "tasks/blocked/TASK-0083.md"
+      "file": "tasks/active/TASK-0083.md"
     },
     {
       "id": "TASK-0084",
@@ -2287,8 +2287,8 @@
       "id": "TASK-0101",
       "title": "Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again",
       "type": "performance",
-      "status": "BACKLOG",
-      "stage": "ANALYSIS",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
       "priority": "HIGH",
       "progress": 0,
       "authority_level": 3,
@@ -2324,9 +2324,9 @@
         "apps/storefront/src/app/"
       ],
       "created_at": "2026-10-02",
-      "updated_at": "2026-10-02",
+      "updated_at": "2026-10-03",
       "reaudit": null,
-      "file": "tasks/backlog/TASK-0101.md"
+      "file": "tasks/active/TASK-0101.md"
     }
   ]
 }

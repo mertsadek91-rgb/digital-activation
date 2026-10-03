@@ -49,4 +49,4 @@
 ## Current tasks
 
 - TASK-0051 — Reconcile the performance budgets and cover product, category and checkout on mobile (IN_PROGRESS, 60%)
-- TASK-0101 — Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again (BACKLOG, 0%)
+- TASK-0101 — Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again (IN_PROGRESS, 0%)
