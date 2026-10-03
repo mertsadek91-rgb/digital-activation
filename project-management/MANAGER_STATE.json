@@ -10,21 +10,16 @@
       ],
       "active_tasks": [
         "TASK-0004",
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "owned_tasks": [
         "TASK-0004",
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "reviews": [
         "TASK-0004"
       ],
-      "blocked_work": [
-        "TASK-0081",
-        "TASK-0083"
-      ],
+      "blocked_work": [],
       "pending_decisions": [
         "DEC-0012",
         "DEC-0013",
@@ -102,7 +97,9 @@
         "interaction-designer",
         "accessibility-specialist"
       ],
-      "active_tasks": [],
+      "active_tasks": [
+        "TASK-0101"
+      ],
       "owned_tasks": [
         "TASK-0101"
       ],
@@ -156,7 +153,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T12:18:34Z"
+      "last_activity": "2026-10-03T07:22:45Z"
     },
     {
       "id": "pm-05",

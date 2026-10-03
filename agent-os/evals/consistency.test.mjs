@@ -2,12 +2,31 @@
 // endpoints are closed unless the owner started the server.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { join } from 'node:path';
 
+import { REPO } from '../tools/lib/paths.mjs';
 import { sandbox, task } from './sandbox.mjs';
 
 const R = ['--reason', 'eval'];
+
+test('V1 compatibility stays removed (M12, TASK-0083): no sync.mjs, no file_ownership; ownership comes from routing.json', () => {
+  assert.equal(existsSync(join(REPO, 'project-management', 'tools', 'sync.mjs')), false);
+  const config = JSON.parse(readFileSync(join(REPO, 'project-management', 'PROJECT_CONFIG.json'), 'utf8'));
+  assert.equal('file_ownership' in config, false);
+  // The dashboard's ownership map is projected from the routing domains, one row per domain.
+  const s = sandbox();
+  try {
+    s.pm('create', 'TASK', '--by', 'frontend-engineer', ...R, '--json', task());
+    const js = s.read('project-management/dashboard/data.js');
+    const data = JSON.parse(js.slice(js.indexOf('{'), js.lastIndexOf('}') + 1));
+    const domains = JSON.parse(s.read('agent-os/policies/routing.json')).domains;
+    assert.deepEqual(data.ownership.map((o) => o.domain), domains.map((d) => d.id));
+  } finally {
+    s.cleanup();
+  }
+});
 
 test('after any write, projections are current and pm check is clean', () => {
   const s = sandbox();

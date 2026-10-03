@@ -72,5 +72,4 @@
 ## Owned tasks
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0081 — Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them (BLOCKED, 50%)
-- TASK-0083 — Remove PROJECT_CONFIG.file_ownership (superseded by routing.json domains) and the V1 sync entry point after one release (BLOCKED, 60%)
+- TASK-0081 — Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them (WAITING_INFORMATION, 50%)
