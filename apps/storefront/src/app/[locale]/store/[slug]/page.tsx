@@ -25,7 +25,6 @@ import { SaleNotice } from '../../../../components/sale-notice';
 import { Reviews } from '../../../../components/reviews';
 import { SocialProofNotices } from '../../../../components/social-proof';
 import { StockAlert } from '../../../../components/stock-alert';
-import { TrustBlock } from '../../../../components/trust-block';
 import { isArabic } from '../../../../i18n/locale';
 import { whatsappLink } from '../../../../lib/contact';
 import { readingLabel } from '../../../../lib/format';
@@ -37,7 +36,6 @@ import {
 } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
 import { notFoundMetadata, openGraphDefaults, pageTitle, robotsMeta } from '../../../../lib/seo';
-import { deliveryPromise, localText } from '../../../../lib/trust';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -113,9 +111,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * product, and "you may also like" as a grid.
  *
  * What stays from the page this replaces, because it is the shop's own truth:
- * the specification rows built from the selected variant, the warnings about
- * what a licence will not do, the sale notice, the queued-buyer form when a
- * product is out, the payment marks and the registration block.
+ * the specification rows built from the selected variant (delivery among
+ * them), the warnings about what a licence will not do, the sale notice, the
+ * queued-buyer form when a product is out, and the payment marks. The
+ * registration block is not repeated here; it is in the footer of every page
+ * (owner decision, 2026-10-03).
  */
 export default async function ProductPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
@@ -244,20 +244,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
             />
 
             <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
-
-            {/* The store's own guarantee and registration, from the marketing
-                panel; absent while that feature is off or says nothing. */}
-            {marketing?.trust?.showOnProduct ? (
-              <TrustBlock
-                trust={marketing.trust}
-                locale={locale}
-                delivery={deliveryPromise(
-                  product.variants,
-                  localText(marketing.trust.instantDeliveryText, locale),
-                  tf,
-                )}
-              />
-            ) : null}
           </div>
 
           <div className="buybox">
