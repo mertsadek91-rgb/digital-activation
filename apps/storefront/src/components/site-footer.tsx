@@ -6,25 +6,33 @@ import { BRAND } from '@da/ui';
 import { isArabic } from '../i18n/locale';
 import { SUPPORT_EMAIL, WHATSAPP_DIAL, WHATSAPP_SHOWN } from '../lib/contact';
 
-import { GlobeIcon, InstagramIcon, MailIcon, TelegramIcon, WhatsAppIcon, XIcon } from './icons';
+import {
+  BoltIcon,
+  GlobeIcon,
+  HeadsetIcon,
+  InstagramIcon,
+  MailIcon,
+  ShieldCheckIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+  XIcon,
+} from './icons';
 import { PaymentsBar } from './product-trust';
 import { BrandLogo } from './brand-logo';
 import { FooterNewsletter } from './footer-newsletter';
 
 /**
- * Site footer, after the UI Kit (`03_Homepage_Sections/<lang>/.../home_footer`, TASK-0102).
+ * Site footer: the five-column layout the shop had before the kit, drawn in
+ * the kit's language (owner request, 2026-10-03, after the simplified kit
+ * footer went to staging).
  *
- * The kit's footer is four columns on the page ground — the brand and a line
- * about the shop, the products, customer service, useful links — and a
- * bottom row with the copyright and the payment marks. That is what this is,
- * with the shop's own facts in it: the categories the catalog actually has,
- * the ways to reach a person (WhatsApp, email), the policies a buyer looks
- * for before typing a card number. The newsletter card sits above the
- * columns, as the kit's last home section does, on every page.
- *
- * The five-colour promise band and the contact "cards" that stood here are
- * gone: the benefits are on the home page in the kit's own strip, and a
- * footer that repeats the home page on every page is a footer nobody reads.
+ * The brand column carries the real logo, the one-line promise, the two
+ * trust pills and the official channels. Then the shelves, the site map, the
+ * warranty and policies, and a support column that gives a buyer two ways to
+ * reach a person — WhatsApp and email, as cards — with the remote-help note
+ * under them. The newsletter card follows, then the payment bar, then the
+ * bottom row with the copyright and the language switch. No registration or
+ * VAT numbers: the owner removed them from the storefront the same day.
  */
 
 /** Core legal and trust policy pages, labelled by `footer.policy.<key>`. */
@@ -33,12 +41,11 @@ const POLICY_PAGES = [
   { slug: 'terms', key: 'terms', isSpecial: false },
   /*
    * The refund policy: the page a buyer looks for before typing a card number
-   * and the page a payment provider asks for by URL during onboarding — and on
-   * a store selling a product that cannot be posted back, it is the one policy
-   * that answers the question everybody actually has.
+   * and the page a payment provider asks for by URL during onboarding.
    */
   { slug: 'refunds', key: 'refunds', isSpecial: false },
   { slug: 'privacy', key: 'privacy', isSpecial: false },
+  { slug: 'contact', key: 'contact', isSpecial: false },
 ] as const;
 
 export function SiteFooter({
@@ -69,133 +76,124 @@ export function SiteFooter({
           { href: `${prefix}/collections/subscriptions`, label: t('fallbackDesign') },
         ];
 
+  const siteMap = [
+    { href: `${prefix}${ROUTES.store}`, label: t('softwareStore') },
+    { href: `${prefix}${ROUTES.blog}`, label: t('guides') },
+    { href: `${prefix}${ROUTES.search}`, label: t('searchKeys') },
+    { href: `${prefix}${ROUTES.licenses}`, label: t('myLicences') },
+    { href: `${prefix}${ROUTES.accountOrders}`, label: t('orderHistory') },
+  ];
+
   return (
     <footer className="site-footer" role="contentinfo">
-      {/* The newsletter, double opt-in: the form sends a confirmation email
-          and says so. */}
-      <div className="footer-newsletter-section">
-        <div className="footer-newsletter-container">
-          <FooterNewsletter locale={locale} />
-        </div>
-      </div>
-
       <div className="footer-main">
         <div className="footer-main-container">
-          {/* The brand: the real logo, which already contains the name, and
-              the one line that says what the shop is, which the mark does not. */}
+          {/* 1. The brand: the real logo (which already contains the name),
+              the promise, the two pills, the channels. */}
           <div className="footer-brand-column">
             <Link
               href={`${prefix}${ROUTES.home}`}
               className="footer-brand-header"
               aria-label={brandName}
             >
-              <BrandLogo locale={locale} width={140} />
+              <BrandLogo locale={locale} width={150} />
             </Link>
+            <p className="footer-brand-sub">{t('brandSub')}</p>
             <p className="footer-brand-bio">{t('brandBio')}</p>
 
-            <div className="footer-social-links">
-              <a
-                href={`https://wa.me/${WHATSAPP_DIAL}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t('whatsappSupport')}
-                className="icon-button social-btn"
-                title="WhatsApp"
-              >
-                <WhatsAppIcon size={20} />
-              </a>
-              <a
-                href="https://t.me/digitalactivation"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t('telegram')}
-                className="icon-button social-btn"
-                title="Telegram"
-              >
-                <TelegramIcon size={20} />
-              </a>
-              <a
-                href="https://x.com/digital_activ"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t('x')}
-                className="icon-button social-btn"
-                title="X (Twitter)"
-              >
-                <XIcon size={16} />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={t('instagram')}
-                className="icon-button social-btn"
-                title="Instagram"
-              >
-                <InstagramIcon size={18} />
-              </a>
+            <div className="footer-trust-badges">
+              <span className="trust-pill">
+                <ShieldCheckIcon size={14} />
+                <span>{t('verifiedStore')}</span>
+              </span>
+              <span className="trust-pill">
+                <BoltIcon size={14} />
+                <span>{t('instantDelivery')}</span>
+              </span>
+            </div>
+
+            <div className="footer-social-wrap">
+              <span className="social-label">{t('channels')}</span>
+              <div className="footer-social-links">
+                <a
+                  href={`https://wa.me/${WHATSAPP_DIAL}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('whatsappSupport')}
+                  className="icon-button social-btn"
+                  title="WhatsApp"
+                >
+                  <WhatsAppIcon size={20} />
+                </a>
+                <a
+                  href="https://t.me/digitalactivation"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('telegram')}
+                  className="icon-button social-btn"
+                  title="Telegram"
+                >
+                  <TelegramIcon size={20} />
+                </a>
+                <a
+                  href="https://x.com/digital_activ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('x')}
+                  className="icon-button social-btn"
+                  title="X (Twitter)"
+                >
+                  <XIcon size={16} />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t('instagram')}
+                  className="icon-button social-btn"
+                  title="Instagram"
+                >
+                  <InstagramIcon size={18} />
+                </a>
+                <a
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                  aria-label={t('sendEmail')}
+                  className="icon-button social-btn"
+                  title="Email"
+                >
+                  <MailIcon />
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Products: the categories the catalog actually has. */}
-          <nav className="footer-nav-column" aria-label={t('products')}>
-            <h2 className="footer-col-title">{t('products')}</h2>
+          {/* 2. The shelves the catalog actually has. */}
+          <nav className="footer-nav-column" aria-label={t('categories')}>
+            <h2 className="footer-col-title">{t('categories')}</h2>
             <ul className="footer-nav-list">
               {categories.map((entry) => (
                 <li key={entry.href}>
                   <Link href={entry.href}>{entry.label}</Link>
                 </li>
               ))}
-              <li>
-                <Link href={`${prefix}${ROUTES.store}`}>{t('softwareStore')}</Link>
-              </li>
             </ul>
           </nav>
 
-          {/* Customer service: a person to reach, and the pages about an order. */}
-          <nav className="footer-nav-column" aria-label={t('customerService')}>
-            <h2 className="footer-col-title">{t('customerService')}</h2>
+          {/* 3. The site map. */}
+          <nav className="footer-nav-column" aria-label={t('siteMap')}>
+            <h2 className="footer-col-title">{t('siteMap')}</h2>
             <ul className="footer-nav-list">
-              <li>
-                <a
-                  href={`https://wa.me/${WHATSAPP_DIAL}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="footer-contact-link"
-                >
-                  <WhatsAppIcon size={16} />
-                  <span>{t('whatsapp')}</span>
-                  <span className="footer-contact-value" dir="ltr">
-                    {WHATSAPP_SHOWN}
-                  </span>
-                </a>
-              </li>
-              <li>
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="footer-contact-link">
-                  <MailIcon />
-                  <span className="footer-contact-value" dir="ltr">
-                    {SUPPORT_EMAIL}
-                  </span>
-                </a>
-              </li>
-              <li>
-                <Link href={`${prefix}${ROUTES.contact}`}>{t('policy.contact')}</Link>
-              </li>
-              <li>
-                <Link href={`${prefix}${ROUTES.licenses}`}>{t('myLicences')}</Link>
-              </li>
-              <li>
-                <Link href={`${prefix}${ROUTES.accountOrders}`}>{t('orderHistory')}</Link>
-              </li>
-              <li>
-                <Link href={`${prefix}${ROUTES.blog}`}>{t('guides')}</Link>
-              </li>
+              {siteMap.map((entry) => (
+                <li key={entry.href}>
+                  <Link href={entry.href}>{entry.label}</Link>
+                </li>
+              ))}
             </ul>
           </nav>
 
-          {/* Useful links: the policies, the warranty first. */}
-          <nav className="footer-nav-column" aria-label={t('usefulLinks')}>
-            <h2 className="footer-col-title">{t('usefulLinks')}</h2>
+          {/* 4. The warranty first, then the policies. */}
+          <nav className="footer-nav-column" aria-label={t('policies')}>
+            <h2 className="footer-col-title">{t('policies')}</h2>
             <ul className="footer-nav-list">
               {POLICY_PAGES.map((page) => (
                 <li key={page.slug}>
@@ -203,15 +201,76 @@ export function SiteFooter({
                     href={`${prefix}/${page.slug}`}
                     className={page.isSpecial ? 'special-policy-link' : undefined}
                   >
-                    {t(`policy.${page.key}`)}
+                    {page.isSpecial ? <ShieldCheckIcon size={14} /> : null}
+                    <span>{t(`policy.${page.key}`)}</span>
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link href={`${prefix}${ROUTES.search}`}>{t('searchKeys')}</Link>
-              </li>
             </ul>
           </nav>
+
+          {/* 5. A person to reach: two cards and the remote-help note. */}
+          <div className="footer-support-column">
+            <div className="support-col-header">
+              <h2 className="footer-col-title">{t('support')}</h2>
+              <span className="support-status-chip">
+                <span className="status-ping" aria-hidden="true" />
+                {t('online')}
+              </span>
+            </div>
+
+            <div className="footer-contact-cards">
+              <a
+                href={`https://wa.me/${WHATSAPP_DIAL}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-contact-card"
+              >
+                <span className="iconbox footer-contact-card-icon is-whatsapp" aria-hidden="true">
+                  <WhatsAppIcon size={20} />
+                </span>
+                <span className="footer-contact-card-body">
+                  <span className="footer-contact-card-label">{t('directWhatsapp')}</span>
+                  <span className="footer-contact-card-val" dir="ltr">
+                    {WHATSAPP_SHOWN}
+                  </span>
+                </span>
+              </a>
+
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="footer-contact-card">
+                <span className="iconbox footer-contact-card-icon" aria-hidden="true">
+                  <MailIcon />
+                </span>
+                <span className="footer-contact-card-body">
+                  <span className="footer-contact-card-label">{t('supportEmail')}</span>
+                  <span className="footer-contact-card-val" dir="ltr">
+                    {SUPPORT_EMAIL}
+                  </span>
+                </span>
+              </a>
+
+              {/* The shop's own offer, in the shop's own terms: conditional on a
+                  problem that is preventing activation, as the warranty policy
+                  the owner wrote makes it. */}
+              <div className="remote-support-badge">
+                <span className="iconbox footer-contact-card-icon" aria-hidden="true">
+                  <HeadsetIcon size={20} />
+                </span>
+                <span className="remote-text">
+                  <strong>{t('remoteTitle')}</strong>
+                  <span>{t('remoteBody')}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* The newsletter, double opt-in: the form sends a confirmation email
+          and says so. */}
+      <div className="footer-newsletter-section">
+        <div className="footer-newsletter-container">
+          <FooterNewsletter locale={locale} />
         </div>
       </div>
 
@@ -229,9 +288,7 @@ export function SiteFooter({
             })}
           </p>
 
-          {/* No registration or VAT numbers here: the owner removed them from
-              the storefront on 2026-10-03. They remain in the admin's trust
-              settings and on the checkout, where the trust block reads them. */}
+          <p className="footer-made-note">{t('madeNote')}</p>
 
           <div className="footer-lang-switcher">
             <Link

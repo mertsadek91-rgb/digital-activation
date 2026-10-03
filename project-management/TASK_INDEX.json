@@ -2440,6 +2440,48 @@
       "updated_at": "2026-10-03",
       "reaudit": null,
       "file": "tasks/completed/TASK-0103.md"
+    },
+    {
+      "id": "TASK-0104",
+      "title": "Footer: restore the five-column layout with the support cards and trust pills, in the kit style (after the owner saw the simplified kit footer on staging)",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "footer"
+      ],
+      "affected_files": [
+        "apps/storefront/src/components/site-footer.tsx",
+        "apps/storefront/src/app/footer.css",
+        "apps/storefront/messages/"
+      ],
+      "created_at": "2026-10-03",
+      "updated_at": "2026-10-03",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0104.md"
     }
   ]
 }
