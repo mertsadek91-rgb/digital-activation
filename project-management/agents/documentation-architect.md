@@ -11,7 +11,7 @@
 | Max authority | Level 2 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | WAITING |
 
 ## Responsibilities
 
@@ -51,4 +51,3 @@
 ## Current tasks
 
 - TASK-0081 — Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them (WAITING_INFORMATION, 50%)
-- TASK-0083 — Remove PROJECT_CONFIG.file_ownership (superseded by routing.json domains) and the V1 sync entry point after one release (IN_PROGRESS, 60%)

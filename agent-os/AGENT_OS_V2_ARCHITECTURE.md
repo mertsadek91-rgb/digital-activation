@@ -82,7 +82,7 @@ team. Rules that can be enforced mechanically are.
 | **IMMUTABLE_HISTORY** | `project-management/logs/*.log` (V1, frozen); the event log itself                                                                                                   |
 | **ARCHIVED**          | `project-management/tools/archive/sync-v1.mjs.txt` (V1 generator source, kept for the record; not executable)                                                        |
 
-M12 (TASK-0083) removed the V1 compatibility layer: the `project-management/tools/sync.mjs` entry point is gone (use `pnpm pm:sync`, which runs `pm.mjs sync`), and `PROJECT_CONFIG.json` no longer carries `file_ownership`. The ownership table lives only in the `domains` of `agent-os/policies/routing.json`; the dashboard's Files view and the ownership-floor rule both read it from there. `consistency.test.mjs` asserts that both stay removed.
+M12 (TASK-0083) closed out the V1 compatibility layer: a `project-management/tools/sync.mjs` entry point and a `PROJECT_CONFIG.json` `file_ownership` block were never committed to this repository (REV-0066, which claimed to remove them, was invalidated); the stale references to them are gone. Use `pnpm pm:sync`, which runs `pm.mjs sync`, and the `routing.json` domains for ownership. The ownership table lives only in the `domains` of `agent-os/policies/routing.json`; the dashboard's Files view and the ownership-floor rule both read it from there. `consistency.test.mjs` asserts that both stay removed.
 
 ## Risk-adaptive governance (DEC-0013)
 

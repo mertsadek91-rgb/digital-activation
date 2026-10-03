@@ -879,19 +879,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0083",
+      "state": "WAITING",
+      "current_task": "TASK-0081",
       "assignments": [
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-03T06:07:34Z"
+      "last_activity": "2026-10-03T06:09:46Z"
     },
     {
       "id": "product-opportunity-lead",

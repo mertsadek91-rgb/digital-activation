@@ -10,13 +10,11 @@
       ],
       "active_tasks": [
         "TASK-0004",
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "owned_tasks": [
         "TASK-0004",
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "reviews": [
         "TASK-0004"
@@ -155,7 +153,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T12:18:34Z"
+      "last_activity": "2026-10-03T06:17:56Z"
     },
     {
       "id": "pm-05",
