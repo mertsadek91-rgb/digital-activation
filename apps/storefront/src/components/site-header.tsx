@@ -129,7 +129,7 @@ export function SiteHeader({
    * The page behind the drawer is inert while it is open, so the dialog is
    * modal in fact and not only by `aria-modal`: Tab from its last control
    * cannot land on the hero behind the backdrop, and a screen reader cannot
-   * wander out of it (REV-0124). Everything on the page except the drawer
+   * wander out of it (REV-0126). Everything on the page except the drawer
    * itself and its backdrop — the header's own rows, the main content, the
    * footer and the floating WhatsApp button — gets `inert`, and loses it
    * again when the drawer closes or the header unmounts.

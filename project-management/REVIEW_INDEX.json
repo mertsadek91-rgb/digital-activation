@@ -1207,6 +1207,34 @@
     },
     {
       "review_id": "REV-0121",
+      "reviewer": "pm-06",
+      "executor": "subagent:general-purpose",
+      "review_type": "RELEASE",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Evidence genuine and local: 33 URLs x 12 cookie scenarios, 0 failures, production build via next start, only localhost hosts, fixture tokens; refresh-once proven; answers REV-0089/0090. Caveats: READONLY marketing 403 is expected StaffGuard behaviour, the fixture returned 404; nav claim from nav.json.",
+      "round": 2,
+      "target": "TASK-0063",
+      "ts": "2026-10-02T12:18:22Z",
+      "actor": "pm-06",
+      "event": "E20261002121822-6caa10"
+    },
+    {
+      "review_id": "REV-0122",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Infeasibility confirmed: auth.controller.ts:46-53 sets host-only cookies (refresh path /v1/auth/staff), so proxy.ts never sees them; widening to the parent domain would leak to the storefront. Scope (c) accepted: all 33 pages are client shells with no data, every data page goes through use-staff.ts; the API is the real gate. Marketing crashes are a mock artefact (mock/api.mjs returns only {enabled}). Condition: affected_files must name use-staff.ts.",
+      "round": 2,
+      "target": "TASK-0063",
+      "ts": "2026-10-02T12:18:31Z",
+      "actor": "pm-04",
+      "event": "E20261002121831-2e47c5"
+    },
+    {
+      "review_id": "REV-0123",
       "reviewer": "frontend-architect",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -1220,7 +1248,7 @@
       "event": "E20261002110356-953849"
     },
     {
-      "review_id": "REV-0122",
+      "review_id": "REV-0124",
       "reviewer": "responsive-design-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
@@ -1234,7 +1262,7 @@
       "event": "E20261002110638-bba9c4"
     },
     {
-      "review_id": "REV-0123",
+      "review_id": "REV-0125",
       "reviewer": "accessibility-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "ACCESSIBILITY",
@@ -1248,13 +1276,13 @@
       "event": "E20261002110709-9882ae"
     },
     {
-      "review_id": "REV-0124",
+      "review_id": "REV-0126",
       "reviewer": "accessibility-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "ACCESSIBILITY",
       "result": "CONCERN",
       "independent": true,
-      "findings": "Round 2 re-check of REV-0123 (BLOCKING_OBJECTION) and REV-0122 items, measured on the rendered home page (webpack dev :3010, fixture API :4000) in Arabic (/, RTL) and English (/en) at 1440, 390 and 360 over headless Chrome CDP. REV-0123 blocker A RESOLVED: after a real pointer click on .mobile-menu-btn (390 and 360, ar and en) document.activeElement is the first drawer link (a.drawer-link Home / الرئيسية) at the first 100ms sample and stays there for all 13 samples to 1315ms; the panel is visibility visible and inert=false from the first sample (computed transition is transform 300ms plus visibility 0s with no delay while open). Escape closes it (inert=true, hidden after 700ms) and returns focus to the menu button. WCAG 2.4.3 F85 no longer applies. REV-0123 blocker B RESOLVED: inactive hero dot ::before is rgb(91,100,117) = ink-muted #5B6475; contrast 5.59:1 on the gradient light end #F0FAF6 and 4.90:1 on the dark end #D7EEE8, both above the 3:1 of WCAG 1.4.11 (computed hero gradient confirmed as linear-gradient(135deg, #F0FAF6, #D7EEE8)); the active dot #087F70 is 4.61:1 / 4.04:1. REV-0122 (3) RESOLVED: the all-products chevron is matrix(-1,0,0,-1) = 180deg when .mega-button.is-open, aria-expanded true while open and false after closing, in both locales at 1440 (crops mega_open_ar/en_1440.png show it pointing up). REV-0122 (2) RESOLVED: every .faqrow summary is 56px tall at 1440/390/360 (76.8px where an English question wraps at 390/360), min 56 >= 44. REV-0122 (1) RESOLVED: at 390 and 360, ar and en, the set of .card-buy heights is {44} for all 10 buyable cards, white-space nowrap; label widths 100.7px (ar add) / 119.7px (ar choose) / 103.6px (en add) / 119.5px (en choose) inside a 130px client width, scrollWidth == clientWidth, no clipping (cards_ar_360.png shows one-line Arabic labels with equal-height add and choose buttons). REV-0122 (4) RESOLVED: fixture answers /v1/payment-methods and /v1/catalog/currencies with 200 and /v1/marketing/public now passes the contract; .footer-payments-bar renders (Visa and Mastercard marks plus the encrypted-connection chip), .footer-registration renders CR and VAT lines, and the topbar currency select is present with USD/SAR/AED (visible at 1440, 48x22 inside a 48x24 label; hidden on phones where the drawer carries a 72x40 select). Console on every load: zero console.error and zero exceptions; the only network failures are two 404s for the expected /v1/cart fixture gap. No horizontal overflow at any width in either locale. NEW FINDING, medium, not blocking: the drawer is role=dialog aria-modal=true but focus is not contained and the page behind is not inert (header, main, footer and the floating WhatsApp link are all non-inert while it is open). Tab from the last drawer control (the currency select) moves focus to the hero primary CTA behind the 50% backdrop with the drawer still open, and a second Tab reaches the hero outline button; Shift+Tab from the first drawer control (the logo) lands on the header cart link. Measured identically at 390 and 360 in ar and en (drawer_tab_escaped_ar/en_360.png). Classification: this is not an explicit WCAG 2.2 AA failure (no success criterion normatively requires focus trapping; the focused element is only partly under the translucent backdrop, so 2.4.11 is not failed), but it contradicts aria-modal=true (screen readers that honour it hide the content focus has just moved to) and fails the WAI-ARIA APG modal dialog pattern; many AA audits report it under 2.4.3. Recommended fix before stage 3: set inert on header/main/footer (and the FAB) while drawerOpen, or wrap Tab/Shift+Tab inside .drawer-panel. INFO: the topbar select is 22px tall at 1440; it meets 2.5.8 only through the spacing exception (14px to the language link, 24px circles do not intersect). Round-1 passes (text contrast, focus ring, carousel semantics, 2.2.2 pause, target sizes) were not re-measured and stand as recorded in REV-0123.",
+      "findings": "Round 2 re-check of REV-0125 (BLOCKING_OBJECTION) and REV-0124 items, measured on the rendered home page (webpack dev :3010, fixture API :4000) in Arabic (/, RTL) and English (/en) at 1440, 390 and 360 over headless Chrome CDP. REV-0125 blocker A RESOLVED: after a real pointer click on .mobile-menu-btn (390 and 360, ar and en) document.activeElement is the first drawer link (a.drawer-link Home / الرئيسية) at the first 100ms sample and stays there for all 13 samples to 1315ms; the panel is visibility visible and inert=false from the first sample (computed transition is transform 300ms plus visibility 0s with no delay while open). Escape closes it (inert=true, hidden after 700ms) and returns focus to the menu button. WCAG 2.4.3 F85 no longer applies. REV-0125 blocker B RESOLVED: inactive hero dot ::before is rgb(91,100,117) = ink-muted #5B6475; contrast 5.59:1 on the gradient light end #F0FAF6 and 4.90:1 on the dark end #D7EEE8, both above the 3:1 of WCAG 1.4.11 (computed hero gradient confirmed as linear-gradient(135deg, #F0FAF6, #D7EEE8)); the active dot #087F70 is 4.61:1 / 4.04:1. REV-0124 (3) RESOLVED: the all-products chevron is matrix(-1,0,0,-1) = 180deg when .mega-button.is-open, aria-expanded true while open and false after closing, in both locales at 1440 (crops mega_open_ar/en_1440.png show it pointing up). REV-0124 (2) RESOLVED: every .faqrow summary is 56px tall at 1440/390/360 (76.8px where an English question wraps at 390/360), min 56 >= 44. REV-0124 (1) RESOLVED: at 390 and 360, ar and en, the set of .card-buy heights is {44} for all 10 buyable cards, white-space nowrap; label widths 100.7px (ar add) / 119.7px (ar choose) / 103.6px (en add) / 119.5px (en choose) inside a 130px client width, scrollWidth == clientWidth, no clipping (cards_ar_360.png shows one-line Arabic labels with equal-height add and choose buttons). REV-0124 (4) RESOLVED: fixture answers /v1/payment-methods and /v1/catalog/currencies with 200 and /v1/marketing/public now passes the contract; .footer-payments-bar renders (Visa and Mastercard marks plus the encrypted-connection chip), .footer-registration renders CR and VAT lines, and the topbar currency select is present with USD/SAR/AED (visible at 1440, 48x22 inside a 48x24 label; hidden on phones where the drawer carries a 72x40 select). Console on every load: zero console.error and zero exceptions; the only network failures are two 404s for the expected /v1/cart fixture gap. No horizontal overflow at any width in either locale. NEW FINDING, medium, not blocking: the drawer is role=dialog aria-modal=true but focus is not contained and the page behind is not inert (header, main, footer and the floating WhatsApp link are all non-inert while it is open). Tab from the last drawer control (the currency select) moves focus to the hero primary CTA behind the 50% backdrop with the drawer still open, and a second Tab reaches the hero outline button; Shift+Tab from the first drawer control (the logo) lands on the header cart link. Measured identically at 390 and 360 in ar and en (drawer_tab_escaped_ar/en_360.png). Classification: this is not an explicit WCAG 2.2 AA failure (no success criterion normatively requires focus trapping; the focused element is only partly under the translucent backdrop, so 2.4.11 is not failed), but it contradicts aria-modal=true (screen readers that honour it hide the content focus has just moved to) and fails the WAI-ARIA APG modal dialog pattern; many AA audits report it under 2.4.3. Recommended fix before stage 3: set inert on header/main/footer (and the FAB) while drawerOpen, or wrap Tab/Shift+Tab inside .drawer-panel. INFO: the topbar select is 22px tall at 1440; it meets 2.5.8 only through the spacing exception (14px to the language link, 24px circles do not intersect). Round-1 passes (text contrast, focus ring, carousel semantics, 2.2.2 pause, target sizes) were not re-measured and stand as recorded in REV-0125.",
       "round": 2,
       "target": "TASK-0102",
       "ts": "2026-10-02T11:21:29Z",

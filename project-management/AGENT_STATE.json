@@ -289,18 +289,16 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0063",
-      "assignments": [
-        "TASK-0063"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0101"
       ],
       "reviews": [],
       "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-02T11:03:56Z"
     },
@@ -431,13 +429,12 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0016",
-        "TASK-0063"
+        "TASK-0016"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:12:09Z"
     },
@@ -790,14 +787,13 @@
       "current_task": "TASK-0051",
       "assignments": [
         "TASK-0051",
-        "TASK-0089",
         "TASK-0101"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 3,
+      "workload": 2,
       "blockers": [],
       "last_activity": "2026-10-02T11:55:16Z"
     },
@@ -818,13 +814,12 @@
       "supporting": [
         "TASK-0004",
         "TASK-0030",
-        "TASK-0044",
-        "TASK-0089"
+        "TASK-0044"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 3.5,
       "blockers": [],
       "last_activity": "2026-10-02T11:07:16Z"
     },
