@@ -56,4 +56,3 @@
 ## Supporting
 
 - TASK-0016 — Two-person approval for bulk licence export (BACKLOG, 0%)
-- TASK-0063 — Server-side session gate for admin pages (IN_PROGRESS, 50%)

@@ -1204,6 +1204,34 @@
       "ts": "2026-10-02T11:55:46Z",
       "actor": "pm-06",
       "event": "E20261002115546-744437"
+    },
+    {
+      "review_id": "REV-0121",
+      "reviewer": "pm-06",
+      "executor": "subagent:general-purpose",
+      "review_type": "RELEASE",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Evidence genuine and local: 33 URLs x 12 cookie scenarios, 0 failures, production build via next start, only localhost hosts, fixture tokens; refresh-once proven; answers REV-0089/0090. Caveats: READONLY marketing 403 is expected StaffGuard behaviour, the fixture returned 404; nav claim from nav.json.",
+      "round": 2,
+      "target": "TASK-0063",
+      "ts": "2026-10-02T12:18:22Z",
+      "actor": "pm-06",
+      "event": "E20261002121822-6caa10"
+    },
+    {
+      "review_id": "REV-0122",
+      "reviewer": "pm-04",
+      "executor": "subagent:general-purpose",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Infeasibility confirmed: auth.controller.ts:46-53 sets host-only cookies (refresh path /v1/auth/staff), so proxy.ts never sees them; widening to the parent domain would leak to the storefront. Scope (c) accepted: all 33 pages are client shells with no data, every data page goes through use-staff.ts; the API is the real gate. Marketing crashes are a mock artefact (mock/api.mjs returns only {enabled}). Condition: affected_files must name use-staff.ts.",
+      "round": 2,
+      "target": "TASK-0063",
+      "ts": "2026-10-02T12:18:31Z",
+      "actor": "pm-04",
+      "event": "E20261002121831-2e47c5"
     }
   ],
   "invalidated_reviews": [
