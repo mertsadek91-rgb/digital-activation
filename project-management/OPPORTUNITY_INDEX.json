@@ -329,6 +329,13 @@
       "relation": "RELATED",
       "ts": "2026-10-01T11:16:22Z",
       "actor": "api-architect"
+    },
+    {
+      "from": "TASK-0103",
+      "to": "TASK-0100",
+      "relation": "RELATED",
+      "ts": "2026-10-02T11:49:25Z",
+      "actor": "frontend-engineer"
     }
   ],
   "ranking": {

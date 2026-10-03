@@ -212,7 +212,8 @@
     "verifiedBuyer": "مشترٍ مُوثَّق",
     "verifiedPurchase": "شراء موثّق",
     "storeReply": "ردّ المتجر",
-    "stars": "{rating} من 5"
+    "stars": "{rating} من 5",
+    "anonymous": "مشترٍ"
   },
   "stockAlert": {
     "done": "سنراسلك مرة واحدة عند توفّره.",
@@ -238,7 +239,12 @@
     "whatsappQuestion": "مرحباً، عندي سؤال عن «{name}»: {url}",
     "getHelp": "اطلب الدعم",
     "readBeforeBuy": "اقرأ قبل أن تشتري",
-    "related": "منتجات قد تعجبك"
+    "related": "منتجات قد تعجبك",
+    "digitalProduct": "منتج رقمي",
+    "accessNote": "طريقة الوصول موضحة في تفاصيل الطلب وفي بريدك بعد الدفع.",
+    "sections": "أقسام الصفحة",
+    "specsTitle": "ما الذي يشمله الشراء؟",
+    "viewAllRelated": "عرض الكل"
   },
   "catalog": {
     "categories": "التصنيفات",
@@ -249,7 +255,9 @@
     "previous": "السابق",
     "next": "التالي",
     "pageOf": "صفحة {page} من {last}",
-    "productCount": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {{count, number, latn} منتجات} many {{count, number, latn} منتجاً} other {{count, number, latn} منتج}}"
+    "productCount": "{count, plural, zero {لا منتجات} one {منتج واحد} two {منتجان} few {{count, number, latn} منتجات} many {{count, number, latn} منتجاً} other {{count, number, latn} منتج}}",
+    "all": "الكل",
+    "filters": "الفلاتر"
   },
   "store": {
     "metaTitle": "المتجر — كل المنتجات",

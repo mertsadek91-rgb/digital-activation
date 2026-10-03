@@ -19,7 +19,7 @@ import {
   variantLabel,
 } from '../lib/format';
 
-import { MinusIcon, PlusIcon, SpecMark, type SpecKind } from './icons';
+import { CartIcon, MinusIcon, PlusIcon, SpecMark, type SpecKind } from './icons';
 
 /**
  * Everything on a product page that changes when the shopper chooses.
@@ -95,6 +95,13 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
       window.removeEventListener('resize', onScroll);
     };
   }, []);
+
+  // The floating WhatsApp button shares the bottom edge with the bar; while
+  // the bar is up the stylesheet lifts the button above it (REV-0127).
+  useEffect(() => {
+    document.body.classList.toggle('has-buy-bar', passed);
+    return () => document.body.classList.remove('has-buy-bar');
+  }, [passed]);
 
   const selected: CatalogVariant =
     product.variants.find((variant) => variant.id === selectedId) ?? product.variants[0]!;
@@ -275,7 +282,13 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                     setAdded(false);
                   }}
                 />
-                <span className="variant-label">{variantLabel(variant, tf)}</span>
+                <span className="radio" aria-hidden="true" />
+                <span className="variant-text">
+                  <span className="variant-label">{variantLabel(variant, tf)}</span>
+                  <span className="variant-sub">
+                    {formatDelivery(variant.deliverySlaSeconds, tf, variant.fulfillmentMode)}
+                  </span>
+                </span>
                 <span className="variant-price">{formatPrice(variant.price)}</span>
                 {!variant.inStock ? <span className="variant-out">{t('soldOut')}</span> : null}
               </label>
@@ -284,7 +297,9 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
         </fieldset>
       ) : null}
 
-      <dl className="specs">
+      {/* The kit's `data-list`: two columns of quiet boxes, a small label over
+          a bold answer, each with the mark the cart and the licence email use. */}
+      <dl className="specs data-list">
         {specs.map((spec) => (
           <div key={spec.kind}>
             <span className="spec-mark" aria-hidden="true">
@@ -311,11 +326,12 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
             {stepper}
             <button
               type="button"
-              className="btn btn-accent btn-buy"
+              className="btn btn-primary btn-buy"
               onClick={() => void add()}
               disabled={busy}
             >
-              {busy ? '…' : tc('addToCart')}
+              <CartIcon />
+              <span>{busy ? '…' : tc('addToCart')}</span>
             </button>
             <p className="buy-total">
               <span>{tc('total')}</span>
@@ -370,11 +386,12 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
               {stepper}
               <button
                 type="button"
-                className="btn btn-accent btn-buy"
+                className="btn btn-primary btn-buy"
                 onClick={() => void add()}
                 disabled={busy}
               >
-                {busy ? '…' : tc('addToCart')}
+                <CartIcon />
+                <span>{busy ? '…' : tc('addToCart')}</span>
               </button>
             </div>
           </motion.div>
