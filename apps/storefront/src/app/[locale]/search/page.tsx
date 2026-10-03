@@ -3,12 +3,16 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { Breadcrumbs } from '../../../components/breadcrumbs';
+import { SearchIcon } from '../../../components/icons';
+import { Pagination } from '../../../components/pagination';
 import { ProductCard } from '../../../components/product-card';
 import { isArabic } from '../../../i18n/locale';
 import { searchProducts } from '../../../lib/api';
 
 /**
- * Search results.
+ * Search results, after the kit's search page (`04_Inner_Pages/*\/search`
+ * and `component_empty_search`, TASK-0103).
  *
  * The page this store did not have. Browsing seventy-three products by
  * category is fine for somebody discovering what is sold here; it is the wrong
@@ -16,15 +20,12 @@ import { searchProducts } from '../../../lib/api';
  * which on a software store is most of them.
  *
  * Server-rendered like every other list, so a result is a URL that can be sent
- * to support or bookmarked — "this is the one I bought" is what search is
- * actually for here. It is `noindex` all the same: `/search` has been in
- * `NOINDEX_PREFIXES` since the SEO rules were written, because a search-result
- * page in an index is a thin page competing with the product pages it links
- * to, and an unbounded query string is an unbounded number of them.
+ * to support or bookmarked. It is `noindex` all the same: a search-result page
+ * in an index is a thin page competing with the product pages it links to.
  *
- * When nothing matches, the page says so and then offers the store, because a
- * dead end with no way forward is the same mistake the 404 page was built to
- * stop making.
+ * When nothing matches, the page says so with the kit's empty state and then
+ * offers the store, because a dead end with no way forward is the same
+ * mistake the 404 page was built to stop making.
  */
 const PER_PAGE = 24;
 
@@ -54,7 +55,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('search');
-  const tk = await getTranslations('catalog');
+  const tc = await getTranslations('common');
 
   const ar = isArabic(locale);
   const prefix = ar ? '' : `/${locale}`;
@@ -66,20 +67,43 @@ export default async function SearchPage({ params, searchParams }: Props) {
     ? await searchProducts({ locale, q, page, perPage: PER_PAGE })
     : { q: '', products: [], total: 0, page: 1, perPage: PER_PAGE };
 
+  const band = (
+    <div className="page-band">
+      <div className="shell">
+        <Breadcrumbs
+          items={[
+            { name: tc('home'), href: `${prefix}/` },
+            { name: t('heading'), href: `${prefix}${ROUTES.search}` },
+          ]}
+        />
+        <header className="page-head">
+          <h1>{q ? t('results') : t('searchStore')}</h1>
+          {q ? (
+            <p className="lede">
+              {t.rich('forQuery', { q, strong: (chunks) => <strong>{chunks}</strong> })}
+            </p>
+          ) : (
+            <p className="lede">{t('hint')}</p>
+          )}
+        </header>
+      </div>
+    </div>
+  );
+
   // The API being unreachable is not "no results" — saying so would tell the
   // visitor their product does not exist when it does.
   if (!results) {
     return (
-      <main className="shell">
-        <header className="page-head">
-          <h1>{t('heading')}</h1>
-        </header>
-        <p className="notice">{t('unavailable')}</p>
-        <p className="missing-actions">
-          <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-            {t('browseStore')}
-          </Link>
-        </p>
+      <main className="catalog-page">
+        {band}
+        <div className="shell">
+          <p className="notice">{t('unavailable')}</p>
+          <p className="missing-actions">
+            <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
+              {t('browseStore')}
+            </Link>
+          </p>
+        </div>
       </main>
     );
   }
@@ -89,61 +113,44 @@ export default async function SearchPage({ params, searchParams }: Props) {
     `${prefix}${ROUTES.search}?q=${encodeURIComponent(q)}${next > 1 ? `&page=${String(next)}` : ''}`;
 
   return (
-    <main className="shell">
-      <header className="page-head">
-        <h1>{q ? t('results') : t('searchStore')}</h1>
-        {q ? (
-          <p className="lede">
-            {t.rich('forQuery', { q, strong: (chunks) => <strong>{chunks}</strong> })}
-          </p>
-        ) : (
-          <p className="lede">{t('hint')}</p>
-        )}
-      </header>
+    <main className="catalog-page">
+      {band}
 
-      {q && results.total > 0 ? (
-        <div className="store-bar">
-          <p className="result-count">{t('resultCount', { count: results.total })}</p>
-        </div>
-      ) : null}
+      <div className="shell">
+        {q && results.total > 0 ? (
+          <div className="store-bar">
+            <p className="result-count">{t('resultCount', { count: results.total })}</p>
+          </div>
+        ) : null}
 
-      {q && results.total === 0 ? (
-        <>
-          <p className="notice">{t('noResults')}</p>
-          <p className="missing-actions">
-            <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-              {t('browseStore')}
-            </Link>
-            <Link className="btn btn-ghost" href={`${prefix}${ROUTES.contact}`}>
-              {t('askUs')}
-            </Link>
-          </p>
-        </>
-      ) : null}
+        {q && results.total === 0 ? (
+          <div className="empty-state">
+            <span className="iconbox empty-state-icon" aria-hidden="true">
+              <SearchIcon size={40} />
+            </span>
+            <h2>{t('noResults')}</h2>
+            <p>{t('hint')}</p>
+            <p className="missing-actions">
+              <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
+                {t('browseStore')}
+              </Link>
+              <Link className="btn btn-outline" href={`${prefix}${ROUTES.contact}`}>
+                {t('askUs')}
+              </Link>
+            </p>
+          </div>
+        ) : null}
 
-      {results.products.length > 0 ? (
-        <div className="grid">
-          {results.products.map((card) => (
-            <ProductCard key={card.slug} card={card} locale={locale} />
-          ))}
-        </div>
-      ) : null}
+        {results.products.length > 0 ? (
+          <div className="grid">
+            {results.products.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
+            ))}
+          </div>
+        ) : null}
 
-      {lastPage > 1 ? (
-        <nav className="pager" aria-label={tk('pagination')}>
-          {page > 1 ? (
-            <Link href={href(page - 1)} rel="prev">
-              {tk('previous')}
-            </Link>
-          ) : null}
-          <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
-          {page < lastPage ? (
-            <Link href={href(page + 1)} rel="next">
-              {tk('next')}
-            </Link>
-          ) : null}
-        </nav>
-      ) : null}
+        <Pagination page={page} lastPage={lastPage} hrefFor={href} />
+      </div>
     </main>
   );
 }

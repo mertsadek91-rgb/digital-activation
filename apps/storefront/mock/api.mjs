@@ -246,6 +246,231 @@ function home(locale, currency) {
   };
 }
 
+// --- stage 3 fixtures: listings, a product, its reviews, search ---------------
+
+const FACETS = {
+  brand: [
+    { value: 'microsoft', label: 'Microsoft', count: 5 },
+    { value: 'adobe', label: 'Adobe', count: 1 },
+    { value: 'autodesk', label: 'Autodesk', count: 1 },
+    { value: 'kaspersky', label: 'Kaspersky', count: 1 },
+  ],
+  platform: [
+    { value: 'WINDOWS', count: 6 },
+    { value: 'CROSS_PLATFORM', count: 2 },
+  ],
+  term: [
+    { value: 'lifetime', count: 5 },
+    { value: 'year', count: 3 },
+  ],
+  devices: [
+    { value: '1', count: 6 },
+    { value: '2-5', count: 2 },
+  ],
+  price: [
+    { key: '0-25', minUsd: 0, maxUsd: 25, min: '0', max: '25', currency: 'USD', count: 5 },
+    { key: '25-50', minUsd: 25, maxUsd: 50, min: '25', max: '50', currency: 'USD', count: 3 },
+  ],
+  inStock: 7,
+  onSale: 2,
+};
+
+function listing(items, locale, currency, page, perPage) {
+  const start = (page - 1) * perPage;
+  return {
+    products: items.slice(start, start + perPage).map((p) => card(p, locale, currency)),
+    total: items.length,
+    page,
+    perPage,
+    facets: FACETS,
+  };
+}
+
+function crumbs(locale, ...rest) {
+  return [{ name: locale === 'ar' ? 'الرئيسية' : 'Home', href: '/' }, ...rest];
+}
+
+const BODY = (locale) => [
+  {
+    type: 'richText',
+    html:
+      locale === 'ar'
+        ? '<p>ويندوز 11 برو هو الإصدار الموجّه للمحترفين والشركات الصغيرة: يضيف إلى إصدار Home أدوات التشفير BitLocker وسطح المكتب البعيد وإدارة السياسات. المفتاح يُفعَّل على خوادم مايكروسوفت مباشرة ويبقى مرتبطاً بجهازك.</p><p>هذا نص وصفي نموذجي من الـ fixture للمعاينة فقط.</p>'
+        : '<p>Windows 11 Pro is the edition for professionals and small businesses: on top of Home it adds BitLocker encryption, Remote Desktop and policy management. The key activates on Microsoft servers directly and stays bound to your device.</p><p>Sample description text from the fixture, for preview only.</p>',
+  },
+];
+
+function product(locale, currency) {
+  const ar = locale === 'ar';
+  const base = PRODUCTS[0];
+  const variants = [
+    {
+      id: 'var_windows-11-pro',
+      sku: 'WIN11-PRO-1',
+      licensePeriodValue: null,
+      licensePeriodUnit: 'LIFETIME',
+      deviceCount: 1,
+      platform: 'WINDOWS',
+      activationMethod: 'RETAIL_ONLINE',
+      deliverySlaSeconds: 300,
+      fulfillmentMode: 'FROM_STOCK',
+      requiresActivationEmail: false,
+      price: price('19.99', null, currency),
+      available: 12,
+      inStock: true,
+      isDefault: true,
+    },
+    {
+      id: 'var_windows-11-pro-3',
+      sku: 'WIN11-PRO-3',
+      licensePeriodValue: null,
+      licensePeriodUnit: 'LIFETIME',
+      deviceCount: 3,
+      platform: 'WINDOWS',
+      activationMethod: 'RETAIL_ONLINE',
+      deliverySlaSeconds: 300,
+      fulfillmentMode: 'FROM_STOCK',
+      requiresActivationEmail: false,
+      price: price('39.99', '49.99', currency),
+      available: 4,
+      inStock: true,
+      isDefault: false,
+    },
+  ];
+  return {
+    slug: base.slug,
+    kind: 'KEY',
+    locale,
+    name: base.name[locale],
+    shortDesc: base.desc[locale],
+    body: BODY(locale),
+    faq: [
+      {
+        q: ar
+          ? 'هل يعمل المفتاح على جهاز مُفعَّل مسبقاً بإصدار Home؟'
+          : 'Does the key work on a machine already on Home?',
+        a: ar
+          ? 'نعم، المفتاح يرقّي Home إلى Pro دون إعادة تثبيت.'
+          : 'Yes. The key upgrades Home to Pro without reinstalling.',
+      },
+      {
+        q: ar ? 'كم مرة يمكن تفعيل المفتاح؟' : 'How many times can the key be activated?',
+        a: ar
+          ? 'مرة واحدة على جهاز واحد؛ يبقى مرتبطاً باللوحة الأم.'
+          : 'Once, on one device; it stays bound to the motherboard.',
+      },
+    ],
+    activationSteps: [
+      {
+        step: 1,
+        text: ar ? 'افتح الإعدادات ← النظام ← التفعيل.' : 'Open Settings → System → Activation.',
+      },
+      {
+        step: 2,
+        text: ar
+          ? 'اختر "تغيير مفتاح المنتج" وألصق المفتاح.'
+          : 'Choose "Change product key" and paste the key.',
+      },
+      {
+        step: 3,
+        text: ar
+          ? 'انتظر التأكيد؛ يظهر "تم التفعيل" خلال دقيقة.'
+          : 'Wait for the confirmation; "Activated" appears within a minute.',
+      },
+    ],
+    downloadUrl: 'https://www.microsoft.com/software-download/windows11',
+    warnings: [
+      {
+        text: ar
+          ? 'لا يعمل على Windows 10 Home دون ترقية.'
+          : 'Does not work on Windows 10 Home without upgrading.',
+        severity: 'note',
+      },
+      {
+        text: ar ? 'الترخيص مقيّد بدول الخليج.' : 'The licence is region-locked to the GCC.',
+        severity: 'critical',
+      },
+    ],
+    brand: { slug: 'microsoft', name: 'Microsoft' },
+    breadcrumbs: crumbs(
+      locale,
+      { name: CATEGORIES[0].name[locale], href: '/collections/windows' },
+      { name: base.name[locale], href: '/store/' + base.slug },
+    ),
+    images: [],
+    hasGoldenWarranty: true,
+    salesCount: 38,
+    rating: { value: '4.8', count: 12 },
+    variants,
+    selectedVariantId: variants[0].id,
+    seo: { title: null, description: null },
+    isDraft: false,
+    sale: null,
+    related: PRODUCTS.slice(1, 5).map((p) => card(p, locale, currency)),
+    articles:
+      locale === 'ar'
+        ? [
+            {
+              slug: POSTS[0].slug,
+              locale,
+              title: POSTS[0].title,
+              summary: POSTS[0].summary,
+              readingMinutes: POSTS[0].minutes,
+              publishedAt: '2026-09-01',
+            },
+          ]
+        : [],
+  };
+}
+
+function reviews(slug, locale) {
+  const ar = locale === 'ar';
+  const rows = [
+    {
+      id: 'rev_1',
+      rating: 5,
+      title: ar ? 'تفعيل خلال دقيقتين' : 'Activated in two minutes',
+      body: ar
+        ? 'وصل المفتاح على البريد مباشرة بعد الدفع وتم التفعيل من أول محاولة.'
+        : 'The key arrived by email right after payment and activated on the first try.',
+      locale,
+      authorName: ar ? 'محمد' : 'Mohammed',
+      createdAt: '2026-09-20T10:00:00Z',
+      storeReply: null,
+      repliedAt: null,
+    },
+    {
+      id: 'rev_2',
+      rating: 4,
+      title: null,
+      body: ar
+        ? 'كل شيء واضح، كنت أتمنى شرحاً أوضح لخطوة ربط الحساب.'
+        : 'Everything was clear; I wished the account-linking step were explained better.',
+      locale,
+      authorName: null,
+      createdAt: '2026-09-12T10:00:00Z',
+      storeReply: ar
+        ? 'شكراً لك، أضفنا الخطوة إلى صفحة المنتج.'
+        : 'Thank you; we added the step to the product page.',
+      repliedAt: '2026-09-13T10:00:00Z',
+    },
+    {
+      id: 'rev_3',
+      rating: 5,
+      title: ar ? 'سعر ممتاز' : 'Great price',
+      body: ar
+        ? 'أرخص من المتجر الرسمي بكثير والمفتاح أصلي.'
+        : 'Much cheaper than the official store and the key is genuine.',
+      locale,
+      authorName: ar ? 'سارة' : 'Sarah',
+      createdAt: '2026-08-30T10:00:00Z',
+      storeReply: null,
+      repliedAt: null,
+    },
+  ];
+  return { slug, rows, page: 1, perPage: 10, total: 12, aggregate: { count: 12, average: '4.8' } };
+}
+
 const marketing = {
   trust: {
     enabled: true,
@@ -280,6 +505,67 @@ const server = createServer((req, res) => {
   };
   if (req.method === 'OPTIONS') return send(204);
 
+  const collectionMatch = url.pathname.match(/^\/v1\/catalog\/collections\/([a-z0-9-]+)$/);
+  if (collectionMatch) {
+    const c = CATEGORIES.find((entry) => entry.slug === collectionMatch[1]);
+    if (!c) return send(404, { statusCode: 404, message: 'no such collection' });
+    const items =
+      c.slug === 'windows' ? PRODUCTS.filter((p) => p.brand === 'Microsoft') : PRODUCTS.slice(0, 4);
+    return send(200, {
+      slug: c.slug,
+      locale,
+      name: c.name[locale],
+      headline: c.headline[locale],
+      body: [],
+      faq: null,
+      breadcrumbs: crumbs(locale, { name: c.name[locale], href: '/collections/' + c.slug }),
+      children:
+        c.slug === 'windows'
+          ? [
+              {
+                slug: 'windows-11',
+                name: locale === 'ar' ? 'ويندوز 11' : 'Windows 11',
+                productCount: 3,
+              },
+              {
+                slug: 'windows-server',
+                name: locale === 'ar' ? 'ويندوز سيرفر' : 'Windows Server',
+                productCount: 2,
+              },
+            ]
+          : [],
+      siblings: CATEGORIES.map((entry) => ({
+        slug: entry.slug,
+        name: entry.name[locale],
+        productCount: entry.productCount,
+      })),
+      seo: { title: null, description: null },
+      ...listing(items, locale, currency, Number(url.searchParams.get('page') ?? 1), 24),
+    });
+  }
+  const brandMatch = url.pathname.match(/^\/v1\/catalog\/brands\/([a-z0-9-]+)$/);
+  if (brandMatch) {
+    const name = brandMatch[1][0].toUpperCase() + brandMatch[1].slice(1);
+    const items = PRODUCTS.filter((p) => p.brand.toLowerCase() === brandMatch[1]);
+    if (items.length === 0) return send(404, { statusCode: 404, message: 'no such brand' });
+    return send(200, {
+      slug: brandMatch[1],
+      locale,
+      name,
+      website: 'https://www.' + brandMatch[1] + '.com',
+      logo: null,
+      intro: [],
+      breadcrumbs: crumbs(locale, { name, href: '/brands/' + brandMatch[1] }),
+      siblings: ['microsoft', 'adobe', 'autodesk', 'kaspersky'].map((b) => ({
+        slug: b,
+        name: b[0].toUpperCase() + b.slice(1),
+        productCount: PRODUCTS.filter((p) => p.brand.toLowerCase() === b).length,
+      })),
+      seo: { title: null, description: null },
+      ...listing(items, locale, currency, 1, 24),
+    });
+  }
+
   switch (url.pathname) {
     case '/v1/catalog/home':
       return send(200, home(locale, currency));
@@ -294,6 +580,29 @@ const server = createServer((req, res) => {
           children: 0,
         })),
       );
+    case '/v1/catalog/store': {
+      const page = Number(url.searchParams.get('page') ?? 1);
+      return send(200, {
+        ...listing(PRODUCTS, locale, currency, page, 24),
+        collections: CATEGORIES.map((c) => ({
+          slug: c.slug,
+          name: c.name[locale],
+          productCount: c.productCount,
+        })),
+      });
+    }
+    case '/v1/catalog/search': {
+      const q = url.searchParams.get('q') ?? '';
+      const hits = PRODUCTS.filter((p) =>
+        (p.name.ar + p.name.en + p.brand).toLowerCase().includes(q.toLowerCase()),
+      );
+      const l = listing(hits, locale, currency, 1, 24);
+      return send(200, { q, products: l.products, total: l.total, page: 1, perPage: 24 });
+    }
+    case '/v1/catalog/products/windows-11-pro':
+      return send(200, product(locale, currency));
+    case '/v1/reviews/products/windows-11-pro':
+      return send(200, reviews('windows-11-pro', locale));
     case '/v1/marketing/public':
       return send(200, marketing);
     // What the shop can take and price in, so the footer's payment bar and the
@@ -319,6 +628,6 @@ const server = createServer((req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   // eslint-disable-next-line no-console -- the one line a fixture server prints
   console.log(
-    `storefront mock API on http://localhost:${PORT} (home, collections, marketing, payment methods, currencies)`,
+    `storefront mock API on http://localhost:${PORT} (home, store, collections, brands, one product with reviews, search, marketing, payment methods, currencies)`,
   );
 });

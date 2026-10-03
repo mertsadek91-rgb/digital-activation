@@ -212,7 +212,8 @@
     "verifiedBuyer": "Verified buyer",
     "verifiedPurchase": "Verified purchase",
     "storeReply": "Reply from the store",
-    "stars": "{rating} out of 5"
+    "stars": "{rating} out of 5",
+    "anonymous": "Buyer"
   },
   "stockAlert": {
     "done": "We will email you once when it is back.",
@@ -238,7 +239,12 @@
     "whatsappQuestion": "Hi, I have a question about \"{name}\": {url}",
     "getHelp": "Get help",
     "readBeforeBuy": "Read before you buy",
-    "related": "You might also like"
+    "related": "You might also like",
+    "digitalProduct": "Digital product",
+    "accessNote": "Access instructions appear in your order details and your email after payment.",
+    "sections": "Page sections",
+    "specsTitle": "What is included?",
+    "viewAllRelated": "View all"
   },
   "catalog": {
     "categories": "Categories",
@@ -249,7 +255,9 @@
     "previous": "Previous",
     "next": "Next",
     "pageOf": "Page {page} of {last}",
-    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}"
+    "productCount": "{count, plural, =0 {no products} one {# product} other {# products}}",
+    "all": "All",
+    "filters": "Filters"
   },
   "store": {
     "metaTitle": "Store — all products",

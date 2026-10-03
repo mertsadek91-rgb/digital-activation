@@ -7,9 +7,17 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { Breadcrumbs } from '../../../../components/breadcrumbs';
 import { BusinessQuote } from '../../../../components/business-quote';
 import { BuyBox } from '../../../../components/buy-box';
-import { SupportIcon } from '../../../../components/icons';
+import {
+  ArrowIcon,
+  DownloadIcon,
+  HeadsetIcon,
+  InfoIcon,
+  PlusIcon,
+  WarningIcon,
+} from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { ProductGallery } from '../../../../components/product-gallery';
 import { ProductTrust } from '../../../../components/product-trust';
@@ -93,12 +101,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/**
+ * The product page, after the kit (`04_Inner_Pages/*\/product` and
+ * `product_secondary`, TASK-0103).
+ *
+ * A title band with the breadcrumb; then the kit's `details` — the picture on
+ * the start side, and beside it the badge, the name, one line about it, the
+ * price, the licence picker, what the licence includes, and the buy button;
+ * then the kit's tabs over the description, the activation steps and the FAQ;
+ * then the reviews as cards on the page ground, the articles that name this
+ * product, and "you may also like" as a grid.
+ *
+ * What stays from the page this replaces, because it is the shop's own truth:
+ * the specification rows built from the selected variant, the warnings about
+ * what a licence will not do, the sale notice, the queued-buyer form when a
+ * product is out, the payment marks and the registration block.
+ */
 export default async function ProductPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('product');
   const tc = await getTranslations('common');
   const tf = await getTranslations('format');
+  const tr = await getTranslations('reviews');
   const ar = isArabic(locale);
 
   const [product, reviews, marketing] = await Promise.all([
@@ -133,26 +158,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
   });
 
   /**
-   * The price handed to the structured data is the same object the page
-   * renders, field for field. That is the whole point: the legacy page printed
-   * د.إ36.36 while its markup declared `"price":"36.36","priceCurrency":"USD"`
-   * — the dirham figure labelled as dollars — and Google discards markup that
-   * contradicts the page it sits on.
-   */
-  /**
    * The aggregate goes on the Product node that is already in the graph, never
-   * in a second one — `buildGraph` throws on two Product entities in one page,
-   * which is exactly the defect this store shipped for years.
-   *
+   * in a second one — `buildGraph` throws on two Product entities in one page.
    * It is taken from the reviews response rather than the denormalised columns
    * on Product, because that is the same arithmetic over the same rows the
-   * section below renders. The columns are the fast path for product cards and
-   * are rewritten on every moderation decision; if the reviews call failed,
-   * they are the fallback rather than emitting nothing.
-   *
-   * And when the count is zero, no rating is emitted at all. An AggregateRating
-   * with a count of zero is not neutral — Google treats an empty or invented
-   * rating as a reason to drop the whole rich result.
+   * section below renders; the columns are the fallback if the reviews call
+   * failed. When the count is zero, no rating is emitted at all.
    */
   const rating =
     reviews && reviews.aggregate.count > 0
@@ -173,6 +184,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
       sku: selected.sku,
       ...(product.brand ? { brandName: product.brand.name } : {}),
       imageUrls: product.images.map((image) => image.url),
+      // The price handed to the structured data is the same object the page
+      // renders, field for field.
       price: { amount: selected.price.amount, currency: selected.price.currency },
       inStock: selected.inStock,
       // The range the licence picker shows, from the same variant prices.
@@ -182,8 +195,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       priceValidUntil: product.sale ? product.sale.endsAt.slice(0, 10) : PRICE_VALID_UNTIL,
       // The Golden Warranty is a replacement promise, not a refund: a key that
       // does not work within seven days is replaced free. Declared only on the
-      // products that carry it — it has exclusions, and a product outside it
-      // makes no such promise.
+      // products that carry it.
       ...(product.hasGoldenWarranty
         ? {
             returnPolicy: {
@@ -194,223 +206,250 @@ export default async function ProductPage({ params, searchParams }: Props) {
             },
           }
         : {}),
-      // Emitted only from approved, verified-purchase reviews. Inventing one
-      // is what produced 565 synthetic reviews on the store this replaces.
+      // Emitted only from approved, verified-purchase reviews.
       ...(rating ? { rating } : {}),
     }),
     product.faq ? jsonld.faqPage(product.faq) : null,
   ]);
 
+  // The page's sections, for the kit's tab row. Only the ones that exist.
+  const sections: { id: string; label: string }[] = [];
+  if (product.body.length > 0) sections.push({ id: 'about', label: t('about') });
+  if (product.activationSteps) sections.push({ id: 'activation', label: t('howToActivate') });
+  if (product.faq) sections.push({ id: 'faq', label: t('faq') });
+  if (reviews) sections.push({ id: 'reviews', label: tr('title') });
+
   return (
-    <main className="shell product">
+    <main className="product-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={tc('breadcrumb')} className="crumbs">
-        {product.breadcrumbs.map((crumb, index) => (
-          <span key={`${crumb.href}-${String(index)}`}>
-            {index > 0 ? <span aria-hidden="true"> › </span> : null}
-            {index === product.breadcrumbs.length - 1 ? (
-              <span aria-current="page">{crumb.name}</span>
-            ) : (
-              <Link href={`${prefix}${crumb.href}`}>{crumb.name}</Link>
-            )}
-          </span>
-        ))}
-      </nav>
-
-      <div className="product-top">
-        <div className="product-media-col">
-          <ProductGallery
-            images={product.images.map((image) => ({ url: image.url, alt: image.alt }))}
-            slug={product.slug}
-            name={product.name}
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={product.breadcrumbs.map((crumb) => ({
+              name: crumb.name,
+              href: `${prefix}${crumb.href}`,
+            }))}
           />
-
-          <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
-
-          {/* The store's own guarantee and registration, from the marketing
-              panel; absent while that feature is off or says nothing. */}
-          {marketing?.trust?.showOnProduct ? (
-            <TrustBlock
-              trust={marketing.trust}
-              locale={locale}
-              delivery={deliveryPromise(
-                product.variants,
-                localText(marketing.trust.instantDeliveryText, locale),
-                tf,
-              )}
-            />
-          ) : null}
-        </div>
-
-        <div className="buybox">
-          {product.brand ? (
-            <Link className="brand" href={`${prefix}/brands/${product.brand.slug}`}>
-              {product.brand.name}
-            </Link>
-          ) : null}
-
-          <h1>{product.name}</h1>
-          {product.shortDesc ? <p className="lede">{product.shortDesc}</p> : null}
-
-          {/* A link rather than a repeat: the stars belong to the section
-              below, and a rating printed twice on one page is two numbers that
-              can fall out of step. Absent entirely when nothing is published. */}
-          {reviews && reviews.aggregate.count > 0 ? (
-            <p className="proof">
-              <a href="#reviews">
-                {t('ratingProof', {
-                  average: reviews.aggregate.average,
-                  count: reviews.aggregate.count,
-                })}
-              </a>
-            </p>
-          ) : null}
-
-          {/* Real orders only, and only above the floor where a count is proof
-              rather than noise. */}
-          {product.salesCount > 0 ? (
-            <p className="proof">{t('salesProof', { count: product.salesCount })}</p>
-          ) : null}
-
-          {/* The price, the picker, the specification table and the buy
-              button move together. They all describe the selected variant, and
-              a page where choosing "3 years" leaves the 1-year price on screen
-              is worse than one with no picker. */}
-          {/* The badge and licence number sit above the price they explain;
-              the price itself already is the sale price. */}
-          {product.sale ? <SaleNotice sale={product.sale} /> : null}
-
-          <BuyBox product={product} locale={locale} />
-
-          {marketing?.business ? (
-            <BusinessQuote
-              productSlug={product.slug}
-              productName={product.name}
-              minSeats={marketing.business.minSeats}
-              locale={locale}
-            />
-          ) : null}
-
-          {!selected.inStock ? (
-            <div className="oos">
-              {/* The legacy store greeted its highest-traffic product page with
-                  "غير متوفر" and offered nothing else. Now the visit becomes a
-                  queued buyer — one email when keys arrive — with a person on
-                  WhatsApp beside it for anyone who would rather ask. */}
-              <StockAlert variantId={selected.id} locale={locale} />
-              <a
-                className="notify"
-                href={whatsappLink(
-                  t('whatsappWhenBack', { name: product.name, url: pageUrl }),
-                  'product_back_in_stock',
-                )}
-                rel="noopener"
-              >
-                {t('askWhenBack')}
-              </a>
-            </div>
-          ) : null}
-
-          {/* Below the buy box, not above it: on a phone the notices sit in the
-              page here, and anything inserted above the button would push it
-              down under a thumb that was already on its way. Keyed by slug so
-              a new product starts a new, separately budgeted page. */}
-          {marketing?.socialProof ? (
-            <SocialProofNotices
-              key={product.slug}
-              slug={product.slug}
-              locale={locale}
-              settings={marketing.socialProof}
-            />
-          ) : null}
-
-          {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
         </div>
       </div>
 
-      {product.activationSteps ? (
-        <section className="prose steps">
-          <h2>{t('howToActivate')}</h2>
-          <ol>
-            {product.activationSteps.map((step) => (
-              <li key={step.step}>{step.text}</li>
-            ))}
-          </ol>
-          {product.downloadUrl ? (
-            <p>
-              <a href={product.downloadUrl} rel="nofollow noopener" target="_blank">
-                {t('officialDownload')}
-              </a>
+      <div className="shell">
+        <div className="details">
+          <div className="product-media-col">
+            <ProductGallery
+              images={product.images.map((image) => ({ url: image.url, alt: image.alt }))}
+              slug={product.slug}
+              name={product.name}
+            />
+
+            <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
+
+            {/* The store's own guarantee and registration, from the marketing
+                panel; absent while that feature is off or says nothing. */}
+            {marketing?.trust?.showOnProduct ? (
+              <TrustBlock
+                trust={marketing.trust}
+                locale={locale}
+                delivery={deliveryPromise(
+                  product.variants,
+                  localText(marketing.trust.instantDeliveryText, locale),
+                  tf,
+                )}
+              />
+            ) : null}
+          </div>
+
+          <div className="buybox">
+            <div className="badge-row">
+              <span className="badge">{t('digitalProduct')}</span>
+              {product.brand ? (
+                <Link className="badge badge-brand" href={`${prefix}/brands/${product.brand.slug}`}>
+                  {product.brand.name}
+                </Link>
+              ) : null}
+            </div>
+
+            <h1>{product.name}</h1>
+            {product.shortDesc ? <p className="lede">{product.shortDesc}</p> : null}
+
+            {/* A link rather than a repeat: the stars belong to the section
+                below, and a rating printed twice on one page is two numbers that
+                can fall out of step. Absent entirely when nothing is published. */}
+            <div className="proof-row">
+              {reviews && reviews.aggregate.count > 0 ? (
+                <p className="proof">
+                  <a href="#reviews">
+                    {t('ratingProof', {
+                      average: reviews.aggregate.average,
+                      count: reviews.aggregate.count,
+                    })}
+                  </a>
+                </p>
+              ) : null}
+              {/* Real orders only, and only above the floor where a count is
+                  proof rather than noise. */}
+              {product.salesCount > 0 ? (
+                <p className="proof">{t('salesProof', { count: product.salesCount })}</p>
+              ) : null}
+            </div>
+
+            {/* The badge and licence number sit above the price they explain;
+                the price itself already is the sale price. */}
+            {product.sale ? <SaleNotice sale={product.sale} /> : null}
+
+            {/* The price, the picker, the specification rows and the buy
+                button move together: they all describe the selected variant. */}
+            <BuyBox product={product} locale={locale} />
+
+            <p className="access-note">
+              <DownloadIcon size={20} />
+              <span>{t('accessNote')}</span>
             </p>
-          ) : null}
-        </section>
-      ) : null}
 
-      {/*
-        What this licence will not do.
-        
-        Above the description rather than below it, because the sentence that
-        matters here — "not for Windows 10 Home", "region-locked to the GCC" —
-        is the one a shopper needs before they decide, not after. A refund
-        costs more than a sale not made.
-      */}
-      {product.warnings.length > 0 ? (
-        <section className="product-warnings" aria-label={t('beforeYouBuy')}>
-          <ul>
-            {product.warnings.map((warning) => (
-              <li key={warning.text} className={`warning-${warning.severity}`}>
-                <span aria-hidden="true">{warning.severity === 'critical' ? '!' : 'i'}</span>
-                {warning.text}
-              </li>
+            {marketing?.business ? (
+              <BusinessQuote
+                productSlug={product.slug}
+                productName={product.name}
+                minSeats={marketing.business.minSeats}
+                locale={locale}
+              />
+            ) : null}
+
+            {!selected.inStock ? (
+              <div className="oos">
+                {/* The legacy store greeted its highest-traffic product page with
+                    "غير متوفر" and offered nothing else. Now the visit becomes a
+                    queued buyer — one email when keys arrive — with a person on
+                    WhatsApp beside it for anyone who would rather ask. */}
+                <StockAlert variantId={selected.id} locale={locale} />
+                <a
+                  className="btn btn-outline"
+                  href={whatsappLink(
+                    t('whatsappWhenBack', { name: product.name, url: pageUrl }),
+                    'product_back_in_stock',
+                  )}
+                  rel="noopener"
+                >
+                  {t('askWhenBack')}
+                </a>
+              </div>
+            ) : null}
+
+            {/* Below the buy box, not above it: on a phone the notices sit in
+                the page here, and anything inserted above the button would push
+                it down under a thumb that was already on its way. */}
+            {marketing?.socialProof ? (
+              <SocialProofNotices
+                key={product.slug}
+                slug={product.slug}
+                locale={locale}
+                settings={marketing.socialProof}
+              />
+            ) : null}
+
+            {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
+          </div>
+        </div>
+      </div>
+
+      {/* --- the kit's tabs, over the sections they point at ---------------- */}
+      {sections.length > 0 ? (
+        <div className="shell product-sections">
+          <nav className="tabs" aria-label={t('sections')}>
+            {sections.map((section) => (
+              <a key={section.id} className="tab" href={`#${section.id}`}>
+                {section.label}
+              </a>
             ))}
-          </ul>
-        </section>
-      ) : null}
+          </nav>
 
-      {/* The description and the reviews side by side, which is how the store
-          this replaces lays out the same two things — and it is the right
-          arrangement for a page whose description runs to two screens: stacked,
-          the reviews are below a fold nobody reaches, and they are the part a
-          hesitant buyer came for. One column on a phone, description first. */}
-      <div className="product-detail">
-        <div className="detail-main">
+          {/* What this licence will not do, before the description rather than
+              after it: "not for Windows 10 Home", "region-locked to the GCC" is
+              what a shopper needs before they decide. A refund costs more than
+              a sale not made. */}
+          {product.warnings.length > 0 ? (
+            <section className="product-warnings" aria-label={t('beforeYouBuy')}>
+              {product.warnings.map((warning) => (
+                <p
+                  key={warning.text}
+                  className={`alert ${warning.severity === 'critical' ? 'alert-error' : 'alert-warning'}`}
+                >
+                  {warning.severity === 'critical' ? <WarningIcon /> : <InfoIcon size={20} />}
+                  <span>{warning.text}</span>
+                </p>
+              ))}
+            </section>
+          ) : null}
+
           {product.body.length > 0 ? (
-            <section className="prose panel">
+            <section className="panel prose" id="about">
               <h2>{t('about')}</h2>
               <Blocks blocks={product.body} />
             </section>
           ) : null}
 
-          {product.faq ? (
-            <section className="prose panel faq">
-              <h2>{t('faq')}</h2>
-              <dl>
-                {product.faq.map((item, index) => (
-                  <div key={index}>
-                    <dt>{item.q}</dt>
-                    <dd>{item.a}</dd>
-                  </div>
+          {product.activationSteps ? (
+            <section className="panel prose activation" id="activation">
+              <h2>{t('howToActivate')}</h2>
+              <ol className="steps-list">
+                {product.activationSteps.map((step) => (
+                  <li key={step.step}>
+                    <span className="stepnum" dir="ltr">
+                      {String(step.step).padStart(2, '0')}
+                    </span>
+                    <span>{step.text}</span>
+                  </li>
                 ))}
-              </dl>
+              </ol>
+              {product.downloadUrl ? (
+                <p>
+                  <a
+                    className="btn btn-text"
+                    href={product.downloadUrl}
+                    rel="nofollow noopener"
+                    target="_blank"
+                  >
+                    <DownloadIcon size={20} />
+                    <span>{t('officialDownload')}</span>
+                  </a>
+                </p>
+              ) : null}
             </section>
           ) : null}
 
-          {/* The old page ends its description with an offer of help, and it
-              is the right place for one: somebody who has read this far either
-              bought it or has a question the page did not answer. */}
+          {product.faq ? (
+            <section className="panel" id="faq">
+              <h2>{t('faq')}</h2>
+              <div className="faq-list">
+                {product.faq.map((item, index) => (
+                  <details key={index} className="faqrow">
+                    <summary>
+                      <span>{item.q}</span>
+                      <span className="faq-toggle" aria-hidden="true">
+                        <PlusIcon />
+                      </span>
+                    </summary>
+                    <p>{item.a}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {/* The offer of help at the end of the description: somebody who has
+              read this far either bought it or has a question the page did not
+              answer. A link to WhatsApp and nothing else. */}
           <aside className="help-cta">
-            <span className="help-mark" aria-hidden="true">
-              <SupportIcon />
+            <span className="iconbox" aria-hidden="true">
+              <HeadsetIcon />
             </span>
             <div>
-              <strong>{t('helpTitle')}</strong>
+              <h3>{t('helpTitle')}</h3>
               <p>{t('helpBody')}</p>
             </div>
-            {/* Prefilled with the product and its link, so the first reply is
-                an answer rather than "which product?". */}
             <a
-              className="btn btn-ghost"
+              className="btn btn-outline"
               href={whatsappLink(
                 t('whatsappQuestion', { name: product.name, url: pageUrl }),
                 'product_question',
@@ -421,53 +460,66 @@ export default async function ProductPage({ params, searchParams }: Props) {
             </a>
           </aside>
         </div>
-
-        {/* Rendered whether or not there are any, because "none yet, and here
-            is why" is a claim worth making on a store whose predecessor showed
-            4.6 stars on 81 products nobody had reviewed. Omitted only when the
-            API could not be reached, where an empty section would be a lie. */}
-        {reviews ? (
-          <div className="detail-side">
-            <Reviews reviews={reviews} />
-          </div>
-        ) : null}
-      </div>
-
-      {/* The other half of the article link: posts that name this product.
-          A shelf answers "which one"; an article answers "why this one rather
-          than that one", and the person still deciding is the one most likely
-          to leave. Empty for most products — seven posts cannot cover
-          sixty-eight — and absent rather than padded when it is. */}
-      {product.articles.length > 0 ? (
-        <section className="product-articles">
-          <h2>{t('readBeforeBuy')}</h2>
-          <ul>
-            {product.articles.map((article) => (
-              <li key={article.slug}>
-                <Link href={`${prefix}${ROUTES.post(article.slug)}`}>
-                  <strong>{article.title}</strong>
-                  {article.summary ? <span>{article.summary}</span> : null}
-                </Link>
-                {article.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(article.readingMinutes, tf)}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
       ) : null}
 
-      {/* What else is on the same shelf. Absent entirely when the shelf holds
-          nothing else, rather than padded out with whatever the catalog has. */}
-      {product.related.length > 0 ? (
-        <section className="related">
-          <h2>{t('related')}</h2>
-          <div className="related-row">
-            {product.related.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
-            ))}
+      {/* Rendered whether or not there are any, because "none yet, and here is
+          why" is a claim worth making on a store whose predecessor showed 4.6
+          stars on 81 products nobody had reviewed. Omitted only when the API
+          could not be reached, where an empty section would be a lie. */}
+      {reviews ? (
+        <div className="band band-soft">
+          <div className="shell">
+            <Reviews reviews={reviews} />
           </div>
-        </section>
+        </div>
+      ) : null}
+
+      {/* Posts that name this product. Empty for most products and absent
+          rather than padded when it is. */}
+      {product.articles.length > 0 ? (
+        <div className="shell">
+          <section className="product-articles">
+            <h2>{t('readBeforeBuy')}</h2>
+            <ul className="post-strip">
+              {product.articles.map((article) => (
+                <li key={article.slug} className="article">
+                  <Link href={`${prefix}${ROUTES.post(article.slug)}`}>
+                    <strong>{article.title}</strong>
+                    {article.summary ? (
+                      <span className="post-strip-sub">{article.summary}</span>
+                    ) : null}
+                    {article.readingMinutes > 0 ? (
+                      <span className="article-more">
+                        {readingLabel(article.readingMinutes, tf)}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      ) : null}
+
+      {/* What else is on the same shelf: the kit's "you may also like" grid.
+          Absent entirely when the shelf holds nothing else. */}
+      {product.related.length > 0 ? (
+        <div className="band band-soft">
+          <section className="shell related">
+            <header className="section-head">
+              <h2>{t('related')}</h2>
+              <Link className="section-more" href={`${prefix}${ROUTES.store}`}>
+                <span>{t('viewAllRelated')}</span>
+                <ArrowIcon size={18} />
+              </Link>
+            </header>
+            <div className="grid">
+              {product.related.slice(0, 4).map((card) => (
+                <ProductCard key={card.slug} card={card} locale={locale} />
+              ))}
+            </div>
+          </section>
+        </div>
       ) : null}
     </main>
   );

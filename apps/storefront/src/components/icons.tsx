@@ -811,3 +811,38 @@ export function ChevronRightIcon({ size = 16 }: { size?: number }) {
     </Svg>
   );
 }
+
+export function FilterIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+      <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none" />
+      <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none" />
+      <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none" />
+    </Svg>
+  );
+}
+
+export function StarIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="currentColor"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z" />
+    </svg>
+  );
+}
+
+export function WarningIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="m12 2 11 19H1Z" />
+      <path d="M12 8v6M12 17h.01" />
+    </Svg>
+  );
+}

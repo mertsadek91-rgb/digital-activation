@@ -216,11 +216,13 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [],
+      "supporting": [
+        "TASK-0103"
+      ],
       "reviews": [],
       "reviews_recorded": 6,
       "opportunities": [],
-      "workload": 0,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-02T11:06:38Z"
     },
@@ -310,16 +312,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0103",
+      "assignments": [
+        "TASK-0103"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-01T11:50:50Z"
+      "last_activity": "2026-10-02T12:03:49Z"
     },
     {
       "id": "backend-architect",

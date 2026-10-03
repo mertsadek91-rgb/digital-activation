@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
@@ -9,6 +8,7 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { isArabic } from '../../../../i18n/locale';
+import { Breadcrumbs } from '../../../../components/breadcrumbs';
 import { CategoryRail } from '../../../../components/category-rail';
 import {
   ListingChips,
@@ -16,6 +16,7 @@ import {
   ListingNoResults,
   ListingSorts,
 } from '../../../../components/listing-filters';
+import { Pagination } from '../../../../components/pagination';
 import { ProductCard } from '../../../../components/product-card';
 import { getBrand } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -89,7 +90,6 @@ export default async function BrandPage({ params, searchParams }: Props) {
   const state = parseListing(await searchParams);
   const { page } = state;
   const t = await getTranslations('brand');
-  const tc = await getTranslations('common');
   const tk = await getTranslations('catalog');
   const ts = await getTranslations('store');
   const ar = isArabic(locale);
@@ -134,63 +134,57 @@ export default async function BrandPage({ params, searchParams }: Props) {
   const lastPage = Math.max(1, Math.ceil(brand.total / brand.perPage));
 
   return (
-    <main className="shell">
+    <main className="catalog-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={tc('breadcrumb')} className="crumbs">
-        {brand.breadcrumbs.map((crumb, index) => (
-          <span key={crumb.href}>
-            {index > 0 ? <span aria-hidden="true"> › </span> : null}
-            {index === brand.breadcrumbs.length - 1 ? (
-              <span aria-current="page">{crumb.name}</span>
-            ) : (
-              <Link href={`${prefix}${crumb.href}`}>{crumb.name}</Link>
-            )}
-          </span>
-        ))}
-      </nav>
-
-      <header className="page-head brand-head">
-        {/* Both dimensions or no image: `next/image` needs an intrinsic size to
-            reserve the space, and a logo that lands after the heading has moved
-            is worse than a heading with no logo. Every asset in this catalog
-            has them; the contract allows null, so this says what happens then.
-            No brand carries a logo today, so this is the branch that runs. */}
-        {brand.logo && brand.logo.width !== null && brand.logo.height !== null ? (
-          <Image
-            className="brand-logo"
-            src={brand.logo.url}
-            alt={brand.logo.alt}
-            width={brand.logo.width}
-            height={brand.logo.height}
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={brand.breadcrumbs.map((crumb) => ({
+              name: crumb.name,
+              href: `${prefix}${crumb.href}`,
+            }))}
           />
-        ) : null}
-        <div>
-          <h1>{brand.name}</h1>
-          {/* No count here: the result line below the rail already carries it,
-              and a number printed twice on one page is two numbers that can
-              fall out of step — the same rule the product page applies to its
-              rating. */}
-          <p className="lede">{t('description', { name: brand.name })}</p>
-          {/* The maker's own site, and the only outbound link on the page.
-              `rel` because it is a link we do not vouch for and do not want to
-              pass ranking to — this is a shop that sells their licences, not a
-              partner of theirs, and the markup should not imply otherwise. */}
-          {brand.website ? (
-            <a
-              className="brand-site"
-              href={brand.website}
-              rel="nofollow noopener noreferrer"
-              target="_blank"
-            >
-              {t('officialSite')}
-            </a>
-          ) : null}
+          <header className="page-head brand-head">
+            {/* Both dimensions or no image: `next/image` needs an intrinsic size to
+                reserve the space, and a logo that lands after the heading has moved
+                is worse than a heading with no logo. No brand carries a logo today,
+                so this is the branch that runs. */}
+            {brand.logo && brand.logo.width !== null && brand.logo.height !== null ? (
+              <Image
+                className="brand-logo"
+                src={brand.logo.url}
+                alt={brand.logo.alt}
+                width={brand.logo.width}
+                height={brand.logo.height}
+              />
+            ) : null}
+            <div>
+              <h1>{brand.name}</h1>
+              {/* No count here: the result line below carries it, and a number
+                  printed twice on one page is two numbers that can fall out of
+                  step. */}
+              <p className="lede">{t('description', { name: brand.name })}</p>
+              {/* The maker's own site, and the only outbound link on the page.
+                  `rel` because it is a link we do not vouch for and do not want
+                  to pass ranking to. */}
+              {brand.website ? (
+                <a
+                  className="brand-site"
+                  href={brand.website}
+                  rel="nofollow noopener noreferrer"
+                  target="_blank"
+                >
+                  {t('officialSite')}
+                </a>
+              ) : null}
+            </div>
+          </header>
         </div>
-      </header>
+      </div>
 
-      <div className="catalog-layout">
-        <aside className="catalog-side">
+      <div className="shell">
+        <div className="listing-bar">
           <CategoryRail
             categories={brand.siblings}
             current={brand.slug}
@@ -206,55 +200,43 @@ export default async function BrandPage({ params, searchParams }: Props) {
               total={brand.total}
             />
           ) : null}
-        </aside>
-
-        <div className="catalog-main">
-          {brand.intro.length > 0 ? (
-            <div className="prose">
-              <Blocks blocks={brand.intro} />
-            </div>
-          ) : null}
-
-          <div className="store-bar">
-            <p className="result-count" role="status">
-              {tk('productCount', { count: brand.total })}
-            </p>
-            {/* A brand's default order is the store's: sales first. */}
-            <ListingSorts state={state} path={listPath} positionLabel={ts('sortPosition')} />
-          </div>
-
-          <ListingChips facets={brand.facets} state={state} path={listPath} />
-
-          {brand.products.length === 0 ? (
-            isFiltered(state.filters) ? (
-              <ListingNoResults state={state} path={listPath} />
-            ) : (
-              <p className="empty">{t('empty')}</p>
-            )
-          ) : (
-            <div className="grid">
-              {brand.products.map((card) => (
-                <ProductCard key={card.slug} card={card} locale={locale} />
-              ))}
-            </div>
-          )}
-
-          {lastPage > 1 ? (
-            <nav className="pager" aria-label={tk('pagination')}>
-              {page > 1 ? (
-                <Link href={listingHref(listPath, state, { page: page - 1 })} rel="prev">
-                  {tk('previous')}
-                </Link>
-              ) : null}
-              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
-              {page < lastPage ? (
-                <Link href={listingHref(listPath, state, { page: page + 1 })} rel="next">
-                  {tk('next')}
-                </Link>
-              ) : null}
-            </nav>
-          ) : null}
         </div>
+
+        {brand.intro.length > 0 ? (
+          <div className="prose">
+            <Blocks blocks={brand.intro} />
+          </div>
+        ) : null}
+
+        <div className="store-bar">
+          <p className="result-count" role="status">
+            {tk('productCount', { count: brand.total })}
+          </p>
+          {/* A brand's default order is the store's: sales first. */}
+          <ListingSorts state={state} path={listPath} positionLabel={ts('sortPosition')} />
+        </div>
+
+        <ListingChips facets={brand.facets} state={state} path={listPath} />
+
+        {brand.products.length === 0 ? (
+          isFiltered(state.filters) ? (
+            <ListingNoResults state={state} path={listPath} />
+          ) : (
+            <p className="empty">{t('empty')}</p>
+          )
+        ) : (
+          <div className="grid">
+            {brand.products.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
+            ))}
+          </div>
+        )}
+
+        <Pagination
+          page={page}
+          lastPage={lastPage}
+          hrefFor={(n) => listingHref(listPath, state, { page: n })}
+        />
       </div>
     </main>
   );
