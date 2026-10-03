@@ -1437,7 +1437,7 @@
       "id": "TASK-0081",
       "title": "Verify the .claude/agents definitions in a fresh session: tool restrictions hold, shaping and reviews run on them",
       "type": "verification",
-      "status": "IN_PROGRESS",
+      "status": "WAITING_INFORMATION",
       "stage": "IMPLEMENTATION",
       "priority": "MEDIUM",
       "progress": 50,

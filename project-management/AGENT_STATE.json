@@ -821,7 +821,7 @@
       "opportunities": [],
       "workload": 3.5,
       "blockers": [],
-      "last_activity": "2026-10-02T11:07:16Z"
+      "last_activity": "2026-10-03T06:07:36Z"
     },
     {
       "id": "sre",
@@ -880,7 +880,7 @@
       "executor": "main",
       "squads": [],
       "state": "WORKING",
-      "current_task": "TASK-0081",
+      "current_task": "TASK-0083",
       "assignments": [
         "TASK-0081",
         "TASK-0083"
@@ -891,7 +891,7 @@
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-03T06:01:49Z"
+      "last_activity": "2026-10-03T06:07:34Z"
     },
     {
       "id": "product-opportunity-lead",
