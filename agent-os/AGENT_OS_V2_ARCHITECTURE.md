@@ -74,13 +74,15 @@ team. Rules that can be enforced mechanically are.
 
 ## Artifact registry
 
-| Class                 | Artifacts                                                                                                                                                                                                      |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **CANONICAL**         | `agent-os/state/events.jsonl`. Configuration: `project-management/PERMISSIONS.json`, `PROJECT_CONFIG.json`, `agent-os/policies/*`, `agent-os/schemas/*`                                                        |
-| **GENERATED**         | record front matter; `*_INDEX.json`, `*_STATE.json` (V1-compatible fields); `agents/*.md`, `managers/*.md`; `dashboard/data.js`; `history/*.json`                                                              |
-| **HUMAN_NARRATIVE**   | record bodies (task plans and work logs, opportunity development packs, decision rationale); `PROJECT_STATUS.md`, `CURRENT_STATE_AUDIT.md`, knowledge base, runbooks                                           |
-| **IMMUTABLE_HISTORY** | `project-management/logs/*.log` (V1, frozen); the event log itself                                                                                                                                             |
-| **DEPRECATED**        | `project-management/tools/sync.mjs` (now forwards to `pm`); `tools/archive/sync-v1.mjs.txt` (V1 source, kept for the record); `FILE_OWNERSHIP` in `PROJECT_CONFIG.json` (superseded by `routing.json` domains) |
+| Class                 | Artifacts                                                                                                                                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CANONICAL**         | `agent-os/state/events.jsonl`. Configuration: `project-management/PERMISSIONS.json`, `PROJECT_CONFIG.json`, `agent-os/policies/*`, `agent-os/schemas/*`              |
+| **GENERATED**         | record front matter; `*_INDEX.json`, `*_STATE.json` (V1-compatible fields); `agents/*.md`, `managers/*.md`; `dashboard/data.js`; `history/*.json`                    |
+| **HUMAN_NARRATIVE**   | record bodies (task plans and work logs, opportunity development packs, decision rationale); `PROJECT_STATUS.md`, `CURRENT_STATE_AUDIT.md`, knowledge base, runbooks |
+| **IMMUTABLE_HISTORY** | `project-management/logs/*.log` (V1, frozen); the event log itself                                                                                                   |
+| **ARCHIVED**          | `project-management/tools/archive/sync-v1.mjs.txt` (V1 generator source, kept for the record; not executable)                                                        |
+
+M12 (TASK-0083) removed the V1 compatibility layer: the `project-management/tools/sync.mjs` entry point is gone (use `pnpm pm:sync`, which runs `pm.mjs sync`), and `PROJECT_CONFIG.json` no longer carries `file_ownership`. The ownership table lives only in the `domains` of `agent-os/policies/routing.json`; the dashboard's Files view and the ownership-floor rule both read it from there. `consistency.test.mjs` asserts that both stay removed.
 
 ## Risk-adaptive governance (DEC-0013)
 

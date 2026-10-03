@@ -834,7 +834,7 @@
       );
       root.appendChild(
         section(
-          'Ownership (from PROJECT_CONFIG.json · full notes in FILE_OWNERSHIP.md)',
+          'Ownership (from agent-os/policies/routing.json · full notes in FILE_OWNERSHIP.md)',
           table(D.ownership, [
             { key: 'path', label: 'Path', cls: 'mono' },
             { key: 'primary', label: 'Primary', render: who },

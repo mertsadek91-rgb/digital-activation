@@ -1,8 +1,8 @@
 # File ownership
 
 Who is primary on each sensitive or shared area, which manager it answers to,
-and who must review a change. The machine-readable copy is `file_ownership` in
-PROJECT_CONFIG.json (rendered on `dashboard/files.html`); keep the two in step.
+and who must review a change. The machine-readable copy is the `domains` list in
+`agent-os/policies/routing.json` (rendered on `dashboard/files.html`); keep the two in step.
 
 | Path                                                                  | Primary                    | Manager | Mandatory review                             | Min. level |
 | --------------------------------------------------------------------- | -------------------------- | ------- | -------------------------------------------- | ---------- |
