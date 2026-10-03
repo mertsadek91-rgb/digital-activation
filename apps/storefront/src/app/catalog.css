@@ -246,7 +246,7 @@ h1 {
 .sorts a {
   display: inline-flex;
   align-items: center;
-  min-block-size: 36px;
+  min-block-size: 44px;
   font-size: var(--text-sm);
   padding: 6px 14px;
   border: 1px solid var(--color-border);
@@ -636,9 +636,27 @@ a.pagination-step:hover {
 @media (min-width: 900px) {
   .details {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: var(--spacing-4);
+    grid-template-rows: auto 1fr;
+    gap: var(--spacing-3) var(--spacing-4);
     align-items: start;
   }
+  /* Picture over the trust cards on the start side; the buy column beside
+     both. One column below, in DOM order: picture, buy column, trust cards. */
+  .details .product-media-col {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .details .buybox {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .details .product-trust-col {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+.product-trust-col {
+  min-inline-size: 0;
 }
 
 /* The kit's `product-image`: a tall soft gradient box, 12px radius. */
@@ -1195,13 +1213,34 @@ a.pagination-step:hover {
 .buy-bar .btn-buy {
   flex: 0 1 14rem;
 }
+/* The bar's button never wraps; the stepper keeps its 44px buttons. */
+.buy-bar .btn-buy {
+  white-space: nowrap;
+  min-inline-size: 0;
+}
+.buy-bar .stepper {
+  flex: none;
+}
+/* On a phone the name and the price go: the row has to hold a 132px stepper
+   and a readable button, and the total is on the button's own row above. */
 @media (max-width: 34rem) {
-  .buy-bar-name {
+  .buy-bar-name,
+  .buy-bar-price {
     display: none;
   }
   .buy-bar-inner {
     padding-inline: var(--spacing-1);
+    gap: 12px;
   }
+  .buy-bar .btn-buy {
+    flex: 1 1 auto;
+    font-size: var(--text-sm);
+    padding-inline: 12px;
+  }
+}
+/* The floating WhatsApp button sits above the bar while the bar is up. */
+.has-buy-bar .whatsapp-fab {
+  inset-block-end: calc(var(--buy-bar-offset, 0px) + 92px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Out of stock: the queued-buyer form and the way to a person. */

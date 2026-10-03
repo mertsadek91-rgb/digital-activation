@@ -242,8 +242,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
               slug={product.slug}
               name={product.name}
             />
-
-            <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
           </div>
 
           <div className="buybox">
@@ -335,6 +333,15 @@ export default async function ProductPage({ params, searchParams }: Props) {
             ) : null}
 
             {product.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
+          </div>
+
+          {/* The payment marks and the shop's promises: under the picture on a
+              wide screen, after the buy column on a phone — the kit's mobile
+              order is picture, name, price, licence, buy, and a card wall
+              between the picture and the name pushed the buy button three
+              screens down (REV-0127). */}
+          <div className="product-trust-col">
+            <ProductTrust hasGoldenWarranty={product.hasGoldenWarranty} />
           </div>
         </div>
       </div>

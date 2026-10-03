@@ -216,15 +216,13 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0103"
-      ],
+      "supporting": [],
       "reviews": [],
-      "reviews_recorded": 6,
+      "reviews_recorded": 7,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-02T11:06:38Z"
+      "last_activity": "2026-10-03T06:30:00Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -312,18 +310,16 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0103",
-      "assignments": [
-        "TASK-0103"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-02T12:03:49Z"
+      "last_activity": "2026-10-03T06:33:22Z"
     },
     {
       "id": "backend-architect",

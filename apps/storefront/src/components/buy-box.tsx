@@ -96,6 +96,13 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     };
   }, []);
 
+  // The floating WhatsApp button shares the bottom edge with the bar; while
+  // the bar is up the stylesheet lifts the button above it (REV-0127).
+  useEffect(() => {
+    document.body.classList.toggle('has-buy-bar', passed);
+    return () => document.body.classList.remove('has-buy-bar');
+  }, [passed]);
+
   const selected: CatalogVariant =
     product.variants.find((variant) => variant.id === selectedId) ?? product.variants[0]!;
 

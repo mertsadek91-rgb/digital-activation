@@ -49,7 +49,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0103 — UI Kit stage 3 — product page, catalog, collection, search and brand listings after the kit (04_Inner_Pages product/catalog/category/search; components filters, plan-selector, tabs, pagination, breadcrumbs, review) (IN_PROGRESS, 0%)
