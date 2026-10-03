@@ -221,9 +221,14 @@ export async function ListingFilterPanel({
           <button type="submit" className="btn btn-primary">
             {t('apply')}
           </button>
-          {isFiltered(f) ? (
-            <Link href={listingHref(path, state, { filters: NO_FILTERS })}>{t('clearAll')}</Link>
-          ) : null}
+          {/* The kit's reset: always there, a link to the unfiltered list. */}
+          <Link
+            href={listingHref(path, state, { filters: NO_FILTERS })}
+            className="btn btn-outline"
+            aria-disabled={isFiltered(f) ? undefined : 'true'}
+          >
+            {t('clearAll')}
+          </Link>
         </div>
       </Form>
     </FilterDrawer>

@@ -203,7 +203,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-02T06:51:40Z"
+      "last_activity": "2026-10-02T11:23:57Z"
     },
     {
       "id": "responsive-design-specialist",
@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 5,
+      "reviews_recorded": 7,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-01T11:49:05Z"
+      "last_activity": "2026-10-03T06:30:00Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -275,11 +275,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 2,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-09-30T07:53:57Z"
+      "last_activity": "2026-10-02T11:21:29Z"
     },
     {
       "id": "frontend-architect",
@@ -296,11 +296,11 @@
         "TASK-0101"
       ],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 1,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-09-30T13:41:36Z"
+      "last_activity": "2026-10-02T11:03:56Z"
     },
     {
       "id": "frontend-engineer",
@@ -319,7 +319,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-01T11:50:50Z"
+      "last_activity": "2026-10-03T07:08:16Z"
     },
     {
       "id": "backend-architect",
@@ -795,7 +795,7 @@
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-03T06:01:50Z"
+      "last_activity": "2026-10-03T07:22:38Z"
     },
     {
       "id": "devops-engineer",
@@ -821,7 +821,7 @@
       "opportunities": [],
       "workload": 3.5,
       "blockers": [],
-      "last_activity": "2026-10-03T06:07:36Z"
+      "last_activity": "2026-10-03T07:22:42Z"
     },
     {
       "id": "sre",
@@ -890,7 +890,7 @@
       "opportunities": [],
       "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-03T06:09:46Z"
+      "last_activity": "2026-10-03T07:22:42Z"
     },
     {
       "id": "product-opportunity-lead",

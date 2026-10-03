@@ -13,7 +13,7 @@ paths:
   - `connect-src` allows only the API and Stripe.
   - The Lighthouse budget requires zero third-party requests, so adding any external script is an L4 change (CSP + performance + privacy).
 - **Relative imports** in the storefront are extensionless (Bundler resolution). Workspace packages keep `.js`.
-- **Design tokens** live in `packages/ui/src/tokens.css`: teal `#148576`; amber `#faa21b` only for offers; Tajawal; 15 px spacing grid; 44 px touch targets.
+- **Design tokens** live in `packages/ui/src/tokens.css` and follow the UI Kit (`docs/ui-kit-review.md`, TASK-0102): teal `#087F70`, mint `#E9F5F1`; the kit's warning hue `#B54708` is the only "offer" accent (the amber is gone); Tajawal for Arabic, Inter for English and for prices/codes (`--font-latin`); 8 px spacing grid; 8/12/999 radii; 48 px controls, 44 px touch targets; 1200 px content width.
   - Use tokens, not hex.
   - `design-system/…/MASTER.md` is a stale template (BUG-0009). Ignore it.
   - Token changes are L3 and route to design-system-architect, art-director and accessibility.

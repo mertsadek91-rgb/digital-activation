@@ -3,8 +3,12 @@ import { useTranslations } from 'next-intl';
 
 import { isArabic } from '../i18n/locale';
 
+import { StarIcon } from './icons';
+
 /**
- * What buyers said, on the product page.
+ * What buyers said, on the product page — as the kit's `review` cards
+ * (`02_Components/*\/review`): an avatar with the initial, the name, the
+ * stars, the words; three to a row on a wide screen.
  *
  * Every row here came from a delivered order line, and the section says so in
  * words rather than with a badge nobody reads. That sentence is the product
@@ -14,28 +18,28 @@ import { isArabic } from '../i18n/locale';
  *
  * When there are no reviews the section still renders, and still says nothing
  * false. "No reviews yet — we only publish reviews from real purchases" is a
- * better answer than five hollow stars, and it is the honest explanation of
- * why a store that has been trading for years shows none.
+ * better answer than five hollow stars.
  */
 export function Reviews({ reviews }: { reviews: ProductReviews }) {
   const t = useTranslations('reviews');
   const { aggregate, rows } = reviews;
 
   return (
-    <section className="prose reviews" id="reviews">
-      <h2>{t('title')}</h2>
-
-      {aggregate.count > 0 ? (
-        <div className="review-summary">
-          <p className="review-average">
-            <strong>{aggregate.average}</strong>
-            <Stars rating={Math.round(Number(aggregate.average))} />
-          </p>
-          <p className="review-count">{t('count', { count: aggregate.count })}</p>
+    <section className="reviews" id="reviews">
+      <header className="section-head">
+        <div className="section-head-text">
+          <h2>{t('title')}</h2>
+          {aggregate.count > 0 ? (
+            <p className="review-summary">
+              <Stars rating={Math.round(Number(aggregate.average))} />
+              <strong className="review-average">{aggregate.average}</strong>
+              <span>{t('count', { count: aggregate.count })}</span>
+            </p>
+          ) : null}
         </div>
-      ) : (
-        <p className="review-empty">{t('empty')}</p>
-      )}
+      </header>
+
+      {aggregate.count === 0 ? <p className="review-empty">{t('empty')}</p> : null}
 
       {rows.length > 0 ? (
         <ul className="review-list">
@@ -56,10 +60,26 @@ export function Reviews({ reviews }: { reviews: ProductReviews }) {
 
 function ReviewItem({ review }: { review: PublicReview }) {
   const t = useTranslations('reviews');
+  const name = review.authorName ?? t('verifiedBuyer');
+  const initial = (review.authorName ?? t('anonymous')).trim().charAt(0);
 
   return (
     <li className="review">
+      <div className="review-head">
+        <span className="avatar" aria-hidden="true">
+          {initial}
+        </span>
+        <div>
+          <p className="review-name">{name}</p>
+          <p className="review-meta">
+            <span className="review-verified">{t('verifiedPurchase')}</span>
+            <time dateTime={review.createdAt}>{review.createdAt.slice(0, 10)}</time>
+          </p>
+        </div>
+      </div>
+
       <Stars rating={review.rating} />
+
       {review.title ? (
         <p className="review-title" dir="auto">
           {review.title}
@@ -71,12 +91,6 @@ function ReviewItem({ review }: { review: PublicReview }) {
           puts its full stop on the wrong side. */}
       <p className="review-body" dir={isArabic(review.locale) ? 'rtl' : 'ltr'}>
         {review.body}
-      </p>
-
-      <p className="review-meta">
-        <span>{review.authorName ?? t('verifiedBuyer')}</span>
-        <span className="review-verified">{t('verifiedPurchase')}</span>
-        <time dateTime={review.createdAt}>{review.createdAt.slice(0, 10)}</time>
       </p>
 
       {review.storeReply ? (
@@ -92,8 +106,8 @@ function ReviewItem({ review }: { review: PublicReview }) {
 /**
  * The rating, drawn once and labelled for anything that is not looking at it.
  *
- * The stars are `aria-hidden` and the number beside them is the accessible
- * name, because "★★★★☆" read aloud is five identical symbols.
+ * The stars are `aria-hidden` and the label is the accessible name, because
+ * five identical symbols read aloud say nothing.
  */
 function Stars({ rating }: { rating: number }) {
   const t = useTranslations('reviews');
@@ -102,7 +116,11 @@ function Stars({ rating }: { rating: number }) {
 
   return (
     <span className="stars" role="img" aria-label={label}>
-      <span aria-hidden="true">{'★'.repeat(full).padEnd(5, '☆')}</span>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= full ? 'star is-on' : 'star'} aria-hidden="true">
+          <StarIcon />
+        </span>
+      ))}
     </span>
   );
 }

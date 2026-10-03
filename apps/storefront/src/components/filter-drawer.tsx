@@ -2,14 +2,17 @@
 
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { CloseIcon, FilterIcon } from './icons';
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** The width the catalog layout grows its sidebar at (`catalog.css`). */
-const DESKTOP = '(min-width: 64rem)';
-
 /**
- * The filter panel's two lives: a sidebar at desktop width, a drawer below it.
+ * The filter panel, as the kit draws it: a button in the listing bar that
+ * opens a sheet (`02_Components/*\/filter-sheet`) on every width — a panel
+ * from the inline end on a wide screen, the full height on a phone. There is
+ * no sidebar; nothing moves until "Show results", so the grid does not
+ * reshuffle behind a sheet the shopper is still ticking.
  *
  * The form inside is server-rendered and works on its own — a GET form whose
  * every state is a URL — so this component only adds behaviour, never
@@ -18,11 +21,6 @@ const DESKTOP = '(min-width: 64rem)';
  * the same link opens a real modal: `role="dialog"` and `aria-modal` while
  * open, focus moved in and trapped (Tab wraps), Escape and the backdrop close
  * it, and focus goes back to the control.
- *
- * On desktop a change submits the form straight away, which is what a
- * sidebar of checkboxes is expected to do; in the drawer nothing moves until
- * "Show results", so the grid does not reshuffle behind a sheet the shopper
- * is still ticking.
  */
 export function FilterDrawer({
   id,
@@ -54,7 +52,7 @@ export function FilterDrawer({
 
   // Arriving on `…#filters` (the no-JS link, shared) opens the drawer properly.
   useEffect(() => {
-    if (window.location.hash === `#${id}` && !window.matchMedia(DESKTOP).matches) setOpen(true);
+    if (window.location.hash === `#${id}`) setOpen(true);
   }, [id]);
 
   useEffect(() => {
@@ -84,20 +82,11 @@ export function FilterDrawer({
       }
     }
 
-    // Growing past the breakpoint turns the drawer back into a sidebar, and a
-    // sidebar holding a focus trap and a scroll lock is a broken page.
-    const wide = window.matchMedia(DESKTOP);
-    const onWide = (event: MediaQueryListEvent): void => {
-      if (event.matches) setOpen(false);
-    };
-
     document.addEventListener('keydown', onKey);
-    wide.addEventListener('change', onWide);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
-      wide.removeEventListener('change', onWide);
       document.body.style.overflow = overflow;
     };
   }, [open, close]);
@@ -107,7 +96,7 @@ export function FilterDrawer({
       <a
         ref={toggle}
         href={`#${id}`}
-        className="filter-toggle"
+        className="btn btn-outline filter-toggle"
         aria-controls={id}
         aria-expanded={open}
         onClick={(event) => {
@@ -115,7 +104,8 @@ export function FilterDrawer({
           setOpen(true);
         }}
       >
-        {buttonLabel}
+        <FilterIcon />
+        <span>{buttonLabel}</span>
       </a>
 
       {open ? <div className="filter-backdrop" aria-hidden="true" onClick={close} /> : null}
@@ -125,13 +115,6 @@ export function FilterDrawer({
         id={id}
         className={`filter-panel${open ? ' is-open' : ''}`}
         {...(open ? { role: 'dialog', 'aria-modal': true, 'aria-labelledby': titleId } : {})}
-        onChange={(event) => {
-          // Desktop only; see above. `requestSubmit` goes through the form's
-          // own submit handling, so it is a client navigation, not a reload.
-          if (!window.matchMedia(DESKTOP).matches) return;
-          const form = (event.target as HTMLElement).closest('form');
-          form?.requestSubmit();
-        }}
         onSubmit={() => {
           if (open) setOpen(false);
         }}
@@ -140,14 +123,14 @@ export function FilterDrawer({
           <h2 id={titleId}>{title}</h2>
           <a
             href="#"
-            className="filter-close"
+            className="icon-button filter-close"
             aria-label={closeLabel}
             onClick={(event) => {
               event.preventDefault();
               close();
             }}
           >
-            <span aria-hidden="true">×</span>
+            <CloseIcon />
           </a>
         </div>
         {children}

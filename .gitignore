@@ -73,3 +73,8 @@ packages/*/src/**/*.map
 .claude/metrics/
 # Canonical-state lock, held while a pm command writes.
 agent-os/state/*.lock
+
+# Design handoff packages (~227 MB of PNG/WebP). Reviewed in docs/ui-kit-review.md;
+# only the editable source and artwork assets get imported, never the full export.
+docs/Digital_Activation_UI_Kit_AR_EN/
+docs/Digital_Activation_Real_Product_Banners_AR_EN_v2/

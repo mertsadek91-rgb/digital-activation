@@ -7,6 +7,7 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { Breadcrumbs } from '../../../../components/breadcrumbs';
 import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
 import {
@@ -15,6 +16,7 @@ import {
   ListingNoResults,
   ListingSorts,
 } from '../../../../components/listing-filters';
+import { Pagination } from '../../../../components/pagination';
 import { ProductCard } from '../../../../components/product-card';
 import { getCollection, recordEvent } from '../../../../lib/api';
 import { goneOrRedirect } from '../../../../lib/gone';
@@ -27,6 +29,12 @@ import {
 } from '../../../../lib/listing';
 import { notFoundMetadata, pageSuffix, pageTitle, paginatedUrl } from '../../../../lib/seo';
 
+/**
+ * A shelf, after the kit's category page (`04_Inner_Pages/*\/category`,
+ * TASK-0103): the same bones as the store index — title band, chips with the
+ * filters at the end, count and sorts, grid, numbered pages — with this
+ * shelf's chip filled in and its sub-shelves as a second row of pills.
+ */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
 
@@ -74,7 +82,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const state = parseListing(await searchParams);
   const { page } = state;
   const t = await getTranslations('collection');
-  const tc = await getTranslations('common');
+  const ts = await getTranslations('store');
   const tk = await getTranslations('catalog');
   const tf = await getTranslations('filters');
   const ar = isArabic(locale);
@@ -133,34 +141,33 @@ export default async function CollectionPage({ params, searchParams }: Props) {
   const lastPage = Math.max(1, Math.ceil(collection.total / collection.perPage));
 
   return (
-    <main className="shell">
+    <main className="catalog-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={tc('breadcrumb')} className="crumbs">
-        {collection.breadcrumbs.map((crumb, index) => (
-          <span key={crumb.href}>
-            {index > 0 ? <span aria-hidden="true"> › </span> : null}
-            {index === collection.breadcrumbs.length - 1 ? (
-              <span aria-current="page">{crumb.name}</span>
-            ) : (
-              <Link href={`${prefix}${crumb.href}`}>{crumb.name}</Link>
-            )}
-          </span>
-        ))}
-      </nav>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={collection.breadcrumbs.map((crumb) => ({
+              name: crumb.name,
+              href: `${prefix}${crumb.href}`,
+            }))}
+          />
+          <header className="page-head">
+            <h1>{collection.name}</h1>
+            {collection.headline ? <p className="lede">{collection.headline}</p> : null}
+          </header>
+        </div>
+      </div>
 
-      <header className="page-head">
-        <h1>{collection.name}</h1>
-        {collection.headline ? <p className="lede">{collection.headline}</p> : null}
-      </header>
-
-      <div className="catalog-layout">
-        <aside className="catalog-side">
+      <div className="shell">
+        <div className="listing-bar">
           <CategoryRail
             categories={collection.siblings}
             current={collection.slug}
             locale={locale}
             title={tk('categories')}
+            allHref={`${prefix}${ROUTES.store}`}
+            allLabel={tk('all')}
           />
           {collection.facets ? (
             <ListingFilterPanel
@@ -170,66 +177,61 @@ export default async function CollectionPage({ params, searchParams }: Props) {
               total={collection.total}
             />
           ) : null}
-        </aside>
-
-        <div className="catalog-main">
-          {collection.children.length > 0 ? (
-            <nav className="subnav" aria-label={tk('subcategories')}>
-              {collection.children.map((child) => (
-                <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
-                  {child.name}
-                  <span className="count">{child.productCount}</span>
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-
-          {collection.body.length > 0 ? (
-            <div className="prose">
-              <Blocks blocks={collection.body} />
-            </div>
-          ) : null}
-
-          <div className="store-bar">
-            <p className="result-count" role="status">
-              {tk('productCount', { count: collection.total })}
-            </p>
-            {/* `position` on a shelf is its own curated order, not sales. */}
-            <ListingSorts state={state} path={listPath} positionLabel={tf('sortFeatured')} />
-          </div>
-
-          <ListingChips facets={collection.facets} state={state} path={listPath} />
-
-          {collection.products.length === 0 ? (
-            isFiltered(state.filters) ? (
-              <ListingNoResults state={state} path={listPath} />
-            ) : (
-              <p className="empty">{t('empty')}</p>
-            )
-          ) : (
-            <div className="grid">
-              {collection.products.map((card) => (
-                <ProductCard key={card.slug} card={card} locale={locale} />
-              ))}
-            </div>
-          )}
-
-          {lastPage > 1 ? (
-            <nav className="pager" aria-label={tk('pagination')}>
-              {page > 1 ? (
-                <Link href={listingHref(listPath, state, { page: page - 1 })} rel="prev">
-                  {tk('previous')}
-                </Link>
-              ) : null}
-              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
-              {page < lastPage ? (
-                <Link href={listingHref(listPath, state, { page: page + 1 })} rel="next">
-                  {tk('next')}
-                </Link>
-              ) : null}
-            </nav>
-          ) : null}
         </div>
+
+        {collection.children.length > 0 ? (
+          <nav className="subnav" aria-label={tk('subcategories')}>
+            {collection.children.map((child) => (
+              <Link key={child.slug} href={`${prefix}${ROUTES.collection(child.slug)}`}>
+                {child.name}
+                <span className="count">{child.productCount}</span>
+              </Link>
+            ))}
+          </nav>
+        ) : null}
+
+        {collection.body.length > 0 ? (
+          <div className="prose">
+            <Blocks blocks={collection.body} />
+          </div>
+        ) : null}
+
+        <div className="store-bar">
+          <p className="result-count" role="status">
+            {tk('productCount', { count: collection.total })}
+          </p>
+          {/* `position` on a shelf is its own curated order, not sales. */}
+          <ListingSorts state={state} path={listPath} positionLabel={tf('sortFeatured')} />
+        </div>
+
+        <ListingChips facets={collection.facets} state={state} path={listPath} />
+
+        {collection.products.length === 0 ? (
+          isFiltered(state.filters) ? (
+            <ListingNoResults state={state} path={listPath} />
+          ) : (
+            <p className="empty">{t('empty')}</p>
+          )
+        ) : (
+          <div className="grid">
+            {collection.products.map((card) => (
+              <ProductCard key={card.slug} card={card} locale={locale} />
+            ))}
+          </div>
+        )}
+
+        <Pagination
+          page={page}
+          lastPage={lastPage}
+          hrefFor={(n) => listingHref(listPath, state, { page: n })}
+        />
+
+        {/* Where to go from the end of one shelf. */}
+        <p className="listing-foot">
+          <Link href={`${prefix}${ROUTES.store}`} className="btn btn-outline">
+            {ts('title')}
+          </Link>
+        </p>
       </div>
     </main>
   );

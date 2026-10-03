@@ -1,93 +1,66 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 
-import { isArabic } from '../i18n/locale';
-import type { HeroSlide } from '../lib/hero-slides';
+import { ArrowIcon, ChevronRightIcon } from './icons';
+
+/** One slide: a product family, its artwork, and where it sends the buyer. */
+export interface HeroSlide {
+  key: string;
+  /** The family's name, as the eyebrow. */
+  name: string;
+  title: string;
+  body: string;
+  cta: string;
+  href: string;
+  image: { src: string; width: number; height: number };
+}
 
 /**
- * The featured-product slider in the hero.
+ * The hero as a slider, one slide per product family (owner request,
+ * 2026-10-02): Windows, Office, Adobe, Autodesk — the four illustrations the
+ * banner package draws.
  *
- * Draws what `loadHeroSlides` read from the catalog and nothing else: no
- * price, name or claim is written in this file, so the first screen of the
- * site can no longer quote a price the product page does not honour. The only
- * text here is the chrome around the data — "from", "save", the buttons —
- * and it comes from the `hero` messages like the rest of the page.
+ * Server-rendered with the first slide active, so the headline is in the
+ * first byte of HTML and stays the LCP element; the script only switches
+ * which slide is shown. Rotation stops while the pointer is over it, while
+ * anything inside it has keyboard focus, and whenever the visitor presses
+ * pause — moving content that cannot be stopped fails WCAG 2.2.2 — and it
+ * starts paused for anybody who has asked the system for reduced motion.
  *
- * Rotation stops while the pointer is over it, while anything inside it has
- * keyboard focus, and whenever the visitor presses pause — moving content
- * that cannot be stopped fails WCAG 2.2.2, and a slide that changes under a
- * focused link moves the link. It starts paused for anybody who has asked the
- * system for reduced motion.
+ * The parts that do not change with the slide — the warranty link and the
+ * three numbers — come in as children, from the page that knows them.
  */
-export function HeroSlider({ slides, locale = 'ar' }: { slides: HeroSlide[]; locale?: string }) {
+export function HeroSlider({ slides, children }: { slides: HeroSlide[]; children?: ReactNode }) {
+  const t = useTranslations('hero');
   const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState(1);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [stopped, setStopped] = useState(false);
-  const isPaused = hovered || focused || stopped;
+  const count = slides.length;
+  const paused = hovered || focused || stopped || count < 2;
 
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setStopped(true);
   }, []);
 
-  const t = useTranslations('hero');
-  const isAr = isArabic(locale);
-  const count = slides.length;
-  const slide = slides[current] ?? slides[0];
-
-  const nextSlide = () => {
-    setDirection(1);
-    setCurrent((prev) => (prev + 1) % count);
-  };
-
-  const prevSlide = () => {
-    setDirection(-1);
-    setCurrent((prev) => (prev - 1 + count) % count);
-  };
-
-  // Auto-play interval. One slide has nowhere to go.
   useEffect(() => {
-    if (isPaused || count < 2) return;
-    const timer = setInterval(() => {
-      setDirection(1);
-      setCurrent((prev) => (prev + 1) % count);
-    }, 5000);
+    if (paused) return;
+    const timer = setInterval(() => setCurrent((index) => (index + 1) % count), 6000);
     return () => clearInterval(timer);
-  }, [isPaused, current, count]);
+  }, [paused, count]);
 
-  if (!slide) return null;
-
-  const slideVariants = {
-    enter: (dir: number) => ({
-      x: dir > 0 ? (isAr ? -40 : 40) : isAr ? 40 : -40,
-      opacity: 0,
-      scale: 0.98,
-    }),
-    center: {
-      x: 0,
-      opacity: 1,
-      scale: 1,
-      transition: {
-        x: { type: 'spring' as const, stiffness: 300, damping: 30 },
-        opacity: { duration: 0.3 },
-      },
-    },
-    exit: (dir: number) => ({
-      x: dir > 0 ? (isAr ? 40 : -40) : isAr ? -40 : 40,
-      opacity: 0,
-      scale: 0.98,
-      transition: { duration: 0.2 },
-    }),
-  };
+  if (count === 0) return null;
 
   return (
-    <div
-      className="hero-slider-wrap"
+    <section
+      className="hero hero-slider"
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={t('region')}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       // React's focus events bubble, so these are focus-within: they fire for
@@ -96,144 +69,96 @@ export function HeroSlider({ slides, locale = 'ar' }: { slides: HeroSlide[]; loc
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
       }}
-      aria-label={t('region')}
-      role="region"
     >
-      <div className="hero-slider-card" style={{ background: slide.theme.bgGlow }}>
-        <AnimatePresence custom={direction} mode="wait">
-          <motion.div
-            key={slide.slug}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            className="hero-slide-content"
+      {slides.map((slide, index) => {
+        const active = index === current;
+        return (
+          <div
+            key={slide.key}
+            className={`hero-slide${active ? ' is-active' : ''}`}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${String(index + 1)} / ${String(count)}: ${slide.name}`}
+            aria-hidden={!active}
+            inert={!active}
           >
-            {/* Brand and category, both from the catalog. */}
-            <div className="hero-slide-top">
-              {slide.brand ? (
-                <span
-                  className="hero-slide-tag"
-                  style={{
-                    background: slide.theme.badgeBg,
-                    borderColor: slide.theme.badgeBorder,
-                    color: slide.theme.accent,
-                  }}
-                >
-                  {slide.brand}
-                </span>
-              ) : null}
-              {slide.category ? <span className="hero-slide-cat">{slide.category}</span> : null}
-            </div>
-
-            {/* h2: the page's h1 is the headline beside the slider, so a slide
-                title one level below it keeps the outline unbroken. */}
-            <h2 className="hero-slide-title">
-              <Link href={slide.href}>{slide.name}</Link>
-            </h2>
-            {slide.description ? <p className="hero-slide-desc">{slide.description}</p> : null}
-
-            <ul className="hero-slide-features">
-              {slide.features.map((feature) => (
-                <li key={feature}>
-                  <span className="feature-bullet" style={{ color: slide.theme.accent }}>
-                    ✓
-                  </span>
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <div className="hero-slide-footer">
-              <div className="hero-slide-price-box">
-                <div className="hero-slide-prices">
-                  {slide.priceIsFrom ? <span className="hero-slide-from">{t('from')}</span> : null}
-                  <span className="hero-slide-price">{slide.price}</span>
-                  {slide.oldPrice ? (
-                    <span className="hero-slide-old-price">{slide.oldPrice}</span>
-                  ) : null}
-                </div>
-                {/* Only over a real strike-through. A saving with nothing to
-                    compare against is a number invented for the badge. */}
-                {slide.savePercent !== null ? (
-                  <span className="hero-slide-save">
-                    {t('save', { percent: String(slide.savePercent) })}
-                  </span>
-                ) : null}
-              </div>
-
-              <Link
-                href={slide.href}
-                className="hero-slide-cta"
-                style={{
-                  background: `linear-gradient(135deg, ${slide.theme.accent}, color-mix(in srgb, ${slide.theme.accent} 80%, black))`,
-                }}
-              >
-                <span>{t('cta')}</span>
-                <span className="cta-arrow" aria-hidden="true">
-                  {isAr ? '←' : '→'}
-                </span>
-              </Link>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation, only when there is somewhere to go. The first button is
-            "previous" in both languages and the row flips with the page, so
-            in Arabic it sits on the right with a right-pointing arrow. It used
-            to call "next" in Arabic while announcing "previous". */}
-        {count > 1 ? (
-          <div className="hero-slider-nav">
-            <button
-              type="button"
-              className="hero-slider-arrow"
-              onClick={prevSlide}
-              aria-label={t('previous')}
-            >
-              {isAr ? '→' : '←'}
-            </button>
-
-            <div className="hero-slider-center">
-              <button
-                type="button"
-                className="hero-slider-arrow hero-slider-pause"
-                onClick={() => setStopped(!stopped)}
-                aria-label={stopped ? t('play') : t('pause')}
-              >
-                <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
-              </button>
-
-              <div className="hero-slider-dots">
-                {slides.map((entry, idx) => (
-                  <button
-                    key={entry.slug}
-                    type="button"
-                    className={`hero-slider-dot ${idx === current ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setDirection(idx > current ? 1 : -1);
-                      setCurrent(idx);
-                    }}
-                    aria-label={t('goToProduct', { name: entry.name })}
-                    // backgroundColor, not background: the shorthand would
-                    // reset background-clip and paint the whole 24px target.
-                    style={idx === current ? { backgroundColor: slide.theme.accent } : undefined}
-                  />
-                ))}
+            <div className="hero-content">
+              <p className="eyebrow">{slide.name}</p>
+              {/* The page's one h1 is the active slide's headline. */}
+              {active ? <h1>{slide.title}</h1> : <p className="hero-title">{slide.title}</p>}
+              <p className="hero-body">{slide.body}</p>
+              <div className="hero-actions">
+                <Link href={slide.href} className="btn btn-primary">
+                  <ArrowIcon />
+                  <span>{slide.cta}</span>
+                </Link>
+                {children}
               </div>
             </div>
-
-            <button
-              type="button"
-              className="hero-slider-arrow"
-              onClick={nextSlide}
-              aria-label={t('next')}
-            >
-              {isAr ? '←' : '→'}
-            </button>
+            {/* Decorative: the headline beside it says what it is. */}
+            <div className="hero-art" aria-hidden="true">
+              <Image
+                src={slide.image.src}
+                alt=""
+                width={slide.image.width}
+                height={slide.image.height}
+                // The candidate `next/image` serves must not exceed the drawn width, or
+                // Lighthouse's responsive-images budget fails: the art box is
+                // 400px wide on a desktop (every family draws at >= 384px) and
+                // 260px on a phone, so the 384w and 256w candidates are asked for.
+                sizes="(max-width: 767px) 256px, 384px"
+                priority={index === 0}
+              />
+            </div>
           </div>
-        ) : null}
-      </div>
-    </div>
+        );
+      })}
+
+      {count > 1 ? (
+        <div className="hero-nav">
+          {/* SVG chevrons, not text glyphs: a text "‹" is bidi-mirrored by the
+              Arabic page and then flipped again by CSS, which pointed both
+              arrows the wrong way. These point by class and direction only. */}
+          <button
+            type="button"
+            className="hero-nav-btn hero-nav-prev"
+            onClick={() => setCurrent((index) => (index - 1 + count) % count)}
+            aria-label={t('previous')}
+          >
+            <ChevronRightIcon />
+          </button>
+          <div className="hero-dots" role="tablist">
+            {slides.map((slide, index) => (
+              <button
+                key={slide.key}
+                type="button"
+                role="tab"
+                className={`hero-dot${index === current ? ' is-active' : ''}`}
+                aria-selected={index === current}
+                aria-label={t('goToProduct', { name: slide.name })}
+                onClick={() => setCurrent(index)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="hero-nav-btn hero-nav-pause"
+            onClick={() => setStopped(!stopped)}
+            aria-label={stopped ? t('play') : t('pause')}
+            aria-pressed={stopped}
+          >
+            <span aria-hidden="true">{stopped ? '▶' : '❚❚'}</span>
+          </button>
+          <button
+            type="button"
+            className="hero-nav-btn hero-nav-next"
+            onClick={() => setCurrent((index) => (index + 1) % count)}
+            aria-label={t('next')}
+          >
+            <ChevronRightIcon />
+          </button>
+        </div>
+      ) : null}
+    </section>
   );
 }

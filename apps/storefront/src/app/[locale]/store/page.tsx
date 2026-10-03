@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
-import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { CategoryRail } from '../../../components/category-rail';
 import {
   ListingChips,
@@ -14,6 +13,8 @@ import {
   ListingNoResults,
   ListingSorts,
 } from '../../../components/listing-filters';
+import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { Pagination } from '../../../components/pagination';
 import { ProductCard } from '../../../components/product-card';
 import { isArabic } from '../../../i18n/locale';
 import { getStore } from '../../../lib/api';
@@ -27,18 +28,16 @@ import {
 import { pageSuffix, paginatedUrl } from '../../../lib/seo';
 
 /**
- * /store — everything on sale.
+ * /store — everything on sale, after the kit's catalog page
+ * (`04_Inner_Pages/*\/catalog`, TASK-0103): a title band on the page
+ * ground with the breadcrumb, a row of category chips with the "Filters"
+ * button at its end, the count and the sorts, the grid, numbered pages.
  *
- * The header has linked here since the storefront existed and the page did not,
- * so the most prominent link on every page of the site was a 404. It is also
- * the only page a visitor can use before they know a single category name,
- * which is why the collections are listed on it rather than hidden behind a
- * menu.
- *
- * Sorting offers the orders that are real, price among them now that the API
- * sorts on each product's cheapest published variant across the whole
- * catalogue rather than within one page. Filters narrow the same list; every
- * state is a URL (see `lib/listing`), and the filtered ones are `noindex`.
+ * It is the only page a visitor can use before they know a single category
+ * name, which is why the shelves are a row of chips on it rather than a menu.
+ * Sorting offers the orders that are real; filters narrow the same list;
+ * every state is a URL (see `lib/listing`), and the filtered ones are
+ * `noindex`.
  */
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const PER_PAGE = 24;
@@ -115,19 +114,27 @@ export default async function StorePage({ params, searchParams }: Props) {
   ]);
 
   return (
-    <main className="shell">
+    <main className="catalog-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <header className="page-head">
-        <h1>{t('title')}</h1>
-        <p className="lede">{t('lede')}</p>
-      </header>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: t('title'), href: path },
+            ]}
+          />
+          <header className="page-head">
+            <h1>{t('title')}</h1>
+            <p className="lede">{t('lede')}</p>
+          </header>
+        </div>
+      </div>
 
-      {/* The rail replaces the horizontal strip that was here. Same links, same
-          counts; a column at desktop width and the strip again below it. The
-          filters sit under it on desktop and behind a button on a phone. */}
-      <div className="catalog-layout">
-        <aside className="catalog-side">
+      <div className="shell">
+        {/* The shelves as chips, the filters at the end of the same row. */}
+        <div className="listing-bar">
           <CategoryRail categories={store.collections} locale={locale} title={tk('categories')} />
           {store.facets ? (
             <ListingFilterPanel
@@ -137,50 +144,38 @@ export default async function StorePage({ params, searchParams }: Props) {
               total={store.total}
             />
           ) : null}
-        </aside>
-
-        <div className="catalog-main">
-          <div className="store-bar">
-            <p className="result-count" role="status">
-              {tk('productCount', { count: store.total })}
-            </p>
-            <ListingSorts state={state} path={path} positionLabel={t('sortPosition')} />
-          </div>
-
-          <ListingChips facets={store.facets} state={state} path={path} />
-
-          {store.products.length === 0 ? (
-            filtered ? (
-              <ListingNoResults state={state} path={path} />
-            ) : (
-              <p className="empty">{t('empty')}</p>
-            )
-          ) : (
-            <MotionFadeIn>
-              <div className="grid">
-                {store.products.map((card) => (
-                  <ProductCard key={card.slug} card={card} locale={locale} />
-                ))}
-              </div>
-            </MotionFadeIn>
-          )}
-
-          {lastPage > 1 ? (
-            <nav className="pager" aria-label={tk('pagination')}>
-              {page > 1 ? (
-                <Link href={listingHref(path, state, { page: page - 1 })} rel="prev">
-                  {tk('previous')}
-                </Link>
-              ) : null}
-              <span>{tk('pageOf', { page: String(page), last: String(lastPage) })}</span>
-              {page < lastPage ? (
-                <Link href={listingHref(path, state, { page: page + 1 })} rel="next">
-                  {tk('next')}
-                </Link>
-              ) : null}
-            </nav>
-          ) : null}
         </div>
+
+        <div className="store-bar">
+          <p className="result-count" role="status">
+            {tk('productCount', { count: store.total })}
+          </p>
+          <ListingSorts state={state} path={path} positionLabel={t('sortPosition')} />
+        </div>
+
+        <ListingChips facets={store.facets} state={state} path={path} />
+
+        {store.products.length === 0 ? (
+          filtered ? (
+            <ListingNoResults state={state} path={path} />
+          ) : (
+            <p className="empty">{t('empty')}</p>
+          )
+        ) : (
+          <MotionFadeIn>
+            <div className="grid">
+              {store.products.map((card) => (
+                <ProductCard key={card.slug} card={card} locale={locale} />
+              ))}
+            </div>
+          </MotionFadeIn>
+        )}
+
+        <Pagination
+          page={page}
+          lastPage={lastPage}
+          hrefFor={(n) => listingHref(path, state, { page: n })}
+        />
       </div>
     </main>
   );

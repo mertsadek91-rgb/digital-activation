@@ -18,6 +18,7 @@ import {
   CategoryMark,
   ChevronIcon,
   CloseIcon,
+  GlobeIcon,
   MailIcon,
   MenuIcon,
   SupportIcon,
@@ -28,14 +29,19 @@ import { CurrencySwitcher } from './currency-switcher';
 import { SearchBox } from './search-box';
 
 /**
- * Site header, in two tiers with responsive drawer for mobile/tablet.
+ * Site header, after the UI Kit (`02_Components/<lang>/Reference/component_header`, `topbar`,
+ * `mega-menu`, `mobile-menu`; TASK-0102).
  *
- * Shaped after the store this replaces: 69.6% of impressions land on the home
- * page. A returning customer recognizes where things are.
+ * Three rows. An announcement bar in the brand colour with the shop's one-line
+ * promise and the language and currency controls. The shop row: logo, a
+ * search box that takes the width between, and 48px icon buttons for the
+ * account and the cart. A navigation row with the "all products" button that
+ * opens the category menu, the categories themselves and the pages a buyer
+ * looks for.
  *
- * For mobile (< 1120px), an offcanvas drawer provides quick, thumb-friendly
- * access to categories, pages, customer license keys, WhatsApp support,
- * and language toggle, keeping the top header clean and uncluttered.
+ * Under 768px the navigation row goes and the drawer takes over: categories,
+ * pages, licences, WhatsApp and the language switch, thumb-friendly, behind a
+ * menu button in the shop row. The search box drops to a row of its own.
  */
 export interface HeaderCollection {
   slug: string;
@@ -44,6 +50,8 @@ export interface HeaderCollection {
 }
 
 const DRAWER_ID = 'site-drawer';
+/** Categories shown in the navigation row; the rest are in the menu. */
+const NAV_CATEGORIES = 5;
 
 export function SiteHeader({
   locale,
@@ -118,6 +126,35 @@ export function SiteHeader({
   }, [drawerOpen]);
 
   /**
+   * The page behind the drawer is inert while it is open, so the dialog is
+   * modal in fact and not only by `aria-modal`: Tab from its last control
+   * cannot land on the hero behind the backdrop, and a screen reader cannot
+   * wander out of it (REV-0126). Everything on the page except the drawer
+   * itself and its backdrop — the header's own rows, the main content, the
+   * footer and the floating WhatsApp button — gets `inert`, and loses it
+   * again when the drawer closes or the header unmounts.
+   */
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const header = drawerRef.current?.parentElement;
+    const outside = [
+      ...(header ? Array.from(header.children) : []),
+      ...Array.from(document.body.children),
+    ].filter(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement &&
+        element !== header &&
+        !element.classList.contains('drawer-panel') &&
+        !element.classList.contains('drawer-overlay') &&
+        element.tagName !== 'SCRIPT',
+    );
+    for (const element of outside) element.inert = true;
+    return () => {
+      for (const element of outside) element.inert = false;
+    };
+  }, [drawerOpen]);
+
+  /**
    * Focus follows the drawer: into its first link when it opens, back to the
    * button that opened it when it closes. Without this a keyboard or
    * screen-reader user opened a dialog and stayed on the button behind it.
@@ -159,128 +196,148 @@ export function SiteHeader({
   /**
    * The other language, on the same page.
    *
-   * It linked to the other language's home page, so somebody reading a
-   * product in Arabic who switched to English had to find the product again.
    * Every route here exists in both languages under the same path, so the
-   * path is kept and only the prefix changes.
-   *
-   * Its label (`header.otherLanguage`, `header.switchLanguage`) is written in
-   * the language it switches to, because that is the language of the reader
-   * looking for it.
+   * path is kept and only the prefix changes. Its label (`header.otherLanguage`,
+   * `header.switchLanguage`) is written in the language it switches to,
+   * because that is the language of the reader looking for it.
    */
   const otherLocale = ar ? 'en' : 'ar';
+  const brandName = ar ? BRAND.nameAr : BRAND.nameEn;
+  const navCategories = collections.slice(0, NAV_CATEGORIES);
 
   return (
     <header className="site-header">
-      {/* Tier one: how to reach a person, and who you are. Quiet by design —
-          it is reference, not navigation. */}
-      <div className="header-utility">
-        <div className="header-utility-inner">
-          <div className="utility-group">
-            <Link href={`${prefix}${ROUTES.licenses}`} className="utility-link">
-              <UserIcon />
-              <span>{t('myLicences')}</span>
-            </Link>
+      {/* The announcement bar: one sentence about the shop, and the two
+          controls that change what every page says — language and currency. */}
+      <div className="topbar">
+        <div className="topbar-inner">
+          <p className="topbar-text">{t('tagline')}</p>
+          <div className="topbar-controls">
             <LocaleLink
               href={localePath}
               locale={otherLocale}
-              className="utility-link"
+              className="topbar-link"
               hrefLang={otherLocale}
               lang={otherLocale}
             >
-              {t('otherLanguage')}
+              <GlobeIcon size={15} />
+              <span>{t('otherLanguage')}</span>
             </LocaleLink>
-            <CurrencySwitcher className="utility-link currency-switcher" />
-          </div>
-
-          <div className="utility-group">
-            <a className="utility-link" href={`mailto:${SUPPORT_EMAIL}`}>
-              <MailIcon />
-              <span dir="ltr">{SUPPORT_EMAIL}</span>
-            </a>
-            <a className="utility-link" href={whatsappLink(undefined, 'header')} rel="noopener">
-              <SupportIcon />
-              <span dir="ltr">{WHATSAPP_SHOWN}</span>
-            </a>
+            <CurrencySwitcher className="topbar-link currency-switcher" />
           </div>
         </div>
       </div>
 
-      {/* Tier two: the shop itself. */}
-      <div className="site-header-inner">
-        <button
-          ref={drawerButtonRef}
-          type="button"
-          className="mobile-menu-btn"
-          aria-label={t('openMenu')}
-          aria-expanded={drawerOpen}
-          aria-controls={DRAWER_ID}
-          onClick={() => setDrawerOpen(true)}
-        >
-          <MenuIcon />
-        </button>
+      {/* The shop row. */}
+      <div className="header-main">
+        <div className="header-main-inner">
+          <button
+            ref={drawerButtonRef}
+            type="button"
+            className="icon-button mobile-menu-btn"
+            aria-label={t('openMenu')}
+            aria-expanded={drawerOpen}
+            aria-controls={DRAWER_ID}
+            onClick={() => setDrawerOpen(true)}
+          >
+            <MenuIcon />
+          </button>
 
-        <Link
-          href={`${prefix}${ROUTES.home}`}
-          className="logo"
-          aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
-        >
-          <BrandLogo locale={locale} width={100} priority />
-        </Link>
+          <Link href={`${prefix}${ROUTES.home}`} className="logo" aria-label={brandName}>
+            <BrandLogo locale={locale} width={120} priority />
+          </Link>
 
-        {collections.length > 0 ? (
-          <div className="mega" ref={menuRef}>
-            <button
-              type="button"
-              className={`mega-button${menuOpen ? ' is-open' : ''}`}
-              aria-expanded={menuOpen}
-              aria-controls="mega-panel"
-              onClick={() => setMenuOpen(!menuOpen)}
+          <div className="header-search">
+            <SearchBox locale={locale} />
+          </div>
+
+          <div className="header-actions">
+            <Link
+              href={`${prefix}${ROUTES.licenses}`}
+              className="icon-button"
+              aria-label={t('myLicences')}
+              title={t('myLicences')}
             >
-              <MenuIcon />
-              <span>{t('allProducts')}</span>
-              <ChevronIcon />
-            </button>
-
-            {menuOpen ? (
-              <div className="mega-panel" id="mega-panel">
-                <ul>
-                  {collections.map((collection) => (
-                    <li key={collection.slug}>
-                      <Link href={`${prefix}${ROUTES.collection(collection.slug)}`}>
-                        <CategoryMark slug={collection.slug} />
-                        <span className="mega-name">{collection.name}</span>
-                        {collection.productCount > 0 ? (
-                          <span className="mega-count">{collection.productCount}</span>
-                        ) : null}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
-                  {t('browseAll')}
-                </Link>
-              </div>
-            ) : null}
+              <UserIcon />
+            </Link>
+            <Link
+              href={`${prefix}${ROUTES.cart}`}
+              className="icon-button cart-link"
+              aria-label={t('cart')}
+              title={t('cart')}
+            >
+              <CartIcon />
+              {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
+            </Link>
           </div>
-        ) : null}
-
-        <nav className="site-nav">
-          <Link href={`${prefix}${ROUTES.store}`}>{t('store')}</Link>
-          <Link href={`${prefix}${ROUTES.goldenWarranty}`}>{tc('goldenWarranty')}</Link>
-          <Link href={`${prefix}${ROUTES.contact}`}>{t('contact')}</Link>
-        </nav>
-
-        <div className="header-search-wrap">
-          <SearchBox locale={locale} />
         </div>
-
-        <Link href={`${prefix}${ROUTES.cart}`} className="cart-link" aria-label={t('cart')}>
-          <CartIcon />
-          <span className="cart-label">{t('cart')}</span>
-          {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
-        </Link>
       </div>
+
+      {/* The navigation row: the menu button, the categories, the pages. */}
+      <nav className="header-nav" aria-label={t('drawer')}>
+        <div className="header-nav-inner">
+          {collections.length > 0 ? (
+            <div className="mega" ref={menuRef}>
+              <button
+                type="button"
+                className={`mega-button${menuOpen ? ' is-open' : ''}`}
+                aria-expanded={menuOpen}
+                aria-controls="mega-panel"
+                onClick={() => setMenuOpen(!menuOpen)}
+              >
+                <MenuIcon />
+                <span>{t('allProducts')}</span>
+                <ChevronIcon />
+              </button>
+
+              {menuOpen ? (
+                <div className="mega-panel" id="mega-panel">
+                  <ul>
+                    {collections.map((collection) => (
+                      <li key={collection.slug}>
+                        <Link href={`${prefix}${ROUTES.collection(collection.slug)}`}>
+                          <CategoryMark slug={collection.slug} />
+                          <span className="mega-name">{collection.name}</span>
+                          {collection.productCount > 0 ? (
+                            <span className="mega-count">{collection.productCount}</span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
+                    {t('browseAll')}
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          <ul className="site-nav">
+            {navCategories.map((collection) => (
+              <li key={collection.slug}>
+                <Link href={`${prefix}${ROUTES.collection(collection.slug)}`}>
+                  {collection.name}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link href={`${prefix}${ROUTES.store}`}>{t('store')}</Link>
+            </li>
+            <li>
+              <Link href={`${prefix}${ROUTES.goldenWarranty}`} className="site-nav-warranty">
+                {tc('goldenWarranty')}
+              </Link>
+            </li>
+            <li>
+              <Link href={`${prefix}${ROUTES.blog}`}>{t('blog')}</Link>
+            </li>
+            <li>
+              <Link href={`${prefix}${ROUTES.contact}`}>{t('contact')}</Link>
+            </li>
+          </ul>
+        </div>
+      </nav>
 
       {/* The mobile drawer and its backdrop.
           Always in the document and moved by CSS transitions on `is-open`,
@@ -307,23 +364,19 @@ export function SiteHeader({
           <Link
             href={`${prefix}${ROUTES.home}`}
             className="logo"
-            aria-label={ar ? BRAND.nameAr : BRAND.nameEn}
+            aria-label={brandName}
             onClick={() => setDrawerOpen(false)}
           >
             <BrandLogo locale={locale} width={100} />
           </Link>
           <button
             type="button"
-            className="drawer-close"
+            className="icon-button drawer-close"
             aria-label={t('closeMenu')}
             onClick={() => setDrawerOpen(false)}
           >
             <CloseIcon />
           </button>
-        </div>
-
-        <div className="drawer-search">
-          <SearchBox locale={locale} />
         </div>
 
         <div className="drawer-body">
@@ -421,7 +474,8 @@ export function SiteHeader({
               lang={otherLocale}
               onClick={() => setDrawerOpen(false)}
             >
-              🌐 {t('switchLanguage')}
+              <GlobeIcon size={16} />
+              <span>{t('switchLanguage')}</span>
             </LocaleLink>
             <CurrencySwitcher className="drawer-link currency-switcher" />
           </div>

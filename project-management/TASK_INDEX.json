@@ -2332,6 +2332,161 @@
       "updated_at": "2026-10-03",
       "reaudit": null,
       "file": "tasks/active/TASK-0101.md"
+    },
+    {
+      "id": "TASK-0102",
+      "title": "Adopt the UI Kit (AR/EN) in the storefront — stage 1 foundations (tokens, Inter for EN, 8px grid, kit icons) and stage 2 home page, header, footer and product card",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "design-system-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-engineer",
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "frontend-architect",
+        "accessibility-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "packages/ui",
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/",
+        "header",
+        "footer"
+      ],
+      "affected_files": [
+        "packages/ui/src/",
+        "apps/storefront/src/app/",
+        "apps/storefront/src/components/site-header.tsx",
+        "apps/storefront/src/components/site-footer.tsx",
+        "apps/storefront/src/components/hero-slider.tsx",
+        "apps/storefront/src/components/product-card.tsx",
+        "apps/storefront/src/components/icons.tsx",
+        "apps/storefront/src/lib/hero-slides.ts",
+        "apps/storefront/messages/",
+        "apps/storefront/mock/",
+        "apps/storefront/public/home/",
+        ".claude/rules/frontend.md",
+        "docs/ui-kit-review.md"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-02",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0102.md"
+    },
+    {
+      "id": "TASK-0103",
+      "title": "UI Kit stage 3 — product page, catalog, collection, search and brand listings after the kit (04_Inner_Pages product/catalog/category/search; components filters, plan-selector, tabs, pagination, breadcrumbs, review)",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "MEDIUM",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/store",
+        "/store/[slug]",
+        "/collections/[slug]",
+        "/search",
+        "/brands/[slug]"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/[locale]/store/",
+        "apps/storefront/src/app/[locale]/collections/",
+        "apps/storefront/src/app/[locale]/search/",
+        "apps/storefront/src/app/[locale]/brands/",
+        "apps/storefront/src/app/catalog.css",
+        "apps/storefront/src/components/buy-box.tsx",
+        "apps/storefront/src/components/product-gallery.tsx",
+        "apps/storefront/src/components/product-trust.tsx",
+        "apps/storefront/src/components/reviews.tsx",
+        "apps/storefront/src/components/listing-filters.tsx",
+        "apps/storefront/src/components/filter-drawer.tsx",
+        "apps/storefront/src/components/category-rail.tsx",
+        "apps/storefront/mock/api.mjs"
+      ],
+      "created_at": "2026-10-02",
+      "updated_at": "2026-10-03",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0103.md"
+    },
+    {
+      "id": "TASK-0104",
+      "title": "Footer: restore the five-column layout with the support cards and trust pills, in the kit style (after the owner saw the simplified kit footer on staging)",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "footer"
+      ],
+      "affected_files": [
+        "apps/storefront/src/components/site-footer.tsx",
+        "apps/storefront/src/app/footer.css",
+        "apps/storefront/messages/"
+      ],
+      "created_at": "2026-10-03",
+      "updated_at": "2026-10-03",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0104.md"
     }
   ]
 }

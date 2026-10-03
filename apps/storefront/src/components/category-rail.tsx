@@ -3,25 +3,17 @@ import Link from 'next/link';
 
 import { isArabic } from '../i18n/locale';
 
-import { CategoryMark } from './icons';
-
 /**
- * Every shelf in the shop, on every page of the catalog.
+ * Every shelf in the shop, on every page of the catalog — as the kit's row of
+ * chips above the grid (`04_Inner_Pages/*\/catalog`), not a sidebar.
  *
- * The store this replaces keeps a category list down the side of its catalog
- * pages, and it is the one piece of its navigation this build had not carried
- * over. What it costs to be without: a collection page here listed its own
- * children and nothing else, so reaching a sibling shelf — Office from Windows
- * — meant going back to the store index first. Ten categories hold stock and
- * the only place all ten appeared together was a menu behind a button.
- *
- * A rail at desktop width and the horizontal strip it replaces below that. On a
- * phone a fixed sidebar is a column of links pushing the products it is meant
- * to help you find off the screen.
+ * A collection page here used to list its own children and nothing else, so
+ * reaching a sibling shelf — Office from Windows — meant going back to the
+ * store index first. The row answers that on every width: one line of pills
+ * that scrolls sideways where it does not fit, the current shelf filled in.
  *
  * Counts are shown because they are real and they change the decision: a shelf
- * with one product on it is worth knowing about before the click, and this
- * catalog has one of those.
+ * with one product on it is worth knowing about before the click.
  */
 export function CategoryRail({
   categories,
@@ -29,41 +21,54 @@ export function CategoryRail({
   locale,
   title,
   hrefFor = ROUTES.collection,
+  allHref,
+  allLabel,
 }: {
   categories: { slug: string; name: string; productCount: number }[];
-  /** The shelf being looked at, so the rail says where you are. */
+  /** The shelf being looked at, so the row says where you are. */
   current?: string;
   locale: string;
   title: string;
   /**
    * How a slug becomes a path. The brand hub is the same list of shelves with
    * the same counts and the same "where am I" rule, differing only in what a
-   * row points at — so it takes this rail rather than a near-copy of it that
-   * would drift the first time either one is touched.
+   * row points at.
    */
   hrefFor?: (slug: string) => string;
+  /** The "all" chip, when the page has somewhere wider to go. */
+  allHref?: string;
+  allLabel?: string;
 }) {
   if (categories.length === 0) return null;
   const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   return (
-    <nav className="cat-rail" aria-label={title}>
-      <h2 className="cat-rail-head">{title}</h2>
+    <nav className="cat-chips" aria-label={title}>
       <ul>
+        {allHref && allLabel ? (
+          <li>
+            <Link
+              href={allHref}
+              className={`chip${current ? '' : ' is-active'}`}
+              aria-current={current ? undefined : 'page'}
+            >
+              {allLabel}
+            </Link>
+          </li>
+        ) : null}
         {categories.map((category) => {
           const active = category.slug === current;
           return (
             <li key={category.slug}>
               <Link
                 href={`${prefix}${hrefFor(category.slug)}`}
-                className={active ? 'is-current' : undefined}
+                className={`chip${active ? ' is-active' : ''}`}
                 // The current page is still a link — it is the heading of the
                 // list as much as a destination — but it says so.
                 aria-current={active ? 'page' : undefined}
               >
-                <CategoryMark slug={category.slug} size={20} />
-                <span className="cat-rail-name">{category.name}</span>
-                <span className="cat-rail-count">{category.productCount}</span>
+                <span>{category.name}</span>
+                <span className="chip-count">{category.productCount}</span>
               </Link>
             </li>
           );
