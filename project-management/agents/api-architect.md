@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- TASK-0105 — Publish @da/contracts as ESM with sideEffects:false so the apps tree-shake it (the CommonJS build put the whole package into the storefront client bundle) (IN_PROGRESS, 60%)
+- TASK-0105 — Publish @da/contracts as ESM with sideEffects:false so the apps tree-shake it (the CommonJS build put the whole package into the storefront client bundle) (IN_PROGRESS, 90%)
