@@ -25,26 +25,28 @@ const noise = (n = 6): Promise<unknown>[] =>
   Array.from({ length: n }, () => prisma.$executeRaw`select pg_sleep(0.03)`);
 
 /**
- * Ends whichever connection still holds the lock. A terminated backend stays
- * in the pg pool as an idle client until somebody borrows it, and that
- * somebody gets `57P01 terminating connection due to administrator command` —
- * which, under `noise()`, was the next test's first query often enough to
- * fail CI. So after a kill the pool is drained: more concurrent probes than
- * the pool has connections, errors swallowed, until a round comes back clean.
- * pg evicts a client whose query fails on a closed socket, so a clean round
- * means no dead client is left for the tests to borrow.
+ * Frees the lock, whichever pooled connection holds it.
+ *
+ * Two traps, both of which failed CI with `57P01 terminating connection due
+ * to administrator command`:
+ *
+ * - The query that does the killing is itself borrowed from the pool, and can
+ *   be handed the very connection that holds the lock. Terminating
+ *   `pg_backend_pid()` kills the query running the kill. So the holder that is
+ *   this connection unlocks instead, and only the others are terminated.
+ * - A terminated connection stays in the pool, and the next borrower gets the
+ *   error. So after a kill the pool is dropped; the adapter is built from a
+ *   connection string and opens a fresh pool on the next query.
  */
 async function release(): Promise<void> {
-  const pids = await holders();
-  if (!pids.length) return;
-  for (const pid of pids) await prisma.$queryRaw`select pg_terminate_backend(${pid})`;
-  for (let round = 0; round < 10; round++) {
-    const probes = await Promise.allSettled(
-      Array.from({ length: 24 }, () => prisma.$queryRaw`select pg_sleep(0.01)`),
-    );
-    if (probes.every((p) => p.status === 'fulfilled')) return;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rows = await prisma.$queryRaw<{ killed: boolean | null }[]>`
+      select case when pid = pg_backend_pid() then null else pg_terminate_backend(pid) end as killed,
+             case when pid = pg_backend_pid() then pg_advisory_unlock(${KEY}) end as unlocked
+      from pg_locks where locktype = 'advisory' and objid = ${KEY} and granted`;
+    if (rows.length === 0) return;
+    if (rows.some((row) => row.killed !== null)) await prisma.$disconnect();
   }
-  throw new Error('the pool still hands out terminated connections after 10 drain rounds');
 }
 
 describe.skipIf(!HAS_DATABASE)('advisory locks for scheduled sweeps', () => {
