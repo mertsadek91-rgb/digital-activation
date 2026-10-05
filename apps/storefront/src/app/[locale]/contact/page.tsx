@@ -20,7 +20,7 @@ import {
 } from '../../../components/icons';
 import { isArabic } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
-import { robotsMeta } from '../../../lib/seo';
+import { pageTitle, robotsMeta } from '../../../lib/seo';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 const WHATSAPP_DIAL = '966534255367';
@@ -40,7 +40,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = page?.seo.description ?? t('metaDescription');
 
   return {
-    title,
+    // Through `pageTitle`, like every other page: the stored title already
+    // ends in the store's name, and the layout's "%s | brand" template would
+    // add it a second time (BUG-0023).
+    title: pageTitle(title),
     description,
     robots: robotsMeta(process.env.NEXT_PUBLIC_SITE_URL),
     alternates: {

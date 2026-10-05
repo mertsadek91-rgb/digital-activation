@@ -416,6 +416,32 @@
       "verification": "Two mismatches, both from Intl differing between Node and the browser (different ICU/CLDR releases). (1) Order: [...REST].sort(localeCompare over Intl.DisplayNames) collates Arabic differently on each side, so option n named different countries. (2) Text: Node names PS 'الأراضي الفلسطينية', current Chromium 'فلسطين' (en: 'Palestinian Territories' vs 'Palestine'), so after fixing the order React still logged a text mismatch on option value=PS. Fix: during SSR and hydration the select renders ISO codes in ISO-code order (deterministic everywhere); after hydration (useSyncExternalStore server snapshot false) the browser's Intl.DisplayNames and collation take over. Verified 2026-10-05 in next dev --webpack on :3012 against the mock API: fresh tab, /ar/checkout and /en/checkout, console shows only HMR connected; server HTML has 13+54 options labelled by code; client DOM has 54 collated names (ar: أذربيجان, إسبانيا, أستراليا, …; en: Afghanistan, Albania, Argentina, …). pnpm typecheck (15/15, DATABASE_URL_MIGRATE placeholder for prisma generate, no DB), pnpm lint and prettier pass.",
       "id": "BUG-0022",
       "file": "issues/BUG-0022.md"
+    },
+    {
+      "created_at": "2026-10-05",
+      "updated_at": "2026-10-05",
+      "title": "Contact page title repeats the store name: the CMS seo.title already ends in the brand and is passed to the layout template without pageTitle()",
+      "severity": "LOW",
+      "status": "FIXED",
+      "affected_system": "NODEJS_FRONTEND",
+      "category": "SEO",
+      "priority": "LOW",
+      "authority_level": 2,
+      "risk": "LOW",
+      "requested_by": "user",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/contact"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/[locale]/contact/page.tsx"
+      ],
+      "id": "BUG-0023",
+      "file": "issues/BUG-0023.md"
     }
   ]
 }
