@@ -10,6 +10,8 @@ import { useEffect, useState } from 'react';
 import type arMessages from '../../messages/ar.json';
 import { isArabic } from '../i18n/locale';
 
+import { ArrowIcon, SearchIcon } from './icons';
+
 /** The `notFound` namespace of one catalogue. */
 export type NotFoundMessages = (typeof arMessages)['notFound'];
 
@@ -97,19 +99,27 @@ export function NotFoundPage({ messages }: { messages: Record<'ar' | 'en', NotFo
 
   return (
     <main className="shell missing" dir={ar ? 'rtl' : 'ltr'} lang={ar ? 'ar' : 'en'}>
-      <header className="page-head">
+      {/* The kit's 404: the round mark, the number, the sentence, the way
+          out (TASK-0107). */}
+      <header className="status-hero">
+        <span className="iconbox status-icon" aria-hidden="true">
+          <SearchIcon size={32} />
+        </span>
+        <p className="missing-code" aria-hidden="true">
+          404
+        </p>
         <h1>{t('title')}</h1>
-        <p className="lede">{t('body')}</p>
+        <p>{t('body')}</p>
+        <p className="missing-actions">
+          <Link className="btn btn-primary" href={`${prefix}${ROUTES.home}`}>
+            {t('home')}
+            <ArrowIcon size={18} />
+          </Link>
+          <Link className="btn btn-outline" href={`${prefix}${ROUTES.store}`}>
+            {t('browseStore')}
+          </Link>
+        </p>
       </header>
-
-      <p className="missing-actions">
-        <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
-          {t('browseStore')}
-        </Link>
-        <Link className="btn btn-ghost" href={`${prefix}${ROUTES.home}`}>
-          {t('home')}
-        </Link>
-      </p>
 
       {/* Nothing at all while it is being asked, and nothing at all when the
           answer is empty. A "we found nothing" heading is a second piece of bad

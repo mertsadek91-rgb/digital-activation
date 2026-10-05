@@ -299,11 +299,13 @@
     "empty": "Nothing here in English yet — the articles on this store are written in Arabic.",
     "readArticle": "Read article",
     "productsInArticle": "Products in this article",
-    "readNext": "Read next"
+    "readNext": "Read next",
+    "browseStore": "Browse the store"
   },
   "contentPage": {
     "untranslated": "This page has not been translated into English yet. What follows is the Arabic version.",
-    "ownVersion": "English version"
+    "ownVersion": "English version",
+    "updated": "Last updated <time>{date}</time>"
   },
   "hero": {
     "region": "Featured Product Offers",
@@ -466,10 +468,12 @@
     "faq1Q": "My key is not working or shows an error — what is the fastest step?",
     "metaDescription": "Reach us through the form, or message directly on WhatsApp, Telegram or email. We reply within 2 hours, 24 hours at the latest.",
     "metaTitle": "Contact Us — Technical Support & Customer Service | Digital Activation",
-    "faq5A": "We reply to form and email messages within {hours} hours at the latest, usually sooner. WhatsApp is the fastest way to reach us."
+    "faq5A": "We reply to form and email messages within {hours} hours at the latest, usually sooner. WhatsApp is the fastest way to reach us.",
+    "helpTitle": "We are here to help",
+    "helpBody": "Talk to the support team about your order or a product."
   },
   "contactForm": {
-    "submit": "Send Message Now →",
+    "submit": "Send Message Now",
     "sending": "Sending...",
     "messagePlaceholder": "Describe the problem or the question. If it is about a key, quote the error you see.",
     "message": "Your message",
@@ -495,7 +499,8 @@
     "contactForm": "Contact form",
     "whatsapp": "WhatsApp",
     "questionBody": "Message us with your order number and we will answer.",
-    "questionTitle": "Still have a question?"
+    "questionTitle": "Still have a question?",
+    "label": "Store guarantee"
   },
   "header": {
     "switchLanguage": "التحويل إلى العربية",

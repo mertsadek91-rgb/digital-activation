@@ -919,6 +919,296 @@ function stage4(req, url, body, send, locale, currency) {
   return false;
 }
 
+// --- stage 5 fixtures: editorial pages, the blog, the 404 guess -------------
+//
+// Layout samples, not store text: the policies and the warranty are the
+// owner's, and these only give the pages something of each block type to
+// draw (heading, rich text, answer-first, steps, FAQ, spec table, CTA).
+
+function pageFixture(slug, locale) {
+  const ar = locale === 'ar';
+  const T = (a, e) => (ar ? a : e);
+  const common = {
+    slug,
+    locale,
+    seo: { title: null, description: null },
+    updatedAt: '2026-10-01T00:00:00.000Z',
+  };
+  if (slug === 'golden-warranty') {
+    return {
+      ...common,
+      title: T('الضمان الذهبي', 'Golden Warranty'),
+      blocks: [
+        {
+          type: 'answerFirst',
+          text: T(
+            'نص نموذجي: الضمان الذهبي يغطي استبدال المفتاح إن توقف عن العمل خلال مدة الضمان، دون أسئلة معقدة.',
+            'Sample text: the Golden Warranty replaces a key that stops working within the warranty period, without complicated questions.',
+          ),
+        },
+        {
+          type: 'heading',
+          level: 2,
+          text: T('ماذا يغطي الضمان', 'What the warranty covers'),
+          id: 'covers',
+        },
+        {
+          type: 'richText',
+          html: T(
+            '<p>نص نموذجي للمعاينة. يُستبدل بالسياسة التي يكتبها مالك المتجر.</p><ul><li>توقف التفعيل بعد التثبيت.</li><li>رفض المفتاح من خوادم الشركة المنتجة.</li></ul>',
+            '<p>Sample text for preview, replaced by the policy the store owner writes.</p><ul><li>Activation stops after installation.</li><li>The key is refused by the vendor servers.</li></ul>',
+          ),
+        },
+        {
+          type: 'steps',
+          title: T('كيف تطلب الاستبدال', 'How to claim a replacement'),
+          steps: [
+            { text: T('تواصل معنا برقم الطلب.', 'Contact us with your order number.') },
+            { text: T('أرسل لقطة لرسالة الخطأ.', 'Send a screenshot of the error.') },
+            { text: T('نرسل لك مفتاحاً بديلاً.', 'We send you a replacement key.') },
+          ],
+        },
+        {
+          type: 'faq',
+          title: T('أسئلة عن الضمان', 'Warranty questions'),
+          items: [
+            {
+              q: T('كم مدة الضمان؟', 'How long is the warranty?'),
+              a: T(
+                'تختلف حسب المنتج وتظهر في صفحته.',
+                'It depends on the product and is shown on its page.',
+              ),
+            },
+            {
+              q: T('هل الاستبدال مجاني؟', 'Is the replacement free?'),
+              a: T('نعم، ضمن شروط الضمان.', 'Yes, within the warranty terms.'),
+            },
+          ],
+        },
+      ],
+    };
+  }
+  if (slug === 'privacy' || slug === 'terms' || slug === 'refunds' || slug === 'about') {
+    const titles = {
+      privacy: T('سياسة الخصوصية', 'Privacy Policy'),
+      terms: T('شروط الخدمة', 'Terms of Service'),
+      refunds: T('سياسة الاسترجاع', 'Refund Policy'),
+      about: T('من نحن', 'About us'),
+    };
+    // /en/terms serves the Arabic page, so the "not translated yet" notice
+    // has something to show.
+    const served = slug === 'terms' ? 'ar' : locale;
+    const S = (a, e) => (served === 'ar' ? a : e);
+    return {
+      ...common,
+      locale: served,
+      title: slug === 'terms' ? 'شروط الخدمة' : titles[slug],
+      blocks: [
+        {
+          type: 'answerFirst',
+          text: S(
+            'هذا قالب تخطيط لصفحات السياسات، وليس نصاً قانونياً معتمداً. يُستبدل بالمحتوى الذي يوافق عليه مالك المتجر.',
+            'This is a layout sample for the policy pages, not approved legal text. It is replaced by the content the store owner approves.',
+          ),
+        },
+        {
+          type: 'heading',
+          level: 2,
+          text: S('البيانات التي نجمعها', 'The data we collect'),
+          id: 'data',
+        },
+        {
+          type: 'richText',
+          html: S(
+            '<p>توضح النسخة المعتمدة بيانات الحساب والطلبات وأغراض استخدامها.</p>',
+            '<p>The approved version explains the account and order data and what it is used for.</p>',
+          ),
+        },
+        {
+          type: 'heading',
+          level: 2,
+          text: S('كيفية استخدام البيانات', 'How the data is used'),
+          id: 'use',
+        },
+        {
+          type: 'richText',
+          html: S(
+            '<p>تعرض السياسة الفعلية الاستخدامات ومزودي الخدمة عند الحاجة.</p><ul><li>تنفيذ الطلب وإرسال المفتاح.</li><li>الرد على رسائل الدعم.</li></ul>',
+            '<p>The actual policy lists the uses and the service providers where needed.</p><ul><li>Fulfilling the order and sending the key.</li><li>Answering support messages.</li></ul>',
+          ),
+        },
+        {
+          type: 'specTable',
+          title: S('مدد الاحتفاظ', 'Retention'),
+          rows: [
+            {
+              label: S('بيانات الطلب', 'Order data'),
+              value: S('سنوات حسب القانون', 'Years, as the law requires'),
+            },
+            { label: S('رسائل الدعم', 'Support messages'), value: S('سنة واحدة', 'One year') },
+          ],
+        },
+        {
+          type: 'heading',
+          level: 2,
+          text: S('حقوق المستخدم والتواصل', 'Your rights and contact'),
+          id: 'rights',
+        },
+        {
+          type: 'richText',
+          html: S(
+            '<p>أدرج خطوات طلب تحديث البيانات أو حذفها وبيانات التواصل المعتمدة.</p>',
+            '<p>List the steps to ask for data to be updated or deleted, and the approved contact details.</p>',
+          ),
+        },
+        {
+          type: 'cta',
+          heading: S('نحن هنا لمساعدتك', 'We are here to help'),
+          body: S(
+            'تواصل مع فريق الدعم بشأن طلبك أو تفاصيل المنتج.',
+            'Contact the support team about your order or a product.',
+          ),
+          buttonLabel: S('تواصل مع الدعم', 'Contact support'),
+          buttonHref: (served === 'ar' ? '' : '/en') + '/contact',
+          tone: 'brand',
+        },
+      ],
+    };
+  }
+  return null;
+}
+
+const POST_FIXTURES = [
+  {
+    slug: 'windows-11-editions',
+    title: 'أي إصدار من ويندوز 11 يناسبك؟',
+    summary: 'الفرق بين Home وPro وEnterprise، ومتى يستحق الفرق في السعر.',
+    minutes: 4,
+    publishedAt: '2026-09-01T09:00:00.000Z',
+  },
+  {
+    slug: 'activate-office-2021',
+    title: 'كيف تفعّل أوفيس 2021 خطوة بخطوة',
+    summary: 'من استلام المفتاح إلى ربطه بحساب مايكروسوفت، مع حل الأخطاء الشائعة.',
+    minutes: 5,
+    publishedAt: '2026-08-20T09:00:00.000Z',
+  },
+  {
+    slug: 'genuine-vs-grey-keys',
+    title: 'ما الفرق بين المفتاح الأصلي والمفتاح الرمادي؟',
+    summary: 'لماذا يتوقف بعض المفاتيح الرخيصة عن العمل بعد شهر، وكيف تتأكد قبل الشراء.',
+    minutes: 3,
+    publishedAt: '2026-08-02T09:00:00.000Z',
+  },
+  {
+    slug: 'windows-10-vs-11',
+    title: 'ويندوز 10 أم ويندوز 11: أيهما تختار في 2026؟',
+    summary: 'مقارنة سريعة بين الإصدارين في المتطلبات والدعم والأداء.',
+    minutes: 6,
+    publishedAt: '2026-07-15T09:00:00.000Z',
+  },
+];
+
+function postCard(p) {
+  return {
+    slug: p.slug,
+    locale: 'ar',
+    title: p.title,
+    summary: p.summary,
+    readingMinutes: p.minutes,
+    publishedAt: p.publishedAt,
+  };
+}
+
+function postFixture(slug, locale, currency) {
+  const p = POST_FIXTURES.find((entry) => entry.slug === slug);
+  if (!p || locale !== 'ar') return null;
+  return {
+    ...postCard(p),
+    blocks: [
+      { type: 'heading', level: 2, text: 'الإصدارات باختصار', id: 'summary' },
+      {
+        type: 'richText',
+        html: '<p>نص نموذجي من الـ fixture للمعاينة فقط. يعرض الفقرات والقوائم والروابط كما تظهر في المقال الحقيقي.</p><ul><li><strong>Home</strong>: للاستخدام المنزلي.</li><li><strong>Pro</strong>: يضيف BitLocker وسطح المكتب البعيد.</li></ul><blockquote>اختر Pro إن كنت تحتاج التشفير أو الدخول عن بعد.</blockquote>',
+      },
+      {
+        type: 'comparison',
+        columns: ['Home', 'Pro'],
+        rows: [
+          { label: 'BitLocker', cells: ['—', '✓'] },
+          { label: 'سطح المكتب البعيد', cells: ['—', '✓'] },
+        ],
+      },
+      {
+        type: 'faq',
+        title: 'أسئلة شائعة',
+        items: [
+          { q: 'هل يمكن الترقية من Home إلى Pro؟', a: 'نعم، بمفتاح Pro دون إعادة تثبيت.' },
+          { q: 'هل يعمل المفتاح على أكثر من جهاز؟', a: 'لا، مفتاح واحد لجهاز واحد.' },
+        ],
+      },
+    ],
+    seo: { title: null, description: null },
+    updatedAt: p.publishedAt,
+    isDraft: false,
+    more: POST_FIXTURES.filter((entry) => entry.slug !== slug)
+      .slice(0, 3)
+      .map(postCard),
+    locales: ['ar'],
+    products: PRODUCTS.slice(0, 2).map((product) => card(product, locale, currency)),
+  };
+}
+
+/** The stage-5 routes. Returns true when it answered. */
+function stage5(url, send, locale, currency) {
+  const path = url.pathname;
+  const page = path.match(/^\/v1\/content\/pages\/([a-z0-9-]+)$/);
+  if (page) {
+    const body = pageFixture(page[1], locale);
+    send(body ? 200 : 404, body ?? { statusCode: 404, message: 'no such page' });
+    return true;
+  }
+  if (path === '/v1/content/posts') {
+    const posts = locale === 'ar' ? POST_FIXTURES.map(postCard) : [];
+    send(200, { posts, total: posts.length });
+    return true;
+  }
+  const post = path.match(/^\/v1\/content\/posts\/([a-z0-9-]+)$/);
+  if (post) {
+    const body = postFixture(post[1], locale, currency);
+    send(body ? 200 : 404, body ?? { statusCode: 404, message: 'no such post' });
+    return true;
+  }
+  if (path === '/v1/content/suggest') {
+    const ar = locale === 'ar';
+    send(200, {
+      suggestions: [
+        {
+          kind: 'product',
+          title: PRODUCTS[0].name[locale],
+          href: (ar ? '' : '/en') + '/store/windows-11-pro',
+        },
+        {
+          kind: 'collection',
+          title: CATEGORIES[1].name[locale],
+          href: (ar ? '' : '/en') + '/collections/office',
+        },
+        {
+          kind: 'page',
+          title: ar ? 'الضمان الذهبي' : 'Golden Warranty',
+          href: (ar ? '' : '/en') + '/golden-warranty',
+        },
+      ],
+    });
+    return true;
+  }
+  if (path === '/v1/content/redirects') {
+    send(404, { statusCode: 404, message: 'no redirect' });
+    return true;
+  }
+  return false;
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
   const locale = url.searchParams.get('locale') === 'en' ? 'en' : 'ar';
@@ -937,6 +1227,7 @@ const server = createServer(async (req, res) => {
 
   const body = req.method === 'POST' || req.method === 'PATCH' ? await readJson(req) : {};
   if (stage4(req, url, body, send, locale, currency)) return;
+  if (stage5(url, send, locale, currency)) return;
 
   const collectionMatch = url.pathname.match(/^\/v1\/catalog\/collections\/([a-z0-9-]+)$/);
   if (collectionMatch) {
@@ -1061,6 +1352,6 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   // eslint-disable-next-line no-console -- the one line a fixture server prints
   console.log(
-    `storefront mock API on http://localhost:${PORT} (home, store, collections, brands, one product with reviews, search, marketing, payment methods, currencies, cart, checkout, orders, account)`,
+    `storefront mock API on http://localhost:${PORT} (home, store, collections, brands, one product with reviews, search, marketing, payment methods, currencies, cart, checkout, orders, account, pages, blog)`,
   );
 });

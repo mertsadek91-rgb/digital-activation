@@ -8,6 +8,8 @@ import { BRAND } from '@da/ui';
 import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
+import { Breadcrumbs } from '../../../../components/breadcrumbs';
+import { ArrowIcon, BookIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { isArabic } from '../../../../i18n/locale';
 import { getPost } from '../../../../lib/api';
@@ -123,68 +125,90 @@ export default async function PostPage({ params }: Props) {
     questions.length > 0 ? jsonld.faqPage(questions) : null,
   ]);
 
+  // The band carries the breadcrumb, the title and the meta; the post is one
+  // column of text under it, then the products it names and what to read
+  // next as the kit's article cards (TASK-0107).
   return (
-    <main className="shell post">
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <nav aria-label={tc('breadcrumb')} className="crumbs">
-        <Link href={`${prefix}${ROUTES.home}`}>{tc('home')}</Link>
-        <span aria-hidden="true"> › </span>
-        <Link href={`${prefix}${ROUTES.blog}`}>{t('title')}</Link>
-      </nav>
-
-      <article className="post-body">
-        <header className="post-header">
-          <h1>{post.title}</h1>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: t('title'), href: `${prefix}${ROUTES.blog}` },
+              { name: post.title, href: `${prefix}${ROUTES.post(slug)}` },
+            ]}
+          />
+          <header className="page-head">
+            <h1>{post.title}</h1>
+          </header>
           <p className="post-meta">
             {post.publishedAt ? (
               <time dateTime={post.publishedAt}>{formatArticleDate(post.publishedAt, locale)}</time>
             ) : null}
-            {post.readingMinutes > 0 ? <span>{readingLabel(post.readingMinutes, tf)}</span> : null}
+            {post.readingMinutes > 0 ? (
+              <span>
+                <BookIcon size={16} />
+                {readingLabel(post.readingMinutes, tf)}
+              </span>
+            ) : null}
           </p>
+        </div>
+      </div>
+
+      <main className="shell post-page">
+        <article className="post-body">
           {/* Rendered as the opening paragraph rather than hidden in a meta
               tag: it is the answer-first summary, and it is the passage most
               likely to be quoted by an answer engine. */}
           {post.summary ? <p className="post-lede">{post.summary}</p> : null}
           {post.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
-        </header>
 
-        <div className="prose">
-          <Blocks blocks={post.blocks} />
-        </div>
-      </article>
-
-      {/* What the article is about, on sale.
-          `relatedProductIds` sat empty since the schema was written, so a
-          reader who had just finished the Windows 10 against 11 comparison was
-          offered no way to buy either. Absent rather than padded when the post
-          names nothing in the catalog. */}
-      {post.products.length > 0 ? (
-        <section className="post-products">
-          <h2>{t('productsInArticle')}</h2>
-          <div className="related-row">
-            {post.products.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
-            ))}
+          <div className="prose">
+            <Blocks blocks={post.blocks} />
           </div>
-        </section>
-      ) : null}
+        </article>
 
-      {post.more.length > 0 ? (
-        <section className="post-more">
-          <h2>{t('readNext')}</h2>
-          <ul>
-            {post.more.map((other) => (
-              <li key={other.slug}>
-                <Link href={`${prefix}${ROUTES.post(other.slug)}`}>{other.title}</Link>
-                {other.readingMinutes > 0 ? (
-                  <span className="post-meta">{readingLabel(other.readingMinutes, tf)}</span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-    </main>
+        {/* What the article is about, on sale. Absent rather than padded when
+            the post names nothing in the catalog. */}
+        {post.products.length > 0 ? (
+          <section className="post-section" aria-labelledby="post-products">
+            <h2 id="post-products">{t('productsInArticle')}</h2>
+            <div className="grid">
+              {post.products.map((card) => (
+                <ProductCard key={card.slug} card={card} locale={locale} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {post.more.length > 0 ? (
+          <section className="post-section" aria-labelledby="post-more">
+            <h2 id="post-more">{t('readNext')}</h2>
+            <ul className="blog-grid">
+              {post.more.map((other) => (
+                <li key={other.slug} className="article">
+                  <Link href={`${prefix}${ROUTES.post(other.slug)}`}>
+                    <span className="article-meta">
+                      {other.readingMinutes > 0 ? (
+                        <span>{readingLabel(other.readingMinutes, tf)}</span>
+                      ) : null}
+                    </span>
+                    <strong>{other.title}</strong>
+                    {other.summary ? <span className="post-strip-sub">{other.summary}</span> : null}
+                    <span className="article-more">
+                      <span>{t('readArticle')}</span>
+                      <ArrowIcon size={16} />
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+      </main>
+    </>
   );
 }

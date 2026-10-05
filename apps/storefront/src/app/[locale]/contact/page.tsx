@@ -5,9 +5,19 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { CONTACT_REPLY_HOURS, ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
+import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { ContactForm } from '../../../components/contact-form';
-import { MailIcon, TelegramIcon, WhatsAppIcon } from '../../../components/icons';
-import { MotionFadeIn } from '../../../components/motion-wrapper';
+import {
+  BoltIcon,
+  CartIcon,
+  EnvelopeIcon,
+  GridIcon,
+  KeyIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  TelegramIcon,
+  WhatsAppIcon,
+} from '../../../components/icons';
 import { isArabic } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
@@ -96,168 +106,161 @@ export default async function ContactPage({ params }: Props) {
     jsonld.faqPage(faqs),
   ]);
 
+  // The kit's `support` page (TASK-0107): the band, then two columns — how
+  // to reach a person and the common questions on the start side, the form
+  // as a card on the end side — and the kit's mint support banner under them.
+  // The emoji glyphs are gone: every channel and shortcut has a drawn icon.
   return (
-    <main className="shell">
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      {/* --- Contact Hero Header --- */}
-      <section className="contact-hero" aria-labelledby="contact-heading">
-        <MotionFadeIn>
-          <span className="contact-badge">
-            <span>💬</span>
-            <span>{t('badge')}</span>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: t('breadcrumb'), href: `${prefix}${ROUTES.contact}` },
+            ]}
+          />
+          <header className="page-head">
+            <h1>{t('heading')}</h1>
+            <p className="lede">{t('lede')}</p>
+          </header>
+          <span className="content-label">
+            <BoltIcon size={14} />
+            {t('sla')}
           </span>
-
-          <h1 id="contact-heading">{t('heading')}</h1>
-
-          <p className="contact-hero-lede">{t('lede')}</p>
-
-          <span className="contact-sla-badge">
-            <span>⏱️</span>
-            <span>{t('sla')}</span>
-          </span>
-        </MotionFadeIn>
-      </section>
-
-      {/* --- 2-Column Responsive Contact Layout --- */}
-      <div className="contact-grid-layout">
-        {/* Column 1: Contact Form */}
-        <div className="contact-form-container">
-          <MotionFadeIn>
-            <ContactForm locale={locale} />
-          </MotionFadeIn>
         </div>
+      </div>
 
-        {/* Column 2: Direct Support Channels & Shortcuts */}
-        <aside className="contact-sidebar">
-          <MotionFadeIn>
-            {/* Direct Channels Box */}
-            <div className="contact-channels-box">
-              <span className="channels-box-title">
-                <span>⚡</span>
-                <span>{t('channelsTitle')}</span>
-              </span>
-
-              {/* WhatsApp Card */}
-              <a
-                href={`https://wa.me/${WHATSAPP_DIAL}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="channel-card channel-whatsapp"
-              >
-                <div className="channel-card-left">
-                  <div className="channel-icon-wrap" aria-hidden="true">
-                    <WhatsAppIcon size={24} />
-                  </div>
-                  <div className="channel-info">
-                    <strong>{t('whatsappTitle')}</strong>
-                    <span dir="ltr">+966 53 425 5367</span>
-                  </div>
-                </div>
-                <span className="channel-action-badge">{t('whatsappAction')}</span>
-              </a>
-
-              {/* Email Card */}
-              <a href="mailto:help@digital-activation.com" className="channel-card channel-email">
-                <div className="channel-card-left">
-                  <div className="channel-icon-wrap" aria-hidden="true">
-                    <MailIcon />
-                  </div>
-                  <div className="channel-info">
-                    <strong>{t('emailTitle')}</strong>
-                    <span dir="ltr">help@digital-activation.com</span>
-                  </div>
-                </div>
-                <span className="channel-action-badge">{t('emailAction')}</span>
-              </a>
-
-              {/* Telegram Card */}
-              <a
-                href="https://t.me/digitalactivations"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="channel-card channel-telegram"
-              >
-                <div className="channel-card-left">
-                  <div className="channel-icon-wrap" aria-hidden="true">
-                    <TelegramIcon size={22} />
-                  </div>
-                  <div className="channel-info">
-                    <strong>{t('telegramTitle')}</strong>
-                    <span dir="ltr">@digitalactivations</span>
-                  </div>
-                </div>
-                <span className="channel-action-badge">{t('telegramAction')}</span>
-              </a>
-            </div>
-
-            {/* Self-Service Shortcuts Box */}
-            <div className="self-service-box">
-              <h3>{t('shortcutsTitle')}</h3>
-              <ul className="self-service-list">
+      <main className="shell contact-page">
+        <div className="contact-layout">
+          <div className="contact-info">
+            <section aria-labelledby="contact-channels">
+              <h2 id="contact-channels">{t('channelsTitle')}</h2>
+              <ul className="channel-list">
                 <li>
-                  <Link href={`${prefix}${ROUTES.licenses}`} className="self-service-link">
-                    <span className="shortcut-icon" aria-hidden="true">
-                      🔑
+                  <a
+                    href={`https://wa.me/${WHATSAPP_DIAL}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="channel-card"
+                  >
+                    <span className="iconbox is-whatsapp" aria-hidden="true">
+                      <WhatsAppIcon size={22} />
                     </span>
+                    <span className="channel-text">
+                      <strong>{t('whatsappTitle')}</strong>
+                      <span dir="ltr">+966 53 425 5367</span>
+                    </span>
+                    <span className="channel-action">{t('whatsappAction')}</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:help@digital-activation.com" className="channel-card">
+                    <span className="iconbox" aria-hidden="true">
+                      <EnvelopeIcon size={22} />
+                    </span>
+                    <span className="channel-text">
+                      <strong>{t('emailTitle')}</strong>
+                      <span dir="ltr">help@digital-activation.com</span>
+                    </span>
+                    <span className="channel-action">{t('emailAction')}</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://t.me/digitalactivations"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="channel-card"
+                  >
+                    <span className="iconbox" aria-hidden="true">
+                      <TelegramIcon size={22} />
+                    </span>
+                    <span className="channel-text">
+                      <strong>{t('telegramTitle')}</strong>
+                      <span dir="ltr">@digitalactivations</span>
+                    </span>
+                    <span className="channel-action">{t('telegramAction')}</span>
+                  </a>
+                </li>
+              </ul>
+            </section>
+
+            <section aria-labelledby="contact-shortcuts">
+              <h2 id="contact-shortcuts">{t('shortcutsTitle')}</h2>
+              <ul className="shortcut-list">
+                <li>
+                  <Link href={`${prefix}${ROUTES.licenses}`} className="menuitem">
+                    <KeyIcon size={20} />
                     <span>{t('shortcutLicences')}</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}${ROUTES.goldenWarranty}`} className="self-service-link">
-                    <span className="shortcut-icon" aria-hidden="true">
-                      🛡️
-                    </span>
+                  <Link href={`${prefix}${ROUTES.goldenWarranty}`} className="menuitem">
+                    <ShieldCheckIcon size={20} />
                     <span>{t('shortcutWarranty')}</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}${ROUTES.accountOrders}`} className="self-service-link">
-                    <span className="shortcut-icon" aria-hidden="true">
-                      📦
-                    </span>
+                  <Link href={`${prefix}${ROUTES.accountOrders}`} className="menuitem">
+                    <CartIcon />
                     <span>{t('shortcutOrders')}</span>
                   </Link>
                 </li>
                 <li>
-                  <Link href={`${prefix}${ROUTES.store}`} className="self-service-link">
-                    <span className="shortcut-icon" aria-hidden="true">
-                      🛍️
-                    </span>
+                  <Link href={`${prefix}${ROUTES.store}`} className="menuitem">
+                    <GridIcon size={20} />
                     <span>{t('shortcutStore')}</span>
                   </Link>
                 </li>
               </ul>
-            </div>
-          </MotionFadeIn>
-        </aside>
-      </div>
+            </section>
 
-      {/* --- Support FAQ Accordion Section --- */}
-      <section className="contact-faq-section" aria-labelledby="faq-heading">
-        <MotionFadeIn>
-          <header className="contact-faq-head">
-            <h2 id="faq-heading">{t('faqTitle')}</h2>
-            <p>{t('faqBody')}</p>
-          </header>
-
-          <div className="contact-faq-list">
-            {faqs.map((faq, index) => (
-              <details key={index} className="contact-faq-item" open={index === 0}>
-                <summary>
-                  <span>{faq.q}</span>
-                  <span aria-hidden="true" style={{ opacity: 0.5 }}>
-                    ▾
-                  </span>
-                </summary>
-                <div className="contact-faq-content">
-                  <p style={{ margin: 0 }}>{faq.a}</p>
-                </div>
-              </details>
-            ))}
+            <section aria-labelledby="faq-heading">
+              <h2 id="faq-heading">{t('faqTitle')}</h2>
+              <p className="contact-faq-lede">{t('faqBody')}</p>
+              <div className="faq-list">
+                {faqs.map((faq, index) => (
+                  <details key={index} className="faqrow" open={index === 0}>
+                    <summary>
+                      <span>{faq.q}</span>
+                      <span className="faq-toggle" aria-hidden="true">
+                        <PlusIcon />
+                      </span>
+                    </summary>
+                    <p>{faq.a}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
           </div>
-        </MotionFadeIn>
-      </section>
-    </main>
+
+          <div className="contact-form-col">
+            <ContactForm locale={locale} />
+          </div>
+        </div>
+
+        <section className="help-banner" aria-labelledby="contact-help">
+          <div>
+            <span className="eyebrow">{t('badge')}</span>
+            <h2 id="contact-help">{t('helpTitle')}</h2>
+            <p>{t('helpBody')}</p>
+          </div>
+          <div className="help-banner-actions">
+            <a
+              className="btn btn-primary"
+              href={`https://wa.me/${WHATSAPP_DIAL}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <WhatsAppIcon size={18} />
+              {t('whatsappAction')}
+            </a>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

@@ -49,3 +49,7 @@
 ## Current tasks
 
 - none
+
+## Supporting
+
+- TASK-0107 — UI Kit stage 5 — content pages after the kit: policy/editorial pages (catch-all), golden warranty, contact (kit support page), blog index and post, 404 and error pages (IN_PROGRESS, 0%)

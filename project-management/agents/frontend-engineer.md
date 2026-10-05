@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -55,4 +55,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0107 — UI Kit stage 5 — content pages after the kit: policy/editorial pages (catch-all), golden warranty, contact (kit support page), blog index and post, 404 and error pages (IN_PROGRESS, 0%)
