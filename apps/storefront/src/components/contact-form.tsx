@@ -1,6 +1,7 @@
 'use client';
 
-import { type ContactTopic, CONTACT_REPLY_HOURS } from '@da/contracts';
+import { type ContactTopic } from '@da/contracts';
+import { CONTACT_REPLY_HOURS } from '@da/contracts/constants';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

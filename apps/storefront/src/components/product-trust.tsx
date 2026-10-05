@@ -1,9 +1,10 @@
 'use client';
 
 import type { PaymentProvider } from '@da/contracts';
-import { offeredPaymentSchema } from '@da/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+
+import { loadOfferedSchemas } from '../lib/lazy-clients';
 
 /**
  * Payment marks and the shop's own promises, under the product gallery.
@@ -135,7 +136,10 @@ let offered: Promise<PaymentProvider[] | null> | null = null;
 function offeredProviders(): Promise<PaymentProvider[] | null> {
   offered ??= (async () => {
     try {
-      const response = await fetch(new URL('/v1/payment-methods', API));
+      const [response, { offeredPaymentSchema }] = await Promise.all([
+        fetch(new URL('/v1/payment-methods', API)),
+        loadOfferedSchemas(),
+      ]);
       if (!response.ok) throw new Error(`payment-methods ${response.status}`);
       const parsed = offeredPaymentSchema.safeParse(await response.json());
       if (!parsed.success) throw new Error('unexpected payment-methods response');

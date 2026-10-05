@@ -1,4 +1,5 @@
-import { ROUTES, whatsappPlacementSchema } from '@da/contracts';
+import { whatsappPlacementSchema } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { recordEvent } from '../../../../lib/api';

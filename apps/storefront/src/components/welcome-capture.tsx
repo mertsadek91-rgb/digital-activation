@@ -6,13 +6,8 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
-import {
-  SUBSCRIBED_KEY,
-  WELCOME_SEEN_KEY,
-  growthApi,
-  memory,
-  publicMarketing,
-} from '../lib/growth-client';
+import { SUBSCRIBED_KEY, WELCOME_SEEN_KEY, memory } from '../lib/growth-memory';
+import { loadGrowthClient } from '../lib/lazy-clients';
 
 import { GrowthDialog } from './growth-dialog';
 
@@ -56,9 +51,11 @@ export function WelcomeCapture({ locale }: { locale: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    void publicMarketing().then((value) => {
-      if (!cancelled) setSettings(value?.welcome ?? null);
-    });
+    void loadGrowthClient()
+      .then((client) => client.publicMarketing())
+      .then((value) => {
+        if (!cancelled) setSettings(value?.welcome ?? null);
+      });
     return () => {
       cancelled = true;
     };
@@ -117,6 +114,7 @@ function WelcomeDialog({
       return;
     }
     setStatus('sending');
+    const { growthApi } = await loadGrowthClient();
     const ok = await growthApi.welcomeSubscribe({ email: email.trim(), locale: lang });
     if (ok) memory.set(SUBSCRIBED_KEY, String(Date.now()));
     setStatus(ok ? 'sent' : 'error');

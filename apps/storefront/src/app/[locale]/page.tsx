@@ -1,4 +1,4 @@
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import type { Metadata } from 'next';
 import { Link } from '../../components/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';

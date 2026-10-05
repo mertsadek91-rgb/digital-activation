@@ -1,10 +1,10 @@
 'use client';
 
-import { offeredCurrenciesSchema } from '@da/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { browserCurrency, setBrowserCurrency } from '../lib/currency';
+import { loadOfferedSchemas } from '../lib/lazy-clients';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -16,9 +16,13 @@ let offered: Promise<string[]> | null = null;
  * on its own: the same answer twice, on every page.
  */
 function offeredCurrencies(): Promise<string[]> {
-  offered ??= fetch(new URL('/v1/catalog/currencies', API))
-    .then((response) => (response.ok ? response.json() : null))
-    .then((body: unknown) => {
+  offered ??= Promise.all([
+    fetch(new URL('/v1/catalog/currencies', API)).then((response) =>
+      response.ok ? (response.json() as Promise<unknown>) : null,
+    ),
+    loadOfferedSchemas(),
+  ])
+    .then(([body, { offeredCurrenciesSchema }]) => {
       const parsed = offeredCurrenciesSchema.safeParse(body);
       if (!parsed.success) throw new Error('unexpected currencies response');
       return parsed.data.currencies.map((entry) => entry.code);

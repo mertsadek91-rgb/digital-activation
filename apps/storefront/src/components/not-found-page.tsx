@@ -1,7 +1,7 @@
 'use client';
 
 import type { Suggestion } from '@da/contracts';
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from './link';
 import { usePathname } from 'next/navigation';
 import { createTranslator } from 'next-intl';

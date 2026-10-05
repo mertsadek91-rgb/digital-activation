@@ -407,16 +407,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0108",
+      "assignments": [
+        "TASK-0108"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-05T11:23:05Z"
+      "last_activity": "2026-10-05T12:19:42Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -787,13 +789,15 @@
       "assignments": [
         "TASK-0101"
       ],
-      "supporting": [],
+      "supporting": [
+        "TASK-0108"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-10-05T11:33:49Z"
+      "last_activity": "2026-10-05T12:19:45Z"
     },
     {
       "id": "devops-engineer",

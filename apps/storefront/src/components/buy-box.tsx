@@ -1,12 +1,12 @@
 'use client';
 
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
-import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
+import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts/constants';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
-import { cartApi, CartError } from '../lib/cart-client';
+import { cartErrorMessage, loadCartApi } from '../lib/lazy-clients';
 import {
   formatActivation,
   formatDelivery,
@@ -125,10 +125,11 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
     try {
       // The client announces the new cart, which is how the header badge
       // hears about it — this component cannot reach it any other way.
+      const cartApi = await loadCartApi();
       await cartApi.add(selected.id, qty, { locale, currency: selected.price.currency });
       setAdded(true);
     } catch (caught) {
-      setError(caught instanceof CartError ? caught.message : t('addFailed'));
+      setError(await cartErrorMessage(caught, t('addFailed')));
     } finally {
       setBusy(false);
     }

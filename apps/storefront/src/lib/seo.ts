@@ -4,7 +4,7 @@
  */
 import type { Metadata } from 'next';
 
-import { NOINDEX_PREFIXES } from '@da/contracts';
+import { NOINDEX_PREFIXES } from '@da/contracts/constants';
 import { indexingPolicy, robotsMeta } from '@da/seo';
 import { BRAND } from '@da/ui';
 

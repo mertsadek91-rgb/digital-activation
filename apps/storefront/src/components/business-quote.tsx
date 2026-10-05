@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
-import { growthApi } from '../lib/growth-client';
+import { loadGrowthClient } from '../lib/lazy-clients';
 
 import { GrowthDialog } from './growth-dialog';
 
@@ -55,6 +55,7 @@ export function BusinessQuote({
   async function submit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     setStatus('sending');
+    const { growthApi } = await loadGrowthClient();
     const ok = await growthApi.businessQuote({
       company: form.company.trim(),
       name: form.name.trim(),

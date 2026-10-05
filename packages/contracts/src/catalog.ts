@@ -666,8 +666,7 @@ export type CatalogQuery = z.infer<typeof catalogQuerySchema>;
 /** Floor below which a sales count is noise rather than proof. */
 export const SALES_PROOF_THRESHOLD = 5;
 
-/** Below this, the storefront shows "only N left" instead of a plain badge. */
-export const LOW_STOCK_THRESHOLD = 5;
+export { LOW_STOCK_THRESHOLD } from './constants.js';
 
 /**
  * What the search box answers with.

@@ -3,7 +3,7 @@ import { Link } from '../../../../components/link';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { BRAND } from '@da/ui';
 import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 

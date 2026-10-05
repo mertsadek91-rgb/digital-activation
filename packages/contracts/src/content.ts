@@ -73,8 +73,7 @@ export const contactResultSchema = z.object({
   received: z.literal(true),
 });
 
-/** Longest a message can wait before the promise on the page stops being true. */
-export const CONTACT_REPLY_HOURS = 24;
+export { CONTACT_REPLY_HOURS } from './constants.js';
 
 /**
  * A message as the panel lists it.

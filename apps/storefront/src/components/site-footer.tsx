@@ -1,6 +1,6 @@
 import { Link } from './link';
 import { useTranslations } from 'next-intl';
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { BRAND } from '@da/ui';
 
 import { isArabic } from '../i18n/locale';

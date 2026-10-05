@@ -98,10 +98,12 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0108"
       ],
       "owned_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0108"
       ],
       "reviews": [],
       "blocked_work": [],

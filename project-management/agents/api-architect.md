@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0108 — Move the plain constants the storefront client needs (ROUTES, NOINDEX_PREFIXES, MAX_LINE_QTY, LOW_STOCK_THRESHOLD, CONTACT_REPLY_HOURS) into a zod-free @da/contracts/constants entry point (IN_PROGRESS, 80%)
