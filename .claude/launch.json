@@ -75,6 +75,21 @@
         "apps/storefront/mock/api.mjs"
       ],
       "port": 4000
+    },
+    {
+      "name": "storefront-webpack-3012",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@da/storefront",
+        "exec",
+        "next",
+        "dev",
+        "--webpack",
+        "--port",
+        "3012"
+      ],
+      "port": 3012
     }
   ]
 }
