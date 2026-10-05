@@ -2708,6 +2708,54 @@
       "updated_at": "2026-10-05",
       "reaudit": null,
       "file": "tasks/completed/TASK-0108.md"
+    },
+    {
+      "id": "TASK-0109",
+      "title": "UI Kit artwork: the four family illustrations (Windows, Office, Adobe, Autodesk) in the page band of their collection and brand pages, reusing the hero WebPs; composed _artwork banners not used (mid-canvas seam)",
+      "type": "feature",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "LOW",
+      "progress": 0,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/collections/[slug]",
+        "/brands/[slug]"
+      ],
+      "affected_files": [
+        "apps/storefront/src/lib/family-art.ts",
+        "apps/storefront/src/components/band-art.tsx",
+        "apps/storefront/src/app/[locale]/collections/[slug]/page.tsx",
+        "apps/storefront/src/app/[locale]/brands/[slug]/page.tsx",
+        "apps/storefront/src/app/[locale]/page.tsx",
+        "apps/storefront/src/app/band-art.css",
+        "apps/storefront/src/app/globals.css",
+        "docs/ui-kit-review.md"
+      ],
+      "created_at": "2026-10-05",
+      "updated_at": "2026-10-05",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0109.md"
     }
   ]
 }

@@ -24,6 +24,7 @@ import { ProductCard } from '../../components/product-card';
 import { readingLabel } from '../../lib/format';
 import { isArabic } from '../../i18n/locale';
 import { getHome } from '../../lib/api';
+import { FAMILY_ART } from '../../lib/family-art';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://digital-activation.com';
 
@@ -79,12 +80,6 @@ export async function generateMetadata({
 }
 
 /** The four product families on the hero, as the kit's banner draws them. */
-const HERO_ART = [
-  { name: 'windows', width: 560, height: 506 },
-  { name: 'office', width: 560, height: 489 },
-  { name: 'adobe', width: 560, height: 552 },
-  { name: 'autodesk', width: 560, height: 569 },
-] as const;
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -104,16 +99,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   // One slide per family. Each links to its category when the catalog has
   // one (matched by slug prefix, as the category marks are), else the store.
-  const slides = HERO_ART.map((art) => {
-    const category = home?.categories.find((entry) => entry.slug.startsWith(art.name));
+  const slides = FAMILY_ART.map((art) => {
+    const category = home?.categories.find((entry) => entry.slug.startsWith(art.family));
     return {
-      key: art.name,
-      name: t(`slides.${art.name}.name`),
-      title: t(`slides.${art.name}.title`),
-      body: t(`slides.${art.name}.body`),
-      cta: t(`slides.${art.name}.cta`),
+      key: art.family,
+      name: t(`slides.${art.family}.name`),
+      title: t(`slides.${art.family}.title`),
+      body: t(`slides.${art.family}.body`),
+      cta: t(`slides.${art.family}.cta`),
       href: href(category ? category.href : ROUTES.store),
-      image: { src: `/home/${art.name}.webp`, width: art.width, height: art.height },
+      image: { src: art.src, width: art.width, height: art.height },
     };
   });
 

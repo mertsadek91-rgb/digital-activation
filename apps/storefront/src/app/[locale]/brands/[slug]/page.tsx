@@ -9,6 +9,8 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 import { Blocks } from '../../../../components/blocks';
 import { isArabic } from '../../../../i18n/locale';
 import { Breadcrumbs } from '../../../../components/breadcrumbs';
+import { BandArt } from '../../../../components/band-art';
+import { brandArt } from '../../../../lib/family-art';
 import { CategoryRail } from '../../../../components/category-rail';
 import {
   ListingChips,
@@ -86,6 +88,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 export default async function BrandPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
+  const bandArt = brandArt(slug);
   setRequestLocale(locale);
   const state = parseListing(await searchParams);
   const { page } = state;
@@ -137,49 +140,52 @@ export default async function BrandPage({ params, searchParams }: Props) {
     <main className="catalog-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <div className="page-band">
+      <div className={bandArt ? 'page-band has-art' : 'page-band'}>
         <div className="shell">
-          <Breadcrumbs
-            items={brand.breadcrumbs.map((crumb) => ({
-              name: crumb.name,
-              href: `${prefix}${crumb.href}`,
-            }))}
-          />
-          <header className="page-head brand-head">
-            {/* Both dimensions or no image: `next/image` needs an intrinsic size to
+          <div className="band-copy">
+            <Breadcrumbs
+              items={brand.breadcrumbs.map((crumb) => ({
+                name: crumb.name,
+                href: `${prefix}${crumb.href}`,
+              }))}
+            />
+            <header className="page-head brand-head">
+              {/* Both dimensions or no image: `next/image` needs an intrinsic size to
                 reserve the space, and a logo that lands after the heading has moved
                 is worse than a heading with no logo. No brand carries a logo today,
                 so this is the branch that runs. */}
-            {brand.logo && brand.logo.width !== null && brand.logo.height !== null ? (
-              <Image
-                className="brand-logo"
-                src={brand.logo.url}
-                alt={brand.logo.alt}
-                width={brand.logo.width}
-                height={brand.logo.height}
-              />
-            ) : null}
-            <div>
-              <h1>{brand.name}</h1>
-              {/* No count here: the result line below carries it, and a number
+              {brand.logo && brand.logo.width !== null && brand.logo.height !== null ? (
+                <Image
+                  className="brand-logo"
+                  src={brand.logo.url}
+                  alt={brand.logo.alt}
+                  width={brand.logo.width}
+                  height={brand.logo.height}
+                />
+              ) : null}
+              <div>
+                <h1>{brand.name}</h1>
+                {/* No count here: the result line below carries it, and a number
                   printed twice on one page is two numbers that can fall out of
                   step. */}
-              <p className="lede">{t('description', { name: brand.name })}</p>
-              {/* The maker's own site, and the only outbound link on the page.
+                <p className="lede">{t('description', { name: brand.name })}</p>
+                {/* The maker's own site, and the only outbound link on the page.
                   `rel` because it is a link we do not vouch for and do not want
                   to pass ranking to. */}
-              {brand.website ? (
-                <a
-                  className="brand-site"
-                  href={brand.website}
-                  rel="nofollow noopener noreferrer"
-                  target="_blank"
-                >
-                  {t('officialSite')}
-                </a>
-              ) : null}
-            </div>
-          </header>
+                {brand.website ? (
+                  <a
+                    className="brand-site"
+                    href={brand.website}
+                    rel="nofollow noopener noreferrer"
+                    target="_blank"
+                  >
+                    {t('officialSite')}
+                  </a>
+                ) : null}
+              </div>
+            </header>
+          </div>
+          {bandArt ? <BandArt art={bandArt} /> : null}
         </div>
       </div>
 

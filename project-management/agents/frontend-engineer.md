@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -55,4 +55,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0109 — UI Kit artwork: the four family illustrations (Windows, Office, Adobe, Autodesk) in the page band of their collection and brand pages, reusing the hero WebPs; composed _artwork banners not used (mid-canvas seam) (IN_PROGRESS, 0%)
