@@ -1,16 +1,24 @@
 'use client';
 
 import type { OfferSuggestions } from '@da/contracts';
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from './link';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
-import { CART_ADDED_EVENT, type CartAddedDetail, cartApi } from '../lib/cart-client';
+import { CART_ADDED_EVENT, type CartAddedDetail } from '../lib/cart-events';
+import { loadCartApi } from '../lib/lazy-clients';
 
 import { CloseIcon } from './icons';
-import { SuggestionList } from './offer-suggestions';
+// The list's add buttons use the cart client, so it comes with the dialog's
+// first opening rather than with every page (TASK-0101).
+// A chunk that fails to load leaves the list out rather than reaching the
+// layout's error boundary.
+const SuggestionList = dynamic(() =>
+  import('./offer-suggestions').then((module) => module.SuggestionList).catch(() => () => null),
+);
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -50,8 +58,10 @@ export function AddedDialog({ locale }: { locale: string }) {
       if (!line) return;
       // Only the answer to the latest add may open the dialog.
       const ticket = ++latest.current;
-      void cartApi
-        .suggestions([line.productSlug], 'added', { locale, currency: cart.currency })
+      void loadCartApi()
+        .then((cartApi) =>
+          cartApi.suggestions([line.productSlug], 'added', { locale, currency: cart.currency }),
+        )
         .then((result) => {
           if (ticket !== latest.current || result.items.length === 0) return;
           restoreRef.current =

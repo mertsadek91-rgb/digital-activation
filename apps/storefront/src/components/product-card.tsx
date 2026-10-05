@@ -1,5 +1,5 @@
 import type { CatalogCard } from '@da/contracts';
-import { LOW_STOCK_THRESHOLD } from '@da/contracts';
+import { LOW_STOCK_THRESHOLD } from '@da/contracts/constants';
 import Image from 'next/image';
 import { Link } from './link';
 import { useTranslations } from 'next-intl';

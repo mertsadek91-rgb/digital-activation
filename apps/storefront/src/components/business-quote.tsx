@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
-import { growthApi } from '../lib/growth-client';
+import { loadGrowthClient } from '../lib/lazy-clients';
 
 import { GrowthDialog } from './growth-dialog';
 
@@ -55,6 +55,15 @@ export function BusinessQuote({
   async function submit(event: React.FormEvent): Promise<void> {
     event.preventDefault();
     setStatus('sending');
+    // The client is loaded on use; a failed load is a failed send, said as one,
+    // rather than a button left spinning.
+    const growthApi = await loadGrowthClient()
+      .then((client) => client.growthApi)
+      .catch(() => null);
+    if (!growthApi) {
+      setStatus('error');
+      return;
+    }
     const ok = await growthApi.businessQuote({
       company: form.company.trim(),
       name: form.name.trim(),

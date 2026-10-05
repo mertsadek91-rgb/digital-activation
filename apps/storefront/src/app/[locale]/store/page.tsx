@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Breadcrumbs } from '../../../components/breadcrumbs';

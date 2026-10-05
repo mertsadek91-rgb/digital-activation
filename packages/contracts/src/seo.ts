@@ -48,46 +48,16 @@ export const SEO_PUBLISH_REQUIREMENTS = {
   requiresSku: true,
 } as const;
 
-/** URL prefixes. Kept in one place so the sitemap, the router and the 301 map
- *  cannot drift apart. Arabic is at the root; English is prefixed. */
-export const ROUTES = {
-  home: '/',
-  store: '/store',
-  /** Already in NOINDEX_PREFIXES: a results page is not a page to index. */
-  search: '/search',
-  product: (slug: string) => `/store/${slug}`,
-  collection: (slug: string) => `/collections/${slug}`,
-  brand: (slug: string) => `/brands/${slug}`,
-  blog: '/blog',
-  post: (slug: string) => `/blog/${slug}`,
-  guide: (slug: string) => `/guides/${slug}`,
-  comparison: (slug: string) => `/compare/${slug}`,
-  glossary: (slug: string) => `/glossary/${slug}`,
-  tool: (slug: string) => `/tools/${slug}`,
-  deals: '/deals',
-  goldenWarranty: '/golden-warranty',
-  business: '/business',
-  about: '/about',
-  contact: '/contact',
-  account: '/account',
-  licenses: '/account/licenses',
-  accountOrders: '/account/orders',
-  accountReviews: '/account/reviews',
-  forYou: '/account/for-you',
-  /** The confirmation page for one order, reachable by the cart that placed it. */
-  order: (number: string) => `/orders/${number}`,
-  cart: '/cart',
-  checkout: '/checkout',
-} as const;
+export { ROUTES } from './constants.js';
 
 /**
  * What the sitemap is built from.
  *
  * Paths rather than slugs, because the thing a crawler needs is a URL and the
- * thing that decides a URL is the route table — which lives here, in ROUTES,
- * next to this. A response that returned slugs would leave the storefront to
- * re-derive paths a second time, and two places that build the same URL are
- * two places that can disagree.
+ * thing that decides a URL is the route table, ROUTES (`constants.ts`). A
+ * response that returned slugs would leave the storefront to re-derive paths
+ * a second time, and two places that build the same URL are two places that
+ * can disagree.
  *
  * `lastModified` is the row's own updatedAt. Inventing one — "today", or the
  * build time — teaches a crawler that everything changes every day, and it
@@ -115,11 +85,4 @@ export const sitemapFeedSchema = z.object({
 });
 export type SitemapFeed = z.infer<typeof sitemapFeedSchema>;
 
-/** Paths that must never be indexed, mirrored into robots.txt. */
-export const NOINDEX_PREFIXES = [
-  '/cart',
-  '/checkout',
-  '/account',
-  '/search',
-  '/product-tag',
-] as const;
+export { NOINDEX_PREFIXES } from './constants.js';

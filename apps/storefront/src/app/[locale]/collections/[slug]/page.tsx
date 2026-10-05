@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { Link } from '../../../../components/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';

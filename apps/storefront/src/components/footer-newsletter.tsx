@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
 
-import { SUBSCRIBED_KEY, memory } from '../lib/growth-client';
+import { SUBSCRIBED_KEY, memory } from '../lib/growth-memory';
 import { subscriptionsApi } from '../lib/subscriptions-client';
 
 /**

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Order, OrderSuggestions } from '@da/contracts';
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from '../../../../components/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';

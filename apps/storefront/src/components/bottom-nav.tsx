@@ -1,13 +1,14 @@
 'use client';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from './link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
-import { CART_EVENT, type CartEventDetail, cartApi } from '../lib/cart-client';
+import { CART_EVENT, type CartEventDetail } from '../lib/cart-events';
+import { loadCartApi } from '../lib/lazy-clients';
 
 import { CartIcon, GridIcon, HomeIcon, SearchIcon, UserIcon } from './icons';
 
@@ -33,6 +34,7 @@ export function BottomNav({ locale }: { locale: string }) {
     let cancelled = false;
     void (async () => {
       try {
+        const cartApi = await loadCartApi();
         const cart = await cartApi.get({ locale });
         if (!cancelled) setCount(cart.itemCount);
       } catch {

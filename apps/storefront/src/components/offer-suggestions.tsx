@@ -1,14 +1,14 @@
 'use client';
 
 import type { Cart, OfferSuggestion } from '@da/contracts';
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import Image from 'next/image';
 import { Link } from './link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
-import { CartError, cartApi } from '../lib/cart-client';
+import { cartErrorMessage, loadCartApi } from '../lib/lazy-clients';
 import { formatPrice } from '../lib/format';
 
 /**
@@ -60,12 +60,13 @@ function SuggestionCard({
     setState('busy');
     setError(null);
     try {
+      const cartApi = await loadCartApi();
       const cart = await cartApi.addSuggestion(id, { locale, currency: item.card.price.currency });
       setState('added');
       onAdded?.(cart);
     } catch (caught) {
       setState('idle');
-      setError(caught instanceof CartError ? caught.message : t('addFailed'));
+      setError(await cartErrorMessage(caught, t('addFailed')));
     }
   }
 
