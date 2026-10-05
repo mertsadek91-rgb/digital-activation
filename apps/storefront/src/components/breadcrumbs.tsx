@@ -10,7 +10,12 @@ import { ChevronRightIcon } from './icons';
  * `hrefs` arrive with the locale prefix already applied; the component only
  * draws them.
  */
-export async function Breadcrumbs({ items }: { items: { name: string; href: string }[] }) {
+export async function Breadcrumbs({
+  items,
+}: {
+  /** `lang` when a step's name is in another language than the page. */
+  items: { name: string; href: string; lang?: string }[];
+}) {
   const tc = await getTranslations('common');
   if (items.length === 0) return null;
 
@@ -27,7 +32,9 @@ export async function Breadcrumbs({ items }: { items: { name: string; href: stri
                 </span>
               ) : null}
               {last ? (
-                <span aria-current="page">{item.name}</span>
+                <span aria-current="page" lang={item.lang}>
+                  {item.name}
+                </span>
               ) : (
                 <Link href={item.href}>{item.name}</Link>
               )}

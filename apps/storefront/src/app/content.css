@@ -204,7 +204,7 @@
     var(--color-brand-tint-deep) 100%
   );
 }
-.help-banner > div {
+.help-banner > div:first-child {
   flex: 1 1 18rem;
 }
 .help-banner h2 {
@@ -246,6 +246,13 @@
 }
 .blog-grid .article-art {
   block-size: 160px;
+}
+/* Card titles are headings (REV-0137), drawn like the home page's cards. */
+.article .article-title {
+  margin: 8px 0 12px;
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  line-height: 1.5;
 }
 .article-meta {
   display: flex;
@@ -410,4 +417,9 @@
 }
 .status-hero .missing-code {
   color: var(--color-brand);
+}
+/* An Arabic title on an English page keeps the Arabic face. */
+.page-head h1:lang(ar),
+.breadcrumb [lang='ar'] {
+  font-family: var(--font-tajawal), system-ui, sans-serif;
 }

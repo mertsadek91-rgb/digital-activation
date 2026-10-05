@@ -134,14 +134,12 @@
         "ai-integration-architect"
       ],
       "active_tasks": [
-        "TASK-0021",
-        "TASK-0107"
+        "TASK-0021"
       ],
       "owned_tasks": [
         "TASK-0021",
         "TASK-0034",
-        "TASK-0041",
-        "TASK-0107"
+        "TASK-0041"
       ],
       "reviews": [
         "TASK-0021"

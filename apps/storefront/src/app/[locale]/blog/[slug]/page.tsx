@@ -196,7 +196,7 @@ export default async function PostPage({ params }: Props) {
                         <span>{readingLabel(other.readingMinutes, tf)}</span>
                       ) : null}
                     </span>
-                    <strong>{other.title}</strong>
+                    <h3 className="article-title">{other.title}</h3>
                     {other.summary ? <span className="post-strip-sub">{other.summary}</span> : null}
                     <span className="article-more">
                       <span>{t('readArticle')}</span>

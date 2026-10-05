@@ -134,7 +134,7 @@ export default async function BlogPage({ params }: Props) {
                       <span>{readingLabel(post.readingMinutes, tf)}</span>
                     ) : null}
                   </span>
-                  <strong>{post.title}</strong>
+                  <h2 className="article-title">{post.title}</h2>
                   {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
                   <span className="article-more">
                     <span>{t('readArticle')}</span>

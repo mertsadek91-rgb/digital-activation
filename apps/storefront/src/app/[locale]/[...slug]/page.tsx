@@ -143,11 +143,15 @@ export default async function ContentPage({ params }: Props) {
           <Breadcrumbs
             items={[
               { name: tc('home'), href: `${prefix}/` },
-              { name: page.title, href: `${prefix}/${page.slug}` },
+              { name: page.title, href: `${prefix}/${page.slug}`, lang: served },
             ]}
           />
           <header className="page-head">
-            <h1>{page.title}</h1>
+            {/* In the language it is written in: on /en/terms the title is
+                Arabic, and the page's own font and direction would mis-set it. */}
+            <h1 lang={served} dir={isArabic(served) ? 'rtl' : 'ltr'}>
+              {page.title}
+            </h1>
           </header>
           <p className="content-updated">
             {t.rich('updated', {
