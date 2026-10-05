@@ -846,3 +846,65 @@ export function WarningIcon({ size = 20 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** The kit's bin, for a cart row's remove button. */
+export function TrashIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+    </Svg>
+  );
+}
+
+/** The kit's copy mark: two overlapping sheets. */
+export function CopyIcon({ size = 18 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V5a1 1 0 0 1 1-1h10" />
+    </Svg>
+  );
+}
+
+/**
+ * Sign out: a door with the arrow leaving it. Drawn leaving to the right and
+ * mirrored by `.icon-flip` on the Arabic page, like every arrow that points
+ * the way the text runs.
+ */
+export function LogoutIcon({ size = 20 }: { size?: number }) {
+  return (
+    <span className="icon-flip">
+      <Svg size={size}>
+        <path d="M10 4H5v16h5M14 8l4 4-4 4M8 12h10" />
+      </Svg>
+    </span>
+  );
+}
+
+/** A gift box, for the referral entry in the account menu. */
+export function GiftIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M3 9h18v4H3zM5 13v8h14v-8M12 9v12M12 9c-2-4-6-4-6-1.5S10 9 12 9Zm0 0c2-4 6-4 6-1.5S14 9 12 9Z" />
+    </Svg>
+  );
+}
+
+/** The kit's receipt mark, for an order's line. */
+export function ReceiptIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />
+    </Svg>
+  );
+}
+
+/** An envelope, for the email field: the kit's mail mark beside an address. */
+export function EnvelopeIcon({ size = 20 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </Svg>
+  );
+}

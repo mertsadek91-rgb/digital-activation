@@ -335,7 +335,16 @@
     "restoreExpired": "That cart link has expired or its order is complete. This is your current cart.",
     "restoreFailed": "Could not open the cart from that link.",
     "addedFromLink": "Added to your cart.",
-    "addFromLinkFailed": "Could not add that product from the link."
+    "addFromLinkFailed": "Could not add that product from the link.",
+    "reviewNote": "Review your order before paying",
+    "couponPlaceholder": "Enter the code",
+    "emptyTitle": "Your cart is empty",
+    "emptyLede": "Pick your digital products to start an order.",
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "unitPrice": "{price} each",
+    "increase": "Increase quantity",
+    "decrease": "Decrease quantity",
+    "couponApplied": "Code applied"
   },
   "checkout": {
     "title": "Checkout",
@@ -379,7 +388,12 @@
     "chargedInUsd": "You will be charged <strong>{amount} USD</strong>.",
     "fpCancelled": "The payment was cancelled. Your cart is kept as it was — try again whenever you like.",
     "fpExpired": "The payment page expired before the payment was made. Your cart is kept; please try again.",
-    "fpFailed": "Payment failed, please try again. Your cart is kept."
+    "fpFailed": "Payment failed, please try again. Your cart is kept.",
+    "customerDetails": "Your details",
+    "paymentMethod": "Payment method",
+    "noShipping": "A digital product needs no shipping address.",
+    "payAmount": "Pay {amount}",
+    "optional": "Optional"
   },
   "checkoutReturn": {
     "title": "Payment status",
@@ -396,7 +410,9 @@
     "checkAgain": "Check again",
     "failedTitle": "The payment did not go through",
     "failedBody": "Payment failed, please try again. Your cart is kept.",
-    "backToCheckout": "Back to checkout"
+    "backToCheckout": "Back to checkout",
+    "orderNumberLabel": "Order number",
+    "tryAgain": "Try again"
   },
   "cardPayment": {
     "declined": "That card was not accepted. Try another card or another method.",
@@ -579,7 +595,19 @@
     "forYou": "Chosen for you",
     "metaTitle": "My account",
     "paidOn": "paid <ltr>{date}</ltr>",
-    "referral": "Invite a friend"
+    "referral": "Invite a friend",
+    "welcome": "Welcome back",
+    "welcomeLede": "Follow your orders and licences from your account.",
+    "menu": "Account menu",
+    "support": "Support",
+    "signedInAs": "Signed in as",
+    "colNumber": "Order",
+    "colDate": "Date",
+    "colItems": "Items",
+    "colStatus": "Status",
+    "colTotal": "Total",
+    "lineCount": "{count, plural, one {# item} other {# items}}",
+    "moreLines": "and {count} more"
   },
   "licences": {
     "copy": "Copy",
@@ -607,7 +635,9 @@
     "waiting": "{count, plural, one {# item} other {# items}} being prepared. Most of our products are prepared after payment; the email arrives as soon as it is ready.",
     "resent": "Sent again to {to}",
     "warranty": "{days}-day warranty from delivery",
-    "deadline": "Must be activated before {date}"
+    "deadline": "Must be activated before {date}",
+    "yourKey": "Your licence code",
+    "hidden": "The code appears here when you press \"Show the licence\"; every view is logged."
   },
   "accountReviews": {
     "moderated": "This review has been moderated, so it can no longer be changed.",
@@ -663,7 +693,13 @@
     "notFoundHint": "If this is your order, open it from the link in your order email, or sign in to your account with the email you ordered with.",
     "title": "Your order",
     "loadFailed": "Could not load the order.",
-    "heading": "Order <ltr>{number}</ltr>"
+    "heading": "Order <ltr>{number}</ltr>",
+    "items": "Items",
+    "deliveryDetails": "Delivery details",
+    "qty": "Qty: {count}",
+    "summary": "Order summary",
+    "myOrders": "My orders",
+    "keyNoteShort": "Your key is in your email and on your licences page."
   },
   "errors": {
     "title": "Something went wrong on our side",

@@ -2482,6 +2482,68 @@
       "updated_at": "2026-10-03",
       "reaudit": null,
       "file": "tasks/completed/TASK-0104.md"
+    },
+    {
+      "id": "TASK-0105",
+      "title": "UI Kit stage 4 — cart (and empty cart), checkout, checkout return (success / payment failed), order details, account home, orders, licences, referral and reviews pages after the kit (04_Inner_Pages cart/checkout/success/payment-failed/account/orders/order-details/licenses; components cart-item, coupon, order-summary, license, alert, empty, account-icons)",
+      "type": "feature",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 0,
+      "authority_level": 2,
+      "risk": "MEDIUM",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/cart",
+        "/checkout",
+        "/checkout/return/[number]",
+        "/orders/[number]",
+        "/account",
+        "/account/orders",
+        "/account/licenses",
+        "/account/for-you",
+        "/account/referral",
+        "/account/reviews"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/[locale]/cart/page.tsx",
+        "apps/storefront/src/app/[locale]/checkout/page.tsx",
+        "apps/storefront/src/app/[locale]/checkout/return/[number]/page.tsx",
+        "apps/storefront/src/app/[locale]/orders/[number]/page.tsx",
+        "apps/storefront/src/app/[locale]/account/",
+        "apps/storefront/src/app/cart.css",
+        "apps/storefront/src/app/account.css",
+        "apps/storefront/src/components/account-shell.tsx",
+        "apps/storefront/src/components/breadcrumbs-client.tsx",
+        "apps/storefront/src/components/icons.tsx",
+        "apps/storefront/mock/api.mjs",
+        "apps/storefront/messages/ar.json",
+        "apps/storefront/messages/en.json",
+        "docs/ui-kit-review.md"
+      ],
+      "created_at": "2026-10-03",
+      "updated_at": "2026-10-05",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0105.md"
     }
   ]
 }

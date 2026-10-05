@@ -1,41 +1,18 @@
 /*
- * Header, cart, checkout and order pages.
+ * The cart, the checkout, the payment return and the order page, after the
+ * kit's inner pages (TASK-0105): `cart-item` rows as cards, the `coupon`
+ * field, the `order-summary` card, the checkout's two panels, the success
+ * and payment-failed heroes, and the order's "delivery details".
  *
  * Logical properties throughout, as elsewhere, so one stylesheet serves the
  * Arabic RTL store and the English LTR one.
  */
 
-/* The header's styles live in header.css (TASK-0102). */
+/* The header's styles live in header.css (TASK-0102); the product page's buy
+   box and stepper in catalog.css (TASK-0103). */
 
-/* --- buy box -------------------------------------------------------------- */
+/* --- shared pieces -------------------------------------------------------- */
 
-.buy-actions {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  margin-block: var(--spacing-1);
-}
-.qty {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--text-sm);
-  color: var(--color-ink-muted);
-}
-.qty select,
-.cart-line-qty select {
-  font: inherit;
-  min-block-size: 48px;
-  padding-inline: 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-  color: var(--color-ink);
-}
-.btn-buy {
-  flex: 1 1 14rem;
-}
 .btn-wide {
   inline-size: 100%;
 }
@@ -51,204 +28,8 @@
   color: inherit;
   font-weight: 700;
 }
-
-/* --- cart ----------------------------------------------------------------- */
-
-.cart-layout,
-.checkout-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-  gap: var(--spacing-2);
-  align-items: start;
-}
-@media (max-width: 860px) {
-  .cart-layout,
-  .checkout-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Details → Payment, so the change of screen reads as progress. */
-.checkout-steps {
-  display: flex;
-  gap: var(--spacing-2);
-  list-style: none;
-  margin: 0 0 var(--spacing-2);
-  padding: 0;
-  color: var(--color-ink-muted);
-  font-weight: 700;
-}
-.checkout-steps li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.checkout-steps span {
-  display: inline-grid;
-  place-items: center;
-  inline-size: 28px;
-  block-size: 28px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  font-size: 0.875rem;
-}
-.checkout-steps li[aria-current='step'] {
-  color: var(--color-brand-ink);
-}
-.checkout-steps li[aria-current='step'] span {
-  background: var(--color-brand);
-  border-color: var(--color-brand);
-  color: #fff;
-}
-.checkout-terms {
-  margin-block-start: var(--spacing-1);
-}
-.checkout-form select {
-  min-block-size: 44px;
-  font: inherit;
-}
-
-.cart-lines,
-.order-lines,
-.summary-lines {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.cart-line {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) auto auto;
-  gap: var(--spacing-1);
-  align-items: start;
-  padding-block: var(--spacing-1);
-  border-block-end: 1px solid var(--color-border);
-}
-@media (max-width: 640px) {
-  .cart-line {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 12px;
-    padding-block: 14px;
-  }
-  .cart-line-media {
-    inline-size: 74px;
-    block-size: 74px;
-    flex-shrink: 0;
-  }
-  .cart-line-body {
-    flex: 1 1 12rem;
-  }
-  .cart-line-qty {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    margin-inline-start: 86px;
-  }
-  .cart-line-total {
-    margin-inline-start: auto;
-    font-size: var(--text-base);
-  }
-}
-.cart-line-media {
-  position: relative;
-  aspect-ratio: 1;
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--color-border);
-}
-.cart-line-media img {
-  object-fit: contain;
-}
-.cart-line-name {
-  font-weight: 700;
-  color: var(--color-ink);
-  text-decoration: none;
-  display: block;
-  font-size: var(--text-base);
-}
-.cart-line-name:hover {
-  color: var(--color-brand);
-}
-.cart-line-spec {
-  margin: 2px 0 0;
-  font-size: var(--text-xs);
-  color: var(--color-ink-muted);
-}
-.cart-line-note {
-  margin: 6px 0 0;
-  font-size: var(--text-xs);
-  color: var(--color-brand-ink);
-  background: var(--color-brand-soft);
-  padding: 5px 8px;
-  border-radius: var(--radius-sm);
-  display: inline-block;
-}
-.cart-line-qty {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-start;
-}
-.cart-line-total {
-  margin: 0;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--color-brand-ink);
-}
-
-/* --- summary -------------------------------------------------------------- */
-
-.cart-summary {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-2);
-  box-shadow: var(--shadow-sm);
-  position: sticky;
-  inset-block-start: calc(var(--header-height) + var(--spacing-1));
-}
-.cart-summary h2 {
-  margin: 0 0 var(--spacing-1);
-  font-size: var(--text-lg);
-}
-.summary-lines li {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: var(--text-sm);
-  padding-block: 5px;
-  color: var(--color-ink-body);
-}
-.totals {
-  margin: 0 0 var(--spacing-1);
-}
-.totals div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding-block: 6px;
-}
-.totals dt,
-.totals dd {
-  margin: 0;
-}
-.totals dd {
-  font-variant-numeric: tabular-nums;
-}
-.totals-discount {
-  color: var(--color-success);
-}
-/*
- * A button that reads as a link. Three pages already asked for this class and
- * nothing defined it, so "edit my details" and "remove coupon" were rendering
- * as the browser's default grey buttons in the middle of a sentence.
- */
+/* A button that reads as a link, for the one-word actions inside a sentence:
+   "remove" beside a coupon, "another method" under a card form. */
 .linky {
   background: none;
   border: 0;
@@ -267,107 +48,483 @@
   cursor: not-allowed;
 }
 
-.totals-discount .linky {
-  margin-inline-start: 8px;
-  font-size: var(--text-xs);
-}
-.totals-total {
-  border-block-start: 1px solid var(--color-border-strong);
-  margin-block-start: 6px;
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-ink);
-}
-
-.coupon {
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
-  margin-block-end: var(--spacing-1);
-}
-.coupon label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: var(--text-sm);
-  color: var(--color-ink-muted);
-}
-.coupon input {
-  font: inherit;
-  min-block-size: 44px;
-  padding-inline: 10px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-}
-.hold-note {
-  margin: 0 0 var(--spacing-1);
-  font-size: var(--text-xs);
-  color: var(--color-ink-muted);
-}
-
-/* --- checkout ------------------------------------------------------------- */
-
-.checkout-form {
+/* The kit's card panel: white, bordered, 12px, 24px inside, titled. */
+.panel {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
-  max-width: 44rem;
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
 }
-.checkout-form h2 {
+.panel > h2 {
   margin: 0;
   font-size: var(--text-xl);
 }
-.checkout-form label {
+@media (max-width: 40rem) {
+  .panel {
+    padding: 20px 16px;
+  }
+}
+
+/* A labelled control: the label in bold over a 48px field. */
+.field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  font-weight: 500;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
 }
+.field input,
+.field select,
+.field textarea,
 .checkout-form input[type='email'],
-.checkout-form input[type='text'] {
+.checkout-form input[type='text'],
+.checkout-form input[type='tel'],
+.checkout-form select,
+.coupon input {
   font: inherit;
-  min-block-size: 48px;
-  padding-inline: 14px;
+  font-weight: 400;
+  inline-size: 100%;
+  min-block-size: var(--control-height);
+  padding: 10px 14px;
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   color: var(--color-ink);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
 }
-.checkout-form input[type='email']:focus,
-.checkout-form input[type='text']:focus {
+.field textarea {
+  min-block-size: 8rem;
+  resize: vertical;
+  line-height: var(--leading-normal);
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus,
+.checkout-form input:focus,
+.checkout-form select:focus,
+.coupon input:focus {
   border-color: var(--color-brand);
   outline: none;
   box-shadow: 0 0 0 3px var(--color-brand-soft);
 }
-.checkout-form small {
-  font-weight: 400;
+.coupon input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+/* The kit's input with a mark at the end: the mail icon beside an email. */
+/* Left-to-right inside, whatever the page: the field is an address, typed
+   `dir="ltr"`, so the mark sits at the physical right beside its padding. */
+.input-icon {
+  position: relative;
+  display: block;
+  direction: ltr;
+}
+.input-icon input {
+  padding-inline-end: 44px;
+}
+.input-icon > svg {
+  position: absolute;
+  inset-inline-end: 14px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  color: var(--color-ink-muted);
+  pointer-events: none;
+}
+.form-note {
+  margin: 0;
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
+}
+
+/* The lock and its line under a pay button: centred, quiet. */
+.secure-note {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: var(--spacing-1) 0 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+.secure-note svg {
+  color: var(--color-ink-body);
+}
+
+/* The round mark over an empty state or an outcome: 80px, mint, brand icon. */
+.status-icon {
+  inline-size: 80px;
+  block-size: 80px;
+  border-radius: 50%;
+}
+.status-icon svg {
+  inline-size: 32px;
+  block-size: 32px;
+}
+
+/* --- cart ----------------------------------------------------------------- */
+
+.cart-page,
+.checkout-page,
+.order-page {
+  display: grid;
+  gap: var(--spacing-2);
+}
+
+/* Lines on the start side, the summary card on the end side; stacked below
+   a desktop. The summary follows the lines on a phone, where the total and
+   the button belong under what they total. */
+.cart-layout,
+.checkout-layout,
+.order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-2);
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .cart-layout,
+  .checkout-layout,
+  .order-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  }
+}
+.cart-main,
+.checkout-main,
+.order-main {
+  display: grid;
+  gap: var(--spacing-2);
+  min-inline-size: 0;
+}
+
+.cart-lines,
+.order-lines,
+.summary-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.cart-lines {
+  display: grid;
+  gap: 12px;
+}
+
+/* The kit's `cart-item`: the mark, the words, the controls at the end. */
+.cart-line {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: var(--spacing-1);
+  align-items: start;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.cart-line[aria-busy='true'] {
+  opacity: 0.7;
+}
+.cart-line-media {
+  position: relative;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.cart-line-media img {
+  object-fit: contain;
+}
+.cart-line-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-inline-size: 0;
+}
+.cart-line-name {
+  display: block;
+  margin: 0;
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+a.cart-line-name:hover {
+  color: var(--color-brand);
+}
+.cart-line-spec {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.cart-line-note {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-brand-ink);
+  background: var(--color-brand-soft);
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+}
+.cart-line-sale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.cart-line-price {
+  margin: 4px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cart-line-price strong {
+  font-family: var(--font-latin);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+}
+.cart-line-unit {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.cart-line-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* The bin: a bordered square in the danger colour, like the kit's. */
+.btn-remove {
+  border: 1px solid var(--color-border);
+  color: var(--color-danger);
+  background: var(--color-bg);
+}
+.btn-remove:hover:not(:disabled) {
+  background: var(--color-danger-soft);
+  border-color: var(--color-danger);
+  color: var(--color-danger-ink);
+}
+.btn-remove:disabled {
+  color: var(--color-ink-muted);
+  cursor: default;
+}
+@media (max-width: 34rem) {
+  .cart-line {
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding: 16px;
+  }
+  .cart-line-controls {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+}
+
+/* The kit's `coupon`: a label, the field, the outline button, full width. */
+.coupon {
+  display: grid;
+  gap: 8px;
+}
+.coupon label {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.coupon-applied .alert {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.coupon-applied .alert > span {
+  flex: 1 1 12rem;
+}
+/* Its own small chip, so the amount does not run into the code's name in an
+   Arabic sentence ("10%" beside "−$7.00" read as one number). */
+.coupon-amount {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  font-family: var(--font-latin);
+  font-weight: 700;
+  unicode-bidi: isolate;
+}
+.offer-superseded {
+  font-weight: 400;
+  color: var(--color-ink-body);
+}
+
+/* --- the summary card ----------------------------------------------------- */
+
+.cart-summary {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
+  position: sticky;
+  inset-block-start: var(--spacing-1);
+}
+.cart-summary h2 {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--text-xl);
+}
+.summary-lines {
+  margin-block-end: 8px;
+}
+.summary-lines li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--text-sm);
+  padding-block: 6px;
+  color: var(--color-ink-body);
+}
+.summary-lines li span:last-child {
+  font-family: var(--font-latin);
+  font-weight: 700;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+.totals {
+  margin: 0 0 var(--spacing-1);
+}
+.totals div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding-block: 12px;
+  border-block-end: 1px solid var(--color-border);
+}
+.totals dt,
+.totals dd {
+  margin: 0;
+}
+.totals dt {
+  color: var(--color-ink-body);
+  font-size: var(--text-sm);
+}
+.totals dd {
+  font-family: var(--font-latin);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.totals-discount dd {
+  color: var(--color-success);
+}
+.totals-discount .linky {
+  margin-inline-start: 8px;
+  font-size: var(--text-xs);
+}
+.totals-total dt {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.totals-total dd {
+  font-size: var(--text-2xl);
+  color: var(--color-brand);
+}
+.hold-note {
+  margin: 0 0 var(--spacing-1);
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.summary-edit {
+  inline-size: 100%;
+  margin-block-start: 8px;
+}
+
+/* --- checkout ------------------------------------------------------------- */
+
+/* Details → Payment, so the change of screen reads as progress. */
+.checkout-steps {
+  display: flex;
+  gap: var(--spacing-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--color-ink-muted);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+.checkout-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.checkout-steps span {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  font-family: var(--font-latin);
+  font-size: var(--text-xs);
+}
+.checkout-steps li[aria-current='step'] {
+  color: var(--color-brand-ink);
+}
+.checkout-steps li[aria-current='step'] span {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-ink-inverse);
+}
+
+.checkout-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.checkout-form small {
+  font-weight: 400;
+  color: var(--color-ink-muted);
+}
+.checkout-form select {
+  font-weight: 400;
 }
 /* The activation email is the one field where getting it wrong costs the
    customer a licence they cannot use, so it is not a field among fields. */
 .checkout-form label.highlight {
-  background: var(--color-accent-soft);
-  border-inline-start: 4px solid var(--color-accent);
+  background: var(--color-warning-soft);
+  border-inline-start: 4px solid var(--color-warning);
   padding: 14px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 .checkout-form label.check {
   flex-direction: row;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   font-weight: 400;
-  font-size: var(--text-sm);
+  color: var(--color-ink-body);
 }
 .checkout-form label.check input {
-  margin-block-start: 3px;
-  inline-size: 18px;
-  block-size: 18px;
+  margin-block-start: 2px;
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
+  accent-color: var(--color-brand);
+}
+.checkout-form .price {
+  margin: 0;
+  font-size: var(--text-2xl);
+  color: var(--color-brand);
+}
+.checkout-terms {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+}
+.checkout-return-notice {
+  margin: 0;
 }
 
 /*
@@ -379,7 +536,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
-  margin-block: var(--spacing-1);
 }
 .pay-choices {
   display: grid;
@@ -395,11 +551,12 @@
   align-items: center;
   gap: 12px;
   min-block-size: 56px;
-  padding: 12px var(--spacing-1);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   cursor: pointer;
+  font-weight: 400;
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
@@ -409,11 +566,10 @@
 }
 .checkout-form label.pay-choice:has(input:checked) {
   border-color: var(--color-brand);
-  background: var(--color-brand-soft);
-  box-shadow: 0 0 0 1px var(--color-brand);
+  background: var(--color-brand-tint);
 }
 .checkout-form label.pay-choice:has(input:focus-visible) {
-  outline: 2px solid var(--color-brand);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 .pay-choices:disabled label.pay-choice {
@@ -439,7 +595,6 @@
   color: var(--color-ink);
 }
 .pay-choice-description {
-  font-weight: 400;
   font-size: var(--text-sm);
   color: var(--color-ink-muted);
 }
@@ -450,48 +605,75 @@
   block-size: 28px;
   object-fit: contain;
 }
+.pay-charged-usd {
+  margin: 0;
+}
 .pay-charged-usd strong {
   color: var(--color-ink);
   unicode-bidi: isolate;
 }
 .pay-submit {
-  min-block-size: 52px;
-  border-radius: var(--radius-lg);
-  font-weight: 700;
-}
-.checkout-return-notice {
-  margin-block-end: var(--spacing-1);
+  font-family: inherit;
 }
 
-/* --- return from the payment page --------------------------------------- */
+/* --- the return from the payment page, and the outcomes ------------------ */
 
 .checkout-return {
+  display: grid;
+  gap: var(--spacing-2);
+}
+/* The kit's success / payment-failed page: a round mark, the outcome, one
+   line, the way on — centred. */
+.status-hero {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-1);
-  max-width: 44rem;
+  align-items: center;
+  gap: 12px;
+  padding: var(--spacing-3) var(--spacing-1);
+  text-align: center;
 }
-.checkout-return-status {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-half);
-  padding: var(--spacing-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg);
+.status-hero h2 {
+  margin: 4px 0 0;
+  font-size: var(--text-3xl);
 }
-.checkout-return-status h2 {
+.status-hero p {
   margin: 0;
-  font-size: var(--text-xl);
-}
-.checkout-return-status p {
-  margin: 0;
+  max-inline-size: 32rem;
+  color: var(--color-ink-muted);
 }
 .checkout-return-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-block-start: var(--spacing-1);
+  justify-content: center;
+  gap: 12px;
+  margin-block-start: 8px;
+}
+
+/* One label and one value in a card: the order number under the outcome. */
+.kv-card {
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.kv-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: 20px var(--spacing-2);
+}
+.kv-card > div + div {
+  border-block-start: 1px solid var(--color-border);
+}
+.kv-card dt {
+  color: var(--color-ink-body);
+  font-size: var(--text-sm);
+}
+.kv-card dd {
+  margin: 0;
+  font-family: var(--font-latin);
+  font-weight: 700;
 }
 
 /* --- card --------------------------------------------------------------- */
@@ -509,10 +691,9 @@
 .card-pay-element {
   padding: var(--spacing-1);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   min-block-size: 5rem;
-  box-shadow: var(--shadow-xs);
 }
 
 /* --- manual payment instructions ----------------------------------------- */
@@ -521,7 +702,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
-  max-inline-size: 44rem;
+}
+.pay-instructions .lede {
+  margin: 0;
 }
 .pay-details {
   margin: 0;
@@ -535,10 +718,9 @@
   align-items: center;
   padding: 12px 16px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
 }
-@media (max-width: 560px) {
+@media (max-width: 35rem) {
   .pay-detail {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -555,14 +737,13 @@
   flex-wrap: wrap;
 }
 /*
- * The values that have to be copied exactly. Monospace and tabular figures
- * because an IBAN is read a group at a time and a proportional 1 beside a
- * proportional 7 is where a digit gets lost; `dir="ltr"` on the element itself
- * because the surrounding page is right-to-left and the bidirectional
- * algorithm would otherwise reorder the groups on screen.
+ * The values that have to be copied exactly. The Latin face and tabular
+ * figures because an IBAN is read a group at a time; `dir="ltr"` on the
+ * element itself because the surrounding page is right-to-left and the
+ * bidirectional algorithm would otherwise reorder the groups on screen.
  */
 .pay-detail.is-exact .pay-value {
-  font-family: var(--font-mono);
+  font-family: var(--font-latin);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-base);
   font-weight: 700;
@@ -571,30 +752,22 @@
   user-select: all;
 }
 .btn-copy {
-  min-block-size: 38px;
+  min-block-size: 40px;
   padding-inline: 14px;
   font-size: var(--text-xs);
-  font-weight: 700;
-  border-radius: var(--radius-pill);
-  background: var(--color-brand-soft);
-  color: var(--color-brand-ink);
-  border: 1px solid var(--color-brand);
-  cursor: pointer;
   margin-inline-start: auto;
-  transition: all 160ms ease;
-}
-.btn-copy:hover {
-  background: var(--color-brand);
-  color: var(--color-ink-inverse);
 }
 
+/* "Add it and save": the cross-sell inside the payment panel. */
 .cross-sell {
   background: var(--color-brand-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   padding: var(--spacing-1);
+  display: grid;
+  gap: 10px;
 }
 .cross-sell h3 {
-  margin: 0 0 10px;
+  margin: 0;
   font-size: var(--text-base);
   color: var(--color-brand-ink);
 }
@@ -608,8 +781,8 @@
 }
 .cross-sell-media {
   position: relative;
-  inline-size: 72px;
-  block-size: 72px;
+  inline-size: 48px;
+  block-size: 48px;
   flex: none;
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -629,6 +802,7 @@
   gap: 8px;
   align-items: baseline;
   flex-wrap: wrap;
+  font-family: var(--font-latin);
 }
 .cross-sell-price s {
   color: var(--color-ink-muted);
@@ -640,78 +814,72 @@
 
 /* --- order ---------------------------------------------------------------- */
 
-.order-meta {
+.order-head {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: var(--spacing-2);
-  margin-block: var(--spacing-1);
+  gap: 12px;
 }
-.order-meta div {
-  display: flex;
-  flex-direction: column;
+.order-head h1 {
+  font-family: var(--font-latin);
+  /* The number is long and Latin: smaller on a phone so it stays on one line. */
+  font-size: clamp(1.5rem, 6.5vw, var(--text-4xl));
 }
-.order-meta dt {
+.order-lines .cart-line-spec {
+  font-family: var(--font-latin);
   font-size: var(--text-xs);
-  color: var(--color-ink-muted);
 }
-.order-meta dd {
-  margin: 0;
-  font-weight: 500;
-}
-.order-lines li {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--spacing-1);
-  padding-block: var(--spacing-1);
-  border-block-end: 1px solid var(--color-border);
-}
-.order-line-name {
-  margin: 0;
-  font-weight: 700;
-}
-.order-line-spec {
-  margin: 2px 0 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-ink-muted);
-}
-.order-line-state {
-  margin: 6px 0 0;
-  font-size: var(--text-sm);
+/* The quantity on an order line: the kit's small mint chip. */
+.chip.is-static {
+  min-block-size: 32px;
+  padding: 4px 12px;
+  background: var(--color-brand-soft);
+  border-color: transparent;
   color: var(--color-brand-ink);
-}
-.order-line-kind {
-  margin: 4px 0 0;
   font-size: var(--text-xs);
-  color: var(--color-ink-muted);
+  cursor: default;
 }
-.order-line-how {
-  margin-block-start: 8px;
-  font-size: var(--text-sm);
-}
-.order-line-how summary {
-  cursor: pointer;
-  color: var(--color-brand-ink);
-}
-.order-line-how ol {
-  margin: 8px 0 0;
-  /* Logical, so the numbers sit inside the text in both directions. */
-  padding-inline-start: 1.2rem;
+.delivery-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
-  gap: 4px;
+  gap: 12px;
+}
+.delivery-list .licence-card {
+  padding: 20px;
+}
+/* Who the order is for and when: quiet boxes, like the product's specs. */
+.kv-list {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+.kv-list > div {
+  display: grid;
+  gap: 2px;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+.kv-list dt {
+  font-size: var(--text-xs);
   color: var(--color-ink-muted);
 }
-.order-line-total {
+.kv-list dd {
   margin: 0;
+  font-size: var(--text-sm);
   font-weight: 700;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-.order-page .totals {
-  max-width: 22rem;
-  margin-inline-start: auto;
+.lede-sm {
+  margin: 0 0 var(--spacing-1);
+  color: var(--color-ink-muted);
 }
 
+/* Kept for the pages that still carry a warning notice. */
 .notice-warn {
-  background: var(--color-accent-soft);
-  color: #7a4a00;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
 }

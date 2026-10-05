@@ -4,14 +4,15 @@
   "current_phase": "Staging live on Coolify (new./admin./api.digital-activation.com); legacy WordPress still serves the apex; validation before production cutover",
   "current_milestone": "MILESTONE-0001",
   "current_milestone_progress": 93,
-  "progress": 70,
+  "progress": 69,
   "health": "ATTENTION_REQUIRED",
   "health_reasons": [
     "TASK-0081 is BLOCKED",
-    "TASK-0083 is BLOCKED"
+    "TASK-0083 is BLOCKED",
+    "1 governance validation problem(s)"
   ],
-  "total_tasks": 58,
-  "active_tasks": 10,
+  "total_tasks": 59,
+  "active_tasks": 11,
   "blocked_tasks": 2,
   "review_tasks": 2,
   "qa_tasks": 0,
@@ -40,9 +41,9 @@
   "reviews_recorded": 93,
   "independent_reviews": 93,
   "owner_attention": 9,
-  "active_agents": 7,
-  "file_collisions": 0,
-  "validation_problems": 0,
-  "canonical_events": 607,
-  "last_activity": "2026-10-03T07:08:16Z"
+  "active_agents": 8,
+  "file_collisions": 1,
+  "validation_problems": 1,
+  "canonical_events": 610,
+  "last_activity": "2026-10-03T07:33:02Z"
 }
