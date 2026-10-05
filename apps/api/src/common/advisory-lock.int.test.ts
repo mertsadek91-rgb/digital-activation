@@ -24,8 +24,17 @@ async function holders(): Promise<number[]> {
 const noise = (n = 6): Promise<unknown>[] =>
   Array.from({ length: n }, () => prisma.$executeRaw`select pg_sleep(0.03)`);
 
+/**
+ * Ends whichever connection still holds the lock. A terminated backend stays
+ * in the pg pool as an idle client until somebody borrows it, and that
+ * somebody gets `57P01 terminating connection due to administrator command` —
+ * which, under `noise()`, was the next test's first query often enough to
+ * fail CI. So the pool is dropped after a kill and refills on the next query.
+ */
 async function release(): Promise<void> {
-  for (const pid of await holders()) await prisma.$queryRaw`select pg_terminate_backend(${pid})`;
+  const pids = await holders();
+  for (const pid of pids) await prisma.$queryRaw`select pg_terminate_backend(${pid})`;
+  if (pids.length) await prisma.$disconnect();
 }
 
 describe.skipIf(!HAS_DATABASE)('advisory locks for scheduled sweeps', () => {
