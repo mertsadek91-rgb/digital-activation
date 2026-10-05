@@ -79,8 +79,6 @@ export async function generateMetadata({
   };
 }
 
-/** The four product families on the hero, as the kit's banner draws them. */
-
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);

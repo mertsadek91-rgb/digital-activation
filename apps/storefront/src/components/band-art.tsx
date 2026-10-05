@@ -19,7 +19,7 @@ export function BandArt({ art }: { art: FamilyArt }) {
         alt=""
         width={art.width}
         height={art.height}
-        sizes="(max-width: 767px) 128px, 256px"
+        sizes="(max-width: 767px) 112px, 256px"
         priority
       />
     </div>
