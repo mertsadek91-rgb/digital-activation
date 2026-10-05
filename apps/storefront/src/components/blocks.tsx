@@ -14,7 +14,7 @@ import { ArrowIcon, PlusIcon } from './icons';
  * answer engines quote, and the legacy store buried its best product copy
  * inside a single PNG where nothing could read it.
  *
- * Drawn after the kit (TASK-0107): steps as numbered rows, the FAQ as the
+ * Drawn after the kit (TASK-0108): steps as numbered rows, the FAQ as the
  * kit's accordion (`faqrow`, the same rows as the home page), tables with the
  * mint header, and a CTA as the kit's mint promo card.
  */

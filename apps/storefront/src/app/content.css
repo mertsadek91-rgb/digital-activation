@@ -1,5 +1,5 @@
 /*
- * The content pages after the kit (TASK-0107): the policy and editorial
+ * The content pages after the kit (TASK-0108): the policy and editorial
  * pages, the Golden Warranty, the blog index and a post, and the 404 and
  * error pages. Contact has its own sheet (contact.css).
  *
@@ -247,7 +247,7 @@
 .blog-grid .article-art {
   block-size: 160px;
 }
-/* Card titles are headings (REV-0137), drawn like the home page's cards. */
+/* Card titles are headings (REV-0138), drawn like the home page's cards. */
 .article .article-title {
   margin: 8px 0 12px;
   color: var(--color-ink);

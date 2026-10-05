@@ -81,7 +81,7 @@ export default async function BlogPage({ params }: Props) {
   ]);
 
   // The kit has no blog page: the index uses the home page's article cards
-  // (the kit's `article`) under the usual page band (TASK-0107).
+  // (the kit's `article`) under the usual page band (TASK-0108).
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />

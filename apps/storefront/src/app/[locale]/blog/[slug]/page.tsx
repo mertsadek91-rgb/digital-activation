@@ -127,7 +127,7 @@ export default async function PostPage({ params }: Props) {
 
   // The band carries the breadcrumb, the title and the meta; the post is one
   // column of text under it, then the products it names and what to read
-  // next as the kit's article cards (TASK-0107).
+  // next as the kit's article cards (TASK-0108).
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />

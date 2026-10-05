@@ -54,7 +54,7 @@ h2,
 h3,
 h4 {
   color: var(--color-ink);
-  /* The kit draws every heading bold (REV-0137). */
+  /* The kit draws every heading bold (REV-0138). */
   font-weight: 700;
   line-height: var(--leading-tight);
   text-wrap: balance;

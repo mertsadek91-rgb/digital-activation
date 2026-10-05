@@ -130,7 +130,7 @@ export default async function ContentPage({ params }: Props) {
   ]);
 
   // The kit's `policy` page: the band with the breadcrumb and the title, then
-  // one column of text (TASK-0107). The date is the row's own, so a reader
+  // one column of text (TASK-0108). The date is the row's own, so a reader
   // can tell a policy that changed last week from one nobody has touched.
   const updated = page.updatedAt.slice(0, 10);
 

@@ -109,7 +109,7 @@ export default async function GoldenWarrantyPage({ params }: Props) {
   ]);
 
   // The kit's page band, then the policy as one column of text, then the
-  // kit's mint help banner (TASK-0107). The emoji badge is gone: the shield
+  // kit's mint help banner (TASK-0108). The emoji badge is gone: the shield
   // was a picture of a claim, and the title already names the policy.
   return (
     <>

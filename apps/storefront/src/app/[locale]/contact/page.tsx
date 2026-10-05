@@ -106,7 +106,7 @@ export default async function ContactPage({ params }: Props) {
     jsonld.faqPage(faqs),
   ]);
 
-  // The kit's `support` page (TASK-0107): the band, then two columns — how
+  // The kit's `support` page (TASK-0108): the band, then two columns — how
   // to reach a person and the common questions on the start side, the form
   // as a card on the end side — and the kit's mint support banner under them.
   // The emoji glyphs are gone: every channel and shortcut has a drawn icon.
