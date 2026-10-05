@@ -55,7 +55,9 @@ export function WelcomeCapture({ locale }: { locale: string }) {
       .then((client) => client.publicMarketing())
       .then((value) => {
         if (!cancelled) setSettings(value?.welcome ?? null);
-      });
+      })
+      // No settings, no window: the same outcome as a store with it switched off.
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };
@@ -114,8 +116,12 @@ function WelcomeDialog({
       return;
     }
     setStatus('sending');
-    const { growthApi } = await loadGrowthClient();
-    const ok = await growthApi.welcomeSubscribe({ email: email.trim(), locale: lang });
+    const growthApi = await loadGrowthClient()
+      .then((client) => client.growthApi)
+      .catch(() => null);
+    const ok = growthApi
+      ? await growthApi.welcomeSubscribe({ email: email.trim(), locale: lang })
+      : false;
     if (ok) memory.set(SUBSCRIBED_KEY, String(Date.now()));
     setStatus(ok ? 'sent' : 'error');
   }

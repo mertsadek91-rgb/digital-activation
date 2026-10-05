@@ -1456,6 +1456,20 @@
       "ts": "2026-10-05T12:25:09Z",
       "actor": "pm-03",
       "event": "E20261005122509-a35acb"
+    },
+    {
+      "review_id": "REV-0139",
+      "reviewer": "pm-06",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "REGRESSION",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "TASK-0108 surface: no regression found. Clean build from deleted packages/contracts/dist: turbo build --filter=@da/storefront --force 5/5 (0 cached), contracts tsc emits dist/constants.js with no import statements, Next 16.3.4 Turbopack resolves @da/contracts/constants via the exports map, 37 pages generated; admin build --force 4/4 also passes (admin imports only the root). CI Performance budget on 09737b5 (job 111759891927, continue-on-error, so reporting only) vs main 9ad92df (job 111747053318), mobile perf/LCP ms: / 0.93/3119 (was 0.90/3496), /en 0.93/3113 (0.90/3466), product 0.95 passes (0.91/3207 -> LCP 2739), collection 0.91/3448 (0.90/3409), cart 0.83/4386 (0.82/4363); mobile LCP still above the 1800 budget everywhere; desktop unchanged (only unused-javascript warnings plus cart render-blocking-resources failure, both pre-existing). CONCERN is release-level, from the TASK-0101 lazy clients riding in PR #26, code-read not observed: if the growth-client chunk fails to load, business-quote.tsx:58 and welcome-capture.tsx:117 await loadGrowthClient() outside any try after setStatus('sending'), so the submit button stays disabled showing an ellipsis with an unhandled rejection (before, growthApi never threw); MEDIUM-LOW. welcome-capture.tsx:54 and growth-layer.tsx:22 have no catch: window just does not open / referral visit skipped, but an unhandled rejection is logged; LOW. added-dialog.tsx:17 next/dynamic SuggestionList has no loading/error handling: a failed offer-suggestions chunk after suggestions arrive would throw into the nearest error boundary from the layout (global-error); LOW likelihood. Safe as required: header and bottom-nav badges (try/catch -> count null), add-to-cart, buy-box, offer-suggestions (loadCartApi inside try; cartErrorMessage falls back to addFailed on import failure), product-trust, social-proof (inside try), currency-switcher (Promise.all with catch, cache reset). Regression matrix row API contracts: storefront build, admin build exercised; OpenAPI generation not run by me (contracts value exports unchanged per REV-0138). UNVERIFIED: CI run 37310091534 on 3eb7b4b (type-only import change) still in progress at review time; no browser chunk-failure simulation.",
+      "round": 1,
+      "target": "TASK-0108",
+      "ts": "2026-10-05T12:33:38Z",
+      "actor": "pm-06",
+      "event": "E20261005123338-0a7048"
     }
   ],
   "invalidated_reviews": [

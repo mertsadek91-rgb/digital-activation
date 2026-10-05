@@ -14,8 +14,10 @@ import { loadCartApi } from '../lib/lazy-clients';
 import { CloseIcon } from './icons';
 // The list's add buttons use the cart client, so it comes with the dialog's
 // first opening rather than with every page (TASK-0101).
+// A chunk that fails to load leaves the list out rather than reaching the
+// layout's error boundary.
 const SuggestionList = dynamic(() =>
-  import('./offer-suggestions').then((module) => module.SuggestionList),
+  import('./offer-suggestions').then((module) => module.SuggestionList).catch(() => () => null),
 );
 
 const FOCUSABLE =

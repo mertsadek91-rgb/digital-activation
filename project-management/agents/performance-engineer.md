@@ -49,7 +49,3 @@
 ## Current tasks
 
 - TASK-0101 — Bring the storefront within its performance budget on real data (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests), then make the Lighthouse CI job blocking again (IN_PROGRESS, 65%)
-
-## Supporting
-
-- TASK-0108 — Move the plain constants the storefront client needs (ROUTES, NOINDEX_PREFIXES, MAX_LINE_QTY, LOW_STOCK_THRESHOLD, CONTACT_REPLY_HOURS) into a zod-free @da/contracts/constants entry point (IN_PROGRESS, 80%)

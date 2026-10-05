@@ -407,18 +407,16 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0108",
-      "assignments": [
-        "TASK-0108"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T12:19:42Z"
+      "last_activity": "2026-10-05T12:34:59Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -789,13 +787,11 @@
       "assignments": [
         "TASK-0101"
       ],
-      "supporting": [
-        "TASK-0108"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 1,
       "blockers": [],
       "last_activity": "2026-10-05T12:31:04Z"
     },

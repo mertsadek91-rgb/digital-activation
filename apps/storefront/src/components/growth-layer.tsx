@@ -19,7 +19,10 @@ export function GrowthLayer({ locale }: { locale: string }) {
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('ref');
     if (code && /^[A-Za-z0-9]{4,16}$/.test(code))
-      void loadGrowthClient().then(({ growthApi }) => growthApi.visitReferral(code));
+      void loadGrowthClient()
+        .then(({ growthApi }) => growthApi.visitReferral(code))
+        // A referral that cannot be recorded is lost, not an error to show.
+        .catch(() => undefined);
   }, []);
 
   return <WelcomeCapture locale={locale} />;
