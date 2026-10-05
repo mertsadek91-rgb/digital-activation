@@ -98,12 +98,10 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0101",
-        "TASK-0106"
+        "TASK-0101"
       ],
       "owned_tasks": [
-        "TASK-0101",
-        "TASK-0106"
+        "TASK-0101"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -171,7 +169,9 @@
         "cro-specialist"
       ],
       "active_tasks": [],
-      "owned_tasks": [],
+      "owned_tasks": [
+        "TASK-0107"
+      ],
       "reviews": [],
       "blocked_work": [],
       "pending_decisions": [],
@@ -199,7 +199,6 @@
         "TASK-0030",
         "TASK-0031",
         "TASK-0044",
-        "TASK-0051",
         "TASK-0060",
         "TASK-0099"
       ],
@@ -212,7 +211,6 @@
         "TASK-0033",
         "TASK-0040",
         "TASK-0044",
-        "TASK-0051",
         "TASK-0060",
         "TASK-0099",
         "TASK-0100"
@@ -231,7 +229,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-05T08:01:56Z"
+      "last_activity": "2026-10-05T11:33:00Z"
     },
     {
       "id": "pm-07",

@@ -1334,7 +1334,7 @@
       ],
       "owned_domains": [
         "apps/storefront/lighthouserc.json",
-        "packages/ui/src/index.ts (PERFORMANCE_BUDGET)"
+        ".github/workflows/ci.yml (Performance budget job)"
       ],
       "allowed": ["performance review and budget changes with evidence"],
       "requires_approval": ["removing functionality (pm-01)"],

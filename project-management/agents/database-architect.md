@@ -60,3 +60,4 @@
 - TASK-0030 — Backup policy and a recorded restore drill (IN_PROGRESS, 30%)
 - TASK-0043 — Owner decision — which legacy customers, orders and licence keys migrate (WAITING_INFORMATION, 20%)
 - TASK-0044 — Plan the staging-to-production transition of the single Coolify environment (WAITING_INFORMATION, 70%)
+- TASK-0107 — Redirect the empty legacy microsoft-sql-server category archive (both URL forms) to /collections/windows-server: one redirect-map row, as an approved data change (BACKLOG, 0%)

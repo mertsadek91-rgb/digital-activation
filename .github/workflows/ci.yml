@@ -280,8 +280,9 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 
       # Runs even when the mobile step failed, so one red run reports both
-      # form factors instead of hiding the second behind the first. The job
-      # still fails if either does.
+      # form factors instead of hiding the second behind the first. Once the
+      # continue-on-error lines are gone (TASK-0101), the job fails if either
+      # step does; until then both only report.
       - name: Lighthouse CI (desktop)
         continue-on-error: true
         if: ${{ !cancelled() && (steps.lhci-mobile.outcome == 'success' || steps.lhci-mobile.outcome == 'failure') }}
