@@ -3,7 +3,7 @@
 import type { Cart, OfferSuggestion } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from './link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 

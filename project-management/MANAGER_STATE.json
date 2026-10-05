@@ -98,10 +98,12 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0106"
       ],
       "owned_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0106"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -111,7 +113,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T11:07:10Z"
+      "last_activity": "2026-10-05T07:58:32Z"
     },
     {
       "id": "pm-04",
@@ -168,19 +170,15 @@
         "content-strategist",
         "cro-specialist"
       ],
-      "active_tasks": [
-        "TASK-0042"
-      ],
-      "owned_tasks": [
-        "TASK-0042"
-      ],
+      "active_tasks": [],
+      "owned_tasks": [],
       "reviews": [],
       "blocked_work": [],
       "pending_decisions": [],
       "consensus": [],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-01T13:07:15Z"
+      "last_activity": "2026-10-05T07:10:13Z"
     },
     {
       "id": "pm-06",
@@ -233,7 +231,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-02T12:18:22Z"
+      "last_activity": "2026-10-05T08:01:56Z"
     },
     {
       "id": "pm-07",

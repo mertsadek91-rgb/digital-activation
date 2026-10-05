@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | subagent:independent-reviewer |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -50,7 +50,7 @@
 
 ## Current tasks
 
-- TASK-0042 — Cutover rehearsal on staging: 301 map crawl and zero broken links (IN_PROGRESS, 60%)
+- none
 
 ## Supporting
 

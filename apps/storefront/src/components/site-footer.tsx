@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from './link';
 import { useTranslations } from 'next-intl';
 import { ROUTES } from '@da/contracts';
 import { BRAND } from '@da/ui';

@@ -11,7 +11,7 @@ import type {
 } from '@da/contracts';
 import { ROUTES, normalizeWhatsappPhone } from '@da/contracts';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '../../../components/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';

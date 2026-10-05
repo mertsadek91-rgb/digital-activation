@@ -1,6 +1,6 @@
 import type { CatalogFacets } from '@da/contracts';
 import Form from 'next/form';
-import Link from 'next/link';
+import { Link } from './link';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 

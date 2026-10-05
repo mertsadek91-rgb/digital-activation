@@ -28,6 +28,38 @@
   color: inherit;
   font-weight: 700;
 }
+/* The confirmation settles in rather than appearing; it leaves at once. */
+.added-in {
+  animation: added-in 220ms ease-out both;
+}
+@keyframes added-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .added-in {
+    animation: none;
+  }
+}
+
+/* The cart arrives from the API after the page has painted, so its <main> is
+   at least a viewport tall from the first frame: the footer sits below the
+   fold while the lines load and stays there when they land, instead of
+   starting on screen and being pushed off it. Lighthouse measured that push
+   as a layout shift of 0.41 on a phone (TASK-0101). The loading, empty and
+   error states share the height, so none of them can move the footer when it
+   changes into another. */
+main.cart-page {
+  min-block-size: 100dvh;
+}
 /* A button that reads as a link, for the one-word actions inside a sentence:
    "remove" beside a coupon, "another method" under a card form. */
 .linky {

@@ -504,7 +504,7 @@ a.licence-name:hover {
 .contact-card h2 {
   margin: 0;
   font-size: var(--text-2xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-brand-ink);
 }
 /* Two per line on a desktop, one on a phone, with no breakpoint to maintain. */

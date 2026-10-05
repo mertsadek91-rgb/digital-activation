@@ -8,6 +8,30 @@ import { browserCurrency, setBrowserCurrency } from '../lib/currency';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
+let offered: Promise<string[]> | null = null;
+
+/**
+ * The currencies the API can price in, asked for once and shared while it succeeds. The
+ * header's top bar and the drawer each hold a switcher, and each used to ask
+ * on its own: the same answer twice, on every page.
+ */
+function offeredCurrencies(): Promise<string[]> {
+  offered ??= fetch(new URL('/v1/catalog/currencies', API))
+    .then((response) => (response.ok ? response.json() : null))
+    .then((body: unknown) => {
+      const parsed = offeredCurrenciesSchema.safeParse(body);
+      if (!parsed.success) throw new Error('unexpected currencies response');
+      return parsed.data.currencies.map((entry) => entry.code);
+    })
+    .catch((): string[] => {
+      // Not remembered: the next switcher to mount asks again, so one failed
+      // request does not hide the picker until a full reload.
+      offered = null;
+      return [];
+    });
+  return offered;
+}
+
 /**
  * The currency picker.
  *
@@ -29,13 +53,13 @@ export function CurrencySwitcher({ className }: { className?: string }) {
 
   useEffect(() => {
     setCurrent(browserCurrency());
-    void fetch(new URL('/v1/catalog/currencies', API))
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body: unknown) => {
-        const parsed = offeredCurrenciesSchema.safeParse(body);
-        if (parsed.success) setCodes(parsed.data.currencies.map((entry) => entry.code));
-      })
-      .catch(() => undefined);
+    let cancelled = false;
+    void offeredCurrencies().then((list) => {
+      if (!cancelled) setCodes(list);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (codes.length < 2) return null;

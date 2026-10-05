@@ -50,7 +50,3 @@
 ## Current tasks
 
 - none
-
-## Supporting
-
-- TASK-0042 — Cutover rehearsal on staging: 301 map crawl and zero broken links (IN_PROGRESS, 60%)

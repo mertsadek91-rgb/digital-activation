@@ -2,7 +2,7 @@
 
 import type { OfferSuggestions } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
-import Link from 'next/link';
+import { Link } from './link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
