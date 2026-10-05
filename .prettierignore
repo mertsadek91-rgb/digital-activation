@@ -11,7 +11,7 @@ dist/
 .turbo/
 pnpm-lock.yaml
 docs/plan.html
-# Written by project-management/tools/sync.mjs. Formatting them would make
+# Written by agent-os/tools/pm.mjs (pm sync). Formatting them would make
 # `pm:check` report them stale; the sources they come from are formatted.
 project-management/*_INDEX.json
 project-management/*_STATE.json

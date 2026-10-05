@@ -1,5 +1,5 @@
 {
-  "description": "Machine-readable role permissions. Source of truth for agents/*.md and managers/*.md, which tools/sync.mjs regenerates. Keep in step with the constitution in README.md. V2 (CR-0003): roles are a catalog, not an active team — agent-os/tools/lib/router.mjs picks who runs; `executor` in agent-os/policies/routing.json says how. Seniority years are descriptive only; quality comes from quality_contract.",
+  "description": "Machine-readable role permissions. Source of truth for agents/*.md and managers/*.md, which `pnpm pm:sync` regenerates. Keep in step with the constitution in README.md. V2 (CR-0003): roles are a catalog, not an active team — agent-os/tools/lib/router.mjs picks who runs; `executor` in agent-os/policies/routing.json says how. Seniority years are descriptive only; quality comes from quality_contract.",
   "max_authority_meaning": "The highest authority level of task this role may be the primary agent on. The approvals that level requires still apply: L3 manager approval, L4 a second manager, L5 a Consensus Board record. Product Evolution roles are capped at L1 (discovery is not delivery).",
   "global_forbidden": [
     "print, log, commit or paste secrets, .env values, licence keys or legacy order-note contents",

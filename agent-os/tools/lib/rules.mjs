@@ -6,8 +6,9 @@
 //   health()         — the V1 health rule, scoped to the new application
 //
 // The V1 rules (authority ceiling, L4 second manager, L5 consensus, completion,
-// dependencies, file collisions) are ported unchanged from project-management/
-// tools/sync.mjs; an eval asserts they still fire.
+// dependencies, file collisions) are ported unchanged from the V1 generator
+// (archived at project-management/tools/archive/sync-v1.mjs.txt); an eval
+// asserts they still fire.
 
 import { verify as verifyOwnerProof } from './owner-key.mjs';
 import { entityErrors, entitiesOf, materialize, OPP_AGENT_TRANSITIONS } from './state.mjs';

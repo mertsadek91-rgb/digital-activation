@@ -799,7 +799,7 @@
       "opportunities": [],
       "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-02T11:55:16Z"
+      "last_activity": "2026-10-03T07:22:38Z"
     },
     {
       "id": "devops-engineer",
@@ -825,7 +825,7 @@
       "opportunities": [],
       "workload": 3.5,
       "blockers": [],
-      "last_activity": "2026-10-02T11:07:16Z"
+      "last_activity": "2026-10-03T07:22:42Z"
     },
     {
       "id": "sre",
@@ -883,22 +883,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "BLOCKED",
+      "state": "WAITING",
       "current_task": "TASK-0081",
       "assignments": [
-        "TASK-0081",
-        "TASK-0083"
+        "TASK-0081"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
-      "blockers": [
-        "TASK-0081",
-        "TASK-0083"
-      ],
-      "last_activity": "2026-10-02T06:46:06Z"
+      "workload": 1,
+      "blockers": [],
+      "last_activity": "2026-10-03T07:22:42Z"
     },
     {
       "id": "product-opportunity-lead",
