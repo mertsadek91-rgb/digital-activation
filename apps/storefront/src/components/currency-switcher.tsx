@@ -11,7 +11,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 let offered: Promise<string[]> | null = null;
 
 /**
- * The currencies the API can price in, asked for once per page load. The
+ * The currencies the API can price in, asked for once and shared while it succeeds. The
  * header's top bar and the drawer each hold a switcher, and each used to ask
  * on its own: the same answer twice, on every page.
  */
@@ -20,9 +20,15 @@ function offeredCurrencies(): Promise<string[]> {
     .then((response) => (response.ok ? response.json() : null))
     .then((body: unknown) => {
       const parsed = offeredCurrenciesSchema.safeParse(body);
-      return parsed.success ? parsed.data.currencies.map((entry) => entry.code) : [];
+      if (!parsed.success) throw new Error('unexpected currencies response');
+      return parsed.data.currencies.map((entry) => entry.code);
     })
-    .catch(() => []);
+    .catch((): string[] => {
+      // Not remembered: the next switcher to mount asks again, so one failed
+      // request does not hide the picker until a full reload.
+      offered = null;
+      return [];
+    });
   return offered;
 }
 

@@ -1358,6 +1358,34 @@
       "ts": "2026-10-05T07:38:58Z",
       "actor": "responsive-design-specialist",
       "event": "E20261005073858-5d5295"
+    },
+    {
+      "review_id": "REV-0132",
+      "reviewer": "pm-03",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Consumers work at HEAD: contracts rebuilds as ESM (NodeNext, no top-level side effects or z.config/registry calls in packages/contracts/src, so sideEffects:false drops nothing); the CommonJS API loads it via require(esm) on Node 22.17 (require from apps/api: 353 exports; built dist/app.module.js loads; built openapi-cli generates the full document, 152 paths / 271 schemas, so z.registry/toJSONSchema work across the boundary); @da/seo (CJS) requires it; repo typecheck 15/15, lint clean, API unit 664/664, i18n/seo/db tests pass; pnpm install --frozen-lockfile succeeds with the patch applied. Zod patch: no z.locales / zod/locales / core.locales use anywhere (git grep); English messages still default in ESM and CJS (zod 4.5.4 registers en in the ZodType constructor, not external.js). CONCERNS: (1) MEDIUM, deploy: the API now depends on unflagged require(esm), i.e. Node >= 22.12 at runtime. engines says >=22.12 but the repo has no Dockerfile/nvmrc and the Coolify build runtime version is UNVERIFIED; on an older Node the API fails to boot with ERR_REQUIRE_ESM. Confirm the staging image Node version before merge. (2) LOW: dual package - contracts imports zod's ESM build while the API's own code requires zod's CJS build, so two zod instances run in the API (verified: ctor identity differs; instanceof ZodType/ZodError still true via v4 traits). z.config() in API code would not reach contract schemas; nothing calls it today. (3) LOW: the patch edits only v4/classic/external.js and v4/core/index.js; the .d.ts still declares z.locales and the .cjs still exports it, so z.locales typechecks but is undefined at runtime in bundled ESM consumers (storefront/admin) - a silent trap; a comment or lint guard would close it. (4) Scope: root package.json patchedDependencies, patches/zod@4.5.4.patch and pnpm-lock.yaml are not in this task's affected_files (only packages/contracts/package.json) nor TASK-0101's; a vendored third-party patch should be claimed by a task. Storefront bundle effect checked only on an existing .next build from 11:16 (before the 11:19 commit): no non-English zod locale strings in client chunks - not a fresh build, not a Lighthouse run.",
+      "round": 1,
+      "target": "TASK-0105",
+      "ts": "2026-10-05T07:58:14Z",
+      "actor": "pm-03",
+      "event": "E20261005075814-3e7517"
+    },
+    {
+      "review_id": "REV-0133",
+      "reviewer": "pm-03",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Code at HEAD is type-correct and clean: storefront tsc --noEmit exit 0, eslint apps/storefront/src eslint.config.mjs exit 0, pnpm format:check clean, root lint/typecheck/test green. Reviewed: Link wrapper (no 'use client', so safe from server and client components; caller-supplied prefetch wins), cart-client sends content-type only with a body (no API code requires content-type on GET; the only body-less non-GET is DELETE /cart/coupon, still preflighted; cookies are SameSite=strict), inert typed boolean in @types/react 19, not-found messages passed as serialisable props, buy-box without framer-motion (no framer-motion import left), Tajawal 800 dropped with CSS weights moved to 700, cart-main min-height, MOCK_CART fixture gated by env. CONCERNS: (1) MEDIUM: the new no-restricted-imports rule for next/link is dead. The vault-guard block later in eslint.config.mjs (files **/*.ts,**/*.tsx) sets the same rule and flat config replaces it, so the effective rule for storefront files is only the vaultPrisma path. Proven: eslint --print-config on site-footer.tsx shows only @da/db/vaultPrisma, and a stdin probe importing next/link into site-footer.tsx lints with exit 0. The 35-43 prefetch requests can silently return with the next direct import. Fix: merge both paths into one rule entry, or put the storefront block after the vault guard and include the vaultPrisma path. (2) LOW: the next-intl Link from i18n/navigation is not covered by the rule either; its two uses set prefetch={false} by hand. (3) LOW: the module-level promises in currency-switcher and product-trust cache a failure (empty list / null) for the life of the client session, not just the page load, because client navigation keeps the module; one transient API error hides the switcher and payment marks until a full reload. Acceptable as decoration, but a reset on failure (offered = null in the catch) costs nothing. (4) Scope: apps/storefront/package.json (framer-motion removed) and pnpm-lock.yaml are outside affected_files; the commit also carries TASK-0042 docs/deployment.md and an advisory-lock int test change. (5) UNVERIFIED: the acceptance criteria themselves (perf >= 0.95, mobile LCP <= 1.8 s, <= 60 requests) - no Lighthouse run here, no fresh storefront build (next.config loads the root .env, which points at staging); ci.yml is unchanged so the Lighthouse job is not yet blocking - the task is at 30% and not completable on this evidence. Note: during this review apps/api/src/common/advisory-lock.int.test.ts showed an uncommitted edit in the worktree made by another session, not by the reviewer; the reviewer's typecheck run regenerated apps/admin/next-env.d.ts, which was restored.",
+      "round": 1,
+      "target": "TASK-0101",
+      "ts": "2026-10-05T07:58:32Z",
+      "actor": "pm-03",
+      "event": "E20261005075832-e08d48"
     }
   ],
   "invalidated_reviews": [
