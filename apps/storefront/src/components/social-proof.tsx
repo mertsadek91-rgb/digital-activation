@@ -1,10 +1,11 @@
 'use client';
 
-import { type PublicMarketing, type SocialProof, socialProofSchema } from '@da/contracts';
+import type { PublicMarketing, SocialProof } from '@da/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { isArabic } from '../i18n/locale';
+import { loadOfferedSchemas } from '../lib/lazy-clients';
 
 import { CloseIcon } from './icons';
 
@@ -60,6 +61,7 @@ export function SocialProofNotices({
         url.searchParams.set('productSlug', slug);
         const response = await fetch(url);
         if (!response.ok) return;
+        const { socialProofSchema } = await loadOfferedSchemas();
         const parsed = socialProofSchema.safeParse(await response.json());
         if (!cancelled && parsed.success) setData(parsed.data);
       } catch {

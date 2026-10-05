@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import { CartError, cartApi } from '../lib/cart-client';
+import { cartErrorMessage, loadCartApi } from '../lib/lazy-clients';
 
 import { CartIcon } from './icons';
 
@@ -43,6 +43,7 @@ export function AddToCart({
     setState('busy');
     setError(null);
     try {
+      const cartApi = await loadCartApi();
       await cartApi.add(variantId, 1, { locale, currency });
       setState('added');
       // Back to a button after a moment: the card stays usable, and somebody
@@ -52,7 +53,7 @@ export function AddToCart({
       }, 2200);
     } catch (caught) {
       setState('idle');
-      setError(caught instanceof CartError ? caught.message : t('addFailed'));
+      setError(await cartErrorMessage(caught, t('addFailed')));
     }
   }
 

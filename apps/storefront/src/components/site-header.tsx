@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from './link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -10,7 +10,8 @@ import { BRAND } from '@da/ui';
 
 import { isArabic } from '../i18n/locale';
 import { Link as LocaleLink, usePathname as useLocalePathname } from '../i18n/navigation';
-import { CART_EVENT, type CartEventDetail, cartApi } from '../lib/cart-client';
+import { CART_EVENT, type CartEventDetail } from '../lib/cart-events';
+import { loadCartApi } from '../lib/lazy-clients';
 import { SUPPORT_EMAIL, WHATSAPP_SHOWN, whatsappLink } from '../lib/contact';
 
 import {
@@ -87,6 +88,7 @@ export function SiteHeader({
     let cancelled = false;
     void (async () => {
       try {
+        const cartApi = await loadCartApi();
         const cart = await cartApi.get({ locale });
         if (!cancelled) setCount(cart.itemCount);
       } catch {

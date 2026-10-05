@@ -2300,7 +2300,7 @@
       "status": "IN_PROGRESS",
       "stage": "IMPLEMENTATION",
       "priority": "HIGH",
-      "progress": 50,
+      "progress": 65,
       "authority_level": 3,
       "risk": "MEDIUM",
       "primary_agent": "performance-engineer",
@@ -2756,6 +2756,51 @@
       "updated_at": "2026-10-05",
       "reaudit": null,
       "file": "tasks/completed/TASK-0109.md"
+    },
+    {
+      "id": "TASK-0110",
+      "title": "Move the plain constants the storefront client needs (ROUTES, NOINDEX_PREFIXES, MAX_LINE_QTY, LOW_STOCK_THRESHOLD, CONTACT_REPLY_HOURS) into a zod-free @da/contracts/constants entry point",
+      "type": "performance",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "LOW",
+      "primary_agent": "api-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "performance-engineer"
+      ],
+      "required_reviewers": [
+        "pm-03",
+        "pm-06"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "contracts",
+        "storefront"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "packages/contracts/src/constants.ts",
+        "packages/contracts/src/seo.ts",
+        "packages/contracts/src/cart.ts",
+        "packages/contracts/src/catalog.ts",
+        "packages/contracts/src/content.ts",
+        "packages/contracts/package.json"
+      ],
+      "created_at": "2026-10-05",
+      "updated_at": "2026-10-05",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0110.md"
     }
   ]
 }

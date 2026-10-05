@@ -1,11 +1,11 @@
 import {
   type AppLocale,
   localeSchema,
-  ROUTES,
   type SitemapEntry,
   type SitemapFeed,
   sitemapFeedSchema,
 } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import {
   alternates,
   alternatesIn,

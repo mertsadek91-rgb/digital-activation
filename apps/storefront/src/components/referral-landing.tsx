@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import { Link } from './link';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';

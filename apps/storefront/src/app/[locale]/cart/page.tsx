@@ -1,7 +1,7 @@
 'use client';
 
 import type { Cart, CartLine, OfferSuggestions } from '@da/contracts';
-import { MAX_LINE_QTY, ROUTES } from '@da/contracts';
+import { MAX_LINE_QTY, ROUTES } from '@da/contracts/constants';
 import Image from 'next/image';
 import { Link } from '../../../components/link';
 import { useParams, useRouter } from 'next/navigation';

@@ -8,6 +8,7 @@ import {
   licensePeriodUnitSchema,
   saleBadgeSchema,
 } from './catalog.js';
+import { MAX_LINE_QTY } from './constants.js';
 import { localeSchema, moneySchema, slugSchema } from './primitives.js';
 
 /**
@@ -34,8 +35,7 @@ import { localeSchema, moneySchema, slugSchema } from './primitives.js';
  */
 export const RESERVATION_TTL_MINUTES = 30;
 
-/** Hard ceiling per line. A digital key order of 100 is a fraud signal. */
-export const MAX_LINE_QTY = 10;
+export { MAX_LINE_QTY } from './constants.js';
 
 export const cartLineSchema = z.object({
   id: z.string(),

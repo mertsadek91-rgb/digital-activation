@@ -9,7 +9,8 @@ import type {
   PaymentSession,
   StartPayment,
 } from '@da/contracts';
-import { ROUTES, normalizeWhatsappPhone } from '@da/contracts';
+import { normalizeWhatsappPhone } from '@da/contracts';
+import { ROUTES } from '@da/contracts/constants';
 import Image from 'next/image';
 import { Link } from '../../../components/link';
 import { useParams, useRouter } from 'next/navigation';
