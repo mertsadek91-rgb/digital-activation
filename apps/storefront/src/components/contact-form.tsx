@@ -6,6 +6,8 @@ import { useState } from 'react';
 
 import { resolveLocale } from '../i18n/locale';
 
+import { ArrowIcon, CheckIcon, WarningIcon } from './icons';
+
 /**
  * The contact form.
  *
@@ -74,9 +76,12 @@ export function ContactForm({ locale }: { locale: string }) {
 
   if (sent) {
     return (
-      <div className="contact-card contact-form-card">
-        <p className="account-sent">{t('sent', { hours: String(CONTACT_REPLY_HOURS) })}</p>
-        <button type="button" className="btn btn-ghost" onClick={() => setSent(false)}>
+      <div className="panel contact-form-card">
+        <p className="alert" role="status">
+          <CheckIcon size={20} />
+          <span>{t('sent', { hours: String(CONTACT_REPLY_HOURS) })}</span>
+        </p>
+        <button type="button" className="btn btn-outline" onClick={() => setSent(false)}>
           {t('sendAnother')}
         </button>
       </div>
@@ -85,17 +90,17 @@ export function ContactForm({ locale }: { locale: string }) {
 
   return (
     <form
-      className="contact-card contact-form-card"
+      className="panel contact-form-card"
       onSubmit={(event) => {
         void submit(event);
       }}
     >
-      <div className="contact-card-header">
+      <div className="contact-form-head">
         <h2>{t('title')}</h2>
         <p>{t('intro')}</p>
       </div>
 
-      <label className="account-field">
+      <label className="field">
         {t('topic')}
         <select value={topic} onChange={(event) => setTopic(event.target.value as ContactTopic)}>
           {TOPICS.map((entry) => (
@@ -107,7 +112,7 @@ export function ContactForm({ locale }: { locale: string }) {
       </label>
 
       <div className="contact-row">
-        <label className="account-field">
+        <label className="field">
           {t('name')}
           <input
             type="text"
@@ -119,7 +124,7 @@ export function ContactForm({ locale }: { locale: string }) {
           />
         </label>
 
-        <label className="account-field">
+        <label className="field">
           {t('email')}
           <input
             type="email"
@@ -134,7 +139,7 @@ export function ContactForm({ locale }: { locale: string }) {
       </div>
 
       <div className="contact-row">
-        <label className="account-field">
+        <label className="field">
           {t('orderNumber')}
           <input
             type="text"
@@ -145,7 +150,7 @@ export function ContactForm({ locale }: { locale: string }) {
           />
         </label>
 
-        <label className="account-field">
+        <label className="field">
           {t('phone')}
           <input
             type="tel"
@@ -157,7 +162,7 @@ export function ContactForm({ locale }: { locale: string }) {
         </label>
       </div>
 
-      <label className="account-field">
+      <label className="field">
         {t('message')}
         <textarea
           value={message}
@@ -185,15 +190,20 @@ export function ContactForm({ locale }: { locale: string }) {
         </label>
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{error}</span>
+        </p>
+      ) : null}
 
       <button
         type="submit"
-        className="btn btn-primary"
-        style={{ minBlockSize: '48px', fontSize: 'var(--text-base)' }}
+        className="btn btn-primary btn-wide"
         disabled={busy || name.trim().length < 2 || message.trim().length < 10}
       >
         {busy ? t('sending') : t('submit')}
+        {busy ? null : <ArrowIcon size={18} />}
       </button>
 
       <p className="account-hint">{t('hint', { hours: String(CONTACT_REPLY_HOURS) })}</p>

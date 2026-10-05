@@ -1,5 +1,7 @@
 import type { Block } from '@da/contracts';
 
+import { ArrowIcon, PlusIcon } from './icons';
+
 /**
  * Renders the block document a product or collection body is stored as.
  *
@@ -11,6 +13,10 @@ import type { Block } from '@da/contracts';
  * `specTable` exists as its own block for a specific reason — tables are what
  * answer engines quote, and the legacy store buried its best product copy
  * inside a single PNG where nothing could read it.
+ *
+ * Drawn after the kit (TASK-0108): steps as numbered rows, the FAQ as the
+ * kit's accordion (`faqrow`, the same rows as the home page), tables with the
+ * mint header, and a CTA as the kit's mint promo card.
  */
 export function Blocks({ blocks }: { blocks: Block[] }) {
   return (
@@ -46,9 +52,14 @@ function BlockView({ block }: { block: Block }) {
       return (
         <section className="steps">
           {block.title ? <h2>{block.title}</h2> : null}
-          <ol>
+          <ol className="steps-list">
             {block.steps.map((step, index) => (
-              <li key={index}>{step.text}</li>
+              <li key={index}>
+                <span className="stepnum" dir="ltr">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span>{step.text}</span>
+              </li>
             ))}
           </ol>
         </section>
@@ -57,14 +68,19 @@ function BlockView({ block }: { block: Block }) {
       return (
         <section className="faq">
           {block.title ? <h2>{block.title}</h2> : null}
-          <dl>
+          <div className="faq-list">
             {block.items.map((item, index) => (
-              <div key={index}>
-                <dt>{item.q}</dt>
-                <dd>{item.a}</dd>
-              </div>
+              <details key={index} className="faqrow">
+                <summary>
+                  <span>{item.q}</span>
+                  <span className="faq-toggle" aria-hidden="true">
+                    <PlusIcon />
+                  </span>
+                </summary>
+                <p>{item.a}</p>
+              </details>
             ))}
-          </dl>
+          </div>
         </section>
       );
     case 'specTable':
@@ -120,13 +136,16 @@ function BlockView({ block }: { block: Block }) {
     case 'cta':
       return (
         <aside className={`cta cta-${block.tone}`}>
-          <h2>{block.heading}</h2>
-          {block.body ? <p>{block.body}</p> : null}
+          <div>
+            <h2>{block.heading}</h2>
+            {block.body ? <p>{block.body}</p> : null}
+          </div>
           {/* A plain anchor: the href comes from content and may be external,
               and next/link on an external URL is a runtime error waiting for
               the first editor who pastes one. */}
           <a className="btn btn-primary" href={block.buttonHref}>
             {block.buttonLabel}
+            <ArrowIcon size={18} />
           </a>
         </aside>
       );

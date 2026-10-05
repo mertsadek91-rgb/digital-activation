@@ -8,7 +8,8 @@ import { ROUTES } from '@da/contracts';
 import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
-import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
+import { ShieldCheckIcon, WhatsAppIcon } from '../../../components/icons';
 import { isArabic } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { notFoundMetadata, pageTitle, robotsMeta } from '../../../lib/seo';
@@ -107,59 +108,64 @@ export default async function GoldenWarrantyPage({ params }: Props) {
     faq ? jsonld.faqPage(faq) : null,
   ]);
 
+  // The kit's page band, then the policy as one column of text, then the
+  // kit's mint help banner (TASK-0108). The emoji badge is gone: the shield
+  // was a picture of a claim, and the title already names the policy.
   return (
-    <main>
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <section className="warranty-hero" aria-labelledby="hero-heading">
-        <MotionFadeIn>
-          <div className="warranty-hero-inner">
-            <span className="warranty-emblem-badge" aria-hidden="true">
-              <span>🛡️</span>
-              {/* The name of the thing, not a certification. "معتمد 100%" read
-                  as an accreditation the shop does not hold and nobody issues. */}
-              <span>{page.title}</span>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: page.title, href: `${prefix}${ROUTES.goldenWarranty}` },
+            ]}
+          />
+          <header className="page-head">
+            <span className="content-label">
+              <ShieldCheckIcon size={14} />
+              {t('label')}
             </span>
-
-            <h1 id="hero-heading">{page.title}</h1>
-
+            <h1>{page.title}</h1>
             {/* The policy's own opening paragraph. It is written to be quoted —
                 it is the block the answer engines lift — so it is also the only
                 summary this page gives. */}
-            {lede ? <p className="warranty-hero-lede">{lede}</p> : null}
-          </div>
-        </MotionFadeIn>
-      </section>
+            {lede ? <p className="lede">{lede}</p> : null}
+          </header>
+        </div>
+      </div>
 
-      {/* The policy itself: the two kinds of cover, how to claim it, what it
-          covers, the questions and the closing call. All of it rows the owner
-          edits in the panel. */}
-      <section className="warranty-section">
-        <MotionFadeIn>
-          <div className="shell prose warranty-body">
-            <Blocks blocks={page.blocks.filter((block) => block.type !== 'answerFirst')} />
-          </div>
-        </MotionFadeIn>
-      </section>
+      <main className="shell content-page warranty-page">
+        {/* The policy itself: the two kinds of cover, how to claim it, what it
+            covers, the questions and the closing call. All of it rows the owner
+            edits in the panel. */}
+        <div className="prose">
+          <Blocks blocks={page.blocks.filter((block) => block.type !== 'answerFirst')} />
+        </div>
 
-      <section className="warranty-section warranty-contact">
-        <div className="shell">
-          <h2>{t('questionTitle')}</h2>
-          <p>{t('questionBody')}</p>
-          <div className="warranty-contact-actions">
+        <section className="help-banner" aria-labelledby="warranty-help">
+          <div>
+            <span className="eyebrow">{t('label')}</span>
+            <h2 id="warranty-help">{t('questionTitle')}</h2>
+            <p>{t('questionBody')}</p>
+          </div>
+          <div className="help-banner-actions">
             <a
-              className="btn btn-accent"
+              className="btn btn-primary"
               href={`https://wa.me/${WHATSAPP_DIAL}`}
               rel="noopener noreferrer"
             >
+              <WhatsAppIcon size={18} />
               {t('whatsapp')}
             </a>
-            <Link className="btn btn-ghost" href={`${prefix}${ROUTES.contact}`}>
+            <Link className="btn btn-outline" href={`${prefix}${ROUTES.contact}`}>
               {t('contactForm')}
             </Link>
           </div>
-        </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </>
   );
 }

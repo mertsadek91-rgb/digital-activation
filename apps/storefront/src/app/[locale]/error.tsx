@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
+import { WarningIcon } from '../../components/icons';
 import { isArabic } from '../../i18n/locale';
 
 /**
@@ -45,19 +46,21 @@ export default function StoreError({
 
   return (
     <main className="shell missing">
-      <header className="page-head">
+      <header className="status-hero">
+        <span className="iconbox status-icon is-danger" aria-hidden="true">
+          <WarningIcon size={32} />
+        </span>
         <h1>{t('title')}</h1>
-        <p className="lede">{t('body')}</p>
+        <p>{t('body')}</p>
+        <p className="missing-actions">
+          <button type="button" className="btn btn-primary" onClick={reset}>
+            {t('retry')}
+          </button>
+          <a className="btn btn-outline" href={ar ? '/contact' : '/en/contact'}>
+            {t('contact')}
+          </a>
+        </p>
       </header>
-
-      <p className="missing-actions">
-        <button type="button" className="btn btn-primary" onClick={reset}>
-          {t('retry')}
-        </button>
-        <a className="btn btn-ghost" href={ar ? '/contact' : '/en/contact'}>
-          {t('contact')}
-        </a>
-      </p>
 
       {error.digest ? (
         <p className="missing-hint">

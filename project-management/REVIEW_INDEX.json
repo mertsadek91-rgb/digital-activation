@@ -1442,6 +1442,20 @@
       "ts": "2026-10-05T11:33:00Z",
       "actor": "pm-06",
       "event": "E20261005113300-90a765"
+    },
+    {
+      "review_id": "REV-0138",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "CONCERN, nothing blocking. 1440/390 shots ar+en for 12 routes, 360 probe on 13. Passed: no overflow, one h1 per page, no target under 44px, FAQ rows keyboard-operable with visible focus, contrast, direction of chevrons/arrows, Latin face on dates, /en/terms Arabic body in Tajawal RTL. Findings: (1) h1 weight 400 vs kit bold (site-wide, predates stage 5); (2) several content h2s weight 400 (contact sections, form title, help banners, post sections, 404 card); (3) h1 stays 48px on phones vs kit ~28px; (4) /en/terms Arabic title and breadcrumb outside lang=ar, wrong font; minors: CTA in the Arabic body links to the Arabic contact route; contact submit greyed until valid; 404 title spacing; help-banner buttons mid-banner at 1440; two date formats; blog card titles not headings; SLA pill wrap at 390.",
+      "round": 1,
+      "target": "TASK-0108",
+      "ts": "2026-10-05T11:53:48Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261005115348-4dbfba"
     }
   ],
   "invalidated_reviews": [

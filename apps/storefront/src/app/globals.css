@@ -5,7 +5,7 @@
 @import './home.css';
 @import './cart.css';
 @import './account.css';
-@import './warranty.css';
+@import './content.css';
 @import './contact.css';
 @import './footer.css';
 @import './marketing-signals.css';
@@ -54,6 +54,8 @@ h2,
 h3,
 h4 {
   color: var(--color-ink);
+  /* The kit draws every heading bold (REV-0138). */
+  font-weight: 700;
   line-height: var(--leading-tight);
   text-wrap: balance;
 }

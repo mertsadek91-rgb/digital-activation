@@ -9,7 +9,8 @@ import { isArabic } from '../../../i18n/locale';
 import { getPosts } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 import { formatArticleDate, readingLabel } from '../../../lib/format';
-import { MotionFadeIn } from '../../../components/motion-wrapper';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
+import { ArrowIcon, BookIcon } from '../../../components/icons';
 
 /**
  * /blog — the seven posts the old store had, and a place to put the next one.
@@ -79,31 +80,51 @@ export default async function BlogPage({ params }: Props) {
       : null,
   ]);
 
+  // The kit has no blog page: the index uses the home page's article cards
+  // (the kit's `article`) under the usual page band (TASK-0108).
   return (
-    <main className="shell blog-index">
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <header className="blog-head">
-        <h1>{t('title')}</h1>
-        <p>{t('lede')}</p>
-      </header>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: t('title'), href: `${prefix}${ROUTES.blog}` },
+            ]}
+          />
+          <header className="page-head">
+            <h1>{t('title')}</h1>
+            <p className="lede">{t('lede')}</p>
+          </header>
+        </div>
+      </div>
 
-      {posts.length === 0 ? (
-        /* Said plainly rather than left blank, and it is said differently in
-           each language for a reason: the posts carried over are Arabic, so an
-           English visitor is looking at a real gap rather than an outage. */
-        <p className="blog-empty">{t('empty')}</p>
-      ) : (
-        <MotionFadeIn>
-          <ul className="post-list">
+      <main className="shell blog-index">
+        {posts.length === 0 ? (
+          /* Said plainly rather than left blank, and it is said differently in
+             each language for a reason: the posts carried over are Arabic, so an
+             English visitor is looking at a real gap rather than an outage. */
+          <div className="empty-state">
+            <span className="iconbox status-icon" aria-hidden="true">
+              <BookIcon size={32} />
+            </span>
+            <p>{t('empty')}</p>
+            <Link className="btn btn-primary" href={`${prefix}${ROUTES.store}`}>
+              {t('browseStore')}
+              <ArrowIcon size={18} />
+            </Link>
+          </div>
+        ) : (
+          <ul className="blog-grid">
             {posts.map((post) => (
-              <li key={post.slug}>
-                <article className="post-card">
-                  <h2>
-                    <Link href={`${prefix}${ROUTES.post(post.slug)}`}>{post.title}</Link>
-                  </h2>
-                  {post.summary ? <p className="post-summary">{post.summary}</p> : null}
-                  <p className="post-meta">
+              <li key={post.slug} className="article">
+                <Link href={`${prefix}${ROUTES.post(post.slug)}`}>
+                  <span className="article-art" aria-hidden="true">
+                    <BookIcon size={64} />
+                  </span>
+                  <span className="article-meta">
                     {post.publishedAt ? (
                       <time dateTime={post.publishedAt}>
                         {formatArticleDate(post.publishedAt, locale)}
@@ -112,19 +133,19 @@ export default async function BlogPage({ params }: Props) {
                     {post.readingMinutes > 0 ? (
                       <span>{readingLabel(post.readingMinutes, tf)}</span>
                     ) : null}
-                  </p>
-                  <div className="post-action">
-                    <Link href={`${prefix}${ROUTES.post(post.slug)}`} className="post-read-link">
-                      <span>{t('readArticle')}</span>
-                      <span aria-hidden="true">{ar ? '←' : '→'}</span>
-                    </Link>
-                  </div>
-                </article>
+                  </span>
+                  <h2 className="article-title">{post.title}</h2>
+                  {post.summary ? <span className="post-strip-sub">{post.summary}</span> : null}
+                  <span className="article-more">
+                    <span>{t('readArticle')}</span>
+                    <ArrowIcon size={16} />
+                  </span>
+                </Link>
               </li>
             ))}
           </ul>
-        </MotionFadeIn>
-      )}
-    </main>
+        )}
+      </main>
+    </>
   );
 }

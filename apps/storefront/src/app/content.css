@@ -1,0 +1,425 @@
+/*
+ * The content pages after the kit (TASK-0108): the policy and editorial
+ * pages, the Golden Warranty, the blog index and a post, and the 404 and
+ * error pages. Contact has its own sheet (contact.css).
+ *
+ * The kit's `policy` page is one column of text under the page band: a mint
+ * label, the heading, then each section as a bold heading over a muted
+ * paragraph. Blocks inside it (steps, the FAQ accordion, tables, the CTA
+ * card) take the kit's components. Logical properties throughout.
+ */
+
+/* --- one column of text ---------------------------------------------------- */
+
+.content-page {
+  display: grid;
+  gap: var(--spacing-2);
+}
+.content-page .prose,
+.post-body .prose {
+  max-inline-size: 820px;
+  color: var(--color-ink-muted);
+  line-height: 1.85;
+}
+.content-page .prose h2,
+.post-body .prose h2 {
+  margin-block: var(--spacing-3) 12px;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.content-page .prose > :first-child,
+.post-body .prose > :first-child {
+  margin-block-start: 0;
+}
+.content-page .prose h3,
+.post-body .prose h3 {
+  color: var(--color-ink);
+}
+/* The page's first, answer-first paragraph: ink, a size up. */
+.content-page .answer-first,
+.post-body .answer-first {
+  margin: 0 0 var(--spacing-2);
+  font-size: var(--text-lg);
+  line-height: 1.75;
+  color: var(--color-ink-body);
+}
+.content-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: start;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.content-updated {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+}
+.content-updated time {
+  font-family: var(--font-latin);
+}
+/* "Not translated yet": the kit's info alert. */
+.notice-untranslated {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #c6dcff;
+  border-radius: var(--radius-sm);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  font-size: var(--text-sm);
+}
+.notice-untranslated a {
+  color: inherit;
+  font-weight: 700;
+}
+
+/* --- blocks inside the text ----------------------------------------------- */
+
+.prose .steps h2,
+.prose .faq h2,
+.prose .spec h2 {
+  margin-block-start: var(--spacing-3);
+}
+.prose .steps-list {
+  margin-block: 12px var(--spacing-2);
+  padding: 0;
+}
+.prose .steps-list li {
+  margin: 0;
+  color: var(--color-ink-body);
+}
+.prose .faq-list {
+  margin-block-end: var(--spacing-2);
+}
+.prose .faqrow summary {
+  font-size: var(--text-base);
+}
+
+/* Tables: the kit's mint header row, bordered card. */
+.prose .table-scroll {
+  margin-block: 12px var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.prose .spec table,
+.prose .compare table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.prose .spec th,
+.prose .spec td,
+.prose .compare th,
+.prose .compare td {
+  padding: 14px 16px;
+  text-align: start;
+  border-block-start: 1px solid var(--color-border);
+}
+.prose .compare thead th,
+.prose .compare thead td {
+  border-block-start: 0;
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+}
+.prose .spec tr:first-child th,
+.prose .spec tr:first-child td {
+  border-block-start: 0;
+}
+.prose .spec th,
+.prose .compare tbody th {
+  color: var(--color-ink);
+  font-weight: 700;
+  inline-size: 40%;
+}
+
+/* The CTA block: the kit's mint promo card, copy at the start, button at the
+   end, stacked on a phone. */
+.prose .cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-block: var(--spacing-3) 0;
+  padding: var(--spacing-3);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-tint) 0%,
+    var(--color-brand-tint-deep) 100%
+  );
+}
+.prose .cta > div {
+  flex: 1 1 18rem;
+}
+.prose .cta h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  color: var(--color-ink);
+}
+.prose .cta p {
+  margin: 8px 0 0;
+  color: var(--color-ink-on-mint);
+}
+.prose .cta .btn {
+  color: var(--color-ink-inverse);
+  text-decoration: none;
+}
+.prose .cta-accent {
+  background: var(--color-accent-soft);
+}
+@media (max-width: 40rem) {
+  .prose .cta {
+    padding: var(--spacing-2);
+  }
+}
+
+/* --- Golden Warranty ------------------------------------------------------- */
+
+.warranty-page .page-head .lede {
+  max-inline-size: 760px;
+}
+/* The closing "still have a question?": the same mint card as the kit's
+   support banner. */
+.help-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-tint) 0%,
+    var(--color-brand-tint-deep) 100%
+  );
+}
+.help-banner > div:first-child {
+  flex: 1 1 18rem;
+}
+.help-banner h2 {
+  margin: 4px 0 0;
+  font-size: var(--text-2xl);
+}
+.help-banner p {
+  margin: 8px 0 0;
+  color: var(--color-ink-on-mint);
+}
+.help-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 40rem) {
+  .help-banner {
+    padding: var(--spacing-2);
+  }
+  .help-banner-actions,
+  .help-banner-actions .btn {
+    inline-size: 100%;
+  }
+}
+
+/* --- the blog -------------------------------------------------------------- */
+
+.blog-index {
+  display: grid;
+  gap: var(--spacing-2);
+}
+.blog-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--spacing-2);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.blog-grid .article-art {
+  block-size: 160px;
+}
+/* Card titles are headings (REV-0138), drawn like the home page's cards. */
+.article .article-title {
+  margin: 8px 0 12px;
+  color: var(--color-ink);
+  font-size: var(--text-lg);
+  line-height: 1.5;
+}
+.article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--color-ink-muted);
+  font-size: var(--text-xs);
+}
+.article-meta time {
+  font-family: var(--font-latin);
+}
+
+/* A post: the band carries the title and the meta, the text is one column. */
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+}
+.post-meta time {
+  font-family: var(--font-latin);
+}
+.post-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.post-page {
+  display: grid;
+  gap: var(--spacing-3);
+}
+.post-body {
+  display: grid;
+  gap: var(--spacing-2);
+}
+.post-lede {
+  margin: 0;
+  padding: var(--spacing-2);
+  border-inline-start: 4px solid var(--color-brand);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-tint);
+  color: var(--color-ink-body);
+  font-size: var(--text-lg);
+  line-height: 1.75;
+  max-inline-size: 820px;
+}
+.post-section {
+  display: grid;
+  gap: var(--spacing-1);
+}
+.post-section h2 {
+  margin: 0;
+  font-size: var(--text-2xl);
+}
+
+/* --- 404 and error --------------------------------------------------------- */
+
+.missing {
+  display: grid;
+  gap: var(--spacing-2);
+  max-inline-size: 760px;
+  padding-block: var(--spacing-4);
+}
+.missing .status-hero {
+  padding-block: 0;
+}
+/* The kit's big number: brand, Latin face. */
+.missing-code {
+  margin: 0;
+  font-family: var(--font-latin);
+  font-size: clamp(3.5rem, 12vw, 5rem);
+  font-weight: 800;
+  line-height: 1;
+  color: var(--color-brand);
+}
+.missing .status-hero h1 {
+  margin: 0;
+  font-size: var(--text-3xl);
+}
+.missing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin: 8px 0 0;
+}
+.missing-guess {
+  padding: var(--spacing-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+.missing-guess h2 {
+  margin: 0 0 8px;
+  font-size: var(--text-xl);
+}
+.missing-guess ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.missing-guess li {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  min-block-size: 48px;
+  border-block-end: 1px solid var(--color-border);
+}
+.missing-guess li:last-child {
+  border-block-end: 0;
+}
+.missing-guess li a {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-block-size: 48px;
+  color: var(--color-ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+.missing-guess li a:hover {
+  color: var(--color-brand);
+  text-decoration: underline;
+}
+.missing-kind {
+  margin-inline-start: auto;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.missing-hint {
+  margin: 12px 0 0;
+  color: var(--color-ink-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+.missing-hint code {
+  font-family: var(--font-latin);
+}
+.status-icon.is-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+/* The list markers the base reset removes, back inside the text. */
+.prose ul {
+  list-style: disc;
+}
+.prose ol:not(.steps-list) {
+  list-style: decimal;
+}
+/* An Arabic body on an English page ("not translated yet") keeps the Arabic
+   face; the page's own font would hand the glyphs to a system fallback. */
+.prose[lang='ar'] {
+  font-family: var(--font-tajawal), system-ui, sans-serif;
+}
+.status-hero .missing-code {
+  color: var(--color-brand);
+}
+/* An Arabic title on an English page keeps the Arabic face. */
+.page-head h1:lang(ar),
+.breadcrumb [lang='ar'] {
+  font-family: var(--font-tajawal), system-ui, sans-serif;
+}
