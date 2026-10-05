@@ -57,4 +57,3 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0106 — Publish @da/contracts as ESM with sideEffects:false so the apps tree-shake it (the CommonJS build put the whole package into the storefront client bundle) (IN_PROGRESS, 90%)
