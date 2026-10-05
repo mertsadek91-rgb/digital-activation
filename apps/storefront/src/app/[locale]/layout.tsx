@@ -26,14 +26,16 @@ import '../globals.css';
  * The store's typefaces, self-hosted by next/font at build time.
  *
  * Tajawal for Arabic (400 body, 500 labels, 700 headings, as the UI Kit
- * specifies; 800 for the heaviest display text that is still set). Inter for
- * English, and for prices, codes and addresses in both languages. The CSS
- * binds them in globals.css: `--font-sans` is Tajawal under `html[lang=ar]`
- * and Inter under `html[lang=en]`; `--font-latin` is always Inter.
+ * specifies, and nothing heavier: the 800 that a few headings asked for was
+ * two more font files on every page, for a weight the kit never set). Inter
+ * for English, and for prices, codes and addresses in both languages. The
+ * CSS binds them in globals.css: `--font-sans` is Tajawal under
+ * `html[lang=ar]` and Inter under `html[lang=en]`; `--font-latin` is always
+ * Inter.
  */
 const tajawal = Tajawal({
   subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '700', '800'],
+  weight: ['400', '500', '700'],
   display: 'swap',
   variable: '--font-tajawal',
 });

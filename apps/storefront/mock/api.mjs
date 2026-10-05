@@ -300,6 +300,53 @@ const BODY = (locale) => [
   },
 ];
 
+/** One line of the one product, at its price: what `MOCK_CART=1` answers. */
+function cart(locale, currency) {
+  const base = PRODUCTS[0];
+  const unit = price('19.99', null, currency);
+  return {
+    token: 'mock-cart',
+    locale,
+    currency,
+    lines: [
+      {
+        id: 'line_1',
+        variantId: 'var_windows-11-pro',
+        sku: 'WIN11-PRO-1',
+        productSlug: base.slug,
+        productName: base.name[locale],
+        licensePeriodValue: null,
+        licensePeriodUnit: 'LIFETIME',
+        deviceCount: 1,
+        activationMethod: 'RETAIL_ONLINE',
+        deliverySlaSeconds: 300,
+        fulfillmentMode: 'FROM_STOCK',
+        requiresActivationEmail: false,
+        image: null,
+        qty: 1,
+        unitPrice: unit,
+        lineTotal: unit,
+        priceChanged: null,
+        availableToAdd: 9,
+        fromCrossSell: false,
+        sale: null,
+        saleEnded: false,
+      },
+    ],
+    itemCount: 1,
+    subtotal: unit,
+    discount: price('0', null, currency),
+    total: unit,
+    coupon: null,
+    couponError: null,
+    automaticDiscount: null,
+    couponSuperseded: false,
+    volume: null,
+    reservationExpiresAt: null,
+    adjustments: [],
+  };
+}
+
 function product(locale, currency) {
   const ar = locale === 'ar';
   const base = PRODUCTS[0];
@@ -504,6 +551,20 @@ const server = createServer((req, res) => {
     res.end(body === undefined ? '' : JSON.stringify(body));
   };
   if (req.method === 'OPTIONS') return send(204);
+
+  // A one-line cart, only when asked for (`MOCK_CART=1`): the Lighthouse run
+  // measures `/cart?add=<variant>` with a line in it, as CI does. Without the
+  // flag the cart keeps answering 404, which is the empty state a design pass
+  // wants to look at.
+  if (process.env.MOCK_CART === '1' && url.pathname.startsWith('/v1/cart')) {
+    if (url.pathname === '/v1/cart' || url.pathname === '/v1/cart/items') {
+      return send(200, cart(locale, currency));
+    }
+    return send(404, { statusCode: 404, message: `mock: no cart fixture for ${url.pathname}` });
+  }
+  if (process.env.MOCK_CART === '1' && url.pathname === '/v1/offers/suggestions') {
+    return send(200, { items: [], licenceNumber: 'DL-0000' });
+  }
 
   const collectionMatch = url.pathname.match(/^\/v1\/catalog\/collections\/([a-z0-9-]+)$/);
   if (collectionMatch) {

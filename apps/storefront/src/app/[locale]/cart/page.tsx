@@ -3,7 +3,7 @@
 import type { Cart, CartLine, OfferSuggestions } from '@da/contracts';
 import { MAX_LINE_QTY, ROUTES } from '@da/contracts';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '../../../components/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -136,7 +136,7 @@ export default function CartPage() {
 
   if (!cart) {
     return (
-      <main className="shell">
+      <main className="shell cart-main">
         <h1>{t('title')}</h1>
         <p className="notice" role={error ? 'alert' : undefined}>
           {error ?? '…'}
@@ -147,7 +147,7 @@ export default function CartPage() {
 
   if (cart.lines.length === 0) {
     return (
-      <main className="shell">
+      <main className="shell cart-main">
         <h1>{t('title')}</h1>
         {linkNote ? <p className="notice">{linkNote}</p> : null}
         {error ? (
@@ -164,7 +164,7 @@ export default function CartPage() {
   }
 
   return (
-    <main className="shell cart-page">
+    <main className="shell cart-page cart-main">
       <h1>{t('title')}</h1>
 
       {linkNote ? <p className="notice">{linkNote}</p> : null}

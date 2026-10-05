@@ -72,11 +72,15 @@ async function request<T>(
   // the result with the currency it actually used.
   url.searchParams.set('currency', init?.currency ?? browserCurrency());
 
+  // The content type only when there is content. On a GET it is a header the
+  // CORS rules do not list as simple, so every read of the cart cost a
+  // preflight round trip before the request itself — one more request on
+  // every page, and two on the cart (TASK-0101).
   const response = await fetch(url, {
     ...init,
     credentials: 'include',
     cache: 'no-store',
-    headers: { 'content-type': 'application/json', ...init?.headers },
+    headers: init?.body ? { 'content-type': 'application/json', ...init.headers } : init?.headers,
   });
 
   const payload: unknown = await response.json().catch(() => null);

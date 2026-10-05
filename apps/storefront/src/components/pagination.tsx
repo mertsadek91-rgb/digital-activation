@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { Link } from './link';
 import { getTranslations } from 'next-intl/server';
 
 import { ChevronRightIcon } from './icons';

@@ -1,7 +1,7 @@
 'use client';
 
 import { ROUTES } from '@da/contracts';
-import Link from 'next/link';
+import { Link } from './link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
@@ -214,6 +214,7 @@ export function SiteHeader({
           <p className="topbar-text">{t('tagline')}</p>
           <div className="topbar-controls">
             <LocaleLink
+              prefetch={false}
               href={localePath}
               locale={otherLocale}
               className="topbar-link"
@@ -467,6 +468,7 @@ export function SiteHeader({
               <span dir="ltr">{SUPPORT_EMAIL}</span>
             </a>
             <LocaleLink
+              prefetch={false}
               href={localePath}
               locale={otherLocale}
               className="drawer-link drawer-lang"

@@ -1176,12 +1176,17 @@ a.pagination-step:hover {
 .buy-bar.is-shown {
   translate: 0 0;
 }
-.buy-bar.motion-controlled {
-  translate: none !important;
-  transition: none !important;
+/* Off screen is also out of the way: the hidden copy casts no shadow over
+   the page's bottom edge and takes no taps meant for what is under it. */
+.buy-bar:not(.is-shown) {
+  visibility: hidden;
+  transition:
+    translate 180ms ease-out,
+    visibility 0s 180ms;
 }
 @media (prefers-reduced-motion: reduce) {
-  .buy-bar {
+  .buy-bar,
+  .buy-bar:not(.is-shown) {
     transition: none;
   }
 }
@@ -1308,7 +1313,7 @@ a.pagination-step:hover {
 }
 .prose h2 {
   font-size: clamp(var(--text-xl), 2.5vw, var(--text-2xl));
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-brand-ink);
   margin-block: var(--spacing-3) var(--spacing-1);
   line-height: 1.35;
@@ -2142,7 +2147,7 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   margin-block: 0 var(--spacing-half);
   color: var(--color-brand-ink);
   font-size: clamp(var(--text-2xl), 3vw, var(--text-3xl));
-  font-weight: 800;
+  font-weight: 700;
 }
 .blog-head p {
   margin: 0;
@@ -2271,7 +2276,7 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
   margin-block: 0 var(--spacing-1);
   color: var(--color-brand-ink);
   font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.35;
 }
 .post-header .post-meta {
@@ -2316,7 +2321,7 @@ body:has(.buy-bar.is-shown) .whatsapp-fab {
 }
 .post-more h2 {
   font-size: var(--text-xl);
-  font-weight: 800;
+  font-weight: 700;
   margin-block: 0 var(--spacing-2);
   color: var(--color-brand-ink);
 }

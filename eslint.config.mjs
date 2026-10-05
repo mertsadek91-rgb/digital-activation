@@ -68,6 +68,32 @@ export default tseslint.config(
   },
 
   /**
+   * The storefront links through its own `Link`, which has prefetching off:
+   * every page renders per request and none has a loading boundary, so a
+   * prefetch fetches nothing the navigation can use and the request budget
+   * paid for it (TASK-0101). The wrapper itself is the one place `next/link`
+   * is imported.
+   */
+  {
+    files: ['apps/storefront/src/**/*.ts', 'apps/storefront/src/**/*.tsx'],
+    ignores: ['apps/storefront/src/components/link.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'next/link',
+              message:
+                "Import { Link } from the storefront's components/link: it is next/link with prefetching off, and the reason is written there.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  /**
    * The licence vault guard.
    *
    * `vaultPrisma` connects as the only Postgres role that can read encrypted

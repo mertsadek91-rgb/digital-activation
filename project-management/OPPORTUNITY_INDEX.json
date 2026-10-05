@@ -336,6 +336,13 @@
       "relation": "RELATED",
       "ts": "2026-10-02T11:49:25Z",
       "actor": "frontend-engineer"
+    },
+    {
+      "from": "TASK-0105",
+      "to": "TASK-0101",
+      "relation": "RELATED",
+      "ts": "2026-10-05T07:00:46Z",
+      "actor": "performance-engineer"
     }
   ],
   "ranking": {

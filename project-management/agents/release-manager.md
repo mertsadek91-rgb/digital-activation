@@ -56,4 +56,3 @@
 ## Supporting
 
 - TASK-0040 — Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002) (BACKLOG, 0%)
-- TASK-0042 — Cutover rehearsal on staging: 301 map crawl and zero broken links (IN_PROGRESS, 60%)

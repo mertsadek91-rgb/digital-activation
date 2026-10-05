@@ -1,4 +1,6 @@
 import { NotFoundPage } from '../../components/not-found-page';
+import ar from '../../../messages/ar.json';
+import en from '../../../messages/en.json';
 
 /**
  * The page at the end of a link that no longer works.
@@ -20,7 +22,9 @@ import { NotFoundPage } from '../../components/not-found-page';
  *
  * All of it lives in a client component, for a reason that is a property of
  * this app's routing rather than a preference — see `not-found-page.tsx`.
+ * Only the `notFound` copy goes with it, in both languages, because the
+ * component cannot know which one it is on until it reads the path.
  */
 export default function NotFound() {
-  return <NotFoundPage />;
+  return <NotFoundPage messages={{ ar: ar.notFound, en: en.notFound }} />;
 }
