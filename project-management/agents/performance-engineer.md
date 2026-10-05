@@ -20,7 +20,7 @@
 ## Owned domains
 
 - apps/storefront/lighthouserc.json
-- packages/ui/src/index.ts (PERFORMANCE_BUDGET)
+- .github/workflows/ci.yml (Performance budget job)
 
 ## Allowed
 
