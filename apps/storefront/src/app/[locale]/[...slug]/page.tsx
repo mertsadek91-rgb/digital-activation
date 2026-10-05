@@ -6,6 +6,8 @@ import type { AppLocale } from '@da/contracts';
 import { alternatesIn, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../components/blocks';
+import { Breadcrumbs } from '../../../components/breadcrumbs';
+import { InfoIcon } from '../../../components/icons';
 import { isArabic, resolveLocale } from '../../../i18n/locale';
 import { getPage } from '../../../lib/api';
 import { goneOrRedirect } from '../../../lib/gone';
@@ -127,29 +129,59 @@ export default async function ContentPage({ params }: Props) {
     questions.length > 0 ? jsonld.faqPage(questions) : null,
   ]);
 
+  // The kit's `policy` page: the band with the breadcrumb and the title, then
+  // one column of text (TASK-0108). The date is the row's own, so a reader
+  // can tell a policy that changed last week from one nobody has touched.
+  const updated = page.updatedAt.slice(0, 10);
+
   return (
-    <main className="shell">
+    <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <header className="page-head">
-        <h1>{page.title}</h1>
-      </header>
+      <div className="page-band">
+        <div className="shell">
+          <Breadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: page.title, href: `${prefix}/${page.slug}`, lang: served },
+            ]}
+          />
+          <header className="page-head">
+            {/* In the language it is written in: on /en/terms the title is
+                Arabic, and the page's own font and direction would mis-set it. */}
+            <h1 lang={served} dir={isArabic(served) ? 'rtl' : 'ltr'}>
+              {page.title}
+            </h1>
+          </header>
+          <p className="content-updated">
+            {t.rich('updated', {
+              date: updated,
+              time: (chunks) => <time dateTime={updated}>{chunks}</time>,
+            })}
+          </p>
+        </div>
+      </div>
 
-      {translated ? null : (
-        <p className="notice-untranslated">
-          {t('untranslated')}{' '}
-          <a href={`${isArabic(served) ? '' : '/en'}/${page.slug}`} hrefLang={served}>
-            {tServed('ownVersion')}
-          </a>
-        </p>
-      )}
+      <main className="shell content-page">
+        {translated ? null : (
+          <p className="notice-untranslated">
+            <InfoIcon size={20} />
+            <span>
+              {t('untranslated')}{' '}
+              <a href={`${isArabic(served) ? '' : '/en'}/${page.slug}`} hrefLang={served}>
+                {tServed('ownVersion')}
+              </a>
+            </span>
+          </p>
+        )}
 
-      {/* `lang` and `dir` follow the text, not the route: an Arabic body inside
+        {/* `lang` and `dir` follow the text, not the route: an Arabic body inside
           an English page is still Arabic, and saying otherwise mis-renders the
           punctuation and tells a screen reader to read it in the wrong voice. */}
-      <div className="prose" lang={served} dir={isArabic(served) ? 'rtl' : 'ltr'}>
-        <Blocks blocks={page.blocks} />
-      </div>
-    </main>
+        <div className="prose" lang={served} dir={isArabic(served) ? 'rtl' : 'ltr'}>
+          <Blocks blocks={page.blocks} />
+        </div>
+      </main>
+    </>
   );
 }

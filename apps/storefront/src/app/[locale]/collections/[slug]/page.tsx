@@ -8,6 +8,8 @@ import { alternates, buildGraph, canonical, jsonld } from '@da/seo';
 
 import { Blocks } from '../../../../components/blocks';
 import { Breadcrumbs } from '../../../../components/breadcrumbs';
+import { BandArt } from '../../../../components/band-art';
+import { collectionArt } from '../../../../lib/family-art';
 import { isArabic } from '../../../../i18n/locale';
 import { CategoryRail } from '../../../../components/category-rail';
 import {
@@ -78,6 +80,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
 
 export default async function CollectionPage({ params, searchParams }: Props) {
   const { locale, slug } = await params;
+  const bandArt = collectionArt(slug);
   setRequestLocale(locale);
   const state = parseListing(await searchParams);
   const { page } = state;
@@ -144,18 +147,21 @@ export default async function CollectionPage({ params, searchParams }: Props) {
     <main className="catalog-page">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: graph }} />
 
-      <div className="page-band">
+      <div className={bandArt ? 'page-band has-art' : 'page-band'}>
         <div className="shell">
-          <Breadcrumbs
-            items={collection.breadcrumbs.map((crumb) => ({
-              name: crumb.name,
-              href: `${prefix}${crumb.href}`,
-            }))}
-          />
-          <header className="page-head">
-            <h1>{collection.name}</h1>
-            {collection.headline ? <p className="lede">{collection.headline}</p> : null}
-          </header>
+          <div className="band-copy">
+            <Breadcrumbs
+              items={collection.breadcrumbs.map((crumb) => ({
+                name: crumb.name,
+                href: `${prefix}${crumb.href}`,
+              }))}
+            />
+            <header className="page-head">
+              <h1>{collection.name}</h1>
+              {collection.headline ? <p className="lede">{collection.headline}</p> : null}
+            </header>
+          </div>
+          {bandArt ? <BandArt art={bandArt} /> : null}
         </div>
       </div>
 

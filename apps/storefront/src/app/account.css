@@ -490,65 +490,6 @@ a.licence-name:hover {
   font-weight: 500;
 }
 
-/* --- contact --------------------------------------------------------------- */
-
-.contact-card {
-  display: grid;
-  gap: var(--spacing-2);
-  max-inline-size: 44rem;
-  padding: var(--spacing-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-}
-.contact-card h2 {
-  margin: 0;
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  color: var(--color-brand-ink);
-}
-/* Two per line on a desktop, one on a phone, with no breakpoint to maintain. */
-.contact-row {
-  display: grid;
-  gap: var(--spacing-1);
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-}
-.contact-card select,
-.contact-card textarea {
-  font: inherit;
-  padding: 11px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-  min-block-size: 46px;
-}
-.contact-card textarea {
-  resize: vertical;
-}
-.account-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: var(--text-sm);
-  color: var(--color-ink-muted);
-}
-.account-field input,
-.account-field select,
-.account-field textarea {
-  font: inherit;
-  font-size: var(--text-base);
-  padding: 11px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--color-bg);
-  min-block-size: 46px;
-}
-.account-field textarea {
-  min-block-size: 8rem;
-  resize: vertical;
-  line-height: var(--leading-normal);
-}
-
 /*
  * The honeypot.
  *

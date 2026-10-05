@@ -1,0 +1,45 @@
+/*
+ * A family's page band with its illustration (TASK-0109), after the kit's
+ * category banner: the mint gradient, the copy on the start side and the
+ * drawing on the end side. Without art the band is the plain page band.
+ */
+.page-band.has-art {
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-tint) 0%,
+    var(--color-brand-tint-deep) 100%
+  );
+}
+.page-band.has-art .shell {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+}
+.band-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+.band-art {
+  flex: none;
+  inline-size: 256px;
+}
+.band-art img {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+/* On a phone the drawing stays beside the title, smaller, so the band does
+   not push the products down. */
+@media (max-width: 47.99rem) {
+  .page-band.has-art .shell {
+    gap: 12px;
+  }
+  .band-art {
+    inline-size: 112px;
+    margin-inline-end: -4px;
+  }
+}
