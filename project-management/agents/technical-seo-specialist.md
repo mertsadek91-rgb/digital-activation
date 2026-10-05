@@ -50,7 +50,7 @@
 
 ## Current tasks
 
-- none
+- TASK-0107 — Redirect the empty legacy microsoft-sql-server category archive (both URL forms) to /collections/windows-server: one redirect-map row, as an approved data change (BACKLOG, 0%)
 
 ## Supporting
 

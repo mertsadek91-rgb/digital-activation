@@ -389,12 +389,13 @@
         "TASK-0011",
         "TASK-0030",
         "TASK-0043",
-        "TASK-0044"
+        "TASK-0044",
+        "TASK-0107"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4.5,
+      "workload": 5,
       "blockers": [],
       "last_activity": "2026-09-29T17:25:36Z"
     },
@@ -621,8 +622,10 @@
       "executor": "subagent:independent-reviewer",
       "squads": [],
       "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "current_task": "TASK-0107",
+      "assignments": [
+        "TASK-0107"
+      ],
       "supporting": [
         "TASK-0004",
         "TASK-0044"
@@ -632,9 +635,9 @@
       "opportunities": [
         "OPP-0001"
       ],
-      "workload": 1,
+      "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-05T07:17:13Z"
+      "last_activity": "2026-10-05T11:30:09Z"
     },
     {
       "id": "content-strategist",
@@ -780,18 +783,17 @@
       "executor": "main",
       "squads": [],
       "state": "WORKING",
-      "current_task": "TASK-0051",
+      "current_task": "TASK-0101",
       "assignments": [
-        "TASK-0051",
         "TASK-0101"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-05T11:26:29Z"
+      "last_activity": "2026-10-05T11:33:49Z"
     },
     {
       "id": "devops-engineer",
