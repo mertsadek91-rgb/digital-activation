@@ -2,7 +2,6 @@
 
 import type { CatalogProduct, CatalogVariant } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD, MAX_LINE_QTY, ROUTES } from '@da/contracts';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
@@ -354,32 +353,25 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
           text is often not read at all. The link says where it goes: it
           opens the cart, and it was labelled "Go to checkout". */}
       <div role="status">
-        <AnimatePresence>
-          {added && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: -6 }}
-              transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-              className="added"
-            >
-              <span>{t('added')}</span>{' '}
-              <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>{t('viewCart')}</a>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {added && (
+          <div className="added added-in">
+            <span>{t('added')}</span>{' '}
+            <a href={ar ? ROUTES.cart : `/${locale}${ROUTES.cart}`}>{t('viewCart')}</a>
+          </div>
+        )}
       </div>
 
-      {/* The same controls, following the page down with Framer Motion slide-up */}
-      <AnimatePresence>
-        {selected.inStock && passed && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-            className="buy-bar is-shown motion-controlled"
-          >
+      {/* The same controls, following the page down. Always in the document
+          and slid in by the CSS transition on `is-shown`, like the header's
+          drawer: the two blocks above and here were the only framer-motion
+          elements left in the storefront, and the library was 45 KB of
+          gzipped script on every product page for a slide and a fade
+          (TASK-0101). `inert` keeps the hidden copy's controls out of the
+          tab order and away from screen readers. */}
+      {(() => {
+        const shown = selected.inStock && passed;
+        return (
+          <div className={`buy-bar${shown ? ' is-shown' : ''}`} inert={!shown}>
             <div className="buy-bar-inner">
               <span className="buy-bar-name">{product.name}</span>
               <span className="buy-bar-price">{total}</span>
@@ -394,9 +386,9 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
                 <span>{busy ? '…' : tc('addToCart')}</span>
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -36,7 +36,7 @@
 
 .contact-hero h1 {
   font-size: clamp(1.85rem, 1.4rem + 2.4vw, 3rem);
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
   color: var(--color-ink);
   letter-spacing: -0.02em;
@@ -114,7 +114,7 @@
 .contact-card-header h2 {
   margin: 0 0 4px;
   font-size: var(--text-xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-brand-ink);
 }
 
@@ -255,7 +255,7 @@
   align-items: center;
   gap: 8px;
   font-size: var(--text-sm);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-ink);
   margin-block-end: 4px;
   padding-block-end: 8px;
@@ -404,7 +404,7 @@
 .self-service-box h3 {
   margin: 0 0 10px;
   font-size: var(--text-sm);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-ink);
   padding-block-end: 8px;
   border-block-end: 1px solid var(--color-border);
@@ -460,7 +460,7 @@
 
 .contact-faq-head h2 {
   font-size: clamp(var(--text-xl), 2.5vw, var(--text-3xl));
-  font-weight: 800;
+  font-weight: 700;
   margin: 0 0 8px;
   position: relative;
   display: inline-block;

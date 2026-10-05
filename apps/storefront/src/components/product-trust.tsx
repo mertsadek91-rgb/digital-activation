@@ -125,6 +125,32 @@ const MARKS: Record<PaymentProvider, ('visa' | 'mastercard' | 'bank' | 'crypto')
   CRYPTO: ['crypto'],
 };
 
+let offered: Promise<PaymentProvider[] | null> | null = null;
+
+/**
+ * What the shop can take, asked of the API once and shared, while it succeeds, by
+ * every component that draws the marks. The cart page holds two of them (its
+ * own trust row and the footer's bar), and each asked separately.
+ */
+function offeredProviders(): Promise<PaymentProvider[] | null> {
+  offered ??= (async () => {
+    try {
+      const response = await fetch(new URL('/v1/payment-methods', API));
+      if (!response.ok) throw new Error(`payment-methods ${response.status}`);
+      const parsed = offeredPaymentSchema.safeParse(await response.json());
+      if (!parsed.success) throw new Error('unexpected payment-methods response');
+      return parsed.data.providers;
+    } catch {
+      // A mark that cannot be drawn truthfully is not drawn. Silence here is
+      // the correct failure: the page loses a decoration, not a fact. The
+      // failure is not remembered, so the next component to mount asks again.
+      offered = null;
+      return null;
+    }
+  })();
+  return offered;
+}
+
 /**
  * The marks the shop is entitled to draw, or null while it does not yet know.
  *
@@ -136,17 +162,9 @@ export function usePaymentMarks(): string[] | null {
 
   useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch(new URL('/v1/payment-methods', API));
-        if (!response.ok) return;
-        const parsed = offeredPaymentSchema.safeParse(await response.json());
-        if (!cancelled && parsed.success) setProviders(parsed.data.providers);
-      } catch {
-        // A mark that cannot be drawn truthfully is not drawn. Silence here is
-        // the correct failure: the page loses a decoration, not a fact.
-      }
-    })();
+    void offeredProviders().then((list) => {
+      if (!cancelled && list) setProviders(list);
+    });
     return () => {
       cancelled = true;
     };

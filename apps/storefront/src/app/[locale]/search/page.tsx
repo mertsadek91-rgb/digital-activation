@@ -1,6 +1,6 @@
 import { ROUTES } from '@da/contracts';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Link } from '../../../components/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Breadcrumbs } from '../../../components/breadcrumbs';

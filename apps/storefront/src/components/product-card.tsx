@@ -1,7 +1,7 @@
 import type { CatalogCard } from '@da/contracts';
 import { LOW_STOCK_THRESHOLD } from '@da/contracts';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from './link';
 import { useTranslations } from 'next-intl';
 
 import { isArabic } from '../i18n/locale';

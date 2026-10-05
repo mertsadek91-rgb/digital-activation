@@ -95,6 +95,42 @@ export default tseslint.config(
   },
 
   /**
+   * The storefront links through its own `Link`, which has prefetching off:
+   * every page renders per request and none has a loading boundary, so a
+   * prefetch fetches nothing the navigation can use and the request budget
+   * paid for it (TASK-0101). The wrapper itself is the one place `next/link`
+   * is imported.
+   *
+   * After the vault guard, and repeating its path: in a flat config a later
+   * block's `no-restricted-imports` replaces an earlier one's for the files
+   * both match, so this one has to carry both restrictions or one is lost.
+   */
+  {
+    files: ['apps/storefront/src/**/*.ts', 'apps/storefront/src/**/*.tsx'],
+    ignores: ['apps/storefront/src/components/link.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@da/db',
+              importNames: ['vaultPrisma'],
+              message:
+                'vaultPrisma may only be imported inside apps/api/src/vault. Go through the vault module: revealing a key requires a fresh TOTP challenge and a KeyAccessLog entry.',
+            },
+            {
+              name: 'next/link',
+              message:
+                "Import { Link } from the storefront's components/link: it is next/link with prefetching off, and the reason is written there.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  /**
    * Order notes must never be used as a delivery mechanism again. That habit is
    * how plaintext licence keys and Office 365 passwords ended up sitting in the
    * legacy `wp_comments` table.

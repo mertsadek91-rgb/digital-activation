@@ -1,5 +1,5 @@
 import { ROUTES } from '@da/contracts';
-import Link from 'next/link';
+import { Link } from './link';
 
 import { isArabic } from '../i18n/locale';
 

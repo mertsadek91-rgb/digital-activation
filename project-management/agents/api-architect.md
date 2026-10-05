@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0106 — Publish @da/contracts as ESM with sideEffects:false so the apps tree-shake it (the CommonJS build put the whole package into the storefront client bundle) (IN_PROGRESS, 90%)

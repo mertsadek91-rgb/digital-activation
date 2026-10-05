@@ -59,7 +59,7 @@
 
 .warranty-hero h1 {
   font-size: clamp(2rem, 1.4rem + 2.8vw, 3.25rem);
-  font-weight: 800;
+  font-weight: 700;
   margin: 0;
   color: var(--color-ink);
   letter-spacing: -0.02em;
@@ -154,7 +154,7 @@
 
 .metric-value {
   font-size: clamp(var(--text-2xl), 2.5vw, var(--text-4xl));
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-gold-ink);
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -189,7 +189,7 @@
 
 .warranty-section-head h2 {
   font-size: clamp(var(--text-xl), 2.5vw, var(--text-3xl));
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-ink);
   margin: 0 0 8px;
   position: relative;
@@ -329,7 +329,7 @@
 .pillar-card h3 {
   margin: 0;
   font-size: var(--text-xl);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-ink);
 }
 
@@ -471,7 +471,7 @@
   border-radius: var(--radius-pill);
   background: var(--color-gold-ink);
   color: var(--color-ink-inverse);
-  font-weight: 800;
+  font-weight: 700;
   font-size: var(--text-base);
   margin-block-end: 14px;
 }
@@ -592,7 +592,7 @@
 
 .warranty-cta-banner h2 {
   font-size: clamp(var(--text-xl), 3vw, var(--text-3xl));
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-ink-inverse);
   margin: 0;
 }

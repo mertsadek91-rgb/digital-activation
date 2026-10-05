@@ -1,7 +1,7 @@
 'use client';
 
 import { ROUTES } from '@da/contracts';
-import Link from 'next/link';
+import { Link } from '../../../../../components/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';

@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 8,
+      "reviews_recorded": 9,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T07:07:29Z"
+      "last_activity": "2026-10-05T07:38:58Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -336,12 +336,13 @@
         "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004"
+        "TASK-0004",
+        "TASK-0106"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 3,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -406,16 +407,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0106",
+      "assignments": [
+        "TASK-0106"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-01T11:50:48Z"
+      "last_activity": "2026-10-05T08:14:21Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -620,11 +623,9 @@
       "staffed": true,
       "executor": "subagent:independent-reviewer",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0042",
-      "assignments": [
-        "TASK-0042"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0004",
         "TASK-0044"
@@ -634,9 +635,9 @@
       "opportunities": [
         "OPP-0001"
       ],
-      "workload": 2,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-02T06:15:40Z"
+      "last_activity": "2026-10-05T07:17:13Z"
     },
     {
       "id": "content-strategist",
@@ -711,13 +712,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0042"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 0,
       "blockers": [],
       "last_activity": null
     },
@@ -789,13 +788,15 @@
         "TASK-0051",
         "TASK-0101"
       ],
-      "supporting": [],
+      "supporting": [
+        "TASK-0106"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-10-03T07:22:38Z"
+      "last_activity": "2026-10-05T08:14:19Z"
     },
     {
       "id": "devops-engineer",
@@ -861,13 +862,12 @@
         "TASK-0044"
       ],
       "supporting": [
-        "TASK-0040",
-        "TASK-0042"
+        "TASK-0040"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-09-30T13:41:34Z"
     },

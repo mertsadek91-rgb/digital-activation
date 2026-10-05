@@ -2,14 +2,16 @@
 
 import type { Suggestion } from '@da/contracts';
 import { ROUTES } from '@da/contracts';
-import Link from 'next/link';
+import { Link } from './link';
 import { usePathname } from 'next/navigation';
 import { createTranslator } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import arMessages from '../../messages/ar.json';
-import enMessages from '../../messages/en.json';
+import type arMessages from '../../messages/ar.json';
 import { isArabic } from '../i18n/locale';
+
+/** The `notFound` namespace of one catalogue. */
+export type NotFoundMessages = (typeof arMessages)['notFound'];
 
 /**
  * The whole 404, in the browser, and not by preference.
@@ -41,12 +43,16 @@ import { isArabic } from '../i18n/locale';
  *
  * For the same reason the copy does not come from `useTranslations`: there is
  * no intl provider above this page to ask. It builds its own translator over
- * the `notFound` namespace alone — read by property, so the bundler can leave
- * the rest of both message files out of this chunk.
+ * the `notFound` namespace alone, in both languages, handed down by the
+ * server `not-found.tsx` that imports the catalogues. Importing them here
+ * put every string of copy in both languages into a chunk that every page
+ * loaded, since a not-found boundary travels with its layout: 28 KB of
+ * script that no page used (TASK-0101). A JSON import is not trimmed to the
+ * property that was read.
  */
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-export function NotFoundPage() {
+export function NotFoundPage({ messages }: { messages: Record<'ar' | 'en', NotFoundMessages> }) {
   const pathname = usePathname();
   const en = pathname === '/en' || pathname.startsWith('/en/');
   const locale = en ? 'en' : 'ar';
@@ -54,7 +60,7 @@ export function NotFoundPage() {
   const prefix = en ? '/en' : '';
   const t = createTranslator({
     locale,
-    messages: { notFound: en ? enMessages.notFound : arMessages.notFound },
+    messages: { notFound: messages[locale] },
     namespace: 'notFound',
   });
 
