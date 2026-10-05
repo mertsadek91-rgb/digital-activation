@@ -395,30 +395,13 @@ Shared React components do not exist yet: `packages/ui/src/index.ts` exports
 
 ### Performance budget
 
-The budget's only home is `apps/storefront/lighthouserc.json` (BUG-0010); there
-is no copy in code. Lighthouse CI runs the desktop preset against `/` and `/en`,
-three runs each, and errors on:
-
-| Assertion                            | Limit                  |
-| ------------------------------------ | ---------------------- |
-| `categories:performance`             | min score `0.95`       |
-| `categories:accessibility`           | min score `0.95`       |
-| `categories:seo`                     | min score `1`          |
-| `largest-contentful-paint`           | `1800` ms              |
-| `cumulative-layout-shift`            | `0.05`                 |
-| `total-blocking-time`                | `200` ms               |
-| `server-response-time`               | `200` ms               |
-| `resource-summary:script:count`      | `20`                   |
-| `resource-summary:stylesheet:count`  | `2`                    |
-| `resource-summary:total:count`       | `60`                   |
-| `resource-summary:third-party:count` | `0`                    |
-| `resource-summary:document:size`     | `61440` bytes (60 KiB) |
-
-`font-display`, `render-blocking-resources`, `unused-css-rules`, `image-alt`,
-`modern-image-formats` and `uses-responsive-images` are also errors;
-`unused-javascript` is a warning. Design choices that add a font, stylesheet or
-third-party request have to fit inside it. If this document and the JSON
-disagree, the JSON wins.
+The budget's only home is `apps/storefront/lighthouserc.json` (BUG-0010,
+TASK-0051): the numbers are not repeated here, because every copy so far has
+drifted from it. The Performance budget job in `.github/workflows/ci.yml`
+measures `/`, `/en`, a product, a category and a filled cart, on mobile and
+desktop, against a seeded fixture catalogue; what it currently misses is
+tracked in TASK-0101. Design choices that add a font, a stylesheet, a script
+or any third-party request have to fit inside that budget.
 
 ## Known debt — hardcoded colours
 
