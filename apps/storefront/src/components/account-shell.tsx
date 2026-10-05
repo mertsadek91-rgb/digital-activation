@@ -120,7 +120,9 @@ function AccountMenu({ prefix, email }: { prefix: string; email: string | null }
           </span>
           <span>
             <span className="account-who-label">{t('signedInAs')}</span>
-            <strong dir="ltr">{email}</strong>
+            <strong dir="ltr" title={email}>
+              {email}
+            </strong>
           </span>
         </p>
       ) : null}

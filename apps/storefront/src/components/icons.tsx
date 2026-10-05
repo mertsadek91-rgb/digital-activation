@@ -908,3 +908,13 @@ export function EnvelopeIcon({ size = 20 }: { size?: number }) {
     </Svg>
   );
 }
+
+/** The kit's house, for the bottom navigation's first slot. */
+export function HomeIcon({ size = 22 }: { size?: number }) {
+  return (
+    <Svg size={size}>
+      <path d="M3 11 12 4l9 7" />
+      <path d="M5 10v10h5v-6h4v6h5V10" />
+    </Svg>
+  );
+}

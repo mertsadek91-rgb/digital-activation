@@ -62,10 +62,14 @@
   font-size: var(--text-xs);
   color: var(--color-ink-muted);
 }
+/* One line, cut with an ellipsis rather than broken mid-word; the full
+   address is in the title. */
 .account-who strong {
   font-family: var(--font-latin);
   font-size: var(--text-xs);
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-menu {
@@ -335,7 +339,7 @@ a.licence-name:hover {
   user-select: all;
 }
 .btn-copy-code {
-  min-block-size: 40px;
+  min-block-size: 44px;
   padding-inline: 12px;
   font-size: var(--text-sm);
 }

@@ -215,8 +215,8 @@ export default function OrderPage() {
                       ) : (
                         <p className="cart-line-name">{line.productName}</p>
                       )}
-                      <p className="cart-line-spec" dir="ltr">
-                        {line.sku}
+                      <p className="cart-line-spec">
+                        <bdi dir="ltr">{line.sku}</bdi>
                       </p>
                       <p className="cart-line-price">
                         <strong>{formatPrice(line.lineTotal)}</strong>

@@ -499,15 +499,18 @@ a.cart-line-name:hover {
   padding: 14px 16px;
   border-radius: var(--radius-sm);
 }
+/* The whole row is the target: 44px tall, the box centred in it. */
 .checkout-form label.check {
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
+  min-block-size: 44px;
   font-weight: 400;
   color: var(--color-ink-body);
+  cursor: pointer;
 }
 .checkout-form label.check input {
-  margin-block-start: 2px;
+  margin: 0;
   inline-size: 20px;
   block-size: 20px;
   flex: none;
@@ -735,6 +738,7 @@ a.cart-line-name:hover {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  font-family: var(--font-latin);
 }
 /*
  * The values that have to be copied exactly. The Latin face and tabular
@@ -752,7 +756,7 @@ a.cart-line-name:hover {
   user-select: all;
 }
 .btn-copy {
-  min-block-size: 40px;
+  min-block-size: 44px;
   padding-inline: 14px;
   font-size: var(--text-xs);
   margin-inline-start: auto;
@@ -872,6 +876,10 @@ a.cart-line-name:hover {
   font-size: var(--text-sm);
   font-weight: 700;
   overflow-wrap: anywhere;
+}
+.kv-list dd[dir='ltr'],
+.checkout-form .notice strong[dir='ltr'] {
+  font-family: var(--font-latin);
 }
 .lede-sm {
   margin: 0 0 var(--spacing-1);

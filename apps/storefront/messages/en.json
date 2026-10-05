@@ -872,5 +872,13 @@
     "sortFeatured": "Featured",
     "sortPriceAsc": "Price: low to high",
     "sortPriceDesc": "Price: high to low"
+  },
+  "bottomNav": {
+    "label": "Quick navigation",
+    "home": "Home",
+    "categories": "Categories",
+    "search": "Search",
+    "cart": "Cart",
+    "account": "Account"
   }
 }

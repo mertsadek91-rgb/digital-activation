@@ -872,5 +872,13 @@
     "sortFeatured": "المقترح",
     "sortPriceAsc": "السعر: من الأقل إلى الأعلى",
     "sortPriceDesc": "السعر: من الأعلى إلى الأقل"
+  },
+  "bottomNav": {
+    "label": "التنقل السريع",
+    "home": "الرئيسية",
+    "categories": "الأقسام",
+    "search": "البحث",
+    "cart": "السلة",
+    "account": "حسابي"
   }
 }
