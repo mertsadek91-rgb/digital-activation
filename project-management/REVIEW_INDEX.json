@@ -1344,6 +1344,20 @@
       "ts": "2026-10-05T07:14:01Z",
       "actor": "pm-06",
       "event": "E20261005071401-e6dfc2"
+    },
+    {
+      "review_id": "REV-0131",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Rendered the production storefront build (localhost:3002, fixture API 4010 with MOCK_CART=1) in headless Chrome over CDP at 1440/1024/768/390/360, Arabic RTL and English, for /golden-warranty, /contact, /blog/which-windows-edition, /store/windows-11-pro, /cart and /does-not-exist (60 full-page captures) plus scripted interaction runs. Headings: no element computes at weight 800 on any page; document.fonts declares Tajawal 400/500/700 only (all loaded on ar pages) and 7 font files are requested per page; h1 resolves to Tajawal on ar and Inter on en, no system fallback; contact (ar/en) and the product .prose h2 look right at 700. /golden-warranty and the blog post cannot be rendered here because the fixture API has no content fixtures for them (they fall to the 404 page), so those CSS changes were verified by diff only (weight-only edits). Buy bar: at the top of the product page it is visibility hidden, inert, translated 110% off screen, its button is not focusable, nothing in it is in the tab order, and elementFromPoint at the bottom edge hits page content; after scrolling past the buy row it is visible with 2 enabled controls plus the add button, at 1440 (name, price, stepper, button) and at 390 (stepper and button only, WhatsApp FAB raised above it); it hides again on scrolling back. Add to cart posts to /v1/cart/items and the added notice renders with animation-name added-in (220ms); under prefers-reduced-motion both the notice animation and the bar transition are none. Cart: .cart-main is 900px at a 900px viewport in loading, empty, error and loaded states, footer top stays at 1128 (1440) / 1101 (390) in all four, so the footer is below the first viewport while loading and never moves; empty and error copy render in the right language and direction. The empty and error states leave roughly 750px of blank page below the message before the footer at 1440x900 and at 390x900; it is not broken and is the accepted cost of the CLS fix, but it is stark on desktop and worth a design pass (for example centring the empty-cart message in the space). Links: 0 prefetch (_rsc) requests on the home page after scrolling to the bottom; header nav to /store and a product card to /store/windows-11-pro navigate normally in both locales; pagination could not be exercised because the fixture has 8 products on one page. 404: lang=ar dir=rtl with Arabic copy and lang=en dir=ltr with English copy at every width. No horizontal overflow (scrollWidth == clientWidth) on any of the 60 captures; console shows only the expected 404s for missing fixtures and a Kaspersky script injected by the local machine. Observation outside this change: the product, cart and 404 h1 compute at weight 400 (unchanged by this commit).",
+      "round": 1,
+      "target": "TASK-0101",
+      "ts": "2026-10-05T07:38:58Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261005073858-5d5295"
     }
   ],
   "invalidated_reviews": [
