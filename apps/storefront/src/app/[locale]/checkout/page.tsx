@@ -16,19 +16,26 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { ClientBreadcrumbs } from '../../../components/breadcrumbs-client';
 import { CardPayment } from '../../../components/card-payment';
 import { CountrySelect } from '../../../components/country-select';
-import { useMarketing } from '../../../components/marketing-context';
+import {
+  ArrowIcon,
+  CartIcon,
+  EnvelopeIcon,
+  LockIcon,
+  WarningIcon,
+} from '../../../components/icons';
 import { DiscountLicence } from '../../../components/offer-suggestions';
 import { PaymentInstructionsPanel } from '../../../components/payment-instructions';
-import { ProductTrust } from '../../../components/product-trust';
-import { TrustBlock } from '../../../components/trust-block';
 import { isArabic } from '../../../i18n/locale';
 import { cartApi, CartError } from '../../../lib/cart-client';
 import { formatPrice } from '../../../lib/format';
 
 /**
- * Checkout.
+ * Checkout, after the kit's checkout page (TASK-0105): the page band, the
+ * customer details and the payment method as two cards, the order summary
+ * as a card at the side with the lock note under it.
  *
  * Two steps, in this order for a reason. The email is taken before payment,
  * because a cart abandoned at the payment step is the most valuable one there
@@ -141,7 +148,6 @@ export default function CheckoutPage() {
   const locale = params.locale ?? 'ar';
   const prefix = isArabic(locale) ? '' : `/${locale}`;
   const t = useTranslations('checkout');
-  const trust = useMarketing()?.trust ?? null;
   const tCart = useTranslations('cart');
   const tOffers = useTranslations('offers');
   const tc = useTranslations('common');
@@ -344,397 +350,448 @@ export default function CheckoutPage() {
     }
   }
 
+  const band = (title: string) => (
+    <div className="page-band">
+      <div className="shell">
+        <ClientBreadcrumbs
+          items={[
+            { name: tc('home'), href: `${prefix}/` },
+            { name: tCart('title'), href: `${prefix}${ROUTES.cart}` },
+            { name: t('title'), href: `${prefix}${ROUTES.checkout}` },
+          ]}
+        />
+        <header className="page-head">
+          <h1>{title}</h1>
+        </header>
+      </div>
+    </div>
+  );
+
   if (cart && cart.lines.length === 0 && stage.kind === 'details') {
     return (
-      <main className="shell">
-        <h1>{t('title')}</h1>
-        <p className="notice">{tCart('empty')}</p>
-        <Link href={`${prefix}${ROUTES.store}`} className="btn btn-primary">
-          {tCart('browseStore')}
-        </Link>
-      </main>
+      <>
+        {band(t('title'))}
+        <main className="shell checkout-page">
+          <div className="empty-state">
+            <span className="iconbox status-icon" aria-hidden="true">
+              <CartIcon />
+            </span>
+            <h2>{tCart('emptyTitle')}</h2>
+            <p>{tCart('emptyLede')}</p>
+            <Link href={`${prefix}${ROUTES.store}`} className="btn btn-primary">
+              {tCart('browseStore')}
+              <ArrowIcon size={18} />
+            </Link>
+          </div>
+        </main>
+      </>
     );
   }
 
   if (stage.kind === 'manual') {
     return (
-      <main className="shell">
-        <h1>{t('completePayment')}</h1>
-        <p className="notice">
-          {t.rich('orderNumber', {
-            number: stage.orderNumber,
-            strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
-          })}
-        </p>
-        <p className="price">
-          <strong>{formatPrice(stage.session.amount)}</strong>
-        </p>
-        <PaymentInstructionsPanel instructions={stage.session.instructions} />
-        <Link
-          href={`${prefix}${ROUTES.order(stage.orderNumber)}`}
-          className="btn btn-primary"
-          onClick={() => router.refresh()}
-        >
-          {t('viewOrder')}
-        </Link>
-      </main>
+      <>
+        {band(t('completePayment'))}
+        <main className="shell checkout-page">
+          <div className="panel checkout-form">
+            <p className="notice">
+              {t.rich('orderNumber', {
+                number: stage.orderNumber,
+                strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+              })}
+            </p>
+            <p className="price">
+              <strong>{formatPrice(stage.session.amount)}</strong>
+            </p>
+            <PaymentInstructionsPanel instructions={stage.session.instructions} />
+            <Link
+              href={`${prefix}${ROUTES.order(stage.orderNumber)}`}
+              className="btn btn-primary"
+              onClick={() => router.refresh()}
+            >
+              {t('viewOrder')}
+              <ArrowIcon size={18} />
+            </Link>
+          </div>
+        </main>
+      </>
     );
   }
 
   return (
-    <main className="shell checkout-page">
-      <h1>{t('title')}</h1>
-
-      {/* Two steps, said out loud. A form that turns into payment buttons with
+    <>
+      {band(t('title'))}
+      <main className="shell checkout-page">
+        {/* Two steps, said out loud. A form that turns into payment buttons with
           no signal between them reads as "did that work?" — the moment a
           shopper reloads and loses the page. */}
-      <ol className="checkout-steps" aria-label={t('steps')}>
-        <li aria-current={stage.kind === 'details' ? 'step' : undefined}>
-          <span>1</span> {t('stepDetails')}
-        </li>
-        <li aria-current={stage.kind !== 'details' ? 'step' : undefined}>
-          <span>2</span> {t('stepPayment')}
-        </li>
-      </ol>
+        <ol className="checkout-steps" aria-label={t('steps')}>
+          <li aria-current={stage.kind === 'details' ? 'step' : undefined}>
+            <span>1</span> {t('stepDetails')}
+          </li>
+          <li aria-current={stage.kind !== 'details' ? 'step' : undefined}>
+            <span>2</span> {t('stepPayment')}
+          </li>
+        </ol>
 
-      <div className="checkout-layout">
-        <div className="checkout-main">
-          {returnNotice ? (
-            <p className="notice notice-warn checkout-return-notice" role="alert">
-              {t(returnNotice)}
-            </p>
-          ) : null}
-          {stage.kind === 'details' ? (
-            <form className="checkout-form" onSubmit={(event) => void submitDetails(event)}>
-              <h2>{t('stepDetails')}</h2>
+        <div className="checkout-layout">
+          <div className="checkout-main">
+            {returnNotice ? (
+              <p className="alert alert-warning checkout-return-notice" role="alert">
+                <WarningIcon size={20} />
+                <span>{t(returnNotice)}</span>
+              </p>
+            ) : null}
+            {stage.kind === 'details' ? (
+              <form className="checkout-form panel" onSubmit={(event) => void submitDetails(event)}>
+                <h2>{t('customerDetails')}</h2>
 
-              <label>
-                {t('email')}
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  autoComplete="email"
-                  required
-                  dir="ltr"
-                />
-                <small>{t('emailHint')}</small>
-              </label>
-
-              {needsActivationEmail ? (
-                <label className="highlight">
-                  {t('activationEmail')}
-                  <input
-                    type="email"
-                    value={activationEmail}
-                    onChange={(event) => setActivationEmail(event.target.value)}
-                    required
-                    dir="ltr"
-                  />
-                  <small>{t('activationEmailHint')}</small>
+                <label>
+                  {t('email')}
+                  <span className="input-icon">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      autoComplete="email"
+                      required
+                      dir="ltr"
+                    />
+                    <EnvelopeIcon />
+                  </span>
+                  <small>{t('emailHint')}</small>
                 </label>
-              ) : null}
 
-              <label>
-                {t('name')}
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  autoComplete="name"
-                />
-              </label>
+                {needsActivationEmail ? (
+                  <label className="highlight">
+                    {t('activationEmail')}
+                    <input
+                      type="email"
+                      value={activationEmail}
+                      onChange={(event) => setActivationEmail(event.target.value)}
+                      required
+                      dir="ltr"
+                    />
+                    <small>{t('activationEmailHint')}</small>
+                  </label>
+                ) : null}
 
-              <label>
-                {t('country')}
-                <CountrySelect locale={locale} value={country} onChange={setCountry} />
-              </label>
+                <label>
+                  {t('name')}
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    autoComplete="name"
+                  />
+                </label>
 
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={marketingOptIn}
-                  onChange={(event) => setMarketingOptIn(event.target.checked)}
-                />
-                <span>{t('marketingOptIn')}</span>
-              </label>
+                <label>
+                  {t('country')}
+                  <CountrySelect locale={locale} value={country} onChange={setCountry} />
+                </label>
 
-              {/* Its own number and its own box, unticked: WhatsApp consent is
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={marketingOptIn}
+                    onChange={(event) => setMarketingOptIn(event.target.checked)}
+                  />
+                  <span>{t('marketingOptIn')}</span>
+                </label>
+
+                {/* Its own number and its own box, unticked: WhatsApp consent is
                   separate from email consent, and neither is assumed. */}
-              <label>
-                {t('whatsappPhone')}
-                <input
-                  type="tel"
-                  value={whatsappPhone}
-                  onChange={(event) => setWhatsappPhone(event.target.value)}
-                  autoComplete="tel"
-                  inputMode="tel"
-                  dir="ltr"
-                  maxLength={32}
-                  aria-invalid={whatsappError && whatsappPhone.trim() !== '' ? true : undefined}
-                />
-                <small>{t('whatsappPhoneHint')}</small>
-              </label>
+                <label>
+                  {t('whatsappPhone')}
+                  <input
+                    type="tel"
+                    value={whatsappPhone}
+                    onChange={(event) => setWhatsappPhone(event.target.value)}
+                    autoComplete="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    maxLength={32}
+                    aria-invalid={whatsappError && whatsappPhone.trim() !== '' ? true : undefined}
+                  />
+                  <small>{t('whatsappPhoneHint')}</small>
+                </label>
 
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={whatsappOptIn}
-                  onChange={(event) => setWhatsappOptIn(event.target.checked)}
-                />
-                <span>{t('whatsappOptIn')}</span>
-              </label>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                  />
+                  <span>{t('whatsappOptIn')}</span>
+                </label>
 
-              {error ? (
-                <p className="error" role="alert">
-                  {error}
-                </p>
-              ) : null}
+                <p className="form-note">{t('noShipping')}</p>
 
-              <button type="submit" className="btn btn-primary btn-wide" disabled={busy}>
-                {busy ? '...' : t('continue')}
-              </button>
-            </form>
-          ) : stage.kind === 'card' ? (
-            <div className="checkout-form">
-              <h2>{t('payByCard')}</h2>
-              <p className="notice">
-                {t.rich('orderNumber', {
-                  number: stage.checkout.order.number,
-                  strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
-                })}
-              </p>
-              <p className="price">
-                <strong>{formatPrice(stage.session.amount)}</strong>
-              </p>
-              <CardPayment
-                session={stage.session}
-                locale={locale}
-                // `?paid=card` tells the order page to wait for the webhook
-                // rather than announce that no payment has arrived.
-                returnPath={`${prefix}/orders/${stage.checkout.order.number}?paid=card`}
-                onPaid={() =>
-                  router.push(`${prefix}/orders/${stage.checkout.order.number}?paid=card`)
-                }
-                onBack={() => setStage({ kind: 'pay', checkout: stage.checkout })}
-              />
-            </div>
-          ) : (
-            <div className="checkout-form">
-              <h2>{t('howToPay')}</h2>
-              <p className="notice">
-                {t.rich('orderNumber', {
-                  number: stage.checkout.order.number,
-                  strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
-                })}
-              </p>
+                {error ? (
+                  <p className="alert alert-error" role="alert">
+                    <WarningIcon size={20} />
+                    <span>{error}</span>
+                  </p>
+                ) : null}
 
-              {stage.checkout.crossSell.length > 0 ? (
-                <section className="cross-sell">
-                  <h3>{t('crossSellTitle')}</h3>
-                  {stage.checkout.crossSell.map((offer) => (
-                    <div key={offer.variantId} className="cross-sell-item">
-                      <div className="cross-sell-media">
-                        {offer.image ? (
-                          <Image src={offer.image.url} alt={offer.image.alt} fill sizes="72px" />
-                        ) : null}
-                      </div>
-                      <div>
-                        <p className="cross-sell-name">{offer.productName}</p>
-                        <p className="cross-sell-price">
-                          <strong>{formatPrice(offer.bundlePrice)}</strong>
-                          <s>{formatPrice(offer.price)}</s>
-                          <span className="badge badge-accent">
-                            {t('save', { percent: String(offer.savePercent) })}
-                          </span>
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        disabled={busy}
-                        onClick={() => void addCrossSell(offer)}
-                      >
-                        {t('addOffer')}
-                      </button>
-                    </div>
-                  ))}
-                </section>
-              ) : null}
-
-              {error ? (
-                <p className="error" role="alert">
-                  {error}
-                </p>
-              ) : null}
-
-              {choices.length === 0 ? (
-                // Nothing configured, so nothing is offered. A row of buttons
-                // where every one leads to a 503 costs the order and the
-                // goodwill; an address to write to keeps at least the order.
+                <button type="submit" className="btn btn-primary btn-wide" disabled={busy}>
+                  {busy ? '…' : t('continue')}
+                  <ArrowIcon size={18} />
+                </button>
+              </form>
+            ) : stage.kind === 'card' ? (
+              <div className="checkout-form panel">
+                <h2>{t('payByCard')}</h2>
                 <p className="notice">
-                  {t.rich('noMethods', {
-                    contact: (chunks) => <Link href={`${prefix}${ROUTES.contact}`}>{chunks}</Link>,
+                  {t.rich('orderNumber', {
+                    number: stage.checkout.order.number,
+                    strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
                   })}
                 </p>
-              ) : (
-                <form
-                  className="pay-choice-form"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    if (chosen) void pay(stage.checkout, chosen);
-                  }}
-                >
-                  <fieldset className="pay-choices" disabled={busy}>
-                    <legend className="visually-hidden">{t('howToPay')}</legend>
-                    {choices.map((choice) => {
-                      const icon =
-                        choice.provider === 'FINAL_PROCESSOR'
-                          ? drawableIcon(choice.method.iconUrl)
-                          : null;
-                      const label =
-                        choice.provider === 'FINAL_PROCESSOR'
-                          ? choice.method.label
-                          : t(METHOD_LABELS[choice.provider]);
-                      const description =
-                        choice.provider === 'FINAL_PROCESSOR' ? choice.method.description : null;
-                      return (
-                        <label key={choice.key} className="pay-choice">
-                          <input
-                            type="radio"
-                            name="payment-method"
-                            value={choice.key}
-                            checked={chosen?.key === choice.key}
-                            onChange={() => setSelected(choice.key)}
-                          />
-                          <span className="pay-choice-body">
-                            <span className="pay-choice-label">{label}</span>
-                            {description ? (
-                              <span className="pay-choice-description">{description}</span>
-                            ) : null}
-                          </span>
-                          {icon ? (
-                            // A plain <img>: the icon's host is whatever the
-                            // admin or the processor chose, which next/image
-                            // would refuse to optimise. `img-src` allows https.
-                            <img
-                              className="pay-choice-icon"
-                              src={icon}
-                              alt={label}
-                              width={40}
-                              height={28}
-                              loading="lazy"
-                              decoding="async"
-                            />
-                          ) : null}
-                        </label>
-                      );
-                    })}
-                  </fieldset>
+                <p className="price">
+                  <strong>{formatPrice(stage.session.amount)}</strong>
+                </p>
+                <CardPayment
+                  session={stage.session}
+                  locale={locale}
+                  // `?paid=card` tells the order page to wait for the webhook
+                  // rather than announce that no payment has arrived.
+                  returnPath={`${prefix}/orders/${stage.checkout.order.number}?paid=card`}
+                  onPaid={() =>
+                    router.push(`${prefix}/orders/${stage.checkout.order.number}?paid=card`)
+                  }
+                  onBack={() => setStage({ kind: 'pay', checkout: stage.checkout })}
+                />
+              </div>
+            ) : (
+              <div className="checkout-form panel">
+                <h2>{t('paymentMethod')}</h2>
+                <p className="notice">
+                  {t.rich('orderNumber', {
+                    number: stage.checkout.order.number,
+                    strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+                  })}
+                </p>
 
-                  {/* The server offers Final Processor only with a method behind
+                {stage.checkout.crossSell.length > 0 ? (
+                  <section className="cross-sell">
+                    <h3>{t('crossSellTitle')}</h3>
+                    {stage.checkout.crossSell.map((offer) => (
+                      <div key={offer.variantId} className="cross-sell-item">
+                        <div className="cross-sell-media">
+                          {offer.image ? (
+                            <Image src={offer.image.url} alt={offer.image.alt} fill sizes="72px" />
+                          ) : null}
+                        </div>
+                        <div>
+                          <p className="cross-sell-name">{offer.productName}</p>
+                          <p className="cross-sell-price">
+                            <strong>{formatPrice(offer.bundlePrice)}</strong>
+                            <s>{formatPrice(offer.price)}</s>
+                            <span className="badge badge-accent">
+                              {t('save', { percent: String(offer.savePercent) })}
+                            </span>
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          disabled={busy}
+                          onClick={() => void addCrossSell(offer)}
+                        >
+                          {t('addOffer')}
+                        </button>
+                      </div>
+                    ))}
+                  </section>
+                ) : null}
+
+                {error ? (
+                  <p className="alert alert-error" role="alert">
+                    <WarningIcon size={20} />
+                    <span>{error}</span>
+                  </p>
+                ) : null}
+
+                {choices.length === 0 ? (
+                  // Nothing configured, so nothing is offered. A row of buttons
+                  // where every one leads to a 503 costs the order and the
+                  // goodwill; an address to write to keeps at least the order.
+                  <p className="alert alert-warning">
+                    <WarningIcon size={20} />
+                    <span>
+                      {t.rich('noMethods', {
+                        contact: (chunks) => (
+                          <Link href={`${prefix}${ROUTES.contact}`}>{chunks}</Link>
+                        ),
+                      })}
+                    </span>
+                  </p>
+                ) : (
+                  <form
+                    className="pay-choice-form"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      if (chosen) void pay(stage.checkout, chosen);
+                    }}
+                  >
+                    <fieldset className="pay-choices" disabled={busy}>
+                      <legend className="visually-hidden">{t('howToPay')}</legend>
+                      {choices.map((choice) => {
+                        const icon =
+                          choice.provider === 'FINAL_PROCESSOR'
+                            ? drawableIcon(choice.method.iconUrl)
+                            : null;
+                        const label =
+                          choice.provider === 'FINAL_PROCESSOR'
+                            ? choice.method.label
+                            : t(METHOD_LABELS[choice.provider]);
+                        const description =
+                          choice.provider === 'FINAL_PROCESSOR' ? choice.method.description : null;
+                        return (
+                          <label key={choice.key} className="pay-choice">
+                            <input
+                              type="radio"
+                              name="payment-method"
+                              value={choice.key}
+                              checked={chosen?.key === choice.key}
+                              onChange={() => setSelected(choice.key)}
+                            />
+                            <span className="pay-choice-body">
+                              <span className="pay-choice-label">{label}</span>
+                              {description ? (
+                                <span className="pay-choice-description">{description}</span>
+                              ) : null}
+                            </span>
+                            {icon ? (
+                              // A plain <img>: the icon's host is whatever the
+                              // admin or the processor chose, which next/image
+                              // would refuse to optimise. `img-src` allows https.
+                              <img
+                                className="pay-choice-icon"
+                                src={icon}
+                                alt={label}
+                                width={40}
+                                height={28}
+                                loading="lazy"
+                                decoding="async"
+                              />
+                            ) : null}
+                          </label>
+                        );
+                      })}
+                    </fieldset>
+
+                    {/* The server offers Final Processor only with a method behind
                       it; if that ever disagrees, the option says so instead of
                       being a radio that leads nowhere. */}
-                  {stage.checkout.paymentMethods.includes('FINAL_PROCESSOR') &&
-                  stage.checkout.finalProcessorMethods.length === 0 ? (
-                    <p className="notice notice-warn" role="status">
-                      {t('fpUnavailable')}
-                    </p>
-                  ) : null}
+                    {stage.checkout.paymentMethods.includes('FINAL_PROCESSOR') &&
+                    stage.checkout.finalProcessorMethods.length === 0 ? (
+                      <p className="alert alert-warning" role="status">
+                        <WarningIcon size={20} />
+                        <span>{t('fpUnavailable')}</span>
+                      </p>
+                    ) : null}
 
-                  {chosen?.provider === 'FINAL_PROCESSOR' && stage.checkout.chargedInUsd ? (
-                    <p className="notice pay-charged-usd">
-                      {t.rich('chargedInUsd', {
-                        amount: usd(stage.checkout.chargedInUsd.amountUsd),
-                        strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
-                      })}
-                    </p>
-                  ) : null}
+                    {chosen?.provider === 'FINAL_PROCESSOR' && stage.checkout.chargedInUsd ? (
+                      <p className="notice pay-charged-usd">
+                        {t.rich('chargedInUsd', {
+                          amount: usd(stage.checkout.chargedInUsd.amountUsd),
+                          strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
+                        })}
+                      </p>
+                    ) : null}
 
-                  <button
-                    type="submit"
-                    className="btn btn-primary btn-wide pay-submit"
-                    disabled={busy || chosen === null}
-                  >
-                    {busy ? '...' : t('payNow')}
-                  </button>
-                </form>
-              )}
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-wide pay-submit"
+                      disabled={busy || chosen === null}
+                    >
+                      <LockIcon size={18} />
+                      {busy
+                        ? '…'
+                        : t('payAmount', { amount: formatPrice(stage.checkout.cart.total) })}
+                    </button>
+                  </form>
+                )}
 
-              {/* The store's guarantee and registration, beside the buttons
-                  that ask for the money — the one place a buyer weighs them. */}
-              {trust?.showOnCheckout ? <TrustBlock trust={trust} locale={locale} compact /> : null}
-
-              {/* The policies, where the decision is made. The refund policy was
+                {/* The policies, where the decision is made. The refund policy was
                   published and linked from almost nowhere; the moment before
                   paying for a key that cannot be returned is where it belongs. */}
-              <p className="meta checkout-terms">
-                {t.rich('terms', {
-                  terms: (chunks) => <Link href={`${prefix}/terms`}>{chunks}</Link>,
-                  refunds: (chunks) => <Link href={`${prefix}/refunds`}>{chunks}</Link>,
-                })}
-              </p>
+                <p className="meta checkout-terms">
+                  {t.rich('terms', {
+                    terms: (chunks) => <Link href={`${prefix}/terms`}>{chunks}</Link>,
+                    refunds: (chunks) => <Link href={`${prefix}/refunds`}>{chunks}</Link>,
+                  })}
+                </p>
 
-              <button type="button" className="linky" onClick={() => setStage({ kind: 'details' })}>
-                {t('editDetails')}
-              </button>
-            </div>
-          )}
-        </div>
-
-        <aside className="cart-summary">
-          <h2>{tCart('summary')}</h2>
-          {cart ? (
-            <>
-              <ul className="summary-lines">
-                {cart.lines.map((line) => (
-                  <li key={line.id}>
-                    <span>
-                      {line.productName} × {line.qty}
-                    </span>
-                    <span>{formatPrice(line.lineTotal)}</span>
-                  </li>
-                ))}
-              </ul>
-              <dl className="totals">
-                <div>
-                  <dt>{tc('subtotal')}</dt>
-                  <dd>{formatPrice(cart.subtotal)}</dd>
-                </div>
-                {/* The one discount the total carries: the coupon, or the
-                    volume / pair discount that beat it. */}
-                {cart.automaticDiscount ? (
-                  <div className="totals-discount">
-                    <dt>
-                      {cart.automaticDiscount.kind === 'volume'
-                        ? tOffers('volumeApplied', { percent: cart.automaticDiscount.percent })
-                        : tOffers('pairApplied')}
-                      <DiscountLicence number={cart.automaticDiscount.licenceNumber} />
-                    </dt>
-                    <dd>−{formatPrice(cart.discount)}</dd>
-                  </div>
-                ) : cart.coupon ? (
-                  <div className="totals-discount">
-                    <dt>{cart.coupon.name}</dt>
-                    <dd>−{formatPrice(cart.discount)}</dd>
-                  </div>
-                ) : null}
-                <div className="totals-total">
-                  <dt>{tc('total')}</dt>
-                  <dd>{formatPrice(cart.total)}</dd>
-                </div>
-              </dl>
-              <Link href={`${prefix}${ROUTES.cart}`} className="linky">
-                {t('editCart')}
-              </Link>
-
-              <div style={{ marginBlockStart: '16px' }}>
-                <ProductTrust showPerks={false} />
+                <button
+                  type="button"
+                  className="btn btn-text"
+                  onClick={() => setStage({ kind: 'details' })}
+                >
+                  {t('editDetails')}
+                </button>
               </div>
-            </>
-          ) : null}
-        </aside>
-      </div>
-    </main>
+            )}
+          </div>
+
+          <aside className="cart-summary" aria-labelledby="checkout-summary-title">
+            <h2 id="checkout-summary-title">{tCart('summary')}</h2>
+            {cart ? (
+              <>
+                <ul className="summary-lines">
+                  {cart.lines.map((line) => (
+                    <li key={line.id}>
+                      <span>
+                        {line.productName} × {line.qty}
+                      </span>
+                      <span>{formatPrice(line.lineTotal)}</span>
+                    </li>
+                  ))}
+                </ul>
+                <dl className="totals">
+                  <div>
+                    <dt>{tc('subtotal')}</dt>
+                    <dd>{formatPrice(cart.subtotal)}</dd>
+                  </div>
+                  {/* The one discount the total carries: the coupon, or the
+                    volume / pair discount that beat it. */}
+                  {cart.automaticDiscount ? (
+                    <div className="totals-discount">
+                      <dt>
+                        {cart.automaticDiscount.kind === 'volume'
+                          ? tOffers('volumeApplied', { percent: cart.automaticDiscount.percent })
+                          : tOffers('pairApplied')}
+                        <DiscountLicence number={cart.automaticDiscount.licenceNumber} />
+                      </dt>
+                      <dd>−{formatPrice(cart.discount)}</dd>
+                    </div>
+                  ) : cart.coupon ? (
+                    <div className="totals-discount">
+                      <dt>{cart.coupon.name}</dt>
+                      <dd>−{formatPrice(cart.discount)}</dd>
+                    </div>
+                  ) : null}
+                  <div className="totals-total">
+                    <dt>{tc('total')}</dt>
+                    <dd>{formatPrice(cart.total)}</dd>
+                  </div>
+                </dl>
+                <Link href={`${prefix}${ROUTES.cart}`} className="btn btn-text summary-edit">
+                  {t('editCart')}
+                </Link>
+
+                <p className="secure-note">
+                  <LockIcon size={20} />
+                  <span>{tCart('reviewNote')}</span>
+                </p>
+              </>
+            ) : null}
+          </aside>
+        </div>
+      </main>
+    </>
   );
 }

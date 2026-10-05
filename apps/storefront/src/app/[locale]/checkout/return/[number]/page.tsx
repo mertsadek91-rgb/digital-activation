@@ -6,12 +6,16 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ClientBreadcrumbs } from '../../../../../components/breadcrumbs-client';
+import { ArrowIcon, CheckIcon, CreditCardIcon, LockIcon } from '../../../../../components/icons';
 import { isArabic } from '../../../../../i18n/locale';
 import { cartApi } from '../../../../../lib/cart-client';
 
 /**
  * Where Final Processor sends the shopper back after paying (or while the
- * payment is still pending).
+ * payment is still pending). Drawn after the kit's success and payment-failed
+ * pages (TASK-0105): a round mark, the outcome as a heading, one line, the
+ * way on, and the order number in a card under it.
  *
  * The answer comes from one place: the API's status endpoint, which confirms
  * an unpaid order with the processor itself (A.2.5). The `fp_result` and
@@ -34,6 +38,7 @@ export default function CheckoutReturnPage() {
   const number = params.number ?? '';
   const prefix = isArabic(locale) ? '' : `/${locale}`;
   const t = useTranslations('checkoutReturn');
+  const tc = useTranslations('common');
 
   const [view, setView] = useState<View>('checking');
   const [round, setRound] = useState(0);
@@ -80,81 +85,113 @@ export default function CheckoutReturnPage() {
   }, [check, round]);
 
   const orderHref = `${prefix}${ROUTES.order(encodeURIComponent(number))}`;
+  const failed = view === 'failed';
 
   return (
-    <main className="shell checkout-return">
-      <h1>{t('title')}</h1>
-      <p className="notice">
-        {t.rich('orderNumber', {
-          number,
-          strong: (chunks) => <strong dir="ltr">{chunks}</strong>,
-        })}
-      </p>
+    <>
+      <div className="page-band">
+        <div className="shell">
+          <ClientBreadcrumbs
+            items={[
+              { name: tc('home'), href: `${prefix}/` },
+              { name: t('title'), href: `${prefix}${ROUTES.checkout}` },
+            ]}
+          />
+          <header className="page-head">
+            <h1>{t('title')}</h1>
+          </header>
+        </div>
+      </div>
 
-      {/* One live region, so a screen reader hears the status change. */}
-      <section
-        className="checkout-return-status"
-        aria-live="polite"
-        aria-busy={view === 'checking'}
-      >
-        {view === 'checking' ? <p>{t('checking')}</p> : null}
+      <main className="shell checkout-return">
+        {/* One live region, so a screen reader hears the status change. */}
+        <section
+          className={`status-hero${failed ? ' is-failed' : ''}`}
+          aria-live="polite"
+          aria-busy={view === 'checking'}
+        >
+          <span className="iconbox status-icon" aria-hidden="true">
+            {failed ? (
+              <CreditCardIcon />
+            ) : view === 'paid' ? (
+              <CheckIcon size={32} />
+            ) : (
+              <LockIcon size={30} />
+            )}
+          </span>
 
-        {view === 'paid' ? (
-          <>
-            <h2>{t('paidTitle')}</h2>
-            <p>{t('paidBody')}</p>
-            <div className="checkout-return-actions">
-              <Link href={orderHref} className="btn btn-primary">
-                {t('viewOrder')}
-              </Link>
-              <Link href={`${prefix}${ROUTES.account}`} className="btn btn-ghost">
-                {t('account')}
-              </Link>
-            </div>
-          </>
-        ) : null}
+          {view === 'checking' ? (
+            <>
+              <h2>{t('checking')}</h2>
+            </>
+          ) : null}
 
-        {view === 'pending' ? (
-          <>
-            <h2>{t('pendingTitle')}</h2>
-            <p>{t('pendingBody')}</p>
-          </>
-        ) : null}
+          {view === 'paid' ? (
+            <>
+              <h2>{t('paidTitle')}</h2>
+              <p>{t('paidBody')}</p>
+              <div className="checkout-return-actions">
+                <Link href={orderHref} className="btn btn-primary">
+                  {t('viewOrder')}
+                  <ArrowIcon size={18} />
+                </Link>
+                <Link href={`${prefix}${ROUTES.licenses}`} className="btn btn-outline">
+                  {t('account')}
+                </Link>
+              </div>
+            </>
+          ) : null}
 
-        {view === 'stalled' ? (
-          <>
-            <h2>{t('stillTitle')}</h2>
-            <p>{t('stillBody')}</p>
-            <div className="checkout-return-actions">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => {
-                  setView('checking');
-                  setRound((value) => value + 1);
-                }}
-              >
-                {t('checkAgain')}
-              </button>
-              <Link href={orderHref} className="btn btn-ghost">
-                {t('viewOrder')}
-              </Link>
-            </div>
-          </>
-        ) : null}
+          {view === 'pending' ? (
+            <>
+              <h2>{t('pendingTitle')}</h2>
+              <p>{t('pendingBody')}</p>
+            </>
+          ) : null}
 
-        {view === 'failed' ? (
-          <>
-            <h2>{t('failedTitle')}</h2>
-            <p>{t('failedBody')}</p>
-            <div className="checkout-return-actions">
-              <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
-                {t('backToCheckout')}
-              </Link>
-            </div>
-          </>
-        ) : null}
-      </section>
-    </main>
+          {view === 'stalled' ? (
+            <>
+              <h2>{t('stillTitle')}</h2>
+              <p>{t('stillBody')}</p>
+              <div className="checkout-return-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setView('checking');
+                    setRound((value) => value + 1);
+                  }}
+                >
+                  {t('checkAgain')}
+                </button>
+                <Link href={orderHref} className="btn btn-outline">
+                  {t('viewOrder')}
+                </Link>
+              </div>
+            </>
+          ) : null}
+
+          {view === 'failed' ? (
+            <>
+              <h2>{t('failedTitle')}</h2>
+              <p>{t('failedBody')}</p>
+              <div className="checkout-return-actions">
+                <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
+                  {t('tryAgain')}
+                  <ArrowIcon size={18} />
+                </Link>
+              </div>
+            </>
+          ) : null}
+        </section>
+
+        <dl className="kv-card">
+          <div>
+            <dt>{t('orderNumberLabel')}</dt>
+            <dd dir="ltr">{number}</dd>
+          </div>
+        </dl>
+      </main>
+    </>
   );
 }

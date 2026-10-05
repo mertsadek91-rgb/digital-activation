@@ -141,7 +141,7 @@ content="noindex, nofollow, nocache">`, and its canonical and alternates
 
 ### The legacy sitemap files themselves, on staging
 
-Raised in the SEO review of this report (REV-0129): `/sitemap.xml` answers
+Raised in the SEO review of this report (REV-0130): `/sitemap.xml` answers
 404 on staging **by design** — `apps/storefront/src/lib/sitemap.ts` returns
 `notFound()` when the host is not indexable, so a crawler cannot be handed a
 sitemap for a site that is `noindex`. The seven legacy sitemap paths that
@@ -156,7 +156,7 @@ confirm `301 → /sitemap.xml → 200`.
 
 ## What remains
 
-1. **`microsoft-sql-server`**: the SEO manager's recommendation (REV-0129) is
+1. **`microsoft-sql-server`**: the SEO manager's recommendation (REV-0130) is
    a 301 of both forms to the parent, `/collections/windows-server`, as a
    one-row data change under its own approved task; the task can close with
    the 404 in place. Everything else in the map scope resolves.

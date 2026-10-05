@@ -7,13 +7,17 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
-import { AccountNav } from '../../../../components/account-nav';
+import { AccountShell } from '../../../../components/account-shell';
+import { CheckIcon, InfoIcon, WarningIcon } from '../../../../components/icons';
 import { isArabic } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
-import { formatLineState, formatOrderStatus, formatPrice } from '../../../../lib/format';
+import { formatOrderStatus, formatPrice } from '../../../../lib/format';
 
 /**
  * طلباتي — what this customer bought, what it cost, and where it has got to.
+ * Drawn after the kit's orders page (TASK-0105): one table — number, date,
+ * what was in it, status, total — each row opening the order itself. On a
+ * phone the rows stack into cards with their labels.
  *
  * Separate from the licences page because the two answer different questions.
  * The licences page is for "my key is gone"; this one is for "did the payment
@@ -36,7 +40,6 @@ export default function OrdersPage() {
   const locale = params.locale ?? 'ar';
   const prefix = isArabic(locale) ? '' : `/${locale}`;
   const t = useTranslations('account');
-  const tc = useTranslations('common');
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [list, setList] = useState<AccountOrderList | null>(null);
@@ -70,126 +73,90 @@ export default function OrdersPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) {
-    return (
-      <main className="shell account-shell">
-        <p className="notice">…</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="shell account-shell">
-      <div className="account-head">
-        <h1>{t('myOrders')}</h1>
-        <p className="who" dir="ltr">
-          {me.email}
+    <AccountShell locale={locale} title={t('myOrders')} email={me?.email}>
+      {!me ? (
+        <p className="notice" aria-busy="true">
+          …
         </p>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={() => {
-            void accountApi.signOut().then(() => router.replace(`${prefix}${ROUTES.account}`));
-          }}
-        >
-          {tc('signOut')}
-        </button>
-      </div>
+      ) : null}
 
-      <AccountNav prefix={prefix} />
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{error}</span>
+        </p>
+      ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
+      {list && list.rows.length === 0 ? (
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{t('noOrders')}</span>
+        </p>
+      ) : null}
 
-      {list && list.rows.length === 0 ? <p className="notice">{t('noOrders')}</p> : null}
-
-      <ul className="order-history">
-        {(list?.rows ?? []).map((order) => (
-          <OrderCard key={order.number} order={order} prefix={prefix} />
-        ))}
-      </ul>
-    </main>
+      {list && list.rows.length > 0 ? (
+        <div className="table-card">
+          <table className="order-table">
+            <thead>
+              <tr>
+                <th scope="col">{t('colNumber')}</th>
+                <th scope="col">{t('colDate')}</th>
+                <th scope="col">{t('colItems')}</th>
+                <th scope="col">{t('colStatus')}</th>
+                <th scope="col" className="is-money">
+                  {t('colTotal')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.rows.map((order) => (
+                <OrderRow key={order.number} order={order} prefix={prefix} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </AccountShell>
   );
 }
 
-function OrderCard({ order, prefix }: { order: AccountOrder; prefix: string }) {
+function OrderRow({ order, prefix }: { order: AccountOrder; prefix: string }) {
   const t = useTranslations('account');
-  const tc = useTranslations('common');
   const tf = useTranslations('format');
   // Paid is the line this page draws, not fulfilled: an order that has been
   // paid for is one the store owes something on, and that is the distinction a
   // customer scanning the list is looking for.
   const paid = order.paidAt !== null;
-  const money = (amount: string): string => formatPrice({ amount, currency: order.currency });
+  const first = order.lines[0];
+  const rest = order.lines.length - 1;
 
   return (
-    <li className={`order-history-card${paid ? '' : ' is-waiting'}`}>
-      <div className="order-history-head">
-        <div>
-          <Link href={`${prefix}${ROUTES.order(order.number)}`} className="order-history-number">
-            <span dir="ltr">{order.number}</span>
-          </Link>
-          <p className="order-history-dates">
-            <span dir="ltr">{order.placedAt.slice(0, 10)}</span>
-            {order.paidAt ? (
-              <span>
-                {' · '}
-                {t.rich('paidOn', {
-                  date: order.paidAt.slice(0, 10),
-                  ltr: (chunks) => <span dir="ltr">{chunks}</span>,
-                })}
-              </span>
-            ) : null}
-          </p>
-        </div>
+    <tr className={paid ? undefined : 'is-waiting'}>
+      <td data-label={t('colNumber')}>
+        {/* The order page is where the activation steps and the delivery
+            wording live, and it is reachable without signing in at all. This
+            list's job is to get the customer to the right one of them. */}
+        <Link href={`${prefix}${ROUTES.order(order.number)}`} className="order-number">
+          <span dir="ltr">{order.number}</span>
+        </Link>
+      </td>
+      <td data-label={t('colDate')}>
+        <span dir="ltr">{order.placedAt.slice(0, 10)}</span>
+      </td>
+      <td data-label={t('colItems')} className="order-items">
+        {first ? first.productName : t('lineCount', { count: 0 })}
+        {rest > 0 ? <span className="meta"> {t('moreLines', { count: rest })}</span> : null}
+      </td>
+      <td data-label={t('colStatus')}>
         <span className={`pill ${paid ? 'pill-published' : 'pill-draft'}`}>
+          {paid ? <CheckIcon size={14} /> : null}
           {formatOrderStatus(order.status, tf)}
         </span>
-      </div>
-
-      <ul className="order-history-lines">
-        {order.lines.map((line) => (
-          <li key={line.sku}>
-            <div>
-              <p className="order-line-name">{line.productName}</p>
-              <p className="order-line-spec" dir="ltr">
-                {line.sku} × {line.qty}
-              </p>
-              <p className="order-line-state">{formatLineState(line.fulfillmentState, tf)}</p>
-            </div>
-            <p className="order-line-total">{money(line.lineTotal)}</p>
-          </li>
-        ))}
-      </ul>
-
-      <dl className="totals">
-        <div>
-          <dt>{tc('subtotal')}</dt>
-          <dd>{money(order.subtotal)}</dd>
-        </div>
-        {Number(order.discount) > 0 ? (
-          <div className="totals-discount">
-            <dt>{tc('discount')}</dt>
-            <dd>−{money(order.discount)}</dd>
-          </div>
-        ) : null}
-        {Number(order.tax) > 0 ? (
-          <div>
-            <dt>{tc('tax')}</dt>
-            <dd>{money(order.tax)}</dd>
-          </div>
-        ) : null}
-        <div className="totals-total">
-          <dt>{tc('total')}</dt>
-          <dd>{money(order.total)}</dd>
-        </div>
-      </dl>
-
-      {/* The order page is where the activation steps and the delivery wording
-          live, and it is reachable without signing in at all. This list's job
-          is to get the customer to the right one of them. */}
-      <Link href={`${prefix}${ROUTES.order(order.number)}`} className="btn btn-ghost">
-        {t('orderDetails')}
-      </Link>
-    </li>
+      </td>
+      <td data-label={t('colTotal')} className="is-money">
+        {formatPrice({ amount: order.total, currency: order.currency })}
+      </td>
+    </tr>
   );
 }

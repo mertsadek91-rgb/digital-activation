@@ -7,6 +7,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
+import { AccountShell } from '../../../../components/account-shell';
+import { CheckIcon, InfoIcon, StarIcon, WarningIcon } from '../../../../components/icons';
 import { isArabic, resolveLocale } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
@@ -31,9 +33,10 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
 export default function AccountReviewsPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
+  const locale = params.locale ?? 'ar';
   const t = useTranslations('account');
   const tr = useTranslations('accountReviews');
-  const prefix = isArabic(params.locale) ? '' : `/${params.locale ?? 'en'}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [list, setList] = useState<ReviewableList | null>(null);
@@ -66,33 +69,39 @@ export default function AccountReviewsPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) {
-    return (
-      <main className="shell account-shell">
-        <p className="notice">…</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="shell account-shell">
-      <div className="account-head">
-        <h1>{t('myReviews')}</h1>
-        <p className="who" dir="ltr">
-          {me.email}
+    <AccountShell locale={locale} title={t('myReviews')} email={me?.email}>
+      {!me ? (
+        <p className="notice" aria-busy="true">
+          …
         </p>
-        <Link className="btn btn-ghost" href={`${prefix}${ROUTES.licenses}`}>
-          {t('myLicences')}
-        </Link>
-      </div>
+      ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="account-sent">{note}</p> : null}
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{error}</span>
+        </p>
+      ) : null}
+      {note ? (
+        <p className="alert" role="status">
+          <CheckIcon size={20} />
+          <span>{note}</span>
+        </p>
+      ) : null}
 
-      {list && list.rows.length === 0 ? <p className="notice">{tr('none')}</p> : null}
+      {list && list.rows.length === 0 ? (
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tr('none')}</span>
+        </p>
+      ) : null}
 
       {list && list.awaiting > 0 ? (
-        <p className="notice">{tr('awaiting', { count: list.awaiting })}</p>
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tr('awaiting', { count: list.awaiting })}</span>
+        </p>
       ) : null}
 
       <ul className="licence-list">
@@ -100,7 +109,7 @@ export default function AccountReviewsPage() {
           <ReviewCard
             key={row.orderItemId}
             row={row}
-            locale={resolveLocale(params.locale)}
+            locale={resolveLocale(locale)}
             prefix={prefix}
             onDone={(message) => {
               setNote(message);
@@ -110,7 +119,20 @@ export default function AccountReviewsPage() {
           />
         ))}
       </ul>
-    </main>
+    </AccountShell>
+  );
+}
+
+/** Five stars, the first `rating` of them filled. */
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span className="stars" aria-label={`${String(rating)}/5`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= rating ? 'star is-on' : 'star'}>
+          <StarIcon size={16} />
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -184,6 +206,7 @@ function ReviewCard({
           <span
             className={`pill ${existing.status === 'APPROVED' ? 'pill-published' : 'pill-draft'}`}
           >
+            {existing.status === 'APPROVED' ? <CheckIcon size={14} /> : null}
             {tr(`status.${existing.status}`)}
           </span>
         ) : null}
@@ -191,9 +214,9 @@ function ReviewCard({
 
       {existing && !open ? (
         <>
-          <p className="licence-kind">
-            {'★'.repeat(existing.rating).padEnd(5, '☆')}
-            {existing.title ? ` — ${existing.title}` : ''}
+          <p className="licence-kind review-rating">
+            <Stars rating={existing.rating} />
+            {existing.title ? <strong>{existing.title}</strong> : null}
           </p>
           <p className="review-body" dir="auto">
             {existing.body}
@@ -215,7 +238,7 @@ function ReviewCard({
             void save();
           }}
         >
-          <label className="account-field">
+          <label className="field">
             <span>{tr('rating')}</span>
             <select value={rating} onChange={(event) => setRating(Number(event.target.value))}>
               {[5, 4, 3, 2, 1].map((value) => (
@@ -226,7 +249,7 @@ function ReviewCard({
             </select>
           </label>
 
-          <label className="account-field">
+          <label className="field">
             <span>{tr('titleLabel')}</span>
             <input
               value={title}
@@ -236,7 +259,7 @@ function ReviewCard({
             />
           </label>
 
-          <label className="account-field">
+          <label className="field">
             <span>{tr('body')}</span>
             <textarea
               value={body}
@@ -260,7 +283,7 @@ function ReviewCard({
             >
               {busy ? '…' : tr('send')}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={() => setOpen(false)}>
+            <button type="button" className="btn btn-outline" onClick={() => setOpen(false)}>
               {tr('cancel')}
             </button>
           </div>
@@ -268,7 +291,11 @@ function ReviewCard({
       ) : (
         <div className="licence-actions">
           {existing === null || existing.editable ? (
-            <button type="button" className="btn btn-primary" onClick={() => setOpen(true)}>
+            <button
+              type="button"
+              className={existing === null ? 'btn btn-primary' : 'btn btn-outline'}
+              onClick={() => setOpen(true)}
+            >
               {existing === null ? tr('write') : tr('edit')}
             </button>
           ) : (

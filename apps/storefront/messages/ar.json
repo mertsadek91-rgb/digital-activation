@@ -335,7 +335,16 @@
     "restoreExpired": "انتهت صلاحية رابط السلّة أو اكتمل طلبها. هذه سلّتك الحالية.",
     "restoreFailed": "تعذّر فتح السلّة من الرابط.",
     "addedFromLink": "أُضيف المنتج إلى سلّتك.",
-    "addFromLinkFailed": "تعذّرت إضافة المنتج من الرابط."
+    "addFromLinkFailed": "تعذّرت إضافة المنتج من الرابط.",
+    "reviewNote": "راجع تفاصيل طلبك قبل الدفع",
+    "couponPlaceholder": "أدخل الرمز",
+    "emptyTitle": "سلتك فارغة",
+    "emptyLede": "اختر منتجاتك الرقمية لبدء الطلب.",
+    "itemCount": "{count, plural, one {منتج واحد} two {منتجان} few {# منتجات} other {# منتج}}",
+    "unitPrice": "{price} للوحدة",
+    "increase": "زيادة الكمية",
+    "decrease": "تقليل الكمية",
+    "couponApplied": "تم تطبيق الرمز"
   },
   "checkout": {
     "title": "إتمام الشراء",
@@ -379,7 +388,12 @@
     "chargedInUsd": "سيُخصم المبلغ بالدولار الأمريكي: <strong>{amount} USD</strong>.",
     "fpCancelled": "أُلغيت عملية الدفع. سلتك محفوظة كما هي، ويمكنك المحاولة مجدداً متى شئت.",
     "fpExpired": "انتهت مهلة صفحة الدفع قبل إتمامه. سلتك محفوظة، فحاول مرة أخرى.",
-    "fpFailed": "فشل الدفع، يرجى المحاولة مرة أخرى. سلتك محفوظة."
+    "fpFailed": "فشل الدفع، يرجى المحاولة مرة أخرى. سلتك محفوظة.",
+    "customerDetails": "تفاصيل العميل",
+    "paymentMethod": "طريقة الدفع",
+    "noShipping": "لا يحتاج المنتج الرقمي إلى عنوان شحن.",
+    "payAmount": "ادفع {amount}",
+    "optional": "اختياري"
   },
   "checkoutReturn": {
     "title": "حالة الدفع",
@@ -396,7 +410,9 @@
     "checkAgain": "تحقّق مرة أخرى",
     "failedTitle": "لم يكتمل الدفع",
     "failedBody": "فشل الدفع، يرجى المحاولة مرة أخرى. سلتك محفوظة.",
-    "backToCheckout": "العودة إلى إتمام الشراء"
+    "backToCheckout": "العودة إلى إتمام الشراء",
+    "orderNumberLabel": "رقم الطلب",
+    "tryAgain": "إعادة المحاولة"
   },
   "cardPayment": {
     "declined": "لم تُقبل البطاقة. جرّب بطاقة أخرى أو طريقة دفع أخرى.",
@@ -579,7 +595,19 @@
     "forYou": "مختارة لك",
     "metaTitle": "حسابي",
     "paidOn": "دُفع في <ltr>{date}</ltr>",
-    "referral": "ادعُ صديقاً"
+    "referral": "ادعُ صديقاً",
+    "welcome": "مرحباً بعودتك",
+    "welcomeLede": "تابع طلباتك وتراخيصك من حسابك.",
+    "menu": "قائمة الحساب",
+    "support": "الدعم",
+    "signedInAs": "مسجّل الدخول باسم",
+    "colNumber": "رقم الطلب",
+    "colDate": "التاريخ",
+    "colItems": "المنتجات",
+    "colStatus": "الحالة",
+    "colTotal": "الإجمالي",
+    "lineCount": "{count, plural, one {منتج واحد} two {منتجان} few {# منتجات} other {# منتج}}",
+    "moreLines": "و{count} أخرى"
   },
   "licences": {
     "copy": "نسخ",
@@ -607,7 +635,9 @@
     "waiting": "{count, plural, zero {{count, number, latn} بند قيد التجهيز} one {بند واحد قيد التجهيز} two {بندان قيد التجهيز} few {{count, number, latn} بنود قيد التجهيز} many {{count, number, latn} بنداً قيد التجهيز} other {{count, number, latn} بند قيد التجهيز}}. معظم منتجاتنا تُجهَّز بعد الدفع، وسيصلك البريد فور جهوزيته.",
     "resent": "أُرسلت الرسالة مرّة أخرى إلى {to}",
     "warranty": "الضمان {days, plural, zero {{days, number, latn} يوم} one {يوم واحد} two {يومان} few {{days, number, latn} أيام} many {{days, number, latn} يوماً} other {{days, number, latn} يوم}} من التسليم",
-    "deadline": "يجب تفعيله قبل {date}"
+    "deadline": "يجب تفعيله قبل {date}",
+    "yourKey": "رمز الترخيص",
+    "hidden": "يظهر الرمز هنا عند الضغط على \"إظهار الترخيص\"، ويُسجَّل كل عرض."
   },
   "accountReviews": {
     "moderated": "تمّت مراجعة هذا التقييم، فلم يعد قابلاً للتعديل.",
@@ -663,7 +693,13 @@
     "notFoundHint": "إن كان هذا طلبك، افتحه من الرابط في بريد الطلب، أو سجّل الدخول إلى حسابك بالبريد الذي طلبت به.",
     "title": "طلبك",
     "loadFailed": "تعذّر تحميل الطلب.",
-    "heading": "طلب <ltr>{number}</ltr>"
+    "heading": "طلب <ltr>{number}</ltr>",
+    "items": "المنتجات",
+    "deliveryDetails": "تفاصيل الوصول",
+    "qty": "الكمية: {count}",
+    "summary": "ملخص الطلب",
+    "myOrders": "طلباتي",
+    "keyNoteShort": "مفتاحك في بريدك وفي صفحة تراخيصك."
   },
   "errors": {
     "title": "حدث خطأ عندنا",
@@ -836,5 +872,13 @@
     "sortFeatured": "المقترح",
     "sortPriceAsc": "السعر: من الأقل إلى الأعلى",
     "sortPriceDesc": "السعر: من الأعلى إلى الأقل"
+  },
+  "bottomNav": {
+    "label": "التنقل السريع",
+    "home": "الرئيسية",
+    "categories": "الأقسام",
+    "search": "البحث",
+    "cart": "السلة",
+    "account": "حسابي"
   }
 }

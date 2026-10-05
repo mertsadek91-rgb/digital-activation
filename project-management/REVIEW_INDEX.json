@@ -1319,6 +1319,20 @@
     },
     {
       "review_id": "REV-0129",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "CONCERN, nothing blocking. 85 shots at 1440/1024/768/390/360 ar+en plus a CDP geometry probe of 11 pages. Majors: (1) Next dev overlay shows 1 issue on /checkout only; (2) signed-in email breaks mid-word in the 240px account menu card. Minors: cart stepper+bin drop under the line on phones (kit keeps them in-row); consent checkboxes 20px in a 23px row; inline terms links 18px; copy buttons 42-43px; Tajawal instead of the Latin face on the pay-step order number, bank-detail values and the order email; order-line SKU sits mid-card (dir=ltr block); summary/hero/sign-in h2 weight 400 vs bold in the kit (design-system call); phone menu chips clipped without affordance; FAB overlaps the footer language switch at 1024 (TASK-0104 scope). Verified: no horizontal overflow anywhere at 360/390; 48px labelled inputs; envelope at the physical right on LTR email in both locales; arrows/chevrons follow reading direction; aria-live on status areas; kit fidelity of cart, empty state, checkout panels, return heroes, account menu, orders table, licence code box, sign-in card.",
+      "round": 1,
+      "target": "TASK-0105",
+      "ts": "2026-10-05T07:07:29Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261005070729-7c5ff2"
+    },
+    {
+      "review_id": "REV-0130",
       "reviewer": "pm-05",
       "executor": "subagent:independent-reviewer",
       "review_type": "SEO",
@@ -1332,13 +1346,13 @@
       "event": "E20261005071013-3ee32f"
     },
     {
-      "review_id": "REV-0130",
+      "review_id": "REV-0131",
       "reviewer": "pm-06",
       "executor": "subagent:independent-reviewer",
       "review_type": "QA",
       "result": "PASS",
       "independent": true,
-      "findings": "QA/release review of the post-deploy rehearsal, verified against the raw scratch data and live hosts, not the report. Reproducibility: the two scratch scripts (inventory.mjs, crawl.mjs) are complete and deterministic (public legacy sources only, GET, UA DA-cutover-rehearsal/1.0, 500 ms spacing, manual redirect following, max 10 hops); I re-ran the inventory method live: legacy sitemap_index.xml lists 5 children answering 200 with 8+10+72+2+1 = 93 URLs (92 unique: /المتجر/ sits in both page- and product-sitemap), REST product_cat = 16 incl. microsoft-sql-server, matching the per-source table. Recomputed from results.json: 174 paths, 125 pass with 0 pass-flag mismatches, 92/92 sitemap, 107/108 map scope, shapes 1x200, 1x301-200, 3x308-200, 116x308-308-200, 4x308-301-200, 49x308-404, max 2 hops, no 302/307/ERR/LOOP, no off-host hop. 12 live chains of my own on new.digital-activation.com (main 1a0a189) match: / 200 ar/rtl and /en 200 en/ltr with no redirect; /سياسة-الاسترجاع/ 308-301-/refunds-200; nested /collections/ويندوز-windows/windows-11-ويندوز/ 308-308-/collections/windows-11-200; /product-category/windows-server-cal/ 308-308-200; /store/windows-11-pro/ 308-200; /locations.kml 301-/contact-200; /tag/cameras/ 308-404 and /product-category/microsoft-sql-server/ 308-404 as reported; every 200 page carries robots noindex,nofollow,nocache. Runbook: C8 (at most 2 permanent hops) and the C4 value NEXT_PUBLIC_SITE_URL=https://digital-activation.com plus the SEO_BLOCK_INDEXING=true hold switch agree with the report and with packages/seo/src/indexing.ts. One gap, confirmed live: /sitemap.xml answers 404 on staging by design (sitemap.ts returns notFound when the host is not indexable) and /category-sitemap.xml goes 301 -> /sitemap.xml -> 404, so the seven legacy sitemap-file 301s cannot be proven to 200 before the DNS change; the report (section added 2026-10-05 11:11, within the task's affected file) now states this, but docs/deployment.md C7 does not yet say to fetch /sitemap_index.xml on the apex and expect 301 -> /sitemap.xml -> 200 and to read the robots meta and canonical host on /; that line must be added to C7 under a task that owns docs/deployment.md (not in this task's affected_files). The cutover VALUES themselves remain UNVERIFIED by nature until the apex build exists. Safety: all requests were read-only GETs; apps/storefront/next.config.ts and src/lib/gone.ts have no working-tree diff and HEAD carries no turbopack flags (REV-0129's note on that is stale); the remaining dirty tree is TASK-0101/0105 storefront and pm-generated files, none touching the redirects. Scope: I agree with pm-05 that the task can be COMPLETED now; the open items (one-row 301 for microsoft-sql-server to /collections/windows-server as its own data-change task, English privacy/terms copy from the owner, map regeneration to retire the static pair and the gone.ts fallback, and the C7 runbook line) are follow-ups, not blockers; acceptance criteria 1 and 2 verified, criterion 3 verified for the mechanism only.",
+      "findings": "QA/release review of the post-deploy rehearsal, verified against the raw scratch data and live hosts, not the report. Reproducibility: the two scratch scripts (inventory.mjs, crawl.mjs) are complete and deterministic (public legacy sources only, GET, UA DA-cutover-rehearsal/1.0, 500 ms spacing, manual redirect following, max 10 hops); I re-ran the inventory method live: legacy sitemap_index.xml lists 5 children answering 200 with 8+10+72+2+1 = 93 URLs (92 unique: /المتجر/ sits in both page- and product-sitemap), REST product_cat = 16 incl. microsoft-sql-server, matching the per-source table. Recomputed from results.json: 174 paths, 125 pass with 0 pass-flag mismatches, 92/92 sitemap, 107/108 map scope, shapes 1x200, 1x301-200, 3x308-200, 116x308-308-200, 4x308-301-200, 49x308-404, max 2 hops, no 302/307/ERR/LOOP, no off-host hop. 12 live chains of my own on new.digital-activation.com (main 1a0a189) match: / 200 ar/rtl and /en 200 en/ltr with no redirect; /سياسة-الاسترجاع/ 308-301-/refunds-200; nested /collections/ويندوز-windows/windows-11-ويندوز/ 308-308-/collections/windows-11-200; /product-category/windows-server-cal/ 308-308-200; /store/windows-11-pro/ 308-200; /locations.kml 301-/contact-200; /tag/cameras/ 308-404 and /product-category/microsoft-sql-server/ 308-404 as reported; every 200 page carries robots noindex,nofollow,nocache. Runbook: C8 (at most 2 permanent hops) and the C4 value NEXT_PUBLIC_SITE_URL=https://digital-activation.com plus the SEO_BLOCK_INDEXING=true hold switch agree with the report and with packages/seo/src/indexing.ts. One gap, confirmed live: /sitemap.xml answers 404 on staging by design (sitemap.ts returns notFound when the host is not indexable) and /category-sitemap.xml goes 301 -> /sitemap.xml -> 404, so the seven legacy sitemap-file 301s cannot be proven to 200 before the DNS change; the report (section added 2026-10-05 11:11, within the task's affected file) now states this, but docs/deployment.md C7 does not yet say to fetch /sitemap_index.xml on the apex and expect 301 -> /sitemap.xml -> 200 and to read the robots meta and canonical host on /; that line must be added to C7 under a task that owns docs/deployment.md (not in this task's affected_files). The cutover VALUES themselves remain UNVERIFIED by nature until the apex build exists. Safety: all requests were read-only GETs; apps/storefront/next.config.ts and src/lib/gone.ts have no working-tree diff and HEAD carries no turbopack flags (REV-0130's note on that is stale); the remaining dirty tree is TASK-0101/0105 storefront and pm-generated files, none touching the redirects. Scope: I agree with pm-05 that the task can be COMPLETED now; the open items (one-row 301 for microsoft-sql-server to /collections/windows-server as its own data-change task, English privacy/terms copy from the owner, map regeneration to retire the static pair and the gone.ts fallback, and the C7 runbook line) are follow-ups, not blockers; acceptance criteria 1 and 2 verified, criterion 3 verified for the mechanism only.",
       "round": 1,
       "target": "TASK-0042",
       "ts": "2026-10-05T07:14:01Z",
@@ -1346,7 +1360,7 @@
       "event": "E20261005071401-e6dfc2"
     },
     {
-      "review_id": "REV-0131",
+      "review_id": "REV-0132",
       "reviewer": "responsive-design-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
@@ -1360,7 +1374,7 @@
       "event": "E20261005073858-5d5295"
     },
     {
-      "review_id": "REV-0132",
+      "review_id": "REV-0133",
       "reviewer": "pm-03",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -1368,13 +1382,13 @@
       "independent": true,
       "findings": "Consumers work at HEAD: contracts rebuilds as ESM (NodeNext, no top-level side effects or z.config/registry calls in packages/contracts/src, so sideEffects:false drops nothing); the CommonJS API loads it via require(esm) on Node 22.17 (require from apps/api: 353 exports; built dist/app.module.js loads; built openapi-cli generates the full document, 152 paths / 271 schemas, so z.registry/toJSONSchema work across the boundary); @da/seo (CJS) requires it; repo typecheck 15/15, lint clean, API unit 664/664, i18n/seo/db tests pass; pnpm install --frozen-lockfile succeeds with the patch applied. Zod patch: no z.locales / zod/locales / core.locales use anywhere (git grep); English messages still default in ESM and CJS (zod 4.5.4 registers en in the ZodType constructor, not external.js). CONCERNS: (1) MEDIUM, deploy: the API now depends on unflagged require(esm), i.e. Node >= 22.12 at runtime. engines says >=22.12 but the repo has no Dockerfile/nvmrc and the Coolify build runtime version is UNVERIFIED; on an older Node the API fails to boot with ERR_REQUIRE_ESM. Confirm the staging image Node version before merge. (2) LOW: dual package - contracts imports zod's ESM build while the API's own code requires zod's CJS build, so two zod instances run in the API (verified: ctor identity differs; instanceof ZodType/ZodError still true via v4 traits). z.config() in API code would not reach contract schemas; nothing calls it today. (3) LOW: the patch edits only v4/classic/external.js and v4/core/index.js; the .d.ts still declares z.locales and the .cjs still exports it, so z.locales typechecks but is undefined at runtime in bundled ESM consumers (storefront/admin) - a silent trap; a comment or lint guard would close it. (4) Scope: root package.json patchedDependencies, patches/zod@4.5.4.patch and pnpm-lock.yaml are not in this task's affected_files (only packages/contracts/package.json) nor TASK-0101's; a vendored third-party patch should be claimed by a task. Storefront bundle effect checked only on an existing .next build from 11:16 (before the 11:19 commit): no non-English zod locale strings in client chunks - not a fresh build, not a Lighthouse run.",
       "round": 1,
-      "target": "TASK-0105",
+      "target": "TASK-0106",
       "ts": "2026-10-05T07:58:14Z",
       "actor": "pm-03",
       "event": "E20261005075814-3e7517"
     },
     {
-      "review_id": "REV-0133",
+      "review_id": "REV-0134",
       "reviewer": "pm-03",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -1388,7 +1402,7 @@
       "event": "E20261005075832-e08d48"
     },
     {
-      "review_id": "REV-0134",
+      "review_id": "REV-0135",
       "reviewer": "pm-06",
       "executor": "subagent:independent-reviewer",
       "review_type": "REGRESSION",
@@ -1396,19 +1410,19 @@
       "independent": true,
       "findings": "Release path sound as far as verifiable, CI not green. VERIFIED: patches/zod@4.5.4.patch is tracked, root package.json pnpm.patchedDependencies + lockfile patchedDependencies hash vl464al2bnlk7q74t2tvdvtzgu; frozen install with the patch passes in CI (Node 22.23.3) and locally (patched zod has no locales re-export in ESM external.js/core/index.js). Rebuilt contracts/i18n/seo/db/api from scratch: contracts dist is ESM, require from apps/api gives 353 exports, CJS @da/seo requiring ESM contracts works, and the compiled CJS API module graph (Nest preview, openapi-cli with placeholder env, no .env) loads on Node 22.17: 152 paths/271 schemas, same as CI. Admin next build passes locally (admin build is not in CI). Dual zod instance (CJS API vs ESM contracts) is safe: zod 4 keeps config/registry on globalThis and instanceof via Symbol.hasInstance; API has no instanceof ZodError. Migrations release command is prisma migrate deploy and @da/db scripts do not import contracts, so no tsx/seed path is affected. CONCERNS: (1) MEDIUM UNVERIFIED: the Node version Coolify/nixpacks uses is documented nowhere (docs/deployment.md s3 has no Node pin); require(esm) needs >=22.12. engines >=22.12.0 has been on main since scaffold and staging builds, which suggests but does not prove >=22.12; pin it (NIXPACKS_NODE_VERSION or .nvmrc) and check the first staging API boot log. (2) MEDIUM: Schema and migrations is red on every run of this PR. It is a pre-existing flake, not caused by this PR: the same advisory-lock 57P01 failure hit claude/footer-richer, ui-kit-content-review (x2) on Oct 2-3 before the PR existed, and @da/db does not depend on contracts or zod. Neither test fix works: f967c8e failed in the pg_terminate_backend call itself (advisory-lock.int.test.ts:36, run 37279857071) and f4ea53a failed with 'pool still hands out terminated connections after 10 drain rounds' (line 47, run 37280760287). Likely cause: the kill query can be served by the lock-holding pooled connection itself; terminating through the shared pool cannot be made reliable. Use a dedicated pg client for the kill, or release by disconnecting the client. (3) LOW: the patch leaves z.locales declared in the .d.ts and present in the CJS build but undefined in ESM, so a future z.locales use typechecks and fails at runtime; zod/locales is the safe import. (4) LOW scope: affected_files lists only packages/contracts/package.json; patches/, root package.json and pnpm-lock.yaml also change.",
       "round": 1,
-      "target": "TASK-0105",
+      "target": "TASK-0106",
       "ts": "2026-10-05T08:01:40Z",
       "actor": "pm-06",
       "event": "E20261005080140-18e7ab"
     },
     {
-      "review_id": "REV-0135",
+      "review_id": "REV-0136",
       "reviewer": "pm-06",
       "executor": "subagent:independent-reviewer",
       "review_type": "REGRESSION",
       "result": "CONCERN",
       "independent": true,
-      "findings": "No release regression found, but the budget is not met and the CI evidence is incomplete. Mobile Lighthouse, run 37279857071 at f967c8e, 3 runs per URL (the only completed Lighthouse step on this PR): performance 0.90 /, 0.90 /en, 0.91 product, 0.90 collection, 0.83 cart (budget 0.95, error); LCP 3564/3479/3142/3346/4350 ms (budget 1800, warn); cart render-blocking-resources 0 (error); unused-javascript 0 on all (warn). No other assertion failed: request and resource counts, CLS (including cart, previously 0.41), TBT, server-response-time and a11y now pass. The step shows success only because of continue-on-error. Desktop UNVERIFIED: cancelled in run 37279857071 and every later run, by new pushes. So the objective (perf >= 0.95, LCP <= 1.8 s, job blocking again) is not met and the continue-on-error lines must stay; this is consistent with IN_PROGRESS at 30%, but the task cannot complete on this evidence. Regression-matrix rows checked: Routing/middleware (Lighthouse hreflang/canonical on /) - no failures in the mobile run; Messages (not-found catalogues passed as props) - typecheck parity passed in CI verify; Design tokens/visual - REV-0131, not judged here; framer-motion removed from package.json and lockfile with no remaining import (comments only); storefront turbo build and an API boot from dist pass in the CI perf job; CI verify (format, typecheck, lint, 664 API tests + storefront/packages tests) passed at f967c8e. UNVERIFIED: 7645042 (the review fix for the next/link lint rule plus fetch caching in currency-switcher and product-trust) has no completed CI yet. Schema and migrations is red from the pre-existing advisory-lock flake, unrelated to storefront files (see REV-0134).",
+      "findings": "No release regression found, but the budget is not met and the CI evidence is incomplete. Mobile Lighthouse, run 37279857071 at f967c8e, 3 runs per URL (the only completed Lighthouse step on this PR): performance 0.90 /, 0.90 /en, 0.91 product, 0.90 collection, 0.83 cart (budget 0.95, error); LCP 3564/3479/3142/3346/4350 ms (budget 1800, warn); cart render-blocking-resources 0 (error); unused-javascript 0 on all (warn). No other assertion failed: request and resource counts, CLS (including cart, previously 0.41), TBT, server-response-time and a11y now pass. The step shows success only because of continue-on-error. Desktop UNVERIFIED: cancelled in run 37279857071 and every later run, by new pushes. So the objective (perf >= 0.95, LCP <= 1.8 s, job blocking again) is not met and the continue-on-error lines must stay; this is consistent with IN_PROGRESS at 30%, but the task cannot complete on this evidence. Regression-matrix rows checked: Routing/middleware (Lighthouse hreflang/canonical on /) - no failures in the mobile run; Messages (not-found catalogues passed as props) - typecheck parity passed in CI verify; Design tokens/visual - REV-0132, not judged here; framer-motion removed from package.json and lockfile with no remaining import (comments only); storefront turbo build and an API boot from dist pass in the CI perf job; CI verify (format, typecheck, lint, 664 API tests + storefront/packages tests) passed at f967c8e. UNVERIFIED: 7645042 (the review fix for the next/link lint rule plus fetch caching in currency-switcher and product-trust) has no completed CI yet. Schema and migrations is red from the pre-existing advisory-lock flake, unrelated to storefront files (see REV-0135).",
       "round": 1,
       "target": "TASK-0101",
       "ts": "2026-10-05T08:01:56Z",
