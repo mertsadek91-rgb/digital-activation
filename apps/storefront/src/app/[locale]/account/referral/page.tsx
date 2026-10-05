@@ -6,7 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { AccountNav } from '../../../../components/account-nav';
+import { AccountShell } from '../../../../components/account-shell';
+import {
+  CheckIcon,
+  CopyIcon,
+  InfoIcon,
+  WarningIcon,
+  WhatsAppIcon,
+} from '../../../../components/icons';
 import { isArabic, resolveLocale } from '../../../../i18n/locale';
 import { ReferralAuthError, growthApi } from '../../../../lib/growth-client';
 
@@ -62,19 +69,27 @@ export default function ReferralAccountPage() {
   }
 
   return (
-    <main className="shell account-page">
-      <header className="page-head">
-        <h1>{tr('accountTitle')}</h1>
-      </header>
-
-      <AccountNav prefix={prefix} />
-
-      {error ? <p className="error">{t('sendFailed')}</p> : null}
-      {!data && !error ? <p className="meta">…</p> : null}
-      {data && !data.enabled ? <p className="notice">{tr('off')}</p> : null}
+    <AccountShell locale={locale} title={tr('accountTitle')}>
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{t('sendFailed')}</span>
+        </p>
+      ) : null}
+      {!data && !error ? (
+        <p className="notice" aria-busy="true">
+          …
+        </p>
+      ) : null}
+      {data && !data.enabled ? (
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tr('off')}</span>
+        </p>
+      ) : null}
 
       {data?.enabled && link ? (
-        <section className="referral-card">
+        <section className="panel referral-card">
           <p className="lede">
             {tr('terms', {
               percent: data.friendPercent,
@@ -89,23 +104,25 @@ export default function ReferralAccountPage() {
             ) : null}
           </p>
 
-          <label className="referral-link">
-            {tr('yourLink')}
+          <label className="field referral-link">
+            <span>{tr('yourLink')}</span>
             <input readOnly value={link} dir="ltr" onFocus={(event) => event.target.select()} />
           </label>
 
           <div className="referral-actions">
             <button type="button" className="btn btn-primary" onClick={() => void copy()}>
+              {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
               {copied ? tr('copied') : tr('copy')}
             </button>
             <a
-              className="btn btn-ghost"
+              className="btn btn-outline"
               href={`https://wa.me/?text=${encodeURIComponent(
                 tr('shareText', { percent: data.friendPercent, link }),
               )}`}
               target="_blank"
               rel="noopener noreferrer"
             >
+              <WhatsAppIcon size={18} />
               {tr('shareWhatsApp')}
             </a>
           </div>
@@ -123,6 +140,6 @@ export default function ReferralAccountPage() {
           <p className="account-hint">{tr('fineprint')}</p>
         </section>
       ) : null}
-    </main>
+    </AccountShell>
   );
 }

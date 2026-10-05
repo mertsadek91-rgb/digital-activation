@@ -614,3 +614,90 @@
 [dir='rtl'] .icon-flip {
   transform: scaleX(-1);
 }
+
+/* --- bottom navigation (phones) ------------------------------------------
+ *
+ * The kit's `bottom-nav`: five destinations fixed to the bottom edge, 64px
+ * tall plus the safe area, the current one in brand. Phones only: from 48rem
+ * the header's rows are on screen. The page reserves the bar's height at the
+ * bottom, the sticky buy bar sits above it (`--buy-bar-offset`), and the
+ * WhatsApp button above whichever of the two is up.
+ */
+.bottom-nav {
+  display: none;
+}
+@media (max-width: 47.99rem) {
+  :root {
+    --bottom-nav-height: 64px;
+    --buy-bar-offset: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+  body {
+    padding-block-end: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+  .bottom-nav {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 45;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    block-size: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-block-end: env(safe-area-inset-bottom, 0px);
+    background: var(--color-bg);
+    border-block-start: 1px solid var(--color-border);
+    box-shadow: 0 -4px 12px 0 rgb(23 33 43 / 0.06);
+  }
+  .bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-block-size: 44px;
+    padding: 6px 4px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--color-ink-muted);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bottom-nav a[aria-current='page'] {
+    color: var(--color-brand);
+    font-weight: 700;
+  }
+  .bottom-nav-icon {
+    position: relative;
+    display: inline-flex;
+  }
+  .bottom-nav-icon svg {
+    inline-size: 22px;
+    block-size: 22px;
+  }
+  .bottom-nav-count {
+    position: absolute;
+    inset-block-start: -7px;
+    inset-inline-end: -10px;
+    display: grid;
+    place-items: center;
+    min-inline-size: 18px;
+    block-size: 18px;
+    padding-inline: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--color-brand);
+    color: var(--color-ink-inverse);
+    font-family: var(--font-latin);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  /* `html body` outranks catalog.css's own rules for the button. */
+  html body .whatsapp-fab {
+    inset-block-end: calc(var(--buy-bar-offset) + 16px);
+  }
+  html body:has(.buy-bar.is-shown) .whatsapp-fab {
+    inset-block-end: calc(var(--buy-bar-offset) + var(--sticky-buy-height, 64px) + 20px);
+  }
+}

@@ -6,8 +6,9 @@
  * answers the reads the home page, the header and the footer make with
  * fixture data in the shapes `@da/contracts` describes, and refuses
  * everything else with a 404 — which is also how a page's empty state gets
- * looked at. Nothing is written anywhere: the cart answers 404, so the header
- * shows no count, and analytics are swallowed.
+ * looked at. Nothing is written to disk: the cart lives in memory (stage 4),
+ * so the header shows a count and the cart page's own controls work, and
+ * analytics are swallowed.
  *
  * Product names and prices are the UI Kit's design samples (tokens.json
  * `samplePrices`), not store offers.
@@ -490,7 +491,435 @@ const marketing = {
   activeSales: [],
 };
 
-const server = createServer((req, res) => {
+// --- stage 4 fixtures: the cart, a checkout, an order, the account ----------
+//
+// The cart is held in memory so the page's own controls move it: the stepper
+// and the bin change the lines, "apply" takes SAVE10 and refuses anything
+// else, and removing every line shows the empty state. Nothing persists past
+// the process. Account reads answer as a signed-in customer regardless of
+// cookies: the point is to look at the pages, not to test the session.
+
+const DEMO_KEY = 'DEMO-XXXXX-XXXXX-XXXXX';
+
+function cartLine(p, qty, locale, currency) {
+  const unit = price(p.price, p.compareAt, currency);
+  const yearly = p.slug.includes('cloud') || p.slug.includes('autocad');
+  return {
+    id: 'line_' + p.slug,
+    variantId: 'var_' + p.slug,
+    sku: p.slug.toUpperCase().slice(0, 12),
+    productSlug: p.slug,
+    productName: p.name[locale],
+    licensePeriodValue: yearly ? 1 : null,
+    licensePeriodUnit: yearly ? 'YEAR' : 'LIFETIME',
+    deviceCount: 1,
+    activationMethod: 'RETAIL_ONLINE',
+    deliverySlaSeconds: 300,
+    fulfillmentMode: 'FROM_STOCK',
+    requiresActivationEmail: false,
+    image: null,
+    qty,
+    unitPrice: unit,
+    lineTotal: { ...unit, amount: (Number(unit.amount) * qty).toFixed(2) },
+    priceChanged: null,
+    availableToAdd: 10 - qty,
+    fromCrossSell: false,
+    sale: null,
+    saleEnded: false,
+  };
+}
+
+const cartState = {
+  lines: [
+    { slug: 'office-2021-professional', qty: 1 },
+    { slug: 'windows-11-pro', qty: 2 },
+  ],
+  coupon: null,
+  couponError: null,
+};
+
+function cart(locale, currency) {
+  const lines = cartState.lines.map((l) =>
+    cartLine(
+      PRODUCTS.find((p) => p.slug === l.slug),
+      l.qty,
+      locale,
+      currency,
+    ),
+  );
+  const subtotal = lines.reduce((sum, l) => sum + Number(l.lineTotal.amount), 0);
+  const discount = cartState.coupon ? subtotal * 0.1 : 0;
+  const money = (n) => ({ amount: n.toFixed(2), currency, compareAt: null, discountPercent: null });
+  return {
+    token: 'mock-cart',
+    locale,
+    currency,
+    lines,
+    itemCount: lines.reduce((sum, l) => sum + l.qty, 0),
+    subtotal: money(subtotal),
+    discount: money(discount),
+    total: money(subtotal - discount),
+    coupon: cartState.coupon
+      ? {
+          code: 'SAVE10',
+          name: locale === 'ar' ? 'خصم ترحيبي 10%' : 'Welcome 10% off',
+          discount: money(discount),
+        }
+      : null,
+    couponError: cartState.couponError,
+    automaticDiscount: null,
+    couponSuperseded: false,
+    volume: null,
+    reservationExpiresAt: null,
+    adjustments: [],
+  };
+}
+
+const ORDER_STEPS = (locale) =>
+  locale === 'ar'
+    ? [
+        'افتح الإعدادات ← النظام ← التفعيل.',
+        'اختر "تغيير مفتاح المنتج" وألصق المفتاح.',
+        'انتظر التأكيد.',
+      ]
+    : [
+        'Open Settings → System → Activation.',
+        'Choose "Change product key" and paste the key.',
+        'Wait for the confirmation.',
+      ];
+
+function order(number, locale, currency, status = 'PAID') {
+  const c = cart(locale, currency);
+  const base =
+    c.lines.length > 0 ? c : { ...c, lines: [cartLine(PRODUCTS[1], 1, locale, currency)] };
+  const lines = base.lines.map((l, i) => ({
+    sku: l.sku,
+    productName: l.productName,
+    productSlug: l.productSlug,
+    qty: l.qty,
+    unitPrice: l.unitPrice,
+    lineTotal: l.lineTotal,
+    fulfillmentState:
+      status === 'PENDING_PAYMENT' ? 'PENDING' : i === 0 ? 'DELIVERED' : 'MANUAL_QUEUE',
+    credentialKind: 'ACTIVATION_KEY',
+    activationSteps: ORDER_STEPS(locale),
+  }));
+  const subtotal = lines.reduce((sum, l) => sum + Number(l.lineTotal.amount), 0);
+  const money = (n) => ({ amount: n.toFixed(2), currency, compareAt: null, discountPercent: null });
+  return {
+    number,
+    status,
+    email: 'customer@example.com',
+    activationEmail: null,
+    locale,
+    currency,
+    lines,
+    subtotal: money(subtotal),
+    discount: money(0),
+    tax: money(0),
+    total: money(subtotal),
+    couponCode: null,
+    placedAt: '2026-10-02T09:30:00.000Z',
+    paidAt: status === 'PENDING_PAYMENT' ? null : '2026-10-02T09:31:00.000Z',
+  };
+}
+
+function checkout(locale, currency) {
+  const c = cart(locale, currency);
+  const cross = PRODUCTS[4];
+  const p = price(cross.price, cross.compareAt, currency);
+  return {
+    order: order('DA-2026-00042', locale, currency, 'PENDING_PAYMENT'),
+    cart: c,
+    crossSell: [
+      {
+        variantId: 'var_' + cross.slug,
+        sku: 'KTS-3',
+        productSlug: cross.slug,
+        productName: cross.name[locale],
+        image: null,
+        price: p,
+        bundlePrice: { ...p, amount: (Number(p.amount) * 0.8).toFixed(2) },
+        savePercent: 20,
+        promotionCode: 'PAIR',
+      },
+    ],
+    activationEmailRequired: false,
+    paymentMethods: ['STRIPE', 'BANK_TRANSFER'],
+    finalProcessorMethods: [],
+    chargedInUsd: null,
+  };
+}
+
+const me = {
+  email: 'customer@example.com',
+  firstName: null,
+  locale: 'ar',
+  orderCount: 3,
+  expiresAt: '2099-01-01T00:00:00.000Z',
+};
+
+function licences(locale) {
+  const row = (p, n, state, i) => ({
+    orderItemId: 'item_' + i,
+    orderNumber: n,
+    productName: p.name[locale],
+    productSlug: p.slug,
+    sku: p.slug.toUpperCase().slice(0, 12),
+    qty: 1,
+    deliveredAt: state === 'DELIVERED' ? '2026-10-02T09:35:00.000Z' : null,
+    placedAt: '2026-10-02T09:30:00.000Z',
+    state,
+    credentialKind: 'ACTIVATION_KEY',
+    activationSteps: ORDER_STEPS(locale),
+    warrantyDays: 365,
+    hasSecret: state === 'DELIVERED',
+    expiresAt: null,
+  });
+  return {
+    rows: [
+      row(PRODUCTS[0], 'DA-2026-00041', 'DELIVERED', 1),
+      row(PRODUCTS[1], 'DA-2026-00041', 'DELIVERED', 2),
+      row(PRODUCTS[3], 'DA-2026-00043', 'MANUAL_QUEUE', 3),
+    ],
+    waiting: 1,
+  };
+}
+
+function accountOrders(locale, currency) {
+  const one = (number, status, paid, items) => {
+    const lines = items.map(([p, qty]) => ({
+      productName: p.name[locale],
+      sku: p.slug.toUpperCase().slice(0, 12),
+      qty,
+      lineTotal: (Number(p.price) * qty).toFixed(2),
+      fulfillmentState: status === 'PENDING_PAYMENT' ? 'PENDING' : 'DELIVERED',
+    }));
+    const subtotal = lines.reduce((sum, l) => sum + Number(l.lineTotal), 0);
+    return {
+      number,
+      status,
+      currency,
+      placedAt: '2026-10-02T09:30:00.000Z',
+      paidAt: paid ? '2026-10-02T09:31:00.000Z' : null,
+      subtotal: subtotal.toFixed(2),
+      discount: '0.00',
+      tax: '0.00',
+      total: subtotal.toFixed(2),
+      lines,
+    };
+  };
+  return {
+    rows: [
+      one('DA-2026-00043', 'PENDING_PAYMENT', false, [[PRODUCTS[3], 1]]),
+      one('DA-2026-00042', 'COMPLETED', true, [
+        [PRODUCTS[1], 1],
+        [PRODUCTS[0], 2],
+      ]),
+      one('DA-2026-00041', 'COMPLETED', true, [[PRODUCTS[0], 1]]),
+    ],
+  };
+}
+
+function reviewable(locale) {
+  const ar = locale === 'ar';
+  return {
+    rows: [
+      {
+        orderItemId: 'item_1',
+        orderNumber: 'DA-2026-00041',
+        productSlug: PRODUCTS[0].slug,
+        productName: PRODUCTS[0].name[locale],
+        deliveredAt: '2026-10-02T09:35:00.000Z',
+        review: {
+          id: 'own_1',
+          rating: 5,
+          title: ar ? 'تفعيل خلال دقيقتين' : 'Activated in two minutes',
+          body: ar
+            ? 'وصل المفتاح على البريد مباشرة بعد الدفع.'
+            : 'The key arrived by email right after payment.',
+          locale,
+          status: 'PENDING',
+          storeReply: null,
+          createdAt: '2026-10-02T12:00:00.000Z',
+          editable: true,
+        },
+      },
+      {
+        orderItemId: 'item_2',
+        orderNumber: 'DA-2026-00041',
+        productSlug: PRODUCTS[1].slug,
+        productName: PRODUCTS[1].name[locale],
+        deliveredAt: '2026-10-02T09:35:00.000Z',
+        review: null,
+      },
+    ],
+    awaiting: 1,
+  };
+}
+
+function forYou(locale, currency) {
+  return {
+    purchases: 3,
+    renewals: [
+      {
+        product: card(PRODUCTS[2], locale, currency),
+        orderNumber: 'DA-2026-00041',
+        startedAt: '2025-10-20T00:00:00.000Z',
+        expiresAt: '2026-10-20T00:00:00.000Z',
+        daysLeft: 17,
+        termLabel: locale === 'ar' ? 'سنة' : '1 year',
+      },
+    ],
+    suggestions: [
+      { product: card(PRODUCTS[5], locale, currency), reason: 'sameBrand', becauseOf: 'Microsoft' },
+      {
+        product: card(PRODUCTS[4], locale, currency),
+        reason: 'relatedToOwned',
+        becauseOf: PRODUCTS[0].name[locale],
+      },
+    ],
+  };
+}
+
+function readJson(req) {
+  return new Promise((resolve) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => {
+      try {
+        resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {});
+      } catch {
+        resolve({});
+      }
+    });
+    req.on('error', () => resolve({}));
+  });
+}
+
+/** The stage-4 routes. Returns true when it answered. */
+function stage4(req, url, body, send, locale, currency) {
+  const path = url.pathname;
+  const ar = locale === 'ar';
+  const done = (status, payload) => {
+    send(status, payload);
+    return true;
+  };
+
+  if (path === '/v1/cart' && req.method === 'GET') return done(200, cart(locale, currency));
+  if (path === '/v1/cart/items' && req.method === 'POST') {
+    const slug = String(body.variantId ?? '').replace(/^var_/, '');
+    const p = PRODUCTS.find((entry) => entry.slug === slug);
+    if (!p) return done(404, { statusCode: 404, message: 'mock: unknown variant' });
+    const line = cartState.lines.find((l) => l.slug === slug);
+    if (line) line.qty = Math.min(10, line.qty + Number(body.qty ?? 1));
+    else cartState.lines.push({ slug, qty: Number(body.qty ?? 1) });
+    return done(200, cart(locale, currency));
+  }
+  const item = path.match(/^\/v1\/cart\/items\/var_([a-z0-9-]+)$/);
+  if (item && req.method === 'PATCH') {
+    const qty = Number(body.qty ?? 1);
+    cartState.lines = cartState.lines
+      .map((l) => (l.slug === item[1] ? { ...l, qty } : l))
+      .filter((l) => l.qty > 0);
+    return done(200, cart(locale, currency));
+  }
+  if (path === '/v1/cart/coupon' && req.method === 'POST') {
+    const code = String(body.code ?? '')
+      .trim()
+      .toUpperCase();
+    if (code === 'SAVE10') {
+      cartState.coupon = 'SAVE10';
+      cartState.couponError = null;
+    } else {
+      cartState.couponError = ar
+        ? 'هذا الرمز غير صالح أو منتهٍ.'
+        : 'That code is not valid or has expired.';
+    }
+    return done(200, cart(locale, currency));
+  }
+  if (path === '/v1/cart/coupon' && req.method === 'DELETE') {
+    cartState.coupon = null;
+    cartState.couponError = null;
+    return done(200, cart(locale, currency));
+  }
+  if (path === '/v1/checkout' && req.method === 'POST')
+    return done(200, checkout(locale, currency));
+
+  const pay = path.match(/^\/v1\/orders\/([A-Z0-9-]+)\/pay$/);
+  if (pay && req.method === 'POST') {
+    const amount = order(pay[1], locale, currency).total;
+    if (body.provider === 'STRIPE')
+      return done(200, { provider: 'STRIPE', clientSecret: '', publishableKey: '', amount });
+    if (body.provider === 'BANK_TRANSFER')
+      return done(200, {
+        provider: 'BANK_TRANSFER',
+        amount,
+        instructions: {
+          headline: ar ? 'حوّل المبلغ إلى الحساب التالي:' : 'Transfer the amount to this account:',
+          fields: [
+            {
+              label: ar ? 'اسم المستفيد' : 'Beneficiary',
+              value: 'Digital Activation LLC',
+              copyable: false,
+            },
+            { label: 'IBAN', value: 'AE07 0331 2345 6789 0123 456', copyable: true },
+            { label: ar ? 'البنك' : 'Bank', value: 'Emirates NBD', copyable: false },
+          ],
+          afterPaying: ar
+            ? 'أرسل صورة الحوالة على واتساب ليُفعَّل طلبك.'
+            : 'Send the transfer receipt on WhatsApp and the order is released.',
+        },
+      });
+    return done(503, {
+      statusCode: 503,
+      message: ar ? 'طريقة الدفع غير متاحة.' : 'That method is unavailable.',
+      reason: 'unavailable',
+    });
+  }
+  const ord = path.match(/^\/v1\/orders\/([A-Z0-9-]+)$/);
+  if (ord && req.method === 'GET') {
+    const status = ord[1].endsWith('PEND') ? 'PENDING_PAYMENT' : 'PAID';
+    return done(200, order(ord[1], locale, currency, status));
+  }
+  const fp = path.match(/^\/v1\/checkout\/final-processor\/status\/([A-Z0-9-]+)$/);
+  if (fp) {
+    const n = fp[1];
+    return done(200, {
+      status: n.endsWith('FAIL') ? 'failed' : n.endsWith('PEND') ? 'pending' : 'paid',
+    });
+  }
+
+  if (path === '/v1/account/me') return done(200, me);
+  if (path === '/v1/account/link') return done(200, { sent: true });
+  if (path === '/v1/account/session') return done(200, { customer: me });
+  if (path === '/v1/account/sign-out') return done(204);
+  if (path === '/v1/account/licences') return done(200, licences(locale));
+  if (path === '/v1/account/orders') return done(200, accountOrders(locale, currency));
+  if (path === '/v1/account/for-you') return done(200, forYou(locale, currency));
+  if (path === '/v1/account/reviews') return done(200, reviewable(locale));
+  const reveal = path.match(/^\/v1\/account\/licences\/([a-z0-9_]+)\/(reveal|resend)$/);
+  if (reveal) {
+    if (reveal[2] === 'resend') return done(200, { to: me.email });
+    return done(200, {
+      secrets: [{ kind: 'ACTIVATION_KEY', key: DEMO_KEY, username: null, password: null }],
+    });
+  }
+  if (path === '/v1/referrals/me')
+    return done(200, {
+      enabled: true,
+      code: 'FRIEND-7K2Q',
+      friendPercent: 10,
+      referrerRewardUsd: 5,
+      clearAfterDays: 14,
+      licenceNumber: 'DL-2026-07',
+      pending: 1,
+      rewarded: 2,
+    });
+  return false;
+}
+
+const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
   const locale = url.searchParams.get('locale') === 'en' ? 'en' : 'ar';
   const currency = url.searchParams.get('currency') ?? 'USD';
@@ -500,10 +929,14 @@ const server = createServer((req, res) => {
       'access-control-allow-origin': req.headers.origin ?? '*',
       'access-control-allow-credentials': 'true',
       'access-control-allow-headers': 'content-type, accept',
+      'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     });
     res.end(body === undefined ? '' : JSON.stringify(body));
   };
   if (req.method === 'OPTIONS') return send(204);
+
+  const body = req.method === 'POST' || req.method === 'PATCH' ? await readJson(req) : {};
+  if (stage4(req, url, body, send, locale, currency)) return;
 
   const collectionMatch = url.pathname.match(/^\/v1\/catalog\/collections\/([a-z0-9-]+)$/);
   if (collectionMatch) {
@@ -628,6 +1061,6 @@ const server = createServer((req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   // eslint-disable-next-line no-console -- the one line a fixture server prints
   console.log(
-    `storefront mock API on http://localhost:${PORT} (home, store, collections, brands, one product with reviews, search, marketing, payment methods, currencies)`,
+    `storefront mock API on http://localhost:${PORT} (home, store, collections, brands, one product with reviews, search, marketing, payment methods, currencies, cart, checkout, orders, account)`,
   );
 });

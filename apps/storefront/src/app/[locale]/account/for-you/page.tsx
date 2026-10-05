@@ -6,7 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
-import { AccountNav } from '../../../../components/account-nav';
+import { AccountShell } from '../../../../components/account-shell';
+import { InfoIcon, WarningIcon } from '../../../../components/icons';
 import { ProductCard } from '../../../../components/product-card';
 import { isArabic, resolveLocale } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
@@ -65,21 +66,26 @@ export default function ForYouPage() {
     })();
   }, [load, prefix, router]);
 
-  if (!me) return <main className="shell">…</main>;
-
   return (
-    <main className="shell account-page">
-      <header className="page-head">
-        <h1>{t('forYou')}</h1>
-        <p className="lede">{tf('lede')}</p>
-      </header>
+    <AccountShell locale={locale} title={t('forYou')} lede={tf('lede')} email={me?.email}>
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{error}</span>
+        </p>
+      ) : null}
+      {!data && !error ? (
+        <p className="notice" aria-busy="true">
+          …
+        </p>
+      ) : null}
 
-      <AccountNav prefix={prefix} />
-
-      {error ? <p className="error">{error}</p> : null}
-      {!data ? <p className="meta">…</p> : null}
-
-      {data && data.purchases === 0 ? <p className="notice">{tf('nothing')}</p> : null}
+      {data && data.purchases === 0 ? (
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tf('nothing')}</span>
+        </p>
+      ) : null}
 
       {data && data.renewals.length > 0 ? (
         <section className="for-you-section">
@@ -99,7 +105,7 @@ export default function ForYouPage() {
       {data && data.suggestions.length > 0 ? (
         <section className="for-you-section">
           <h2>{tf('alsoTitle')}</h2>
-          <div className="product-grid">
+          <div className="product-grid for-you-grid">
             {data.suggestions.map((item) => (
               <div key={item.product.slug} className="for-you-tile">
                 <ProductCard card={item.product} locale={locale} />
@@ -114,9 +120,12 @@ export default function ForYouPage() {
       ) : null}
 
       {data && data.purchases > 0 && data.renewals.length === 0 && data.suggestions.length === 0 ? (
-        <p className="notice">{tf('allLifetime')}</p>
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tf('allLifetime')}</span>
+        </p>
       ) : null}
-    </main>
+    </AccountShell>
   );
 }
 

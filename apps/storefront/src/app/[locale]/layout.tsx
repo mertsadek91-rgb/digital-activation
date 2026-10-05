@@ -13,6 +13,7 @@ import { openGraphDefaults, robotsMeta } from '../../lib/seo';
 
 import { GrowthLayer } from '../../components/growth-layer';
 import { AddedDialog } from '../../components/added-dialog';
+import { BottomNav } from '../../components/bottom-nav';
 import { SiteFooter } from '../../components/site-footer';
 import { SiteHeader } from '../../components/site-header';
 import { WhatsAppButton } from '../../components/whatsapp-button';
@@ -128,6 +129,7 @@ export default async function LocaleLayout({
           {children}
           <SiteFooter locale={locale} collections={collections} />
           <WhatsAppButton />
+          <BottomNav locale={locale} />
           <GrowthLayer locale={locale} />
           <AddedDialog locale={locale} />
         </NextIntlClientProvider>
