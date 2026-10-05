@@ -29,12 +29,22 @@ const noise = (n = 6): Promise<unknown>[] =>
  * in the pg pool as an idle client until somebody borrows it, and that
  * somebody gets `57P01 terminating connection due to administrator command` —
  * which, under `noise()`, was the next test's first query often enough to
- * fail CI. So the pool is dropped after a kill and refills on the next query.
+ * fail CI. So after a kill the pool is drained: more concurrent probes than
+ * the pool has connections, errors swallowed, until a round comes back clean.
+ * pg evicts a client whose query fails on a closed socket, so a clean round
+ * means no dead client is left for the tests to borrow.
  */
 async function release(): Promise<void> {
   const pids = await holders();
+  if (!pids.length) return;
   for (const pid of pids) await prisma.$queryRaw`select pg_terminate_backend(${pid})`;
-  if (pids.length) await prisma.$disconnect();
+  for (let round = 0; round < 10; round++) {
+    const probes = await Promise.allSettled(
+      Array.from({ length: 24 }, () => prisma.$queryRaw`select pg_sleep(0.01)`),
+    );
+    if (probes.every((p) => p.status === 'fulfilled')) return;
+  }
+  throw new Error('the pool still hands out terminated connections after 10 drain rounds');
 }
 
 describe.skipIf(!HAS_DATABASE)('advisory locks for scheduled sweeps', () => {
