@@ -7,12 +7,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
-import { AccountNav } from '../../../../components/account-nav';
+import { AccountShell } from '../../../../components/account-shell';
+import { CheckIcon, CopyIcon, InfoIcon, WarningIcon } from '../../../../components/icons';
 import { isArabic } from '../../../../i18n/locale';
 import { accountApi, AccountError } from '../../../../lib/account-client';
 
 /**
- * تراخيصي — everything this customer has bought, and how to use it.
+ * تراخيصي — everything this customer has bought, and how to use it. Drawn
+ * after the kit's licences page (TASK-0105): one card per line with the
+ * status chip, the code in a dashed box, the copy button under it.
  *
  * The page exists for one moment: the licence email is gone and the key is
  * needed now. Until it existed the only answer was "write to support", and
@@ -41,11 +44,10 @@ import { accountApi, AccountError } from '../../../../lib/account-client';
 export default function LicensesPage() {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
+  const locale = params.locale ?? 'ar';
   const t = useTranslations('account');
-  const tc = useTranslations('common');
   const tl = useTranslations('licences');
-  const ar = isArabic(params.locale);
-  const prefix = ar ? '' : `/${params.locale ?? 'en'}`;
+  const prefix = isArabic(locale) ? '' : `/${locale}`;
 
   const [me, setMe] = useState<CustomerMe | null>(null);
   const [list, setList] = useState<LicenceList | null>(null);
@@ -80,46 +82,39 @@ export default function LicensesPage() {
     if (me) void load();
   }, [me, load]);
 
-  if (!me) {
-    return (
-      <main className="shell account-shell">
-        <p className="notice">…</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="shell account-shell">
-      <div className="account-head">
-        <h1>{t('myLicences')}</h1>
-        <p className="who" dir="ltr">
-          {me.email}
+    <AccountShell locale={locale} title={t('myLicences')} email={me?.email}>
+      {!me ? (
+        <p className="notice" aria-busy="true">
+          …
         </p>
-        {/* The only entry point to the review page other than the invitation
-            email, and a customer who has lost the email still has this. */}
-        <Link className="btn btn-ghost" href={`${prefix}${ROUTES.accountReviews}`}>
-          {t('myReviews')}
-        </Link>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          onClick={() => {
-            void accountApi.signOut().then(() => router.replace(`${prefix}${ROUTES.account}`));
-          }}
-        >
-          {tc('signOut')}
-        </button>
-      </div>
+      ) : null}
 
-      <AccountNav prefix={prefix} />
+      {error ? (
+        <p className="alert alert-error" role="alert">
+          <WarningIcon size={20} />
+          <span>{error}</span>
+        </p>
+      ) : null}
+      {note ? (
+        <p className="alert" role="status">
+          <CheckIcon size={20} />
+          <span>{note}</span>
+        </p>
+      ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="account-sent">{note}</p> : null}
-
-      {list && list.rows.length === 0 ? <p className="notice">{tl('none')}</p> : null}
+      {list && list.rows.length === 0 ? (
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tl('none')}</span>
+        </p>
+      ) : null}
 
       {list && list.waiting > 0 ? (
-        <p className="notice notice-warn">{tl('waiting', { count: list.waiting })}</p>
+        <p className="alert alert-info">
+          <InfoIcon size={20} />
+          <span>{tl('waiting', { count: list.waiting })}</span>
+        </p>
       ) : null}
 
       <ul className="licence-list">
@@ -133,7 +128,7 @@ export default function LicensesPage() {
           />
         ))}
       </ul>
-    </main>
+    </AccountShell>
   );
 }
 
@@ -197,6 +192,7 @@ function LicenceCard({
           </p>
         </div>
         <span className={`pill ${delivered ? 'pill-published' : 'pill-draft'}`}>
+          {delivered ? <CheckIcon size={14} /> : null}
           {tl(`state.${row.state}`)}
         </span>
       </div>
@@ -219,49 +215,57 @@ function LicenceCard({
       ) : null}
 
       {row.hasSecret ? (
-        <div className="licence-actions">
-          {secrets === null ? (
+        <>
+          {/* The kit's `licensecode` box: dashed, on the page ground, the code
+              in the Latin face. Empty — with the sentence that says why —
+              until the customer asks for it. */}
+          <div className="licence-code" aria-live="polite">
+            {secrets === null ? (
+              <p className="licence-code-hidden">{tl('hidden')}</p>
+            ) : (
+              secrets.map((secret, index) => (
+                <div key={index} className="licence-secret-block">
+                  {secret.kind === 'ACCOUNT_CREDENTIALS' ? (
+                    <>
+                      <Field label={tl('username')} value={secret.username} />
+                      <Field label={tl('password')} value={secret.password} />
+                    </>
+                  ) : (
+                    <Field label={tl('key')} value={secret.key} />
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="licence-actions">
+            {secrets === null ? (
+              <button
+                type="button"
+                className="btn btn-outline"
+                disabled={busy !== null}
+                onClick={() => void reveal()}
+              >
+                {busy === 'reveal' ? '…' : tl('reveal')}
+              </button>
+            ) : (
+              <button type="button" className="btn btn-outline" onClick={() => setSecrets(null)}>
+                {tl('hide')}
+              </button>
+            )}
+
             <button
               type="button"
-              className="btn btn-primary"
-              disabled={busy !== null}
-              onClick={() => void reveal()}
+              className="btn btn-text"
+              disabled={busy !== null || !delivered}
+              onClick={() => void resend()}
             >
-              {busy === 'reveal' ? '…' : tl('reveal')}
+              {busy === 'resend' ? '…' : tl('resend')}
             </button>
-          ) : (
-            <button type="button" className="btn btn-ghost" onClick={() => setSecrets(null)}>
-              {tl('hide')}
-            </button>
-          )}
+          </div>
 
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={busy !== null || !delivered}
-            onClick={() => void resend()}
-          >
-            {busy === 'resend' ? '…' : tl('resend')}
-          </button>
-        </div>
-      ) : null}
-
-      {secrets !== null ? (
-        <div className="licence-secret">
-          {secrets.map((secret, index) => (
-            <div key={index} className="licence-secret-block">
-              {secret.kind === 'ACCOUNT_CREDENTIALS' ? (
-                <>
-                  <Field label={tl('username')} value={secret.username} />
-                  <Field label={tl('password')} value={secret.password} />
-                </>
-              ) : (
-                <Field label={tl('key')} value={secret.key} />
-              )}
-            </div>
-          ))}
-          <p className="licence-warn">{tl('doNotShare')}</p>
-        </div>
+          {secrets !== null ? <p className="licence-warn">{tl('doNotShare')}</p> : null}
+        </>
       ) : null}
 
       {row.activationSteps.length > 0 ? (
@@ -292,10 +296,10 @@ function Field({ label, value }: { label: string; value: string | null }) {
   return (
     <p className="licence-field">
       <span className="licence-field-label">{label}</span>
-      <strong dir="ltr">{value}</strong>
+      <code dir="ltr">{value}</code>
       <button
         type="button"
-        className="linky"
+        className="btn btn-outline btn-copy-code"
         onClick={() => {
           void navigator.clipboard
             .writeText(value ?? '')
@@ -308,6 +312,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
             .catch(() => undefined);
         }}
       >
+        {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
         {copied ? tl('copied') : tl('copy')}
       </button>
     </p>
