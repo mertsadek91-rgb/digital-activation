@@ -227,6 +227,14 @@ export type Suggestions = z.infer<typeof suggestionsSchema>;
  * migration whose whole risk is losing organic traffic, dropping the only
  * editorial content would have been the one avoidable loss.
  */
+export const articleImageSchema = z.object({
+  url: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  alt: z.string(),
+});
+export type ArticleImage = z.infer<typeof articleImageSchema>;
+
 export const articleCardSchema = z.object({
   slug: slugSchema,
   locale: localeSchema,
@@ -243,19 +251,17 @@ export const articleCardSchema = z.object({
   summary: z.string().nullable(),
   readingMinutes: z.number().int().min(0),
   publishedAt: z.string().nullable(),
+  /**
+   * The article image (CR-0006): the card's picture, the article page's lead
+   * picture, its og:image and the Article JSON-LD image. Optional so an older
+   * API still validates.
+   */
+  hero: articleImageSchema.nullable().optional(),
 });
 export type ArticleCard = z.infer<typeof articleCardSchema>;
 
 export const articleSchema = articleCardSchema.extend({
   blocks: blockDocumentSchema,
-  /**
-   * The article image (CR-0006): the page's lead picture, its og:image and
-   * the Article JSON-LD image. Optional so an older API still validates.
-   */
-  hero: z
-    .object({ url: z.string(), width: z.number().int(), height: z.number().int(), alt: z.string() })
-    .nullable()
-    .optional(),
   seo: z.object({
     title: z.string().nullable(),
     description: z.string().nullable(),

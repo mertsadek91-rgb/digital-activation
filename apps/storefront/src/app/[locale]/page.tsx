@@ -8,7 +8,6 @@ import { BRAND } from '@da/ui';
 
 import {
   ArrowIcon,
-  BookIcon,
   CartIcon,
   CategoryMark,
   CreditCardIcon,
@@ -18,6 +17,7 @@ import {
   PlusIcon,
   ShieldCheckIcon,
 } from '../../components/icons';
+import { ArticleArt } from '../../components/article-art';
 import { HeroSlider } from '../../components/hero-slider';
 import { MotionFadeIn } from '../../components/motion-wrapper';
 import { ProductCard } from '../../components/product-card';
@@ -354,9 +354,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {home.posts.map((post) => (
               <li key={post.slug} className="article">
                 <Link href={href(ROUTES.post(post.slug))}>
-                  <span className="article-art" aria-hidden="true">
-                    <BookIcon size={72} />
-                  </span>
+                  <ArticleArt
+                    hero={post.hero}
+                    iconSize={72}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                  />
                   <span className="eyebrow">
                     {post.readingMinutes > 0
                       ? readingLabel(post.readingMinutes, tf)

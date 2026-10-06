@@ -26,7 +26,7 @@ import {
 } from '@da/contracts';
 import { ArticleKind, FulfillmentMode, Locale, Prisma, PublishStatus } from '@da/db';
 
-import { toArticleCard } from '../common/article-card.js';
+import { ARTICLE_HERO_INCLUDE, toArticleCard } from '../common/article-card.js';
 import type { LiveSale } from '../offers/offer-rules.js';
 import { SalesService, saleBadge, saleFor, salePriced } from '../offers/sales.service.js';
 import { sanitizeBlocks } from '../common/rich-text.js';
@@ -531,6 +531,7 @@ export class CatalogService {
         },
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         take: BLOG_MORE_SIZE,
+        include: ARTICLE_HERO_INCLUDE,
       }),
     ]);
 
@@ -729,6 +730,7 @@ export class CatalogService {
       },
       orderBy: [{ publishedAt: 'desc' }],
       take: BLOG_MORE_SIZE,
+      include: ARTICLE_HERO_INCLUDE,
     });
 
     return {

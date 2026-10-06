@@ -149,6 +149,7 @@ const PRODUCTS = [
 const POSTS = [
   {
     slug: 'which-windows-edition',
+    hero: { url: '/home/windows.webp', width: 1200, height: 630, alt: 'ويندوز 11' },
     title: 'أي إصدار من ويندوز 11 يناسبك؟',
     summary: 'الفرق بين Home وPro وEnterprise، ومتى يستحق الفرق في السعر.',
     minutes: 4,
@@ -240,6 +241,7 @@ function home(locale, currency) {
             summary: p.summary,
             readingMinutes: p.minutes,
             publishedAt: '2026-09-01',
+            hero: p.hero ?? null,
           }))
         : [],
     productCount: PRODUCTS.length,
@@ -1081,6 +1083,7 @@ function pageFixture(slug, locale) {
 const POST_FIXTURES = [
   {
     slug: 'windows-11-editions',
+    hero: { url: '/home/windows.webp', width: 1200, height: 630, alt: 'ويندوز 11' },
     title: 'أي إصدار من ويندوز 11 يناسبك؟',
     summary: 'الفرق بين Home وPro وEnterprise، ومتى يستحق الفرق في السعر.',
     minutes: 4,
@@ -1117,6 +1120,7 @@ function postCard(p) {
     summary: p.summary,
     readingMinutes: p.minutes,
     publishedAt: p.publishedAt,
+    hero: p.hero ?? null,
   };
 }
 
