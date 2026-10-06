@@ -167,6 +167,8 @@ export const adminArticleSchema = z.object({
   en: adminArticleLocaleSchema,
   /** Every by-line the post can carry, for the picker. */
   authors: z.array(authorOptionSchema),
+  /** The article image, shared by both languages (CR-0006). */
+  hero: z.object({ url: z.string(), altAr: z.string(), altEn: z.string() }).nullable().optional(),
 });
 export type AdminArticle = z.infer<typeof adminArticleSchema>;
 

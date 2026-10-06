@@ -166,6 +166,7 @@ export class ContentService {
         locale: wanted,
         ...(allowDrafts ? {} : { status: PublishStatus.PUBLISHED }),
       },
+      include: { hero: { include: { alts: { select: { locale: true, alt: true } } } } },
     });
     if (!post) throw new NotFoundException(`No post with slug "${slug}"`);
 
@@ -194,6 +195,16 @@ export class ContentService {
     return {
       ...toArticleCard(post),
       blocks: parseBlocks(post.blocks),
+      // The article image (CR-0006), with this language's alt text and the
+      // title when none was written.
+      hero: post.hero
+        ? {
+            url: heroUrl(post.hero.key),
+            width: post.hero.width ?? 1200,
+            height: post.hero.height ?? 630,
+            alt: post.hero.alts.find((alt) => alt.locale === wanted)?.alt ?? post.title,
+          }
+        : null,
       seo: parseSeo(post.seo),
       updatedAt: post.updatedAt.toISOString(),
       isDraft: post.status !== PublishStatus.PUBLISHED,
@@ -347,4 +358,10 @@ function parseSeo(value: Prisma.JsonValue): ContentPage['seo'] {
     title: typeof record.title === 'string' ? record.title : null,
     description: typeof record.description === 'string' ? record.description : null,
   };
+}
+
+/** Where a stored key is served from: the bucket's public base, as the catalog does. */
+function heroUrl(key: string): string {
+  const base = process.env.S3_PUBLIC_BASE_URL;
+  return base ? new URL(key, base).toString() : `/media/${key}`;
 }

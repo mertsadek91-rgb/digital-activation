@@ -43,7 +43,8 @@ type NavKey =
   | 'contentPages'
   | 'contentBlog'
   | 'contentBrands'
-  | 'supplier';
+  | 'supplier'
+  | 'contentStudio';
 
 type NavItem = {
   key: NavKey;
@@ -307,6 +308,12 @@ export function Nav({
       items: [
         { key: 'contentPages', label: t('contentPages'), icon: 'pages', path: 'content/pages' },
         { key: 'contentBlog', label: t('contentBlog'), icon: 'blog', path: 'content/blog' },
+        {
+          key: 'contentStudio',
+          label: t('contentStudio'),
+          icon: 'studio',
+          path: 'content/studio',
+        },
         {
           key: 'contentBrands',
           label: t('contentBrands'),

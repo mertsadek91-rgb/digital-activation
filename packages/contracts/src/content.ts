@@ -248,6 +248,14 @@ export type ArticleCard = z.infer<typeof articleCardSchema>;
 
 export const articleSchema = articleCardSchema.extend({
   blocks: blockDocumentSchema,
+  /**
+   * The article image (CR-0006): the page's lead picture, its og:image and
+   * the Article JSON-LD image. Optional so an older API still validates.
+   */
+  hero: z
+    .object({ url: z.string(), width: z.number().int(), height: z.number().int(), alt: z.string() })
+    .nullable()
+    .optional(),
   seo: z.object({
     title: z.string().nullable(),
     description: z.string().nullable(),

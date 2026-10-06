@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import {
@@ -25,6 +25,8 @@ import {
   adminArticleSchema,
   adminBrandListSchema,
   adminBrandSchema,
+  type ArticleHeroUpload,
+  articleHeroUploadSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
@@ -137,6 +139,27 @@ export class ContentAdminController {
   @ApiOperation({ summary: 'One post, both locales, with the authors to choose from' })
   getArticle(@Param('slug') slug: string): Promise<AdminArticle> {
     return this.articles.get(slug);
+  }
+
+  @Post('articles/:slug/hero')
+  @ZodResponse(adminArticleSchema)
+  @ApiOperation({ summary: 'Set the article image (both languages)' })
+  setArticleHero(
+    @Param('slug') slug: string,
+    @Body(new ZodPipe(articleHeroUploadSchema)) body: ArticleHeroUpload,
+    @Req() request: StaffRequest,
+  ): Promise<AdminArticle> {
+    return this.articles.setHero(slug, body, request.staff?.sub);
+  }
+
+  @Delete('articles/:slug/hero')
+  @ZodResponse(adminArticleSchema)
+  @ApiOperation({ summary: 'Remove the article image' })
+  removeArticleHero(
+    @Param('slug') slug: string,
+    @Req() request: StaffRequest,
+  ): Promise<AdminArticle> {
+    return this.articles.removeHero(slug, request.staff?.sub);
   }
 
   @Patch('articles/:slug')

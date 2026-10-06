@@ -1,0 +1,143 @@
+/* The article studio (CR-0006). Built on the panel's tokens and classes. */
+
+.studio-inventory {
+  margin-block: 0 16px;
+}
+
+.studio-layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  margin-block-end: 20px;
+}
+
+.studio-chat,
+.studio-custom,
+.studio-result {
+  display: grid;
+  gap: 12px;
+}
+
+.studio-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studio-head h2 {
+  margin: 0;
+}
+
+.studio-thread {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-block-size: 22rem;
+  overflow: auto;
+}
+
+.studio-message {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-card-alt);
+}
+
+.studio-message.is-user {
+  border-inline-start: 3px solid var(--color-brand, #087f70);
+}
+
+.studio-message p {
+  margin: 4px 0 0;
+  white-space: pre-line;
+}
+
+.studio-ideas {
+  display: grid;
+  gap: 12px;
+}
+
+.studio-idea-list {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(22rem, 100%), 1fr));
+}
+
+.studio-idea {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.studio-idea h3 {
+  margin: 0;
+  font-size: var(--text-md, 1.05rem);
+}
+
+.studio-idea p {
+  margin: 0;
+}
+
+.studio-idea.is-dismissed {
+  background: var(--color-card-alt);
+}
+
+.studio-idea details ol {
+  margin: 6px 0 0;
+  padding-inline-start: 1.2em;
+}
+
+.studio-links {
+  overflow-wrap: anywhere;
+}
+
+.studio-facts {
+  margin: 0;
+  padding-inline-start: 1.2em;
+}
+
+.studio-prompt {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-card-alt);
+  font-size: 13px;
+}
+
+.studio-result {
+  margin-block-end: 20px;
+  border-inline-start: 3px solid var(--color-brand, #087f70);
+}
+
+@media (max-width: 900px) {
+  .studio-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .studio-chat button,
+  .studio-custom button,
+  .studio-idea button,
+  .studio-idea .as-button {
+    min-block-size: 44px;
+  }
+}
+
+.studio-actions,
+.studio-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-tags {
+  gap: 6px;
+}

@@ -423,3 +423,17 @@
 .breadcrumb [lang='ar'] {
   font-family: var(--font-tajawal), system-ui, sans-serif;
 }
+
+/* The article image (CR-0006): full width of the text column, never taller
+   than a screen, rounded like the cards. */
+.post-hero {
+  margin: 0 0 var(--space-4, 24px);
+}
+
+.post-hero img {
+  inline-size: 100%;
+  block-size: auto;
+  max-block-size: 70vh;
+  object-fit: cover;
+  border-radius: var(--radius-md, 12px);
+}

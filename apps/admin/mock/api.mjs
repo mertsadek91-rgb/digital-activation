@@ -20,6 +20,7 @@ import {
   supplierSectionDynamic,
   supplierSectionRoutes,
 } from './supplier.mjs';
+import { studioDynamic } from './studio.mjs';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 4000);
 const ORIGIN = process.env.MOCK_API_ORIGIN ?? 'http://localhost:3001';
@@ -736,6 +737,7 @@ const orderKeys = (number) => {
 const dynamic = [
   ...supplierDynamic,
   ...supplierSectionDynamic,
+  ...studioDynamic,
   [/^GET \/v1\/admin\/orders\/([^/]+)$/, (m) => orderDetail(decodeURIComponent(m[1]))],
   [
     /^GET \/v1\/admin\/fulfillment\/orders\/([^/]+)\/keys$/,

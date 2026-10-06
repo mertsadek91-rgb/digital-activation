@@ -4300,3 +4300,31 @@ a.as-button.ghost:hover {
     break-inside: avoid;
   }
 }
+
+/* The article image (CR-0006). */
+.article-hero-form {
+  display: grid;
+  gap: 12px;
+}
+
+.article-hero-preview {
+  inline-size: 100%;
+  max-inline-size: 640px;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.article-hero-form label.button {
+  cursor: pointer;
+}
+
+.article-hero-form .visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

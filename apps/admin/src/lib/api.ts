@@ -12,6 +12,7 @@
 import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
 
 import type {
+  ArticleHeroUpload,
   MarketingFeature,
   MarketingSettings,
   WhatsappStatus,
@@ -430,6 +431,17 @@ export const api = {
     request<AdminArticle>('/admin/content/articles', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+
+  /** The article image, shared by both languages (CR-0006). */
+  setArticleHero: (slug: string, body: ArticleHeroUpload) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}/hero`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+  removeArticleHero: (slug: string) =>
+    request<AdminArticle>(`/admin/content/articles/${encodeURIComponent(slug)}/hero`, {
+      method: 'DELETE',
     }),
 
   setContentArticle: (slug: string, patch: SetArticle) =>
