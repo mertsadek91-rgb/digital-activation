@@ -2,12 +2,10 @@
 
 import {
   AI_PROTOCOLS,
-  SEO_LENGTH_GUIDE,
   type AiProtocol,
-  type EditableBlock,
   type GenerateCopy,
+  generateCopySchema,
   type GeneratedCopy,
-  type GeneratedLocaleCopy,
   type SupplierAiModels,
   type SupplierAiStatus,
 } from '@da/contracts';
@@ -19,6 +17,8 @@ import { api } from '../../lib/api';
 import { supplierAiApi, supplierApi } from '../../lib/supplier-api';
 
 import { CardDesigner } from './card-designer';
+import { runCopyJob } from './copy-job';
+import { CopyPreview } from './copy-preview';
 
 type Locale = 'ar' | 'en';
 
@@ -89,25 +89,17 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
       .catch(() => setProducts([]));
   }, [load]);
 
-  /**
-   * Starts a background job and polls it every few seconds (BUG-0026): the
-   * generation outlives the 100 s Cloudflare keeps a request open. Gives up
-   * after 12 minutes, which is past anything a model takes; the server marks
-   * a job that long dead anyway.
-   */
-  async function generate(input: GenerateCopy): Promise<GeneratedCopy> {
-    const job = await supplierAiApi.copy(input);
-    const started = Date.now();
-    setElapsed(0);
-    for (;;) {
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      if (!mounted.current) throw new Error(t('aiCancelled'));
-      setElapsed(Math.round((Date.now() - started) / 1000));
-      const current = await supplierAiApi.copyJob(job.id);
-      if (current.status === 'DONE' && current.result) return current.result;
-      if (current.status === 'FAILED') throw new Error(current.error ?? t('loadFailed'));
-      if (Date.now() - started > 12 * 60 * 1000) throw new Error(t('aiTimedOut'));
-    }
+  /** One copy job, polled; each language is shown as soon as it is ready. */
+  function generate(
+    input: GenerateCopy,
+    onPartial: (partial: GeneratedCopy) => void,
+  ): Promise<GeneratedCopy> {
+    return runCopyJob(input, {
+      onPartial,
+      onElapsed: setElapsed,
+      isActive: () => mounted.current,
+      messages: { cancelled: t('aiCancelled'), timedOut: t('aiTimedOut'), failed: t('loadFailed') },
+    });
   }
 
   async function run(label: string, work: () => Promise<void>) {
@@ -334,7 +326,16 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
                 void run('copy', async () => {
                   setCopy(null);
                   setCardSlug(slug);
-                  setCopy(await generate({ productSlug: slug, locales, focusKeywords: keywords }));
+                  setCopy(
+                    await generate(
+                      generateCopySchema.parse({
+                        productSlug: slug,
+                        locales,
+                        focusKeywords: keywords,
+                      }),
+                      setCopy,
+                    ),
+                  );
                 })
               }
             >
@@ -379,20 +380,27 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
                 key={locale}
                 locale={locale}
                 copy={copy[locale]}
-                busy={busy !== null}
-                onSave={() =>
-                  void run(`save-${locale}`, async () => {
-                    const draft = copy[locale];
-                    if (!draft) return;
-                    await api.setProductContent(slug, { locale, blocks: draft.blocks });
-                    await api.setProductCopy(slug, {
-                      locale,
-                      seoTitle: draft.seoTitle,
-                      seoDescription: draft.seoDescription,
-                      shortDesc: draft.shortDesc,
-                    });
-                    setNote(t('aiSaved', { locale: t(`aiLocale_${locale}`) }));
-                  })
+                actions={
+                  <button
+                    type="button"
+                    disabled={busy !== null}
+                    onClick={() =>
+                      void run(`save-${locale}`, async () => {
+                        const draft = copy[locale];
+                        if (!draft) return;
+                        await api.setProductContent(slug, { locale, blocks: draft.blocks });
+                        await api.setProductCopy(slug, {
+                          locale,
+                          seoTitle: draft.seoTitle,
+                          seoDescription: draft.seoDescription,
+                          shortDesc: draft.shortDesc,
+                        });
+                        setNote(t('aiSaved', { locale: t(`aiLocale_${locale}`) }));
+                      })
+                    }
+                  >
+                    {t('aiSave')}
+                  </button>
                 }
               />
             ) : null,
@@ -401,119 +409,4 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
       ) : null}
     </div>
   );
-}
-
-function CopyPreview({
-  locale,
-  copy,
-  busy,
-  onSave,
-}: {
-  locale: Locale;
-  copy: GeneratedLocaleCopy;
-  busy: boolean;
-  onSave: () => void;
-}) {
-  const t = useT('supplier');
-  const dir = locale === 'ar' ? 'rtl' : 'ltr';
-  return (
-    <section className="card ai-preview">
-      <div className="supplier-sync">
-        <h2>{t(`aiLocale_${locale}`)}</h2>
-        <button type="button" disabled={busy} onClick={onSave}>
-          {t('aiSave')}
-        </button>
-      </div>
-      <dl className="ai-fields">
-        <dt>
-          {t('aiSeoTitle')} <Count value={copy.seoTitle} max={SEO_LENGTH_GUIDE.seoTitleMax} />
-        </dt>
-        <dd lang={locale} dir={dir}>
-          {copy.seoTitle}
-        </dd>
-        <dt>
-          {t('aiSeoDescription')}{' '}
-          <Count value={copy.seoDescription} max={SEO_LENGTH_GUIDE.seoDescriptionMax} />
-        </dt>
-        <dd lang={locale} dir={dir}>
-          {copy.seoDescription}
-        </dd>
-        <dt>{t('aiShortDesc')}</dt>
-        <dd lang={locale} dir={dir}>
-          {copy.shortDesc}
-        </dd>
-        <dt>{t('aiKeywordsOut')}</dt>
-        <dd className="supplier-states" lang={locale} dir={dir}>
-          {copy.keywords.map((keyword) => (
-            <span key={keyword} className="pill pill-info">
-              {keyword}
-            </span>
-          ))}
-        </dd>
-      </dl>
-      <div className="ai-body" lang={locale} dir={dir}>
-        {copy.blocks.map((block, index) => (
-          <BlockPreview key={index} block={block} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Count({ value, max }: { value: string; max: number }) {
-  return (
-    <span className={`meta${value.length > max ? ' supplier-large' : ''}`} dir="ltr">
-      ({value.length}/{max})
-    </span>
-  );
-}
-
-/** A plain rendering of each block. The storefront's own styles apply after saving. */
-function BlockPreview({ block }: { block: EditableBlock }) {
-  switch (block.type) {
-    case 'answerFirst':
-      return <p className="ai-answer">{block.text}</p>;
-    case 'heading':
-      return block.level === 2 ? <h3>{block.text}</h3> : <h4>{block.text}</h4>;
-    case 'richText':
-      // Shown as text, not injected: the server sanitises on save, and the
-      // preview has no need to trust the model's markup.
-      return (
-        <p className="ai-rich">
-          {block.html.replace(/<\/(p|li|h3)>/g, '\n').replace(/<[^>]+>/g, '')}
-        </p>
-      );
-    case 'steps':
-      return (
-        <ol>
-          {block.steps.map((step, index) => (
-            <li key={index}>{step.text}</li>
-          ))}
-        </ol>
-      );
-    case 'specTable':
-      return (
-        <table className="admin-table">
-          <tbody>
-            {block.rows.map((row, index) => (
-              <tr key={index}>
-                <th>{row.label}</th>
-                <td>{row.value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-    case 'faq':
-      return (
-        <dl className="ai-faq">
-          {block.items.map((item, index) => (
-            <div key={index}>
-              <dt>{item.q}</dt>
-              <dd>{item.a}</dd>
-            </div>
-          ))}
-        </dl>
-      );
-  }
 }

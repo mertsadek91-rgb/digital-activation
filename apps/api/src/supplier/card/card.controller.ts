@@ -4,9 +4,11 @@ import {
   type CardDefaults,
   type CardPreview,
   type CardSpecInput,
+  type LogoColor,
   type ProductImages,
   type SaveCard,
   cardSpecSchema,
+  logoUploadSchema,
   saveCardSchema,
 } from '@da/contracts';
 
@@ -36,6 +38,12 @@ export class CardController {
     @Body(new ZodPipe(cardSpecSchema)) body: CardSpecInput,
   ): Promise<CardSpecInput> {
     return this.cards.suggest(slug, body);
+  }
+
+  @Post('logo-color')
+  @ApiOperation({ summary: 'The main colour of an uploaded logo' })
+  logoColor(@Body(new ZodPipe(logoUploadSchema)) body: { dataUrl: string }): Promise<LogoColor> {
+    return this.cards.uploadedLogoColor(body.dataUrl);
   }
 
   @Post(':slug/preview')

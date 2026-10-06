@@ -158,6 +158,55 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
               </span>
             </label>
           </div>
+          <div className="supplier-actions card-logo-upload">
+            <label className="as-button ghost">
+              {spec.logoDataUrl ? t('cardReplaceLogo') : t('cardUploadLogo')}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="visually-hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = '';
+                  if (!file) return;
+                  void run('logo', async () => {
+                    const dataUrl = await shrinkLogo(file);
+                    const { color } = await supplierCardApi.logoColor(dataUrl);
+                    const next = {
+                      ...spec,
+                      logoDataUrl: dataUrl,
+                      useLogo: true,
+                      color: color ?? spec.color,
+                    };
+                    setSpec(next);
+                    const result = await supplierCardApi.preview(slug, next);
+                    setPreview(result.dataUrl);
+                    setNotes(result.notes);
+                  });
+                }}
+              />
+            </label>
+            {spec.logoDataUrl ? (
+              <>
+                <img
+                  className="card-logo-thumb"
+                  src={spec.logoDataUrl}
+                  alt={t('cardUploadedLogo')}
+                />
+                <button
+                  type="button"
+                  className="ghost btn-sm"
+                  onClick={() => {
+                    const { logoDataUrl: _removed, ...rest } = spec;
+                    setSpec({ ...rest, useLogo: defaults.hasLogo });
+                  }}
+                >
+                  {t('cardRemoveLogo')}
+                </button>
+              </>
+            ) : null}
+            <small className="meta">{t('cardLogoHint')}</small>
+          </div>
           <div className="supplier-actions">
             <button
               type="button"
@@ -232,4 +281,22 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
       ) : null}
     </section>
   );
+}
+
+/**
+ * A logo file shrunk in the browser to a PNG no wider or taller than 800 px,
+ * keeping transparency, so it fits the request size limit; the server reads
+ * it again before drawing.
+ */
+async function shrinkLogo(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 800 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('canvas unavailable');
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return canvas.toDataURL('image/png');
 }

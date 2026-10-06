@@ -63,11 +63,31 @@ export type SupplierAiTest = z.infer<typeof supplierAiTestSchema>;
 
 // --- copy ---------------------------------------------------------------------
 
+/**
+ * What is on the editor page right now, saved or not, so "improve" rewrites
+ * what the person is looking at. Omitted, the stored copy is used.
+ */
+export const currentCopySchema = z.object({
+  seoTitle: z.string().max(500).default(''),
+  seoDescription: z.string().max(1000).default(''),
+  shortDesc: z.string().max(500).default(''),
+  blocks: z.array(z.unknown()).max(60).default([]),
+});
+export type CurrentCopy = z.infer<typeof currentCopySchema>;
+
 export const generateCopySchema = z.object({
   productSlug: z.string().trim().min(1),
   locales: z.array(localeSchema).min(1).max(2).default(['ar', 'en']),
   /** Keywords the person wants the copy built around, comma-separated. */
   focusKeywords: z.string().trim().max(300).default(''),
+  /** `write` starts from the facts; `improve` rewrites the page's current copy. */
+  mode: z.enum(['write', 'improve']).default('write'),
+  /** A one-off request for this run ("shorter", "more technical"). */
+  instructions: z.string().trim().max(1000).default(''),
+  /** The page's current copy, per locale, for `improve`. */
+  current: z
+    .object({ ar: currentCopySchema.optional(), en: currentCopySchema.optional() })
+    .default({}),
 });
 export type GenerateCopy = z.infer<typeof generateCopySchema>;
 
@@ -149,6 +169,16 @@ export const cardSpecSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'لون بصيغة ‎#rrggbb'),
   /** Draw the brand's logo; false draws the brand name in its colour. */
   useLogo: z.boolean().default(true),
+  /**
+   * A logo uploaded for this product, as a data URL, drawn in place of the
+   * brand's. Capped well under the 2 MiB body limit; the panel shrinks it
+   * first.
+   */
+  logoDataUrl: z
+    .string()
+    .max(1_400_000)
+    .regex(/^data:image\/(png|jpeg|webp);base64,/, 'شعار بصيغة PNG أو JPEG أو WebP')
+    .optional(),
 });
 export type CardSpecInput = z.infer<typeof cardSpecSchema>;
 
@@ -167,6 +197,15 @@ export const cardPreviewSchema = z.object({
   notes: z.array(z.string()),
 });
 export type CardPreview = z.infer<typeof cardPreviewSchema>;
+
+/** The main colour of an uploaded logo, for the card. */
+export const logoColorSchema = z.object({ color: z.string().nullable() });
+
+/** An uploaded logo, for its colour. Same limits as on the card spec. */
+export const logoUploadSchema = z.object({
+  dataUrl: cardSpecSchema.shape.logoDataUrl.unwrap(),
+});
+export type LogoColor = z.infer<typeof logoColorSchema>;
 
 export const saveCardSchema = cardSpecSchema.extend({
   /** Make it the product's main image. */

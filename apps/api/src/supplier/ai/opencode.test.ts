@@ -9,9 +9,10 @@ import {
   extractJson,
   protocolFor,
   readText,
+  whyEmpty,
 } from './opencode.js';
 import { copySystemPrompt, copyUserPrompt, draftUserPrompt } from './prompts.js';
-import { normaliseCopy, slugify } from './supplier-ai.service.js';
+import { normaliseCopy, pageText, slugify } from './supplier-ai.service.js';
 
 describe('protocolFor', () => {
   it.each([
@@ -286,5 +287,113 @@ describe('OpenCodeClient identity (OpenCode Go)', () => {
     const client = new OpenCodeClient('KEY', 'https://example.test/v1', 'da-fixed');
     expect(await client.models()).toEqual(['kimi-k3']);
     expect(headers['x-opencode-session']).toBe('da-fixed');
+  });
+});
+
+describe('empty answers (BUG-0027)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('recognises a budget spent on thinking in each protocol', () => {
+    expect(
+      whyEmpty('chat', {
+        choices: [{ finish_reason: 'length', message: { content: '', reasoning_content: 'hmm' } }],
+      }),
+    ).toEqual({ stoppedForLength: true, detail: 'stop: length, reasoning only' });
+    expect(whyEmpty('messages', { stop_reason: 'max_tokens', content: [] }).stoppedForLength).toBe(
+      true,
+    );
+    expect(
+      whyEmpty('responses', {
+        status: 'incomplete',
+        incomplete_details: { reason: 'max_output_tokens' },
+      }).stoppedForLength,
+    ).toBe(true);
+    expect(
+      whyEmpty('chat', { choices: [{ finish_reason: 'stop', message: { content: '' } }] }),
+    ).toEqual({
+      stoppedForLength: false,
+      detail: 'stop: stop',
+    });
+  });
+
+  it('retries with a larger budget when thinking used it up, then answers', async () => {
+    const budgets: number[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      const body = JSON.parse(init?.body as string) as { max_tokens: number };
+      budgets.push(body.max_tokens);
+      const answer =
+        body.max_tokens >= 16_000
+          ? { choices: [{ finish_reason: 'stop', message: { content: '{"ok":true}' } }] }
+          : {
+              choices: [
+                { finish_reason: 'length', message: { content: '', reasoning_content: 'x' } },
+              ],
+            };
+      return Promise.resolve(new Response(JSON.stringify(answer), { status: 200 }));
+    });
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1');
+    const text = await client.complete({
+      model: 'glm-5.3',
+      protocol: 'chat',
+      system: 'S',
+      prompt: 'P',
+      maxTokens: 8000,
+    });
+    expect(text).toBe('{"ok":true}');
+    expect(budgets).toEqual([8000, 16_000]);
+  });
+
+  it('explains an empty answer that is not about the budget', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: '' } }] }),
+      ),
+    );
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1');
+    await expect(
+      client.complete({ model: 'm', protocol: 'chat', system: 'S', prompt: 'P', maxTokens: 10 }),
+    ).rejects.toThrow(/stop: stop/);
+  });
+});
+
+describe('improve mode', () => {
+  it('flattens a page into readable text with its structure', () => {
+    const text = pageText([
+      { type: 'answerFirst', text: 'A genuine key.' },
+      { type: 'heading', level: 2, text: 'What you get' },
+      { type: 'richText', html: '<ul><li>One key</li><li>Support</li></ul>' },
+      { type: 'faq', items: [{ q: 'Lifetime?', a: 'Yes.' }] },
+      { type: 'unknown', raw: {} },
+    ]);
+    expect(text).toContain('A genuine key.');
+    expect(text).toContain('## What you get');
+    expect(text).toContain('- One key');
+    expect(text).toContain('FAQ: Lifetime? — Yes.');
+  });
+
+  it('hands the current page and the one-off request to the model', () => {
+    const prompt = copyUserPrompt({
+      locale: 'ar',
+      facts: {
+        nameAr: 'ويندوز 11 برو',
+        nameEn: 'Windows 11 Pro',
+        brand: 'Microsoft',
+        categories: [],
+        kind: 'KEY',
+        variants: [],
+        supplierLines: [],
+      },
+      focusKeywords: '',
+      sample: null,
+      current: { seoTitle: 'Old title', seoDescription: '', shortDesc: '', body: 'Old body text' },
+      instructions: 'shorter',
+    });
+    expect(prompt).toMatch(/Improve the Arabic product page copy/);
+    expect(prompt).toContain('Old title');
+    expect(prompt).toContain('Old body text');
+    expect(prompt).toContain('(empty)');
+    expect(prompt).toContain('shorter');
   });
 });

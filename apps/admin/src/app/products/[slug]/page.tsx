@@ -66,6 +66,8 @@ export default function ProductEditPage() {
   const [missing, setMissing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [active, setActive] = useState<SectionId>('readiness');
+  // Bumped when the AI panel saves SEO copy, so the copy form reloads it.
+  const [copyVersion, setCopyVersion] = useState(0);
 
   /**
    * The header and the gate, together.
@@ -149,6 +151,8 @@ export default function ProductEditPage() {
   if (!me) return <div className="admin-layout">{c('loading')}</div>;
 
   const canWrite = ['OWNER', 'ADMIN', 'CATALOG'].includes(me.role);
+  // The AI endpoints admit ADMIN and CATALOG (OWNER passes), as writing does.
+  const canUseAi = canWrite;
   // Terms carry costUsd, and stock and SEO copy are read from the same
   // OWNER/ADMIN/CATALOG routes; other roles are not shown sections that would
   // only come back 403 (TASK-0095).
@@ -346,6 +350,7 @@ export default function ProductEditPage() {
               <h3>{t('seoCopy')}</h3>
               <p className="lede-sm">{t('seoLede')}</p>
               <CopyForm
+                key={`copy-${String(copyVersion)}`}
                 slug={slug}
                 locale={locale}
                 canWrite={canWrite}
@@ -362,6 +367,11 @@ export default function ProductEditPage() {
               canWrite={canWrite}
               onSaved={onSaved}
               onError={onError}
+              canUseAi={canUseAi}
+              onCopyChanged={() => {
+                setCopyVersion((value) => value + 1);
+                onSaved();
+              }}
             />
           </section>
 

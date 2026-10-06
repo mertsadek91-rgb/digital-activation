@@ -62,16 +62,40 @@ export function copySystemPrompt(instructions: string): string {
     .join('\n\n');
 }
 
+/** The page as it stands, for "improve": what the person is looking at. */
+export interface CurrentPage {
+  seoTitle: string;
+  seoDescription: string;
+  shortDesc: string;
+  /** The body flattened to text, block by block. */
+  body: string;
+}
+
+const IMPROVE_RULES = [
+  'Rewrite and improve the existing page below into professional, conversion-focused copy.',
+  'Keep every true, specific fact from it that agrees with the product facts (system requirements, activation details, what is included). Drop claims the facts do not support, and anything about price, discounts or the supplier.',
+  'Fix grammar, spelling and awkward phrasing; replace vague filler with specifics; remove repetition.',
+  'Restructure into the block order given in the system prompt: a direct answer-first paragraph, scannable sections with clear headings, a specification table, activation steps, and 4–6 FAQ items that answer what buyers actually ask before paying.',
+  'Strengthen SEO: main keyword at the start of the title and in the first sentence, related terms in headings, a description that gives a reason to click.',
+].join('\n');
+
 export function copyUserPrompt(input: {
   locale: 'ar' | 'en';
   facts: ProductFacts;
   focusKeywords: string;
   sample: StyleSample | null;
+  /** Present for "improve": the page's current copy in this language. */
+  current?: CurrentPage | null;
+  /** A one-off request for this run. */
+  instructions?: string;
 }): string {
   const { facts } = input;
   const language = input.locale === 'ar' ? 'Arabic' : 'English';
+  const improving = Boolean(input.current);
   const lines = [
-    `Write the ${language} product page copy.`,
+    improving
+      ? `Improve the ${language} product page copy.`
+      : `Write the ${language} product page copy.`,
     '',
     'Product facts:',
     `- Name (Arabic): ${facts.nameAr ?? 'not set'}`,
@@ -88,8 +112,23 @@ export function copyUserPrompt(input: {
         `- Supplier line name (for facts only, do not quote): ${line.name}${line.warranty ? `; warranty ${line.warranty}` : ''}`,
     ),
   ];
+  if (input.current) {
+    lines.push(
+      '',
+      IMPROVE_RULES,
+      '',
+      'The page as it is now:',
+      `seoTitle: ${input.current.seoTitle || '(empty)'}`,
+      `seoDescription: ${input.current.seoDescription || '(empty)'}`,
+      `shortDesc: ${input.current.shortDesc || '(empty)'}`,
+      'body:',
+      input.current.body.slice(0, 12_000) || '(empty)',
+    );
+  }
   if (input.focusKeywords)
     lines.push('', `Build the copy around these keywords: ${input.focusKeywords}`);
+  if (input.instructions)
+    lines.push('', `The store owner asks for this run: ${input.instructions}`);
   if (input.sample) {
     lines.push(
       '',

@@ -2,6 +2,7 @@
 
 import type {
   AiCopyJob,
+  LogoColor,
   ApplySupplierPrices,
   CardDefaults,
   CardPreview,
@@ -99,6 +100,11 @@ export const supplierAiApi = {
 
 /** The product card picture (CR-0004). */
 export const supplierCardApi = {
+  logoColor: (dataUrl: string) =>
+    request<LogoColor>('/admin/supplier/card/logo-color', {
+      method: 'POST',
+      body: JSON.stringify({ dataUrl }),
+    }),
   defaults: (slug: string) =>
     request<CardDefaults>(`/admin/supplier/card/${encodeURIComponent(slug)}`),
   suggest: (slug: string, spec: CardSpecInput) =>

@@ -1,4 +1,9 @@
-import { type AiCopyJob, type GeneratedCopy, aiCopyJobKey } from '@da/contracts';
+import {
+  type AiCopyJob,
+  type GeneratedCopy,
+  aiCopyJobKey,
+  generateCopySchema,
+} from '@da/contracts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AuditService } from '../../auth/audit.service.js';
@@ -65,11 +70,9 @@ describe('copy jobs', () => {
       }),
     );
 
-    const job = await service.startCopyJob({
-      productSlug: 'known',
-      locales: ['ar'],
-      focusKeywords: '',
-    });
+    const job = await service.startCopyJob(
+      generateCopySchema.parse({ productSlug: 'known', locales: ['ar'] }),
+    );
     expect(job.status).toBe('RUNNING');
     expect((await service.copyJob(job.id)).status).toBe('RUNNING');
 
@@ -83,11 +86,9 @@ describe('copy jobs', () => {
   it('records a failure with its message', async () => {
     const { service } = harness();
     vi.spyOn(service, 'generateCopy').mockRejectedValue(new Error('OpenCode 402: no funds'));
-    const job = await service.startCopyJob({
-      productSlug: 'known',
-      locales: ['ar'],
-      focusKeywords: '',
-    });
+    const job = await service.startCopyJob(
+      generateCopySchema.parse({ productSlug: 'known', locales: ['ar'] }),
+    );
     await flush();
     expect(await service.copyJob(job.id)).toMatchObject({
       status: 'FAILED',
@@ -99,7 +100,7 @@ describe('copy jobs', () => {
     const { service } = harness();
     const spy = vi.spyOn(service, 'generateCopy');
     await expect(
-      service.startCopyJob({ productSlug: 'missing', locales: ['ar'], focusKeywords: '' }),
+      service.startCopyJob(generateCopySchema.parse({ productSlug: 'missing', locales: ['ar'] })),
     ).rejects.toThrow();
     expect(spy).not.toHaveBeenCalled();
   });
