@@ -25,6 +25,8 @@ export function CreateFromLine({
   onCancel: () => void;
 }) {
   const t = useT('supplier');
+  const p = useT('products');
+  const c = useT('common');
   const [draft, setDraft] = useState<DraftProduct | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +85,10 @@ export function CreateFromLine({
       </p>
       {!draft ? (
         <div className="supplier-actions">
-          <button type="button" disabled={busy} onClick={() => void propose()}>
+          <button type="button" autoFocus disabled={busy} onClick={() => void propose()}>
             {busy ? t('aiGenerating') : t('createPropose')}
           </button>
-          <button type="button" className="ghost" onClick={onCancel}>
+          <button type="button" className="ghost" aria-label={c('cancel')} onClick={onCancel}>
             ✕
           </button>
         </div>
@@ -95,7 +97,9 @@ export function CreateFromLine({
           {draft.notes.length > 0 ? (
             <ul className="notice supplier-skips">
               {draft.notes.map((line) => (
-                <li key={line}>{line}</li>
+                <li key={line} dir="auto">
+                  {line}
+                </li>
               ))}
             </ul>
           ) : null}
@@ -139,23 +143,36 @@ export function CreateFromLine({
               />
             </label>
           </div>
-          <p className="meta" dir="ltr">
-            {draft.kind} · {draft.licensePeriodUnit}
-            {draft.licensePeriodValue ? ` ${String(draft.licensePeriodValue)}` : ''} ·{' '}
-            {draft.deviceCount} · {draft.platform} · {draft.activationMethod} · {draft.model}
+          <p className="meta">
+            {p(`kind_${draft.kind}`)} ·{' '}
+            {draft.licensePeriodUnit === 'LIFETIME'
+              ? p('unit_LIFETIME')
+              : `${String(draft.licensePeriodValue ?? 1)} ${p(`unit_${draft.licensePeriodUnit}`)}`}{' '}
+            · {t('createDevices', { count: draft.deviceCount })} · {p(`platform_${draft.platform}`)}{' '}
+            · {p(`activation_${draft.activationMethod}`)} · <bdi dir="ltr">{draft.model}</bdi>
           </p>
           <p className="meta">{t('createTermsHint')}</p>
           <div className="supplier-actions">
             <button type="button" disabled={busy} onClick={() => void create()}>
               {t('createSubmit')}
             </button>
-            <button type="button" className="ghost" disabled={busy} onClick={onCancel}>
+            <button
+              type="button"
+              className="ghost"
+              aria-label={c('cancel')}
+              disabled={busy}
+              onClick={onCancel}
+            >
               ✕
             </button>
           </div>
         </div>
       )}
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

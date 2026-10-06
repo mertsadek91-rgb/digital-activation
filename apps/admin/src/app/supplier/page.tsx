@@ -50,9 +50,15 @@ export default function SupplierPage() {
   // A product just created from a sheet line, handed to the AI tab.
   const [copySlug, setCopySlug] = useState<string | null>(null);
 
+  // The hash is read on load and whenever it changes (a link, back/forward).
   useEffect(() => {
-    const fromHash = window.location.hash.replace('#', '') as Tab;
-    if (TABS.includes(fromHash)) setTabState(fromHash);
+    const read = () => {
+      const fromHash = window.location.hash.replace('#', '') as Tab;
+      if (TABS.includes(fromHash)) setTabState(fromHash);
+    };
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
   }, []);
 
   const setTab = (next: Tab) => {
@@ -87,9 +93,34 @@ export default function SupplierPage() {
         <p className="who">{t('lede')}</p>
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="tabs-bar supplier-tabs" role="tablist" aria-label={t('title')}>
+      <div
+        className="tabs-bar supplier-tabs"
+        role="tablist"
+        aria-label={t('title')}
+        onKeyDown={(event) => {
+          // Arrow keys move along the strip in reading order; Home and End
+          // jump to its ends — as the order screen's tabs do.
+          const index = TABS.indexOf(tab);
+          const rtl = document.documentElement.dir === 'rtl';
+          let target: Tab | undefined;
+          if (event.key === (rtl ? 'ArrowLeft' : 'ArrowRight'))
+            target = TABS[(index + 1) % TABS.length];
+          else if (event.key === (rtl ? 'ArrowRight' : 'ArrowLeft'))
+            target = TABS[(index - 1 + TABS.length) % TABS.length];
+          else if (event.key === 'Home') target = TABS[0];
+          else if (event.key === 'End') target = TABS[TABS.length - 1];
+          if (!target) return;
+          event.preventDefault();
+          setTab(target);
+          document.getElementById(`tab-${target}`)?.focus();
+        }}
+      >
         {TABS.map((key) => (
           <button
             key={key}
@@ -97,6 +128,7 @@ export default function SupplierPage() {
             type="button"
             role="tab"
             aria-selected={tab === key}
+            tabIndex={tab === key ? 0 : -1}
             aria-controls={`panel-${key}`}
             className={`tab${tab === key ? ' is-active' : ''}`}
             onClick={() => setTab(key)}

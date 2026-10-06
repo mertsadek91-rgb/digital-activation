@@ -7,6 +7,7 @@ import { ActorType, Prisma, SupplierChangeKind } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
 import { withAdvisoryLock } from '../common/advisory-lock.js';
+import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { diffLine, supplierUnavailable, suspiciousOutage, suspiciousShrink } from './diff.js';
@@ -85,7 +86,11 @@ export class SupplierSyncService {
     );
     return result.ran
       ? result.value
-      : { status: 'BUSY', error: 'A sync is already running.', ...EMPTY };
+      : {
+          status: 'BUSY',
+          error: say('هناك قراءة جارية الآن.', 'A sync is already running.'),
+          ...EMPTY,
+        };
   }
 
   /**
@@ -106,7 +111,10 @@ export class SupplierSyncService {
     if (!apiKey) {
       return this.finish(sourceId, staffId, {
         status: 'FAILED',
-        error: 'GOOGLE_SHEETS_API_KEY is not set on the API.',
+        error: say(
+          'مفتاح GOOGLE_SHEETS_API_KEY غير مضبوط على الخادم.',
+          'GOOGLE_SHEETS_API_KEY is not set on the API.',
+        ),
         ...EMPTY,
       });
     }
@@ -134,7 +142,10 @@ export class SupplierSyncService {
     if (!force && suspiciousShrink(previousActive, lines.length)) {
       return this.finish(sourceId, staffId, {
         status: 'REFUSED',
-        error: `The sheet now has ${String(lines.length)} rows, down from ${String(previousActive)}. That looks like a broken read, so nothing was changed. Check the sheet; if it is right, an admin can apply it anyway.`,
+        error: say(
+          `الشيت فيه الآن ${String(lines.length)} سطراً بعد أن كان ${String(previousActive)}. تبدو قراءة خاطئة، فلم يتغير شيء. راجع الشيت؛ وإن كان صحيحاً يمكن للمدير تطبيقها.`,
+          `The sheet now has ${String(lines.length)} rows, down from ${String(previousActive)}. That looks like a broken read, so nothing was changed. Check the sheet; if it is right, an admin can apply it anyway.`,
+        ),
         ...EMPTY,
         rowCount: lines.length,
         warnings,
@@ -160,7 +171,10 @@ export class SupplierSyncService {
     if (!force && suspiciousOutage(following.length, newlyOut)) {
       return this.finish(sourceId, staffId, {
         status: 'REFUSED',
-        error: `This read would mark ${String(newlyOut)} of ${String(following.length)} linked products out of stock at once. Nothing was changed. Check the sheet; if it is right, an admin can apply it anyway.`,
+        error: say(
+          `هذه القراءة ستجعل ${String(newlyOut)} من ${String(following.length)} منتجاً مربوطاً نافداً دفعة واحدة، فلم يتغير شيء. راجع الشيت؛ وإن كان صحيحاً يمكن للمدير تطبيقها.`,
+          `This read would mark ${String(newlyOut)} of ${String(following.length)} linked products out of stock at once. Nothing was changed. Check the sheet; if it is right, an admin can apply it anyway.`,
+        ),
         ...EMPTY,
         rowCount: lines.length,
         warnings,

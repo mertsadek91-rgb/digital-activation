@@ -65,7 +65,13 @@ export function PricesTab({ isAdmin }: { isAdmin: boolean }) {
   }
 
   if (!data)
-    return error ? <p className="error">{error}</p> : <p className="meta">{c('loading')}</p>;
+    return error ? (
+      <p className="error" role="alert" dir="auto">
+        {error}
+      </p>
+    ) : (
+      <p className="meta">{c('loading')}</p>
+    );
   if (data.rows.length === 0) return <p className="notice">{t('pricesEmpty')}</p>;
 
   const pending = data.rows.filter((row) => row.state === 'PENDING');
@@ -113,9 +119,13 @@ export function PricesTab({ isAdmin }: { isAdmin: boolean }) {
         )}
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
       {result ? (
-        <div className="ok-note">
+        <div className="ok-note" role="status">
           <p>{t('applied', { applied: result.applied.length, skipped: result.skipped.length })}</p>
           {result.skipped.length > 0 ? (
             <ul className="supplier-skips">
@@ -151,21 +161,27 @@ export function PricesTab({ isAdmin }: { isAdmin: boolean }) {
               <tr key={row.variantId} className={row.state === 'PENDING' ? undefined : 'is-muted'}>
                 {isAdmin ? (
                   <td>
-                    <input
-                      type="checkbox"
-                      aria-label={row.sku}
-                      disabled={row.state !== 'PENDING'}
-                      checked={selected.has(row.variantId)}
-                      onChange={() => toggle(row.variantId)}
-                    />
+                    {/* A padded label: an 18 px box alone is too small a target on a phone. */}
+                    <label className="supplier-tick">
+                      <input
+                        type="checkbox"
+                        aria-label={row.sku}
+                        disabled={row.state !== 'PENDING'}
+                        checked={selected.has(row.variantId)}
+                        onChange={() => toggle(row.variantId)}
+                      />
+                    </label>
                   </td>
                 ) : null}
                 <td>
                   <Link href={`/products/${encodeURIComponent(row.productSlug)}`}>
-                    {row.productName}
+                    <bdi>{row.productName}</bdi>
                   </Link>
                   <div className="meta">
-                    <span dir="ltr">{row.sku}</span> · {row.terms}
+                    <span dir="ltr" className="supplier-sku">
+                      {row.sku}
+                    </span>{' '}
+                    · {row.terms}
                   </div>
                 </td>
                 <td dir="ltr">{row.itemName}</td>

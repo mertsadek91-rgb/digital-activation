@@ -3,6 +3,8 @@ import path from 'node:path';
 
 import sharp from 'sharp';
 
+import { say } from '../../common/panel-locale.js';
+
 /**
  * The product card image, in the store's own template (CR-0004).
  *
@@ -272,7 +274,10 @@ export async function renderCard(spec: CardSpec): Promise<RenderedCard> {
   const notes: string[] = [];
   if (!fontsAvailable()) {
     notes.push(
-      'Tajawal font files are not in apps/api/assets/fonts; the card used the server default font.',
+      say(
+        'ملفات خط Tajawal غير موجودة في apps/api/assets/fonts، فرُسمت البطاقة بخط الخادم الافتراضي.',
+        'Tajawal font files are not in apps/api/assets/fonts; the card used the server default font.',
+      ),
     );
   }
   const layers: sharp.OverlayOptions[] = [];

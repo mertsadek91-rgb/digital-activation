@@ -45,6 +45,10 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
 
   const [products, setProducts] = useState<{ slug: string; name: string }[]>([]);
   const [slug, setSlug] = useState(initialSlug ?? '');
+  // The product the card designer shows. Set once the field names a real
+  // product (or copy is generated), not on every keystroke: each change
+  // reloads the card's defaults from the API.
+  const [cardSlug, setCardSlug] = useState<string | null>(initialSlug);
   const [keywords, setKeywords] = useState('');
   const [locales, setLocales] = useState<Locale[]>(['ar', 'en']);
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
@@ -88,6 +92,10 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
     }
   }
 
+  useEffect(() => {
+    if (products.some((product) => product.slug === slug)) setCardSlug(slug);
+  }, [slug, products]);
+
   const families = useMemo(() => {
     const groups = new Map<string, SupplierAiModels['models']>();
     for (const entry of models ?? [])
@@ -96,7 +104,13 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
   }, [models]);
 
   if (!status)
-    return error ? <p className="error">{error}</p> : <p className="meta">{c('loading')}</p>;
+    return error ? (
+      <p className="error" role="alert" dir="auto">
+        {error}
+      </p>
+    ) : (
+      <p className="meta">{c('loading')}</p>
+    );
 
   return (
     <div className="supplier-settings">
@@ -288,6 +302,7 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
               onClick={() =>
                 void run('copy', async () => {
                   setCopy(null);
+                  setCardSlug(slug);
                   setCopy(
                     await supplierAiApi.copy({
                       productSlug: slug,
@@ -309,11 +324,19 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
         </div>
       </section>
 
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="ok-note">{note}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
+      {note ? (
+        <p className="ok-note" role="status">
+          {note}
+        </p>
+      ) : null}
 
-      {slug ? (
-        <CardDesigner slug={slug} aiReady={status.configured && Boolean(status.model)} />
+      {cardSlug ? (
+        <CardDesigner slug={cardSlug} aiReady={status.configured && Boolean(status.model)} />
       ) : null}
 
       {copy ? (

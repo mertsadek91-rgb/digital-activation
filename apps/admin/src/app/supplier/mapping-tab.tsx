@@ -84,14 +84,23 @@ export function MappingTab() {
         <input
           type="search"
           className="search"
+          aria-label={c('search')}
           placeholder={c('search')}
           value={q}
           onChange={(event) => setQ(event.target.value)}
         />
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="ok-note">{note}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
+      {note ? (
+        <p className="ok-note" role="status">
+          {note}
+        </p>
+      ) : null}
 
       {!data ? (
         <p className="meta">{c('loading')}</p>
@@ -158,6 +167,7 @@ function MappingRowView({
   onUnlink: () => void;
 }) {
   const t = useT('supplier');
+  const c = useT('common');
   const broken = row.link?.item.missingSince != null;
   const [picking, setPicking] = useState(!row.link || broken);
   const [search, setSearch] = useState('');
@@ -177,7 +187,9 @@ function MappingRowView({
   return (
     <tr className={broken ? 'is-warning' : undefined}>
       <td>
-        <Link href={`/products/${encodeURIComponent(row.productSlug)}`}>{row.productName}</Link>
+        <Link href={`/products/${encodeURIComponent(row.productSlug)}`}>
+          <bdi>{row.productName}</bdi>
+        </Link>
         <div className="meta" dir="ltr">
           {row.sku}
         </div>
@@ -296,7 +308,12 @@ function MappingRowView({
                 {t('link')}
               </button>
               {row.link ? (
-                <button type="button" className="ghost btn-sm" onClick={() => setPicking(false)}>
+                <button
+                  type="button"
+                  className="ghost btn-sm"
+                  aria-label={c('cancel')}
+                  onClick={() => setPicking(false)}
+                >
                   ✕
                 </button>
               ) : null}

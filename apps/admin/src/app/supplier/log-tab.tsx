@@ -30,7 +30,12 @@ export function LogTab() {
       );
   }, [t]);
 
-  if (error) return <p className="error">{error}</p>;
+  if (error)
+    return (
+      <p className="error" role="alert" dir="auto">
+        {error}
+      </p>
+    );
   if (!log) return <p className="meta">{c('loading')}</p>;
 
   const yes = t('struckYes');
@@ -64,7 +69,11 @@ export function LogTab() {
                     <span className={`pill ${statusPill(row.status)}`}>
                       {t(`status${row.status}` as 'statusOK')}
                     </span>
-                    {row.error ? <div className="meta">{row.error}</div> : null}
+                    {row.error ? (
+                      <div className="meta" dir="auto">
+                        {row.error}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="num">{row.rowCount}</td>
                   <td className="num" dir="ltr">

@@ -169,7 +169,11 @@ export function SettingsTab({
               {source.sheetUpdatedLabel ? (
                 <p className="meta">{t('sheetUpdated', { date: source.sheetUpdatedLabel })}</p>
               ) : null}
-              {source.lastSyncError ? <p className="error">{source.lastSyncError}</p> : null}
+              {source.lastSyncError ? (
+                <p className="error" role="alert" dir="auto">
+                  {source.lastSyncError}
+                </p>
+              ) : null}
             </div>
             <div className="supplier-actions">
               <a className="as-button ghost" href={source.url} target="_blank" rel="noreferrer">
@@ -193,8 +197,16 @@ export function SettingsTab({
         </section>
       ) : null}
 
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="ok-note">{note}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
+      {note ? (
+        <p className="ok-note" role="status">
+          {note}
+        </p>
+      ) : null}
 
       <section className="card supplier-rules">
         <h2>{t('rulesHeading')}</h2>

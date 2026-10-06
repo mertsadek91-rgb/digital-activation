@@ -383,10 +383,27 @@ export class SupplierAiService {
           select: { id: true },
         })
       : null;
-    if (answer.brand && !brand) notes.push(`brand "${answer.brand}" is not in the catalogue yet`);
+    if (answer.brand && !brand)
+      notes.push(
+        say(
+          `العلامة "${answer.brand}" غير موجودة في الكتالوج بعد.`,
+          `Brand "${answer.brand}" is not in the catalogue yet.`,
+        ),
+      );
     if (item.wholesaleOnly)
-      notes.push('the supplier sells this line with a minimum order quantity');
-    if (!item.costUsd) notes.push('the sheet has no price for this line; set the price by hand');
+      notes.push(
+        say(
+          'المورّد يبيع هذا السطر بحد أدنى للكمية (جملة).',
+          'The supplier sells this line with a minimum order quantity.',
+        ),
+      );
+    if (!item.costUsd)
+      notes.push(
+        say(
+          'لا سعر لهذا السطر في الشيت؛ حدّد السعر يدوياً.',
+          'The sheet has no price for this line; set the price by hand.',
+        ),
+      );
 
     // Matched by name to the supplier's category, when we have one called that.
     const category = item.category

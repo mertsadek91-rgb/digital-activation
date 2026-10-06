@@ -1499,6 +1499,7 @@ export const en: AdminMessages = {
     createTermsHint:
       'Term, devices, platform and activation are proposed from the line name. Check them in the product editor after creating.',
     createSubmit: 'Create as draft and link',
+    createDevices: 'Devices: {count}',
     settingsHeading: 'Connect the sheet',
     notConnected:
       'No sheet connected yet. Paste the link of a shared Google Sheet (anyone with the link can view).',

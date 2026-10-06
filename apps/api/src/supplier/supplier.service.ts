@@ -19,7 +19,7 @@ import {
 import { Locale, Prisma, type SupplierRounding, refreshProductPrice } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
-import { say } from '../common/panel-locale.js';
+import { panelLocale, say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { nameSimilarity } from './names.js';
@@ -362,7 +362,8 @@ export class SupplierService {
         variantId: variant.id,
         sku: variant.sku,
         productSlug: variant.product.slug,
-        productName: ar ?? en ?? variant.product.slug,
+        // In the panel's language, falling back to the other one.
+        productName: (panelLocale() === 'en' ? (en ?? ar) : (ar ?? en)) ?? variant.product.slug,
         terms: terms(variant),
         priceUsd: variant.priceUsd.toFixed(2),
         supplierOutOfStock: variant.supplierOutOfStock,
@@ -730,7 +731,8 @@ function priceRow(
     sku: link.variant.sku,
     productSlug: link.variant.product.slug,
     productName:
-      translations.find((t) => t.locale === Locale.AR)?.name ??
+      translations.find((t) => t.locale === (panelLocale() === 'en' ? Locale.EN : Locale.AR))
+        ?.name ??
       translations[0]?.name ??
       link.variant.product.slug,
     terms: terms(link.variant),

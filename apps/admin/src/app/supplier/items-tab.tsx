@@ -15,7 +15,13 @@ import { supplierApi } from '../../lib/supplier-api';
 import { CreateFromLine } from './create-from-line';
 import { formatDay, usd } from './format';
 
-/** Every line read from the sheet, with what state it is in. */
+/**
+ * Every line read from the sheet, with what state it is in.
+ *
+ * "Create product" opens its panel above the table, not inside a row: a row
+ * lives in the table's horizontal scroller, and a form there was cut off on
+ * every width below the table's own (REV-0150).
+ */
 export function ItemsTab({
   canCreate,
   onCreated,
@@ -30,7 +36,7 @@ export function ItemsTab({
   const [q, setQ] = useState('');
   const [data, setData] = useState<SupplierItems | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState<string | null>(null);
+  const [creating, setCreating] = useState<SupplierItemView | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -46,10 +52,17 @@ export function ItemsTab({
     return () => clearTimeout(timer);
   }, [load, q]);
 
+  function closeCreate() {
+    const id = creating?.id;
+    setCreating(null);
+    // Back to the button that opened it.
+    if (id) requestAnimationFrame(() => document.getElementById(`create-${id}`)?.focus());
+  }
+
   return (
     <section>
       <div className="supplier-toolbar">
-        <div className="supplier-filters" role="group">
+        <div className="supplier-filters" role="group" aria-label={t('tabItems')}>
           {SUPPLIER_ITEM_FILTERS.map((key) => (
             <button
               key={key}
@@ -66,13 +79,24 @@ export function ItemsTab({
         <input
           type="search"
           className="search"
+          aria-label={t('search')}
           placeholder={t('search')}
           value={q}
           onChange={(event) => setQ(event.target.value)}
         />
       </div>
 
-      {error ? <p className="error">{error}</p> : null}
+      {creating ? (
+        <div className="card supplier-create-card">
+          <CreateFromLine item={creating} onCancel={closeCreate} onDone={onCreated} />
+        </div>
+      ) : null}
+
+      {error ? (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      ) : null}
       {!data ? (
         <p className="meta">{c('loading')}</p>
       ) : (
@@ -96,14 +120,15 @@ export function ItemsTab({
                   key={item.id}
                   item={item}
                   locale={locale}
-                  creating={creating === item.id}
+                  active={creating?.id === item.id}
                   onCreate={
                     canCreate && item.links.length === 0 && !item.missingSince
-                      ? () => setCreating(item.id)
+                      ? () => {
+                          setCreating(item);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
                       : null
                   }
-                  onCancel={() => setCreating(null)}
-                  onCreated={onCreated}
                 />
               ))}
               {data.items.length === 0 ? (
@@ -124,30 +149,20 @@ export function ItemsTab({
 function ItemRow({
   item,
   locale,
-  creating,
+  active,
   onCreate,
-  onCancel,
-  onCreated,
 }: {
   item: SupplierItemView;
   locale: 'ar' | 'en';
-  creating: boolean;
+  active: boolean;
   onCreate: (() => void) | null;
-  onCancel: () => void;
-  onCreated: (slug: string) => void;
 }) {
   const t = useT('supplier');
-  if (creating) {
-    return (
-      <tr>
-        <td colSpan={8}>
-          <CreateFromLine item={item} onCancel={onCancel} onDone={onCreated} />
-        </td>
-      </tr>
-    );
-  }
+  const classes = [item.missingSince ? 'is-muted' : '', active ? 'is-selected' : '']
+    .filter(Boolean)
+    .join(' ');
   return (
-    <tr className={item.missingSince ? 'is-muted' : undefined}>
+    <tr className={classes || undefined}>
       <td className="num">{item.rowNumber ?? '—'}</td>
       <td dir="ltr" className={item.outOfStock ? 'supplier-struck' : undefined}>
         {item.name}
@@ -188,12 +203,19 @@ function ItemRow({
             key={link.variantId}
             href={`/products/${encodeURIComponent(link.productSlug)}`}
             dir="ltr"
+            className="supplier-sku"
           >
             {link.sku}
           </Link>
         ))}
         {onCreate ? (
-          <button type="button" className="ghost btn-sm" onClick={onCreate}>
+          <button
+            id={`create-${item.id}`}
+            type="button"
+            className="ghost btn-sm"
+            aria-pressed={active}
+            onClick={onCreate}
+          >
             {t('createFromLine')}
           </button>
         ) : null}

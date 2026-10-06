@@ -57,7 +57,13 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
 
   if (!slug) return null;
   if (!spec || !defaults)
-    return error ? <p className="error">{error}</p> : <p className="meta">{c('loading')}</p>;
+    return error ? (
+      <p className="error" role="alert" dir="auto">
+        {error}
+      </p>
+    ) : (
+      <p className="meta">{c('loading')}</p>
+    );
 
   const setChip = (index: 0 | 1, patch: Partial<CardSpecInput['chips'][0]>) =>
     setSpec((current) => {
@@ -211,8 +217,16 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
           ))}
         </div>
       </div>
-      {error ? <p className="error">{error}</p> : null}
-      {note ? <p className="ok-note">{note}</p> : null}
+      {error ? (
+        <p className="error" role="alert" dir="auto">
+          {error}
+        </p>
+      ) : null}
+      {note ? (
+        <p className="ok-note" role="status">
+          {note}
+        </p>
+      ) : null}
     </section>
   );
 }

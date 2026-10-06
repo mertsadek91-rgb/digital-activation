@@ -1445,7 +1445,7 @@ export const ar = {
     aiPickModel: 'اختر نموذجاً…',
     aiNoModel: 'لم يُختر بعد — حمّل القائمة',
     aiLoadModels: 'حمّل قائمة النماذج',
-    aiModelsLoaded: 'وُجد {count} نموذجاً في حسابك.',
+    aiModelsLoaded: 'عدد النماذج في حسابك: {count}.',
     aiProtocol: 'طريقة الاتصال',
     aiProtocol_auto: 'تلقائي حسب النموذج',
     aiProtocol_messages: 'Anthropic Messages',
@@ -1485,6 +1485,7 @@ export const ar = {
     createTermsHint:
       'المدة وعدد الأجهزة والمنصة وطريقة التفعيل مقترحة من اسم السطر. راجعها في محرر المنتج بعد الإنشاء.',
     createSubmit: 'أنشئ كمسودة واربط',
+    createDevices: 'الأجهزة: {count}',
     // settings
     settingsHeading: 'ربط الشيت',
     notConnected:
