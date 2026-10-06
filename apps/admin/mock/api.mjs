@@ -14,7 +14,12 @@
  */
 import { createServer } from 'node:http';
 
-import { supplierDynamic, supplierRoutes } from './supplier.mjs';
+import {
+  supplierDynamic,
+  supplierRoutes,
+  supplierSectionDynamic,
+  supplierSectionRoutes,
+} from './supplier.mjs';
 
 const PORT = Number(process.env.MOCK_API_PORT ?? 4000);
 const ORIGIN = process.env.MOCK_API_ORIGIN ?? 'http://localhost:3001';
@@ -730,6 +735,7 @@ const orderKeys = (number) => {
 /** Paths with a parameter in them, matched after the exact table above. */
 const dynamic = [
   ...supplierDynamic,
+  ...supplierSectionDynamic,
   [/^GET \/v1\/admin\/orders\/([^/]+)$/, (m) => orderDetail(decodeURIComponent(m[1]))],
   [
     /^GET \/v1\/admin\/fulfillment\/orders\/([^/]+)\/keys$/,
@@ -790,6 +796,7 @@ const routes = new Map([
   ['GET /v1/admin/launch', launch],
   ['GET /v1/admin/marketing/settings', marketing],
   ...supplierRoutes,
+  ...supplierSectionRoutes,
 ]);
 
 createServer(async (req, res) => {

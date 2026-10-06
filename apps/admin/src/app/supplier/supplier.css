@@ -338,9 +338,15 @@
   }
 }
 
-.card-logo-upload .as-button {
+.card-upload-button {
   position: relative;
   cursor: pointer;
+}
+
+/* The hidden file input still takes keyboard focus; show it on the label. */
+.card-upload-button:focus-within {
+  outline: 2px solid var(--color-brand, #087f70);
+  outline-offset: 2px;
 }
 
 .card-logo-thumb {
@@ -380,4 +386,30 @@
 .ai-improve .ai-preview {
   box-shadow: none;
   border: 1px solid var(--color-border);
+}
+
+/* One section's AI button in the product editor (CR-0005). */
+.ai-section {
+  display: grid;
+  gap: 6px;
+  margin-block-end: 8px;
+}
+
+.ai-section-ask {
+  min-inline-size: min(18rem, 100%);
+}
+
+.ai-section-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 10px 12px;
+  margin-block: 8px 12px;
+  border: 1px dashed var(--color-border-strong, var(--color-border));
+  border-radius: var(--radius-sm);
+}
+
+.ai-section-item {
+  display: grid;
+  gap: 4px;
 }

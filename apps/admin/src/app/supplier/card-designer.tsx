@@ -159,7 +159,9 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
             </label>
           </div>
           <div className="supplier-actions card-logo-upload">
-            <label className="as-button ghost">
+            {/* A label styled as the panel's button: the file input inside it is
+                hidden, so the label is what is seen and clicked. */}
+            <label className="button ghost card-upload-button">
               {spec.logoDataUrl ? t('cardReplaceLogo') : t('cardUploadLogo')}
               <input
                 type="file"

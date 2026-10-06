@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
 import { AiImprove } from './ai-improve';
+import { AiSectionButton } from './ai-section';
 import { BlockDocumentEditor } from './block-editor';
 
 /**
@@ -144,6 +145,30 @@ export function ContentForm({
         />
       ) : null}
 
+      {canWrite && canUseAi ? (
+        <div className="ai-section-bar" role="group" aria-label={t('aiSectionsHeading')}>
+          {(['specTable', 'steps', 'faq'] as const).map((type) => {
+            const existing = blocks.find((block) => block.type === type);
+            return (
+              <div key={type} className="ai-section-item">
+                <span className="meta">{t(`aiSection_${type}`)}</span>
+                <AiSectionButton
+                  slug={slug}
+                  locale={locale}
+                  section={type}
+                  hasContent={existing !== undefined}
+                  current={() => blocks.find((block) => block.type === type) ?? null}
+                  onResult={(result) => {
+                    if (result.section !== type || !('block' in result)) return;
+                    setBlocks((current) => placeBlock(current, result.block));
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
       <BlockDocumentEditor blocks={blocks} canWrite={canWrite} onChange={setBlocks} />
 
       <Warnings warnings={warnings} canWrite={canWrite} onChange={setWarnings} />
@@ -268,4 +293,23 @@ function Warnings({
       ) : null}
     </fieldset>
   );
+}
+
+/**
+ * Puts an AI-written FAQ, steps or specification block into the body: in
+ * place of the first block of that type, or, when there is none, where the
+ * house order puts it — specification, then steps, then FAQ, at the end.
+ */
+export function placeBlock(blocks: ContentBlock[], block: ContentBlock): ContentBlock[] {
+  const at = blocks.findIndex((existing) => existing.type === block.type);
+  if (at >= 0) return blocks.map((existing, index) => (index === at ? block : existing));
+  const order = ['specTable', 'steps', 'faq'];
+  const rank = order.indexOf(block.type);
+  const before = blocks.findIndex((existing) => {
+    const other = order.indexOf(existing.type);
+    return other > rank;
+  });
+  return before < 0
+    ? [...blocks, block]
+    : [...blocks.slice(0, before), block, ...blocks.slice(before)];
 }

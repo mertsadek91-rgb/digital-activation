@@ -5,6 +5,7 @@ import { countBodyWords, READINESS_RULES, SEO_LENGTH_GUIDE } from '@da/contracts
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
+import { AiSectionButton } from './ai-section';
 import { api } from '../../lib/api';
 import { RichTextEditor } from './rich-text-editor';
 
@@ -74,12 +75,15 @@ export function CopyForm({
   canWrite,
   onSaved,
   onError,
+  canUseAi = false,
 }: {
   slug: string;
   locale: 'ar' | 'en';
   canWrite: boolean;
   onSaved: () => void;
   onError: (message: string) => void;
+  /** Offer AI for these fields (ADMIN and CATALOG). */
+  canUseAi?: boolean;
 }) {
   const t = useT('products');
   const c = useT('common');
@@ -151,6 +155,22 @@ export function CopyForm({
           .finally(() => setBusy(false));
       }}
     >
+      {canWrite && canUseAi && loaded ? (
+        <AiSectionButton
+          slug={slug}
+          locale={locale}
+          section="seo"
+          hasContent={Boolean(seoTitle || seoDescription || shortDesc)}
+          current={() => ({ seoTitle, seoDescription, shortDesc })}
+          onResult={(result) => {
+            if (result.section !== 'seo') return;
+            setSeoTitle(result.seoTitle);
+            setSeoDescription(result.seoDescription);
+            setShortDesc(result.shortDesc);
+          }}
+        />
+      ) : null}
+
       <label className="grow">
         {t('copySeoTitle')}
         <input

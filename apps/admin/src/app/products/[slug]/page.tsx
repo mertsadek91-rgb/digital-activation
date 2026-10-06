@@ -1,6 +1,6 @@
 'use client';
 
-import type { AdminProductRow, Readiness } from '@da/contracts';
+import { ROUTES, type AdminProductRow, type Readiness } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useStaff } from '../../../lib/use-staff';
@@ -66,8 +66,18 @@ export default function ProductEditPage() {
   const [missing, setMissing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [active, setActive] = useState<SectionId>('readiness');
+  // The storefront origin, for the "view in store" link.
+  const [storefront, setStorefront] = useState<string | null>(null);
   // Bumped when the AI panel saves SEO copy, so the copy form reloads it.
   const [copyVersion, setCopyVersion] = useState(0);
+
+  useEffect(() => {
+    if (!me || !['OWNER', 'ADMIN', 'CATALOG'].includes(me.role)) return;
+    api
+      .site()
+      .then((site) => setStorefront(site.storefrontUrl || null))
+      .catch(() => setStorefront(null));
+  }, [me]);
 
   /**
    * The header and the gate, together.
@@ -257,6 +267,17 @@ export default function ProductEditPage() {
               </button>
             ))}
           </div>
+          {storefront && row ? (
+            <a
+              className="as-button ghost"
+              href={`${storefront}${locale === 'en' ? '/en' : ''}${ROUTES.product(slug)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={published ? undefined : t('viewInStoreDraft')}
+            >
+              {t('viewInStore')} ↗
+            </a>
+          ) : null}
           {canWrite && row ? (
             <button
               type="button"
@@ -354,6 +375,7 @@ export default function ProductEditPage() {
                 slug={slug}
                 locale={locale}
                 canWrite={canWrite}
+                canUseAi={canUseAi}
                 onSaved={onSaved}
                 onError={onError}
               />
@@ -379,6 +401,7 @@ export default function ProductEditPage() {
             <h3>{t('activationHowTo')}</h3>
             <p className="lede-sm">{t('howToLede')}</p>
             <HowToForm
+              canUseAi={canUseAi}
               slug={slug}
               locale={locale}
               canWrite={canWrite}

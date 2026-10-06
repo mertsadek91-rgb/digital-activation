@@ -618,3 +618,93 @@ export const supplierDynamic = [
     (match) => mappingRows.find((row) => row.variantId === match[2]) ?? mappingRows[0],
   ],
 ];
+
+// One product-page section written by AI (CR-0005): the last section asked
+// for is what the job returns.
+let lastSection = 'faq';
+const sectionResults = {
+  seo: {
+    section: 'seo',
+    seoTitle: 'مفتاح Windows 11 Pro أصلي | تفعيل دائم وتسليم فوري',
+    seoDescription:
+      'اشترِ مفتاح Windows 11 Pro أصلياً لجهاز واحد بتفعيل دائم، يصلك على بريدك خلال دقائق مع دعم عبر واتساب.',
+    shortDesc: 'مفتاح Windows 11 Pro أصلي لجهاز واحد، تفعيل دائم وتسليم فوري.',
+    keywords: ['مفتاح ويندوز 11 برو'],
+  },
+  activation: {
+    section: 'activation',
+    steps: [
+      'افتح الإعدادات ثم النظام ثم التنشيط',
+      'اختر تغيير مفتاح المنتج',
+      'أدخل المفتاح الذي وصلك بالبريد ثم اضغط التالي',
+      'إن لم ينجح التفعيل فراسلنا على واتساب',
+    ],
+  },
+  faq: {
+    section: 'faq',
+    block: {
+      type: 'faq',
+      title: 'أسئلة شائعة',
+      items: [
+        { q: 'هل المفتاح أصلي؟', a: 'نعم، مفتاح Retail أصلي.' },
+        { q: 'متى يصلني المفتاح؟', a: 'خلال دقائق من الدفع على بريدك.' },
+      ],
+    },
+  },
+  steps: {
+    section: 'steps',
+    block: {
+      type: 'steps',
+      title: 'طريقة الشراء والتفعيل',
+      steps: [{ text: 'أضف المنتج إلى السلة وادفع.' }, { text: 'يصلك المفتاح بالبريد.' }],
+    },
+  },
+  specTable: {
+    section: 'specTable',
+    block: {
+      type: 'specTable',
+      title: 'المواصفات',
+      rows: [
+        { label: 'المدة', value: 'مدى الحياة' },
+        { label: 'الأجهزة', value: 'جهاز واحد' },
+      ],
+    },
+  },
+};
+
+export const supplierSectionRoutes = [
+  ['GET /v1/admin/site', { storefrontUrl: 'https://new.digital-activation.com' }],
+  [
+    'GET /v1/admin/products/windows-11-pro/activation-steps',
+    { steps: ['افتح الإعدادات', 'أدخل المفتاح'] },
+  ],
+];
+
+const sectionJobDone = () => ({
+  id: 'sec-1',
+  status: 'DONE',
+  section: lastSection,
+  startedAt: now,
+  finishedAt: now,
+  result: sectionResults[lastSection],
+  error: null,
+});
+
+export const supplierSectionDynamic = [
+  [/^GET \/v1\/admin\/supplier\/ai\/section\/sec-1$/, sectionJobDone],
+  [
+    /^POST \/v1\/admin\/supplier\/ai\/section$/,
+    (_match, body) => {
+      lastSection = body?.section ?? 'faq';
+      return {
+        id: 'sec-1',
+        status: 'RUNNING',
+        section: lastSection,
+        startedAt: now,
+        finishedAt: null,
+        result: null,
+        error: null,
+      };
+    },
+  ],
+];

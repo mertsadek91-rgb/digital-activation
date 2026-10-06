@@ -101,13 +101,15 @@
         "TASK-0101",
         "TASK-0115",
         "TASK-0116",
-        "TASK-0117"
+        "TASK-0117",
+        "TASK-0118"
       ],
       "owned_tasks": [
         "TASK-0101",
         "TASK-0115",
         "TASK-0116",
-        "TASK-0117"
+        "TASK-0117",
+        "TASK-0118"
       ],
       "reviews": [],
       "blocked_work": [],
