@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
+  type AiCopyJob,
   type DraftProduct,
   type GenerateCopy,
-  type GeneratedCopy,
   type SupplierAiModels,
   type SupplierAiSettings,
   type SupplierAiStatus,
@@ -63,9 +63,15 @@ export class SupplierAiController {
   }
 
   @Post('copy')
-  @ApiOperation({ summary: 'Generate product copy (returned, not saved)' })
-  copy(@Body(new ZodPipe(generateCopySchema)) body: GenerateCopy): Promise<GeneratedCopy> {
-    return this.ai.generateCopy(body);
+  @ApiOperation({ summary: 'Start generating product copy in the background (not saved)' })
+  copy(@Body(new ZodPipe(generateCopySchema)) body: GenerateCopy): Promise<AiCopyJob> {
+    return this.ai.startCopyJob(body);
+  }
+
+  @Get('copy/:id')
+  @ApiOperation({ summary: 'A copy job: RUNNING, or DONE with the copy, or FAILED with why' })
+  copyJob(@Param('id') id: string): Promise<AiCopyJob> {
+    return this.ai.copyJob(id);
   }
 
   @Post('draft/:itemId')
