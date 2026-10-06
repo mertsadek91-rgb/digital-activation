@@ -57,7 +57,3 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0111 — Supplier sync phase 1: read the supplier Google Sheet (values, strikethrough, merged categories), snapshot and diff it, log every change, admin data and settings pages (IN_PROGRESS, 80%)
-- TASK-0112 — Supplier sync phase 2: variant-to-sheet mapping by name, markup pricing proposals with apply one/selected/all, strikethrough sets notify-me (IN_PROGRESS, 75%)
-- TASK-0113 — Supplier sync phase 3: OpenCode AI provider (model list, model choice) and AI-generated ar/en product copy saved as drafts, create product from a sheet row (IN_PROGRESS, 80%)
-- TASK-0114 — Supplier sync phase 4: product card image generator in the legacy card template (brand logo, term ribbon, product name, two chips), AI fills the card text (IN_PROGRESS, 75%)

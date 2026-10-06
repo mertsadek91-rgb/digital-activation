@@ -2806,10 +2806,10 @@
       "id": "TASK-0111",
       "title": "Supplier sync phase 1: read the supplier Google Sheet (values, strikethrough, merged categories), snapshot and diff it, log every change, admin data and settings pages",
       "type": "feature",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "HIGH",
-      "progress": 80,
+      "progress": 100,
       "authority_level": 3,
       "risk": "MEDIUM",
       "primary_agent": "database-architect",
@@ -2841,18 +2841,18 @@
       ],
       "affected_files": [],
       "created_at": "2026-10-05",
-      "updated_at": "2026-10-05",
+      "updated_at": "2026-10-06",
       "reaudit": null,
-      "file": "tasks/active/TASK-0111.md"
+      "file": "tasks/completed/TASK-0111.md"
     },
     {
       "id": "TASK-0112",
       "title": "Supplier sync phase 2: variant-to-sheet mapping by name, markup pricing proposals with apply one/selected/all, strikethrough sets notify-me",
       "type": "feature",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "HIGH",
-      "progress": 75,
+      "progress": 100,
       "authority_level": 4,
       "risk": "MEDIUM",
       "primary_agent": "database-architect",
@@ -2887,18 +2887,18 @@
       ],
       "affected_files": [],
       "created_at": "2026-10-05",
-      "updated_at": "2026-10-05",
+      "updated_at": "2026-10-06",
       "reaudit": null,
-      "file": "tasks/active/TASK-0112.md"
+      "file": "tasks/completed/TASK-0112.md"
     },
     {
       "id": "TASK-0113",
       "title": "Supplier sync phase 3: OpenCode AI provider (model list, model choice) and AI-generated ar/en product copy saved as drafts, create product from a sheet row",
       "type": "feature",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 80,
+      "progress": 100,
       "authority_level": 3,
       "risk": "MEDIUM",
       "primary_agent": "database-architect",
@@ -2929,18 +2929,18 @@
       ],
       "affected_files": [],
       "created_at": "2026-10-05",
-      "updated_at": "2026-10-05",
+      "updated_at": "2026-10-06",
       "reaudit": null,
-      "file": "tasks/active/TASK-0113.md"
+      "file": "tasks/completed/TASK-0113.md"
     },
     {
       "id": "TASK-0114",
       "title": "Supplier sync phase 4: product card image generator in the legacy card template (brand logo, term ribbon, product name, two chips), AI fills the card text",
       "type": "feature",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 75,
+      "progress": 100,
       "authority_level": 3,
       "risk": "LOW",
       "primary_agent": "database-architect",
@@ -2970,9 +2970,9 @@
       ],
       "affected_files": [],
       "created_at": "2026-10-05",
-      "updated_at": "2026-10-05",
+      "updated_at": "2026-10-06",
       "reaudit": null,
-      "file": "tasks/active/TASK-0114.md"
+      "file": "tasks/completed/TASK-0114.md"
     }
   ]
 }

@@ -313,16 +313,11 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0111",
-        "TASK-0112",
-        "TASK-0113",
-        "TASK-0114"
-      ],
+      "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-05T13:09:34Z"
     },
@@ -341,16 +336,12 @@
         "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004",
-        "TASK-0111",
-        "TASK-0112",
-        "TASK-0113",
-        "TASK-0114"
+        "TASK-0004"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4.5,
+      "workload": 2.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -387,15 +378,11 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0111",
+      "state": "AVAILABLE",
+      "current_task": "TASK-0040",
       "assignments": [
         "TASK-0040",
-        "TASK-0041",
-        "TASK-0111",
-        "TASK-0112",
-        "TASK-0113",
-        "TASK-0114"
+        "TASK-0041"
       ],
       "supporting": [
         "TASK-0004",
@@ -408,9 +395,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 9,
+      "workload": 5,
       "blockers": [],
-      "last_activity": "2026-10-06T07:19:19Z"
+      "last_activity": "2026-10-06T07:21:05Z"
     },
     {
       "id": "api-architect",
