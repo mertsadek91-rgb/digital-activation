@@ -2,6 +2,7 @@ import { generatedLocaleCopySchema } from '@da/contracts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  OPENCODE_USER_AGENT,
   OpenCodeClient,
   OpenCodeError,
   buildRequest,
@@ -237,5 +238,53 @@ describe('OpenCodeClient temperature fallback', () => {
       );
       expect('temperature' in (wire.body as Record<string, unknown>)).toBe(false);
     }
+  });
+});
+
+describe('OpenCodeClient identity (OpenCode Go)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const reply = () =>
+    new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 });
+  const input = {
+    model: 'space-bunny',
+    protocol: 'chat' as const,
+    system: 'S',
+    prompt: 'P',
+    maxTokens: 10,
+  };
+  const headersOf = (init: RequestInit | undefined) => init?.headers as Record<string, string>;
+
+  it('sends one stable session id per client and names the app', async () => {
+    const seen: Record<string, string>[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      seen.push(headersOf(init));
+      return Promise.resolve(reply());
+    });
+
+    const first = new OpenCodeClient('KEY', 'https://example.test/v1');
+    await first.complete(input);
+    await first.complete(input);
+    const second = new OpenCodeClient('KEY', 'https://example.test/v1');
+    await second.complete(input);
+
+    expect(seen.map((h) => h['user-agent'])).toEqual(Array(3).fill(OPENCODE_USER_AGENT));
+    const sessions = seen.map((h) => h['x-opencode-session']);
+    expect(sessions[0]).toMatch(/^da-[0-9a-f-]{36}$/);
+    expect(sessions[1]).toBe(sessions[0]);
+    expect(sessions[2]).not.toBe(sessions[0]);
+  });
+
+  it('sends the session on the model list too', async () => {
+    let headers: Record<string, string> = {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      headers = headersOf(init);
+      return Promise.resolve(new Response(JSON.stringify({ data: [{ id: 'kimi-k3' }] })));
+    });
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1', 'da-fixed');
+    expect(await client.models()).toEqual(['kimi-k3']);
+    expect(headers['x-opencode-session']).toBe('da-fixed');
   });
 });

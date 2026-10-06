@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type { AiProtocol } from '@da/contracts';
 
 /**
@@ -164,15 +166,42 @@ function providerError(body: unknown): string {
 /** Models that refused `temperature` in this process. */
 const NO_TEMPERATURE = new Set<string>();
 
+/**
+ * How this app names itself to OpenCode. OpenCode Go refuses traffic from a
+ * generic HTTP library name and asks each client to identify itself.
+ */
+export const OPENCODE_USER_AGENT = 'digital-activation-store/1.0';
+
+/**
+ * One client is one conversation: OpenCode Go routes and caches by the
+ * `x-opencode-session` header and refuses requests without it (BUG-0025).
+ * Every request this instance makes — both languages of one product's copy,
+ * and the corrective retry — carries the same session id. The services create
+ * a client per task, so tasks never share one.
+ */
 export class OpenCodeClient {
+  readonly sessionId: string;
+
   constructor(
     private readonly apiKey: string,
     private readonly base: string = DEFAULT_OPENCODE_BASE,
-  ) {}
+    sessionId?: string,
+  ) {
+    this.sessionId = sessionId ?? `da-${randomUUID()}`;
+  }
+
+  /** Headers every request carries, whatever the protocol. */
+  private get identity(): Record<string, string> {
+    return { 'user-agent': OPENCODE_USER_AGENT, 'x-opencode-session': this.sessionId };
+  }
 
   async models(): Promise<string[]> {
     const response = await fetch(`${this.base}/models`, {
-      headers: { authorization: `Bearer ${this.apiKey}`, accept: 'application/json' },
+      headers: {
+        authorization: `Bearer ${this.apiKey}`,
+        accept: 'application/json',
+        ...this.identity,
+      },
       signal: AbortSignal.timeout(20_000),
     });
     if (!response.ok) {
@@ -215,6 +244,7 @@ export class OpenCodeClient {
         headers: {
           'content-type': 'application/json',
           accept: 'application/json',
+          ...this.identity,
           ...wire.headers,
         },
         body: JSON.stringify(wire.body),
