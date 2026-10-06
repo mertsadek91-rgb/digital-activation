@@ -9,7 +9,7 @@ import { supplierApi } from '../../lib/supplier-api';
 
 import { usd } from './format';
 
-const FILTERS = ['all', 'unlinked', 'broken', 'linked'] as const;
+const FILTERS = ['all', 'unlinked', 'broken', 'linked', 'skipped'] as const;
 type Filter = (typeof FILTERS)[number];
 
 /**
@@ -138,6 +138,15 @@ export function MappingTab() {
                       (saved) => t('unlinked', { sku: saved.sku }),
                     )
                   }
+                  onSkip={(skip) =>
+                    void act(
+                      () => supplierApi.setSkipped(row.variantId, skip),
+                      (saved) =>
+                        skip
+                          ? t('skippedNote', { sku: saved.sku })
+                          : t('unskippedNote', { sku: saved.sku }),
+                    )
+                  }
                 />
               ))}
               {data.rows.length === 0 ? (
@@ -160,11 +169,14 @@ function MappingRowView({
   lines,
   onLink,
   onUnlink,
+  onSkip,
 }: {
   row: SupplierMappingRow;
   lines: SupplierItemView[];
   onLink: (itemId: string, markup: string, followStock: boolean) => void;
   onUnlink: () => void;
+  /** true skips (not sold by this supplier), false puts it back. */
+  onSkip: (skip: boolean) => void;
 }) {
   const t = useT('supplier');
   const c = useT('common');
@@ -200,7 +212,16 @@ function MappingRowView({
         {usd(row.priceUsd)}
       </td>
       <td className="mapping-cell">
-        {row.link && !picking ? (
+        {row.skipped ? (
+          <div className="mapping-linked">
+            <p className="meta">{t('skippedRow')}</p>
+            <div className="supplier-actions">
+              <button type="button" className="ghost btn-sm" onClick={() => onSkip(false)}>
+                {t('unskip')}
+              </button>
+            </div>
+          </div>
+        ) : row.link && !picking ? (
           <div className="mapping-linked">
             <div dir="ltr" className={row.link.item.outOfStock ? 'supplier-struck' : undefined}>
               {row.link.item.name}
@@ -317,7 +338,17 @@ function MappingRowView({
                 >
                   ✕
                 </button>
-              ) : null}
+              ) : (
+                // Not sold by this supplier: out of the linking lists for good.
+                <button
+                  type="button"
+                  className="ghost btn-sm"
+                  title={t('skipHint')}
+                  onClick={() => onSkip(true)}
+                >
+                  {t('skip')}
+                </button>
+              )}
             </div>
           </div>
         )}

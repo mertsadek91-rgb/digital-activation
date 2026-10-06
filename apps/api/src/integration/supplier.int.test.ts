@@ -174,4 +174,34 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
       ).supplierOutOfStock,
     ).toBe(false);
   });
+
+  it('skips a variant out of every list but its own, and puts it back', async () => {
+    const supplier = harness.get(SupplierService);
+    const id = catalogue.stocked.variantId;
+    const before = await supplier.mapping({ filter: 'unlinked' });
+    expect(before.rows.some((row) => row.variantId === id)).toBe(true);
+
+    const skipped = await supplier.setSkipped(id, true, actor);
+    expect(skipped.skipped).toBe(true);
+    const after = await supplier.mapping({ filter: 'all' });
+    expect(after.rows.some((row) => row.variantId === id)).toBe(false);
+    expect(after.counts.skipped).toBeGreaterThanOrEqual(1);
+    const list = await supplier.mapping({ filter: 'skipped' });
+    expect(list.rows.map((row) => row.variantId)).toContain(id);
+
+    await supplier.setSkipped(id, false, actor);
+    const back = await supplier.mapping({ filter: 'unlinked' });
+    expect(back.rows.some((row) => row.variantId === id)).toBe(true);
+  });
+
+  it('refuses to skip a linked variant', async () => {
+    const supplier = harness.get(SupplierService);
+    await supplier.setLink(
+      catalogue.stocked.variantId,
+      { itemId, markupPercent: null, followStock: false },
+      actor,
+    );
+    await expect(supplier.setSkipped(catalogue.stocked.variantId, true, actor)).rejects.toThrow();
+    await supplier.removeLink(catalogue.stocked.variantId, actor);
+  });
 });

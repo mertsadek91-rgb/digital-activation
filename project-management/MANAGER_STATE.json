@@ -100,12 +100,14 @@
       "active_tasks": [
         "TASK-0101",
         "TASK-0115",
-        "TASK-0116"
+        "TASK-0116",
+        "TASK-0117"
       ],
       "owned_tasks": [
         "TASK-0101",
         "TASK-0115",
-        "TASK-0116"
+        "TASK-0116",
+        "TASK-0117"
       ],
       "reviews": [],
       "blocked_work": [],

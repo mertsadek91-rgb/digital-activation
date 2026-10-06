@@ -64,6 +64,12 @@ export const supplierApi = {
     request<SupplierMappingRow>(`/admin/supplier/links/${encodeURIComponent(variantId)}`, {
       method: 'DELETE',
     }),
+  /** Skip a variant (not sold by this supplier) or put it back into linking. */
+  setSkipped: (variantId: string, skip: boolean) =>
+    request<SupplierMappingRow>(`/admin/supplier/skips/${encodeURIComponent(variantId)}`, {
+      method: skip ? 'PUT' : 'DELETE',
+      ...(skip ? { body: '{}' } : {}),
+    }),
   prices: () => request<SupplierPrices>('/admin/supplier/prices'),
   applyPrices: (input: ApplySupplierPrices) =>
     request<ApplySupplierPricesResult>('/admin/supplier/prices/apply', {
