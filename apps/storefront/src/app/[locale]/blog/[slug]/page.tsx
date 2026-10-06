@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { Metadata } from 'next';
 import { Link } from '../../../../components/link';
 import { notFound } from 'next/navigation';
@@ -50,6 +51,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: post.seo.title ?? post.title,
       description: post.seo.description ?? post.summary ?? undefined,
       type: 'article',
+      // The article image (CR-0006), when it has one; the site default otherwise.
+      ...(post.hero
+        ? {
+            images: [
+              {
+                url: post.hero.url,
+                width: post.hero.width,
+                height: post.hero.height,
+                alt: post.hero.alt,
+              },
+            ],
+          }
+        : {}),
       ...(post.publishedAt ? { publishedTime: post.publishedAt } : {}),
       modifiedTime: post.updatedAt,
     },
@@ -111,6 +125,8 @@ export default async function PostPage({ params }: Props) {
       url: pageUrl,
       headline: post.title,
       description: post.seo.description ?? post.summary ?? post.title,
+      ...(post.hero ? { imageUrl: post.hero.url } : {}),
+      inLanguage: ar ? 'ar' : 'en',
       datePublished: post.publishedAt ?? post.updatedAt,
       dateModified: post.updatedAt,
       /**
@@ -163,6 +179,18 @@ export default async function PostPage({ params }: Props) {
           {/* Rendered as the opening paragraph rather than hidden in a meta
               tag: it is the answer-first summary, and it is the passage most
               likely to be quoted by an answer engine. */}
+          {post.hero ? (
+            <figure className="post-hero">
+              <Image
+                src={post.hero.url}
+                alt={post.hero.alt}
+                width={post.hero.width}
+                height={post.hero.height}
+                priority
+                sizes="(max-width: 900px) 100vw, 760px"
+              />
+            </figure>
+          ) : null}
           {post.summary ? <p className="post-lede">{post.summary}</p> : null}
           {post.isDraft ? <p className="draft-flag">{tc('draftPreview')}</p> : null}
 

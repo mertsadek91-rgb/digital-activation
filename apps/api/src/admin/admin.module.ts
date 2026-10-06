@@ -71,5 +71,7 @@ import { TaxonomyService } from './taxonomy.service.js';
     LaunchService,
     DashboardService,
   ],
+  // The article studio writes drafts through the blog editor's own service.
+  exports: [ContentArticlesService],
 })
 export class AdminModule {}

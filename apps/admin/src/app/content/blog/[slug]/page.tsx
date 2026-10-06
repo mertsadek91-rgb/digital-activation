@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { ArticleHeroForm } from './hero-form';
+
 import { useT } from '../../../../i18n/provider';
 import { api, ApiError } from '../../../../lib/api';
 import { Nav } from '../../../nav';
@@ -211,6 +213,20 @@ export default function ContentPostEditor() {
 
       {post && row && draft ? (
         <div className="edit-sections">
+          <section className="edit-section">
+            <h3>{t('heroHeading')}</h3>
+            <p className="lede-sm">{t('heroLede')}</p>
+            <ArticleHeroForm
+              post={post}
+              canWrite={canWrite}
+              onChanged={(saved) => {
+                setPost(saved);
+                setNote(t('heroSaved'));
+              }}
+              onError={setError}
+            />
+          </section>
+
           <section className="edit-section">
             <h3>{t('copyHeading')}</h3>
             {!row.exists ? <p className="notice">{t('postLocaleMissingNote')}</p> : null}

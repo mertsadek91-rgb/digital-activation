@@ -120,6 +120,8 @@ export interface ArticleInput {
    */
   author: { name: string; url?: string; sameAs?: string[]; type?: 'Person' | 'Organization' };
   publisherName: string;
+  /** BCP 47 language of the article, e.g. "ar" (CR-0006). */
+  inLanguage?: string;
 }
 
 const SCHEMA = 'https://schema.org';
@@ -270,6 +272,7 @@ export function article(input: ArticleInput): JsonLdNode {
     headline: input.headline,
     description: input.description,
     ...(input.imageUrl ? { image: input.imageUrl } : {}),
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
     datePublished: input.datePublished,
     dateModified: input.dateModified,
     author: {

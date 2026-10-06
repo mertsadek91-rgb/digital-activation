@@ -56,3 +56,5 @@
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
 - TASK-0044 — Plan the staging-to-production transition of the single Coolify environment (WAITING_INFORMATION, 70%)
+- TASK-0119 — Article studio in the admin: inventory, AI ideas with chat, write a 1500-2000 word draft article with summary, headings, FAQ, verified internal links, SEO fields and an image prompt (IN_PROGRESS, 80%)
+- TASK-0120 — Article image: upload in the article editor, served by the content API, shown on the article page, in og:image and in the Article JSON-LD (with inLanguage) (IN_PROGRESS, 80%)

@@ -316,15 +316,17 @@
         "TASK-0115",
         "TASK-0116",
         "TASK-0117",
-        "TASK-0118"
+        "TASK-0118",
+        "TASK-0119",
+        "TASK-0120"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 6,
       "blockers": [],
-      "last_activity": "2026-10-06T12:21:57Z"
+      "last_activity": "2026-10-06T12:46:03Z"
     },
     {
       "id": "backend-architect",
@@ -345,12 +347,14 @@
         "TASK-0115",
         "TASK-0116",
         "TASK-0117",
-        "TASK-0118"
+        "TASK-0118",
+        "TASK-0119",
+        "TASK-0120"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4.5,
+      "workload": 5.5,
       "blockers": [],
       "last_activity": "2026-10-06T10:57:01Z"
     },
@@ -637,14 +641,16 @@
       ],
       "supporting": [
         "TASK-0004",
-        "TASK-0044"
+        "TASK-0044",
+        "TASK-0119",
+        "TASK-0120"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [
         "OPP-0001"
       ],
-      "workload": 2,
+      "workload": 3,
       "blockers": [],
       "last_activity": "2026-10-05T11:30:09Z"
     },

@@ -59,3 +59,5 @@
 - TASK-0116 — Card designer: upload a product logo (shrunk in the browser, validated on the server), card colour from the logo (IN_PROGRESS, 85%)
 - TASK-0117 — Supplier mapping: skip a variant that this supplier does not sell (hidden from every linking list, shown under a Skipped filter, can be put back) (IN_PROGRESS, 90%)
 - TASK-0118 — Product editor: write or improve each section with AI (SEO fields, activation how-to, FAQ, steps, specification table) and a View in store link; logo upload shown as a button (IN_PROGRESS, 90%)
+- TASK-0119 — Article studio in the admin: inventory, AI ideas with chat, write a 1500-2000 word draft article with summary, headings, FAQ, verified internal links, SEO fields and an image prompt (IN_PROGRESS, 80%)
+- TASK-0120 — Article image: upload in the article editor, served by the content API, shown on the article page, in og:image and in the Article JSON-LD (with inLanguage) (IN_PROGRESS, 80%)

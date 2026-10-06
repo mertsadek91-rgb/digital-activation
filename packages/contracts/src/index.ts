@@ -37,3 +37,4 @@ export * from './customers-admin.js';
 export * from './analytics.js';
 export * from './supplier.js';
 export * from './supplier-ai.js';
+export * from './studio.js';

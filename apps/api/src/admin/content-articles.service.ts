@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
 import type {
+  ArticleHeroUpload,
   AdminArticle,
   AdminArticleList,
   AdminArticleLocale,
@@ -25,6 +26,14 @@ import {
   toStoredDocument,
 } from './content-documents.js';
 import { recordMove } from './content-redirect.js';
+import { UnreadableImageError, decodeDataUrl, processImage } from '../media/image.js';
+import { put, storage } from '../media/storage.js';
+
+/** Where a stored key is served from; the bucket's public base, as the catalog does. */
+function assetUrl(key: string): string {
+  const base = process.env.S3_PUBLIC_BASE_URL;
+  return base ? new URL(key, base).toString() : `/media/${key}`;
+}
 
 /**
  * The blog, for the people who write it.
@@ -85,7 +94,21 @@ export class ContentArticlesService {
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     });
+    const heroId = rows.find((row) => row.heroAssetId)?.heroAssetId ?? null;
+    const hero = heroId
+      ? await this.prisma.client.asset.findUnique({
+          where: { id: heroId },
+          include: { alts: { select: { locale: true, alt: true } } },
+        })
+      : null;
     return {
+      hero: hero
+        ? {
+            url: assetUrl(hero.key),
+            altAr: hero.alts.find((alt) => alt.locale === Locale.AR)?.alt ?? '',
+            altEn: hero.alts.find((alt) => alt.locale === Locale.EN)?.alt ?? '',
+          }
+        : null,
       slug,
       path: contentPath.post(slug),
       ar: toLocale(
@@ -264,6 +287,83 @@ export class ContentArticlesService {
     });
 
     return this.get(nextSlug ?? slug);
+  }
+
+  /**
+   * The article image (CR-0006), shared by both languages of the post: the
+   * page's lead picture, its og:image and the Article JSON-LD image. Processed
+   * and stored exactly as a product image is (WebP, ≤1600 px, metadata
+   * stripped), with alt text per locale.
+   */
+  async setHero(
+    slug: string,
+    input: ArticleHeroUpload,
+    actorId: string | undefined,
+  ): Promise<AdminArticle> {
+    const rows = await this.load(slug);
+    let processed;
+    try {
+      processed = await processImage(decodeDataUrl(input.dataUrl));
+    } catch (error) {
+      if (error instanceof UnreadableImageError) throw new BadRequestException(error.message);
+      throw error;
+    }
+    const existing = await this.prisma.client.asset.findUnique({ where: { key: processed.key } });
+    if (!existing) await put(storage(), processed.key, processed.bytes, processed.mime);
+    const asset =
+      existing ??
+      (await this.prisma.client.asset.create({
+        data: {
+          key: processed.key,
+          mime: processed.mime,
+          bytes: processed.bytes.byteLength,
+          width: processed.width,
+          height: processed.height,
+          checksum: processed.checksum,
+        },
+      }));
+    for (const [locale, alt] of [
+      [Locale.AR, input.alt.ar],
+      [Locale.EN, input.alt.en],
+    ] as const) {
+      if (!alt) continue;
+      await this.prisma.client.assetAlt.upsert({
+        where: { assetId_locale: { assetId: asset.id, locale } },
+        update: { alt },
+        create: { assetId: asset.id, locale, alt },
+      });
+    }
+    const before = rows.find((row) => row.heroAssetId)?.heroAssetId ?? null;
+    await this.prisma.client.article.updateMany({
+      where: { kind: ArticleKind.POST, slug },
+      data: { heroAssetId: asset.id },
+    });
+    await this.audit.record({
+      actorId,
+      entity: 'Article',
+      entityId: slug,
+      action: 'article.hero_set',
+      before: { heroAssetId: before },
+      after: { heroAssetId: asset.id, key: asset.key },
+    });
+    return this.get(slug);
+  }
+
+  async removeHero(slug: string, actorId: string | undefined): Promise<AdminArticle> {
+    const rows = await this.load(slug);
+    const before = rows.find((row) => row.heroAssetId)?.heroAssetId ?? null;
+    await this.prisma.client.article.updateMany({
+      where: { kind: ArticleKind.POST, slug },
+      data: { heroAssetId: null },
+    });
+    await this.audit.record({
+      actorId,
+      entity: 'Article',
+      entityId: slug,
+      action: 'article.hero_removed',
+      before: { heroAssetId: before },
+    });
+    return this.get(slug);
   }
 
   private async load(slug: string): Promise<Article[]> {
