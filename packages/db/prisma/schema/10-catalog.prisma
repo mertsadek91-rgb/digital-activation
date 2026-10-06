@@ -229,6 +229,14 @@ model Variant {
   /// Purchase cost, admin-only. Never exposed by any storefront endpoint.
   costUsd      Decimal? @db.Decimal(12, 2)
 
+  /// The supplier's price sheet has this line struck through, or no longer
+  /// lists it (CR-0004). Set only by the supplier sync, for a variant linked
+  /// to a sheet row with followStock on. While true the variant is not
+  /// buyable and the product page offers "notify me" instead; the
+  /// back-in-stock sweep emails the people waiting once it clears. Applies to
+  /// ON_DEMAND lines, which otherwise can never be out of stock.
+  supplierOutOfStock Boolean @default(false)
+
   isDefault Boolean       @default(false)
   position  Int           @default(0)
   status    PublishStatus @default(DRAFT)
@@ -243,6 +251,7 @@ model Variant {
   orderItems   OrderItem[]
   stockAlerts  StockAlert[]
   media        ProductMedia[]
+  supplierLink VariantSupplierLink?
 
   @@index([productId, position])
   @@schema("public")

@@ -26,6 +26,21 @@ const envSchema = z.object({
   FX_REFRESH: z.string().optional(),
 
   /**
+   * Supplier price sheet (CR-0004). The Google Sheets API key reads the
+   * supplier's shared sheet (values and strikethrough); without it the
+   * supplier screens load but cannot sync. `SUPPLIER_SYNC=off` stops the
+   * hourly read. OPENCODE_API_KEY is the owner's OpenCode Zen account, used
+   * for AI product copy; OPENCODE_BASE_URL overrides its endpoint.
+   */
+  GOOGLE_SHEETS_API_KEY: z.string().optional(),
+  SUPPLIER_SYNC: z.string().optional(),
+  OPENCODE_API_KEY: z.string().optional(),
+  OPENCODE_BASE_URL: z.string().optional(),
+  /** The product card's font folder and family; default apps/api/assets/fonts, Tajawal. */
+  CARD_FONT_DIR: z.string().optional(),
+  CARD_FONT_FAMILY: z.string().optional(),
+
+  /**
    * The incident switch for automatic licence delivery (BUG-0021). `off`
    * still assigns stocked keys on payment but leaves the lines in the staff
    * queue. Strict on purpose: a mistyped `of` must refuse the boot, not

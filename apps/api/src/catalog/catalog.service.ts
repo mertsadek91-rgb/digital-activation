@@ -84,6 +84,31 @@ function isStocked(variant: { fulfillmentMode: FulfillmentMode }): boolean {
   return variant.fulfillmentMode === FulfillmentMode.FROM_STOCK;
 }
 
+/**
+ * Whether a variant can be bought right now: not struck through on the
+ * supplier's sheet (CR-0004), and — for a stocked line — with stock left.
+ * A made-to-order line the supplier is out of is out of stock too; that is
+ * the one way one can be.
+ */
+function isBuyable(variant: {
+  fulfillmentMode: FulfillmentMode;
+  supplierOutOfStock: boolean;
+  inventory: { onHand: number; reserved: number } | null;
+}): boolean {
+  if (variant.supplierOutOfStock) return false;
+  return isStocked(variant) ? sellable(variant) > 0 : true;
+}
+
+/** Units on offer: 0 when the supplier is out, null for an unstocked line. */
+function availableCount(variant: {
+  fulfillmentMode: FulfillmentMode;
+  supplierOutOfStock: boolean;
+  inventory: { onHand: number; reserved: number } | null;
+}): number | null {
+  if (variant.supplierOutOfStock) return 0;
+  return isStocked(variant) ? sellable(variant) : null;
+}
+
 /** Sellable count for a stocked variant: on hand minus what carts hold. */
 function sellable(variant: { inventory: { onHand: number; reserved: number } | null }): number {
   return Math.max(0, (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0));
@@ -606,7 +631,6 @@ export class CatalogService {
     });
 
     const variants: CatalogVariant[] = product.variants.map((variant) => {
-      const stocked = isStocked(variant);
       const priced = salePriced(variant, sale);
 
       return {
@@ -621,8 +645,8 @@ export class CatalogService {
         fulfillmentMode: variant.fulfillmentMode,
         requiresActivationEmail: variant.requiresActivationEmail,
         price: displayPrice(priced.priceUsd, priced.compareAtUsd, query.currency, pricing.fx),
-        available: stocked ? sellable(variant) : null,
-        inStock: stocked ? sellable(variant) > 0 : true,
+        available: availableCount(variant),
+        inStock: isBuyable(variant),
         isDefault: variant.isDefault,
       };
     });
@@ -890,6 +914,7 @@ export class CatalogService {
             priceUsd: true,
             compareAtUsd: true,
             fulfillmentMode: true,
+            supplierOutOfStock: true,
             inventory: { select: { onHand: true, reserved: true } },
           },
         },
@@ -1042,8 +1067,8 @@ export class CatalogService {
     const priced = product.variants.map((variant) => ({
       variant,
       stocked: isStocked(variant),
-      available: isStocked(variant) ? sellable(variant) : null,
-      buyable: isStocked(variant) ? sellable(variant) > 0 : true,
+      available: availableCount(variant),
+      buyable: isBuyable(variant),
     }));
 
     // The card shows the entry price — the cheapest variant a visitor could

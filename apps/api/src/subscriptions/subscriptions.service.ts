@@ -51,9 +51,16 @@ export class SubscriptionsService {
   }): Promise<{ ok: true }> {
     const variant = await this.prisma.client.variant.findFirst({
       where: { id: input.variantId, status: PublishStatus.PUBLISHED },
-      select: { id: true, productId: true },
+      select: { id: true, productId: true, fulfillmentMode: true, supplierOutOfStock: true },
     });
     if (!variant) throw new BadRequestException('Unknown product option.');
+
+    // A made-to-order line can only run out through the supplier's sheet
+    // (CR-0004). Asking to be told when a buyable one is "back" would email
+    // on the next sweep for nothing, so it is accepted and not stored.
+    if (variant.fulfillmentMode !== FulfillmentMode.FROM_STOCK && !variant.supplierOutOfStock) {
+      return { ok: true };
+    }
 
     const customer = await this.prisma.client.customer.findUnique({
       where: { email: input.email },
@@ -88,8 +95,9 @@ export class SubscriptionsService {
    *
    * A sweep over the database rather than a hook on the stock import, so a
    * key added by any path — the vault import, a manual correction, a script —
-   * reaches the people who asked. Only stocked variants: a made-to-order one
-   * is never "out of stock" in the sense the button means.
+   * reaches the people who asked. A stocked variant is back when it has
+   * stock; a made-to-order one is back when the supplier's sheet stops
+   * striking it through (CR-0004) — the only way such a line runs out.
    */
   @Cron(CronExpression.EVERY_10_MINUTES, { name: 'back-in-stock' })
   async sweep(): Promise<{ sent: number }> {
@@ -104,7 +112,7 @@ export class SubscriptionsService {
         notifiedAt: null,
         variant: {
           status: PublishStatus.PUBLISHED,
-          fulfillmentMode: FulfillmentMode.FROM_STOCK,
+          supplierOutOfStock: false,
           product: { status: PublishStatus.PUBLISHED },
         },
       },
@@ -113,6 +121,8 @@ export class SubscriptionsService {
       include: {
         variant: {
           select: {
+            fulfillmentMode: true,
+            supplierLink: { select: { createdAt: true } },
             inventory: { select: { onHand: true, reserved: true } },
             product: {
               select: { slug: true, translations: { select: { locale: true, name: true } } },
@@ -126,7 +136,17 @@ export class SubscriptionsService {
     for (const alert of alerts) {
       const variant = alert.variant;
       if (!variant) continue;
-      const available = (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0);
+      const stocked = variant.fulfillmentMode === FulfillmentMode.FROM_STOCK;
+      // A made-to-order alert counts only if it was asked for after the
+      // variant was linked to the supplier sheet — the one way such a line can
+      // have been out. Alerts older than that (asked of a line that was never
+      // out) are left alone rather than emailed on the first sweep.
+      if (!stocked && (!variant.supplierLink || alert.createdAt < variant.supplierLink.createdAt)) {
+        continue;
+      }
+      const available = stocked
+        ? (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0)
+        : 1;
       if (available <= 0) continue;
 
       const locale = alert.locale === Locale.EN ? 'en' : 'ar';

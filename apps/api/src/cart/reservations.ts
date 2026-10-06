@@ -105,8 +105,15 @@ export async function hold(
 
   const variant = await tx.variant.findUnique({
     where: { id: variantId },
-    select: { fulfillmentMode: true },
+    select: { fulfillmentMode: true, supplierOutOfStock: true },
   });
+
+  // The supplier's sheet has the line struck through (CR-0004): nothing can
+  // be held, whatever the fulfilment mode. The cart reports it as it reports
+  // any sold-out line, and the product page offers "notify me".
+  if (variant?.supplierOutOfStock && qty > 0) {
+    return { granted: 0, requested: qty, availableAfter: 0 };
+  }
 
   // Made to order: no shelf, no hold, no ceiling. Taking a reservation here
   // would invent a limit the business does not have, and refusing the line

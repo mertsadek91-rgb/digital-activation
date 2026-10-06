@@ -1,0 +1,174 @@
+// ---------------------------------------------------------------------------
+// Supplier price sheet (CR-0004): the wholesale list a supplier publishes as a
+// Google Sheet, read on a schedule, kept as rows we can diff, and linked to our
+// own variants so a cost change becomes a price proposal and a struck-through
+// line becomes "notify me".
+//
+// The sheet belongs to the supplier. Rows move when somebody inserts a line in
+// the middle, so nothing here is keyed by row number: an item is its
+// normalised product name within its source.
+// ---------------------------------------------------------------------------
+
+/// How a marked-up price is rounded before it is proposed.
+enum SupplierRounding {
+  /// Two decimals, half up. 10.00 at 50% is 15.00.
+  CENTS
+  /// Up to the next whole dollar, less a cent. 15.20 becomes 15.99.
+  END_99
+  /// Up to the next whole dollar. 15.20 becomes 16.00.
+  WHOLE
+
+  @@schema("public")
+}
+
+/// One supplier sheet. The markup is a percentage on cost: 50 means
+/// price = cost × 1.5, which is what the owner asked for.
+model SupplierSource {
+  id            String           @id @default(cuid())
+  name          String
+  /// The id in the sheet's URL (`/spreadsheets/d/<id>/`).
+  spreadsheetId String
+  /// The tab, as the `gid` in the sheet's URL.
+  sheetGid      Int              @default(0)
+  markupPercent Decimal          @default(50) @db.Decimal(6, 2)
+  rounding      SupplierRounding @default(CENTS)
+  /// Read on the hourly schedule. Off means "sync now" only.
+  autoSync      Boolean          @default(true)
+
+  lastSyncAt     DateTime?
+  /// OK | FAILED | REFUSED (the sheet no longer looks like the one we know).
+  lastSyncStatus String?
+  lastSyncError  String?
+  /// The supplier's own "Update Date" cell, verbatim.
+  sheetUpdatedLabel String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items     SupplierItem[]
+  snapshots SupplierSnapshot[]
+
+  @@unique([spreadsheetId, sheetGid])
+  @@schema("public")
+}
+
+/// One read of the sheet. Kept so the log can say what each sync saw.
+model SupplierSnapshot {
+  id                String         @id @default(cuid())
+  source            SupplierSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId          String
+  fetchedAt         DateTime       @default(now())
+  status            String
+  error             String?
+  sheetUpdatedLabel String?
+  rowCount          Int            @default(0)
+  /// sha256 of the parsed rows; an unchanged sheet writes no item changes.
+  contentHash       String?
+  added             Int            @default(0)
+  changed           Int            @default(0)
+  removed           Int            @default(0)
+  /// Variants whose availability this sync switched, either way.
+  stockSwitched     Int            @default(0)
+  /// Staff member who pressed "sync now"; null for the schedule.
+  triggeredById     String?
+
+  changes SupplierItemChange[]
+
+  @@index([sourceId, fetchedAt])
+  @@schema("public")
+}
+
+/// A line of the supplier's list, as last read.
+model SupplierItem {
+  id        String         @id @default(cuid())
+  source    SupplierSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  sourceId  String
+  /// Lower-cased, whitespace-collapsed name: the identity of the row.
+  nameKey   String
+  /// The name as the supplier wrote it.
+  name      String
+  category  String?
+  /// Null when the price cell is empty ("Price fluctuation").
+  costUsd   Decimal?       @db.Decimal(12, 2)
+  /// The price cell verbatim, for when it does not parse.
+  priceText String?
+  warranty  String?
+  remarks   String?
+  /// The name cell is struck through: the supplier is out of it.
+  outOfStock    Boolean @default(false)
+  /// Only part of the name is struck through. Not treated as out of stock,
+  /// but shown so a person can look.
+  partialStrike Boolean @default(false)
+  /// The name carries a minimum order ("MOQ≥50 pieces").
+  wholesaleOnly Boolean @default(false)
+  /// Row number when last seen. Informational only — rows move.
+  rowNumber     Int?
+
+  firstSeenAt  DateTime  @default(now())
+  lastSeenAt   DateTime  @default(now())
+  /// Set when a sync no longer finds the row; cleared if it comes back.
+  missingSince DateTime?
+
+  links   VariantSupplierLink[]
+  changes SupplierItemChange[]
+
+  @@unique([sourceId, nameKey])
+  @@index([sourceId, missingSince])
+  @@schema("public")
+}
+
+enum SupplierChangeKind {
+  ADDED
+  REMOVED
+  RETURNED
+  COST
+  STOCK
+  CATEGORY
+  WARRANTY
+  REMARKS
+
+  @@schema("public")
+}
+
+/// What a sync saw change on one row. Append-only.
+model SupplierItemChange {
+  id         String             @id @default(cuid())
+  item       SupplierItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId     String
+  snapshot   SupplierSnapshot   @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  snapshotId String
+  kind       SupplierChangeKind
+  before     Json?
+  after      Json?
+  createdAt  DateTime           @default(now())
+
+  @@index([itemId, createdAt])
+  @@index([snapshotId])
+  @@schema("public")
+}
+
+/// "This variant of ours is that line of the sheet." Saved once, by a person;
+/// the sync never makes or remakes a link on its own, because two similar
+/// names are exactly how a Pro key gets priced as a Home key.
+model VariantSupplierLink {
+  id            String       @id @default(cuid())
+  variant       Variant      @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId     String       @unique
+  item          SupplierItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId        String
+  /// Overrides the source's markup for this variant. Null uses the source's.
+  markupPercent Decimal?     @db.Decimal(6, 2)
+  /// Mirror the sheet's strikethrough onto `Variant.supplierOutOfStock`.
+  followStock   Boolean      @default(true)
+
+  lastAppliedCostUsd  Decimal?  @db.Decimal(12, 2)
+  lastAppliedPriceUsd Decimal?  @db.Decimal(12, 2)
+  lastAppliedAt       DateTime?
+
+  linkedById String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([itemId])
+  @@schema("public")
+}

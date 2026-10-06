@@ -102,6 +102,7 @@
     },
     "fulfillment": {
       "fromStockOut": "From our own stock — none left right now",
+      "outNow": "Out right now, back soon",
       "fromStock": "Held in stock — delivered immediately",
       "onDemand": "Prepared after purchase, so the licence term does not start before you use it",
       "manualSetup": "Prepared by hand against your own details after purchase"

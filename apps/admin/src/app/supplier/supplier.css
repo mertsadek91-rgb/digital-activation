@@ -1,0 +1,339 @@
+/* Supplier price sheet (CR-0004). Built on the panel's tokens and classes. */
+
+.supplier-tabs {
+  margin-block: var(--space-4, 16px);
+}
+
+.supplier-settings {
+  display: grid;
+  gap: 16px;
+}
+
+.supplier-form {
+  display: grid;
+  gap: 14px;
+}
+
+.supplier-form-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+}
+
+.supplier-check {
+  margin-inline-start: 0;
+}
+
+.supplier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.supplier-sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.supplier-sync p {
+  margin: 0;
+}
+
+.supplier-rules ul {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  display: grid;
+  gap: 6px;
+  color: var(--color-ink-secondary);
+  font-size: var(--text-sm);
+}
+
+.supplier-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 12px;
+}
+
+.supplier-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.supplier-filters .chip .tab-count {
+  margin-inline-start: 6px;
+}
+
+.supplier-table td {
+  vertical-align: top;
+}
+
+/* Faded by colour, not opacity: opacity took text and badges below AA
+   contrast (REV-0162). Badges keep their own colours. */
+.supplier-table tr.is-muted td {
+  color: var(--color-ink-secondary);
+  background: var(--color-card-alt);
+}
+
+.supplier-table tr.is-warning td {
+  background: color-mix(in srgb, var(--color-warning, #b7791f) 8%, transparent);
+}
+
+.supplier-struck {
+  text-decoration: line-through;
+  color: var(--color-ink-muted);
+}
+
+.supplier-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.supplier-large {
+  color: var(--color-danger, #c53030);
+  font-weight: 700;
+}
+
+.supplier-json {
+  /* The panel's tables keep the last cell on one line; this column must wrap,
+     or the one before it is squeezed to a character per line (REV-0151). */
+  white-space: normal;
+  min-inline-size: 12rem;
+  max-inline-size: 22rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.supplier-skips {
+  margin: 6px 0 0;
+  padding-inline-start: 1.2em;
+}
+
+.mapping-cell {
+  min-inline-size: 18rem;
+}
+
+.mapping-picker,
+.mapping-linked {
+  display: grid;
+  gap: 8px;
+}
+
+.mapping-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mapping-suggestions .chip {
+  white-space: normal;
+  text-align: start;
+}
+
+.mapping-matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  max-block-size: 14rem;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.mapping-matches button {
+  inline-size: 100%;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: start;
+  min-block-size: 32px;
+  padding: 4px 8px;
+}
+
+.mapping-matches button.is-active {
+  font-weight: 700;
+}
+
+.mapping-chosen {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-success, #2f855a);
+}
+
+.mapping-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.mapping-options .field {
+  max-inline-size: 10rem;
+}
+
+.create-from-line {
+  display: grid;
+  gap: 10px;
+  padding-block: 8px;
+}
+
+.ai-preview .ai-fields {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: 6px 16px;
+  margin: 0 0 16px;
+}
+
+.ai-preview .ai-fields dt {
+  font-weight: 600;
+  color: var(--color-ink-secondary);
+}
+
+.ai-preview .ai-fields dd {
+  margin: 0;
+}
+
+.ai-body {
+  display: grid;
+  gap: 10px;
+  border-block-start: 1px solid var(--color-border);
+  padding-block-start: 12px;
+}
+
+.ai-body h3,
+.ai-body h4,
+.ai-body p {
+  margin: 0;
+}
+
+.ai-answer {
+  font-weight: 600;
+}
+
+.ai-rich {
+  white-space: pre-line;
+}
+
+.ai-faq dt {
+  font-weight: 600;
+}
+
+.ai-faq dd {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 640px) {
+  .ai-preview .ai-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card-designer {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  align-items: start;
+}
+
+.card-preview img {
+  inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 900px) {
+  .card-designer {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* An SKU is one token: never broken at its hyphens. */
+.supplier-sku {
+  white-space: nowrap;
+}
+
+.supplier-create-card {
+  margin-block-end: 16px;
+}
+
+.supplier-table tr.is-selected td {
+  background: var(--color-card-alt);
+}
+
+/* A padded tap target around the price-row checkbox. */
+.supplier-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  margin: -12px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  /* Touch targets: 44 px on a phone (REV-0150). */
+  .supplier-tabs .tab,
+  .supplier-filters .chip,
+  .supplier-actions button,
+  .supplier-actions .as-button,
+  .supplier-toolbar .search,
+  .mapping-suggestions .chip,
+  .mapping-matches button,
+  .ai-preview button {
+    min-block-size: 44px;
+  }
+
+  .supplier-actions button.btn-sm,
+  .mapping-linked button,
+  .mapping-picker button {
+    min-inline-size: 44px;
+  }
+
+  .supplier-check,
+  .mapping-options .check,
+  .supplier-actions .check {
+    min-block-size: 44px;
+  }
+
+  /* The mapping table stacks: each variant a block, its picker under it,
+     instead of a last column scrolled out of view (REV-0151). */
+  .mapping-table thead {
+    display: none;
+  }
+
+  .mapping-table,
+  .mapping-table tbody,
+  .mapping-table tr,
+  .mapping-table td {
+    display: block;
+    inline-size: 100%;
+  }
+
+  .mapping-table tr {
+    border-block-end: 1px solid var(--color-border);
+    padding-block: 8px;
+  }
+
+  .mapping-table td {
+    border: 0;
+    padding-block: 4px;
+    white-space: normal;
+  }
+
+  .mapping-cell {
+    min-inline-size: 0;
+  }
+}
