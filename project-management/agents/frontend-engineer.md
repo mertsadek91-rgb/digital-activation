@@ -11,7 +11,7 @@
 | Max authority | Level 3 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -55,4 +55,5 @@
 
 ## Current tasks
 
-- none
+- TASK-0115 — Improve-with-AI panel in the product editor: reads the page (unsaved blocks, saved SEO, facts), rewrites to the house rules, applies into the editor unsaved (IN_PROGRESS, 85%)
+- TASK-0116 — Card designer: upload a product logo (shrunk in the browser, validated on the server), card colour from the logo (IN_PROGRESS, 85%)

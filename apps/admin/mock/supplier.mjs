@@ -434,7 +434,57 @@ const cardSpec = {
   useLogo: true,
 };
 
+// The product editor, enough of it to render "improve with AI" (CR-0005).
+const editorRow = {
+  slug: 'windows-11-pro',
+  nameAr: 'ويندوز 11 برو',
+  nameEn: 'Windows 11 Pro',
+  status: 'PUBLISHED',
+  kind: 'KEY',
+  brand: 'Microsoft',
+  primaryCategory: 'Windows',
+  variantCount: 1,
+  stock: null,
+  stockedVariantCount: 0,
+  priceFromUsd: '2.25',
+  hasGoldenWarranty: false,
+  salesCount: 12,
+  imageCount: 1,
+  activationSteps: { ar: 2, en: 0 },
+  blockers: 0,
+  warnings: 1,
+};
+const editorReadiness = { locale: 'ar', publishable: true, checks: [] };
+const editorCopy = {
+  locale: 'ar',
+  name: 'ويندوز 11 برو',
+  shortDesc: 'مفتاح ويندوز 11 برو',
+  seoTitle: 'مفتاح ويندوز 11 برو',
+  seoDescription: 'اشتر مفتاح ويندوز 11 برو',
+  body: '',
+  bodyEditable: false,
+  otherBlocks: ['answerFirst', 'faq'],
+  readiness: editorReadiness,
+};
+const editorContent = {
+  locale: 'ar',
+  name: 'ويندوز 11 برو',
+  blocks: [
+    { type: 'answerFirst', text: 'مفتاح ويندوز 11 برو أصلي للتفعيل على جهاز واحد، يصلك على بريدك فور الدفع مع دعم كامل.' },
+    { type: 'richText', html: '<p>نص قديم قصير يحتاج تحسيناً.</p>' },
+  ],
+  warnings: [],
+  downloadUrl: '',
+  bodyWords: 20,
+  bodyMinWords: 120,
+};
+
 export const supplierRoutes = [
+  ['POST /v1/admin/supplier/card/logo-color', { color: '#e8410a' }],
+  ['GET /v1/admin/products/windows-11-pro', editorRow],
+  ['GET /v1/admin/products/windows-11-pro/readiness', editorReadiness],
+  ['GET /v1/admin/products/windows-11-pro/copy', editorCopy],
+  ['GET /v1/admin/products/windows-11-pro/content', editorContent],
   [
     'GET /v1/admin/supplier/card/windows-11-pro',
     {

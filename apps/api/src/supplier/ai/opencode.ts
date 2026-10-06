@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import type { AiProtocol } from '@da/contracts';
 
+import { say } from '../../common/panel-locale.js';
+
 /**
  * A minimal client for OpenCode Zen (https://opencode.ai/zen/v1).
  *
@@ -163,6 +165,61 @@ function providerError(body: unknown): string {
   return '';
 }
 
+/** The most a retry for an exhausted budget asks for. */
+export const MAX_TOKENS_CEILING = 32_000;
+
+/**
+ * Why an answer came back without text, from each protocol's own stop field:
+ * whether the model hit its token limit, and a short description for the
+ * error (the stop reason, and whether there was reasoning but no answer).
+ */
+export function whyEmpty(
+  protocol: ResolvedProtocol,
+  body: unknown,
+): { stoppedForLength: boolean; detail: string } {
+  const record = (body ?? {}) as Record<string, unknown>;
+  const str = (value: unknown): string => (typeof value === 'string' ? value : '');
+  let stop: string;
+  let reasoning = false;
+  switch (protocol) {
+    case 'messages':
+      stop = str(record.stop_reason);
+      reasoning = ((record.content ?? []) as { type?: string }[]).some(
+        (part) => part.type === 'thinking',
+      );
+      break;
+    case 'responses': {
+      const details = record.incomplete_details as { reason?: unknown } | undefined;
+      stop = str(details?.reason) || str(record.status);
+      reasoning = ((record.output ?? []) as { type?: string }[]).some(
+        (item) => item.type === 'reasoning',
+      );
+      break;
+    }
+    case 'gemini': {
+      const candidates = (record.candidates ?? []) as { finishReason?: unknown }[];
+      stop = str(candidates[0]?.finishReason);
+      break;
+    }
+    default: {
+      const choices = (record.choices ?? []) as {
+        finish_reason?: unknown;
+        message?: { reasoning_content?: unknown; reasoning?: unknown };
+      }[];
+      stop = str(choices[0]?.finish_reason);
+      const message = choices[0]?.message;
+      reasoning = Boolean(message?.reasoning_content ?? message?.reasoning);
+    }
+  }
+  const stoppedForLength = /length|max_tokens|max_output_tokens|MAX_TOKENS/i.test(stop);
+  return {
+    stoppedForLength,
+    detail: [stop ? `stop: ${stop}` : 'no stop reason', reasoning ? 'reasoning only' : '']
+      .filter(Boolean)
+      .join(', '),
+  };
+}
+
 /** Models that refused `temperature` in this process. */
 const NO_TEMPERATURE = new Set<string>();
 
@@ -266,13 +323,27 @@ export class OpenCodeClient {
       );
     }
     const text = readText(input.protocol, body);
-    if (!text.trim()) {
-      throw new OpenCodeError(
-        `OpenCode returned no text for ${input.model}. If this model speaks another protocol, choose it in the AI settings.`,
-        response.status,
-      );
+    if (text.trim()) return text;
+
+    // An empty answer (BUG-0027). Thinking models (GLM, Kimi, DeepSeek, Qwen)
+    // spend part of max_tokens reasoning; when that runs out before the
+    // answer starts, the answer field is empty. Once, with a larger budget.
+    const why = whyEmpty(input.protocol, body);
+    if (why.stoppedForLength && input.maxTokens < MAX_TOKENS_CEILING) {
+      return this.send({ ...input, maxTokens: Math.min(input.maxTokens * 2, MAX_TOKENS_CEILING) });
     }
-    return text;
+    throw new OpenCodeError(
+      why.stoppedForLength
+        ? say(
+            `النموذج ${input.model} استهلك كل الرموز المتاحة في التفكير قبل أن يكتب الجواب. اختر نموذجاً آخر أو أعد المحاولة.`,
+            `${input.model} spent its whole token budget thinking before it wrote an answer. Pick another model or try again.`,
+          )
+        : say(
+            `لم يُرجع النموذج ${input.model} أي نص (${why.detail}). إن كان يستخدم طريقة اتصال أخرى فاخترها في إعدادات الذكاء الاصطناعي.`,
+            `${input.model} returned no text (${why.detail}). If this model speaks another protocol, choose it in the AI settings.`,
+          ),
+      response.status,
+    );
   }
 }
 

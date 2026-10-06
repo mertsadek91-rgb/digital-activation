@@ -41,6 +41,7 @@ import {
   protocolFor,
 } from './opencode.js';
 import {
+  type CurrentPage,
   type ProductFacts,
   type StyleSample,
   copySystemPrompt,
@@ -204,7 +205,11 @@ export class SupplierAiService {
 
   // --- copy -----------------------------------------------------------------
 
-  async generateCopy(input: GenerateCopy): Promise<GeneratedCopy> {
+  async generateCopy(
+    input: GenerateCopy,
+    /** Called with the result so far each time one language finishes. */
+    onPartial?: (partial: GeneratedCopy) => Promise<void>,
+  ): Promise<GeneratedCopy> {
     const settings = await this.settings();
     const protocol = this.protocol(settings);
     const model = settings.model ?? '';
@@ -219,6 +224,7 @@ export class SupplierAiService {
     try {
       await Promise.all(
         input.locales.map(async (locale) => {
+          const current = input.mode === 'improve' ? await this.currentPage(input, locale) : null;
           result[locale] = await this.askForCopy(client, {
             model,
             protocol,
@@ -227,18 +233,51 @@ export class SupplierAiService {
               locale,
               facts,
               focusKeywords: input.focusKeywords,
-              sample: locale === 'ar' ? sample : null,
+              sample: locale === 'ar' && !current ? sample : null,
+              current,
+              instructions: input.instructions,
             }),
             temperature: settings.temperature,
             notes,
             locale,
           });
+          // Shown in the panel while the other language is still writing.
+          await onPartial?.({ ...result, notes: [...notes] });
         }),
       );
     } catch (error) {
       throw this.asBadRequest(error);
     }
     return result;
+  }
+
+  /**
+   * The page's copy in one language for "improve": what the editor sent (its
+   * unsaved state included), or else what is stored.
+   */
+  private async currentPage(input: GenerateCopy, locale: 'ar' | 'en'): Promise<CurrentPage> {
+    const sent = input.current[locale];
+    if (sent) {
+      return {
+        seoTitle: sent.seoTitle,
+        seoDescription: sent.seoDescription,
+        shortDesc: sent.shortDesc,
+        body: pageText(sent.blocks),
+      };
+    }
+    const row = await this.prisma.client.productTranslation.findFirst({
+      where: {
+        product: { slug: input.productSlug },
+        locale: locale === 'en' ? Locale.EN : Locale.AR,
+      },
+      select: { seoTitle: true, seoDescription: true, shortDesc: true, body: true },
+    });
+    return {
+      seoTitle: row?.seoTitle ?? '',
+      seoDescription: row?.seoDescription ?? '',
+      shortDesc: row?.shortDesc ?? '',
+      body: pageText(row?.body ?? []),
+    };
   }
 
   // --- copy jobs --------------------------------------------------------------
@@ -271,7 +310,7 @@ export class SupplierAiService {
     await this.saveJob(job);
     void this.pruneJobs();
 
-    void this.generateCopy(input).then(
+    void this.generateCopy(input, (partial) => this.saveJob({ ...job, result: partial })).then(
       (result) =>
         this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
       (error: unknown) =>
@@ -359,7 +398,9 @@ export class SupplierAiService {
         protocol: input.protocol,
         system: input.system,
         prompt,
-        maxTokens: 8000,
+        // Room for thinking models to reason and still answer; an exhausted
+        // budget is retried larger by the client (BUG-0027).
+        maxTokens: 12_000,
         temperature: input.temperature,
       });
       try {
@@ -624,4 +665,60 @@ export function normaliseCopy(raw: unknown, notes: string[], locale: 'ar' | 'en'
       : [],
     blocks: blocks.slice(0, 20),
   };
+}
+
+/**
+ * A body's blocks as plain text for a prompt, keeping each block's role
+ * ("## heading", "FAQ: q — a") so the model sees the structure it is
+ * rewriting. Unknown blocks are skipped.
+ */
+export function pageText(blocks: unknown): string {
+  if (!Array.isArray(blocks)) return '';
+  const strip = (html: string): string =>
+    html
+      .replace(/<\/(p|li|h[2-6])>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '- ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+  const out: string[] = [];
+  for (const block of blocks) {
+    if (block === null || typeof block !== 'object') continue;
+    const b = block as Record<string, unknown>;
+    switch (b.type) {
+      case 'heading':
+        out.push(`## ${text(b.text)}`);
+        break;
+      case 'answerFirst':
+        out.push(text(b.text));
+        break;
+      case 'richText':
+        out.push(strip(text(b.html)));
+        break;
+      case 'steps':
+        out.push(
+          `Steps${b.title ? ` (${text(b.title)})` : ''}:`,
+          ...((b.steps as { text?: string }[] | undefined) ?? []).map(
+            (step, i) => `${String(i + 1)}. ${step.text ?? ''}`,
+          ),
+        );
+        break;
+      case 'specTable':
+        out.push(
+          ...((b.rows as { label?: string; value?: string }[] | undefined) ?? []).map(
+            (row) => `${row.label ?? ''}: ${row.value ?? ''}`,
+          ),
+        );
+        break;
+      case 'faq':
+        out.push(
+          ...((b.items as { q?: string; a?: string }[] | undefined) ?? []).map(
+            (item) => `FAQ: ${item.q ?? ''} — ${item.a ?? ''}`,
+          ),
+        );
+        break;
+    }
+  }
+  return out.filter(Boolean).join('\n\n');
 }

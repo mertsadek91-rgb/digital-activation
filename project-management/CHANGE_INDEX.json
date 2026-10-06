@@ -88,6 +88,21 @@
         "SIG-0006"
       ],
       "file": "change-requests/CR-0004.md"
+    },
+    {
+      "created_at": "2026-10-06",
+      "updated_at": "2026-10-06",
+      "id": "CR-0005",
+      "title": "AI content in the product editor (improve the current page) and an uploadable product logo for the card image",
+      "status": "APPROVED",
+      "authority_level": 3,
+      "risk": "LOW",
+      "responsible_manager": "pm-03",
+      "departments": [
+        "Engineering"
+      ],
+      "consensus_required": false,
+      "file": "change-requests/CR-0005.md"
     }
   ]
 }

@@ -1,8 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import sharp from 'sharp';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type CardDefaults,
   type CardPreview,
   type CardSpecInput,
+  type LogoColor,
   type ProductImages,
   type SaveCard,
   cardIconSchema,
@@ -11,6 +13,7 @@ import { Locale } from '@da/db';
 import { z } from 'zod';
 
 import { say } from '../../common/panel-locale.js';
+import { UnreadableImageError, decodeDataUrl } from '../../media/image.js';
 import { MediaService } from '../../media/media.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { SupplierAiService } from '../ai/supplier-ai.service.js';
@@ -138,7 +141,13 @@ export class CardService {
 
   private async render(slug: string, spec: CardSpecInput) {
     const product = await this.product(slug);
-    const logo = spec.useLogo ? await this.logoBytes(product.brand?.logo?.key) : null;
+    // A logo uploaded for this card wins over the brand's; it is used only
+    // for the drawing, never stored on its own.
+    const logo = spec.logoDataUrl
+      ? await uploadedLogo(spec.logoDataUrl)
+      : spec.useLogo
+        ? await this.logoBytes(product.brand?.logo?.key)
+        : null;
     const card = await renderCard({
       title: spec.title,
       ribbon: spec.ribbon,
@@ -148,6 +157,11 @@ export class CardService {
       brandName: product.brand?.name ?? null,
     });
     return { product, card };
+  }
+
+  /** The main colour of an uploaded logo, for the card's colour field. */
+  async uploadedLogoColor(dataUrl: string): Promise<LogoColor> {
+    return { color: await logoColor(await uploadedLogo(dataUrl)) };
   }
 
   async preview(slug: string, spec: CardSpecInput): Promise<CardPreview> {
@@ -168,6 +182,26 @@ export class CardService {
         isHero: input.isHero || product._count.media === 0,
       },
       actorId,
+    );
+  }
+}
+
+/**
+ * An uploaded logo's bytes, checked to be an image sharp can read before it
+ * reaches the renderer, so a bad file is a clear refusal rather than a 500.
+ */
+async function uploadedLogo(dataUrl: string): Promise<Buffer> {
+  try {
+    const bytes = decodeDataUrl(dataUrl);
+    const meta = await sharp(bytes).metadata();
+    if (!meta.width || !meta.height) throw new UnreadableImageError('no dimensions');
+    return bytes;
+  } catch (error) {
+    throw new BadRequestException(
+      say(
+        `تعذّرت قراءة الشعار المرفوع: ${error instanceof Error ? error.message : ''}`,
+        `The uploaded logo could not be read: ${error instanceof Error ? error.message : ''}`,
+      ),
     );
   }
 }

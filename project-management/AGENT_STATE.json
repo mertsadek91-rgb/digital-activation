@@ -310,16 +310,19 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0115",
+      "assignments": [
+        "TASK-0115",
+        "TASK-0116"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-05T13:09:34Z"
+      "last_activity": "2026-10-06T10:57:06Z"
     },
     {
       "id": "backend-architect",
@@ -336,14 +339,16 @@
         "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004"
+        "TASK-0004",
+        "TASK-0115",
+        "TASK-0116"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 3.5,
       "blockers": [],
-      "last_activity": "2026-10-06T09:55:49Z"
+      "last_activity": "2026-10-06T10:57:01Z"
     },
     {
       "id": "backend-engineer",

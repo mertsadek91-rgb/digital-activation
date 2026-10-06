@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
+import { AiImprove } from './ai-improve';
 import { BlockDocumentEditor } from './block-editor';
 
 /**
@@ -34,12 +35,18 @@ export function ContentForm({
   canWrite,
   onSaved,
   onError,
+  canUseAi = false,
+  onCopyChanged,
 }: {
   slug: string;
   locale: 'ar' | 'en';
   canWrite: boolean;
   onSaved: () => void;
   onError: (message: string) => void;
+  /** Offer "improve with AI" (ADMIN and CATALOG: the API's own rule). */
+  canUseAi?: boolean;
+  /** The SEO copy was saved from here; the copy form should reload. */
+  onCopyChanged?: () => void;
 }) {
   const t = useT('products');
   const c = useT('common');
@@ -126,6 +133,16 @@ export function ContentForm({
           {t('wordCount', { count: words, min: server.bodyMinWords })}
         </p>
       </div>
+
+      {canWrite && canUseAi ? (
+        <AiImprove
+          slug={slug}
+          locale={locale}
+          blocks={blocks}
+          onApplyBlocks={setBlocks}
+          onCopySaved={() => onCopyChanged?.()}
+        />
+      ) : null}
 
       <BlockDocumentEditor blocks={blocks} canWrite={canWrite} onChange={setBlocks} />
 
