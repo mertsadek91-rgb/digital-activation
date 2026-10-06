@@ -154,6 +154,24 @@ export class SupplierController {
     return this.supplier.removeLink(variantId, actor(request));
   }
 
+  @Put('skips/:variantId')
+  @ApiOperation({ summary: 'Mark a variant as not sold by this supplier (hidden from linking)' })
+  skip(
+    @Param('variantId') variantId: string,
+    @Req() request: StaffRequest,
+  ): Promise<SupplierMappingRow> {
+    return this.supplier.setSkipped(variantId, true, actor(request));
+  }
+
+  @Delete('skips/:variantId')
+  @ApiOperation({ summary: 'Put a skipped variant back into linking' })
+  unskip(
+    @Param('variantId') variantId: string,
+    @Req() request: StaffRequest,
+  ): Promise<SupplierMappingRow> {
+    return this.supplier.setSkipped(variantId, false, actor(request));
+  }
+
   @Get('prices')
   @ApiOperation({ summary: 'Price proposals from cost × (1 + markup)' })
   prices(): Promise<SupplierPrices> {

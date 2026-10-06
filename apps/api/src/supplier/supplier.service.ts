@@ -15,6 +15,8 @@ import {
   type SupplierPrices,
   type SupplierSourceView,
   parseSheetUrl,
+  supplierSkipKey,
+  supplierSkipListSchema,
 } from '@da/contracts';
 import { Locale, Prisma, type SupplierRounding, refreshProductPrice } from '@da/db';
 
@@ -266,6 +268,8 @@ export class SupplierService {
               'supplier.link_set',
               'supplier.link_removed',
               'supplier.sync_forced',
+              'supplier.variant_skipped',
+              'supplier.variant_unskipped',
               'variant.supplier_price_applied',
               'variant.supplier_stock',
             ],
@@ -316,6 +320,7 @@ export class SupplierService {
 
   async mapping(query: SupplierMappingQuery): Promise<SupplierMapping> {
     const source = await this.primary();
+    const skippedIds = source ? await this.skipped(source.id) : new Set<string>();
     const [variants, items] = await Promise.all([
       this.prisma.client.variant.findMany({
         orderBy: [{ product: { slug: 'asc' } }, { position: 'asc' }],
@@ -350,7 +355,7 @@ export class SupplierService {
       // Matched against the English name: the sheet is in English.
       const probe = `${en ?? ar ?? variant.product.slug} ${String(variant.deviceCount)} PC ${termsEn(variant)}`;
       const suggestions =
-        link === null || broken
+        (link === null || broken) && !skippedIds.has(variant.id)
           ? items
               .map((item) => ({ item, score: nameSimilarity(probe, item.name) }))
               .sort((a, b) => b.score - a.score)
@@ -367,6 +372,7 @@ export class SupplierService {
         terms: terms(variant),
         priceUsd: variant.priceUsd.toFixed(2),
         supplierOutOfStock: variant.supplierOutOfStock,
+        skipped: skippedIds.has(variant.id),
         link: link
           ? {
               item: {
@@ -386,14 +392,17 @@ export class SupplierService {
     });
 
     const isBroken = (row: SupplierMappingRow) => row.link?.item.missingSince != null;
+    // A skipped variant is not this supplier's: it leaves every list but its own.
+    const active = rows.filter((row) => !row.skipped);
     const counts = {
-      all: rows.length,
-      linked: rows.filter((row) => row.link && !isBroken(row)).length,
-      unlinked: rows.filter((row) => !row.link).length,
-      broken: rows.filter(isBroken).length,
+      all: active.length,
+      linked: active.filter((row) => row.link && !isBroken(row)).length,
+      unlinked: active.filter((row) => !row.link).length,
+      broken: active.filter(isBroken).length,
+      skipped: rows.length - active.length,
     };
     const needle = query.q?.toLowerCase();
-    const filtered = rows
+    const filtered = (query.filter === 'skipped' ? rows.filter((row) => row.skipped) : active)
       .filter((row) =>
         query.filter === 'linked'
           ? row.link !== null && !isBroken(row)
@@ -412,6 +421,63 @@ export class SupplierService {
           (row.link?.item.name.toLowerCase().includes(needle) ?? false),
       );
     return { rows: filtered, counts };
+  }
+
+  // --- skipping ---------------------------------------------------------------
+
+  /** The variants marked as not sold by this source. */
+  private async skipped(sourceId: string): Promise<Set<string>> {
+    const row = await this.prisma.client.setting.findUnique({
+      where: { key: supplierSkipKey(sourceId) },
+    });
+    const parsed = supplierSkipListSchema.safeParse(row?.value ?? []);
+    return new Set(parsed.success ? parsed.data : []);
+  }
+
+  /**
+   * Marks a variant as not sold by this supplier, or puts it back. A linked
+   * variant is refused: it plainly is this supplier's, and skipping it would
+   * hide a link that still drives its price and availability.
+   */
+  async setSkipped(variantId: string, skip: boolean, actor: Actor): Promise<SupplierMappingRow> {
+    const source = await this.requirePrimary();
+    const variant = await this.prisma.client.variant.findUnique({
+      where: { id: variantId },
+      select: { id: true, sku: true, supplierLink: { select: { id: true } } },
+    });
+    if (!variant)
+      throw new NotFoundException(say('لا يوجد متغيّر بهذا المعرّف.', 'No such variant.'));
+    if (skip && variant.supplierLink) {
+      throw new BadRequestException(
+        say(
+          'هذا المتغيّر مربوط بسطر في الشيت. فك الربط أولاً إن كان لا يُشترى من هذا المورّد.',
+          'This variant is linked to a sheet line. Unlink it first if it is not bought from this supplier.',
+        ),
+      );
+    }
+    const ids = await this.skipped(source.id);
+    const before = ids.has(variantId);
+    if (skip) ids.add(variantId);
+    else ids.delete(variantId);
+    if (before !== skip) {
+      const key = supplierSkipKey(source.id);
+      const value = [...ids];
+      await this.prisma.client.setting.upsert({
+        where: { key },
+        update: { value },
+        create: { key, value },
+      });
+      await this.audit.record({
+        actorId: actor.staffId,
+        entity: 'Variant',
+        entityId: variantId,
+        action: skip ? 'supplier.variant_skipped' : 'supplier.variant_unskipped',
+        after: { sku: variant.sku, sourceId: source.id },
+        ip: actor.ip,
+        userAgent: actor.userAgent,
+      });
+    }
+    return this.mappingRow(variantId);
   }
 
   async setLink(
@@ -467,6 +533,11 @@ export class SupplierService {
       userAgent: actor.userAgent,
     });
     await this.sync.reconcileStock({ variantIds: [variantId] }, actor.staffId);
+    // Linked means this supplier's after all: it leaves the skipped list.
+    const source = await this.primary();
+    if (source && (await this.skipped(source.id)).has(variantId)) {
+      await this.setSkipped(variantId, false, actor);
+    }
     return this.mappingRow(variantId);
   }
 
@@ -503,8 +574,11 @@ export class SupplierService {
   }
 
   private async mappingRow(variantId: string): Promise<SupplierMappingRow> {
-    const { rows } = await this.mapping({ filter: 'all' });
-    const row = rows.find((entry) => entry.variantId === variantId);
+    const [active, skipped] = await Promise.all([
+      this.mapping({ filter: 'all' }),
+      this.mapping({ filter: 'skipped' }),
+    ]);
+    const row = [...active.rows, ...skipped.rows].find((entry) => entry.variantId === variantId);
     if (!row) throw new NotFoundException('variant');
     return row;
   }

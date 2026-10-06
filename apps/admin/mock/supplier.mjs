@@ -110,6 +110,7 @@ const mappingRows = [
     terms: 'مدى الحياة · 1 جهاز',
     priceUsd: '2.00',
     supplierOutOfStock: false,
+    skipped: false,
     link: { item: ref(items[0]), markupPercent: null, followStock: true },
     suggestions: [],
   },
@@ -121,6 +122,7 @@ const mappingRows = [
     terms: '1 سنة · 1 جهاز',
     priceUsd: '5.99',
     supplierOutOfStock: false,
+    skipped: false,
     link: { item: ref(items[5]), markupPercent: '40.00', followStock: true },
     suggestions: [],
   },
@@ -132,6 +134,7 @@ const mappingRows = [
     terms: 'مدى الحياة · 5 جهاز',
     priceUsd: '9.00',
     supplierOutOfStock: true,
+    skipped: false,
     link: { item: ref(items[3]), markupPercent: null, followStock: true },
     suggestions: [],
   },
@@ -143,6 +146,7 @@ const mappingRows = [
     terms: 'مدى الحياة · 5 جهاز',
     priceUsd: '49.00',
     supplierOutOfStock: false,
+    skipped: false,
     link: null,
     suggestions: [
       { ...ref(items[1]), score: 0.86 },
@@ -157,6 +161,7 @@ const mappingRows = [
     terms: '1 سنة · 1 جهاز',
     priceUsd: '9.00',
     supplierOutOfStock: true,
+    skipped: false,
     link: { item: ref(items[6]), markupPercent: null, followStock: true },
     suggestions: [{ ...ref(items[5]), score: 0.31 }],
   },
@@ -164,7 +169,7 @@ const mappingRows = [
 
 const mapping = {
   rows: mappingRows,
-  counts: { all: 5, linked: 3, unlinked: 1, broken: 1 },
+  counts: { all: 5, linked: 3, unlinked: 1, broken: 1, skipped: 0 },
 };
 
 const prices = {
@@ -470,7 +475,10 @@ const editorContent = {
   locale: 'ar',
   name: 'ويندوز 11 برو',
   blocks: [
-    { type: 'answerFirst', text: 'مفتاح ويندوز 11 برو أصلي للتفعيل على جهاز واحد، يصلك على بريدك فور الدفع مع دعم كامل.' },
+    {
+      type: 'answerFirst',
+      text: 'مفتاح ويندوز 11 برو أصلي للتفعيل على جهاز واحد، يصلك على بريدك فور الدفع مع دعم كامل.',
+    },
     { type: 'richText', html: '<p>نص قديم قصير يحتاج تحسيناً.</p>' },
   ],
   warnings: [],
@@ -523,8 +531,30 @@ export const supplierRoutes = [
       ms: 840,
     },
   ],
-  ['POST /v1/admin/supplier/ai/copy', { id: 'job-1', status: 'RUNNING', productSlug: 'windows-11-pro', startedAt: now, finishedAt: null, result: null, error: null }],
-  ['GET /v1/admin/supplier/ai/copy/job-1', { id: 'job-1', status: 'DONE', productSlug: 'windows-11-pro', startedAt: now, finishedAt: now, result: aiCopy, error: null }],
+  [
+    'POST /v1/admin/supplier/ai/copy',
+    {
+      id: 'job-1',
+      status: 'RUNNING',
+      productSlug: 'windows-11-pro',
+      startedAt: now,
+      finishedAt: null,
+      result: null,
+      error: null,
+    },
+  ],
+  [
+    'GET /v1/admin/supplier/ai/copy/job-1',
+    {
+      id: 'job-1',
+      status: 'DONE',
+      productSlug: 'windows-11-pro',
+      startedAt: now,
+      finishedAt: now,
+      result: aiCopy,
+      error: null,
+    },
+  ],
   [
     'POST /v1/admin/supplier/ai/draft/it_2',
     {
@@ -574,6 +604,15 @@ export const supplierRoutes = [
 ];
 
 export const supplierDynamic = [
+  [
+    /^(PUT|DELETE) \/v1\/admin\/supplier\/skips\/([^/]+)$/,
+    (match) => {
+      const row = mappingRows.find((entry) => entry.variantId === match[2]) ?? mappingRows[0];
+      row.skipped = match[1] === 'PUT';
+      mapping.counts.skipped = mappingRows.filter((entry) => entry.skipped).length;
+      return row;
+    },
+  ],
   [
     /^(PUT|DELETE) \/v1\/admin\/supplier\/links\/([^/]+)$/,
     (match) => mappingRows.find((row) => row.variantId === match[2]) ?? mappingRows[0],

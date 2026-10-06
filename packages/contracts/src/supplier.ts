@@ -194,7 +194,11 @@ export type SupplierLog = z.infer<typeof supplierLogSchema>;
 
 // --- mapping ----------------------------------------------------------------
 
-export const SUPPLIER_MAPPING_FILTERS = ['all', 'linked', 'unlinked', 'broken'] as const;
+/**
+ * `skipped` lists variants a person marked as not sold by this supplier;
+ * every other filter leaves them out, so they stop cluttering the linking.
+ */
+export const SUPPLIER_MAPPING_FILTERS = ['all', 'linked', 'unlinked', 'broken', 'skipped'] as const;
 export const supplierMappingQuerySchema = z.object({
   filter: z.enum(SUPPLIER_MAPPING_FILTERS).default('all'),
   q: z.string().trim().max(200).optional(),
@@ -219,6 +223,8 @@ export const supplierMappingRowSchema = z.object({
   terms: z.string(),
   priceUsd: z.string(),
   supplierOutOfStock: z.boolean(),
+  /** Marked as not sold by this supplier, so not to be linked. */
+  skipped: z.boolean(),
   link: z
     .object({
       item: itemRefSchema,
@@ -238,6 +244,7 @@ export const supplierMappingSchema = z.object({
     linked: z.number().int(),
     unlinked: z.number().int(),
     broken: z.number().int(),
+    skipped: z.number().int(),
   }),
 });
 export type SupplierMapping = z.infer<typeof supplierMappingSchema>;
@@ -255,6 +262,10 @@ export const setSupplierLinkSchema = z.object({
 export type SetSupplierLink = z.infer<typeof setSupplierLinkSchema>;
 
 // --- prices -----------------------------------------------------------------
+
+/** The Setting key holding a source's skipped variant ids. */
+export const supplierSkipKey = (sourceId: string): string => `supplier.skipped.${sourceId}`;
+export const supplierSkipListSchema = z.array(z.string()).max(10_000);
 
 export const SUPPLIER_PRICE_STATES = [
   /** Proposed price differs from the current one. */

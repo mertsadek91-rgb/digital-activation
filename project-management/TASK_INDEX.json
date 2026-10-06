@@ -3049,6 +3049,46 @@
       "updated_at": "2026-10-06",
       "reaudit": null,
       "file": "tasks/active/TASK-0116.md"
+    },
+    {
+      "id": "TASK-0117",
+      "title": "Supplier mapping: skip a variant that this supplier does not sell (hidden from every linking list, shown under a Skipped filter, can be put back)",
+      "type": "feature",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 90,
+      "authority_level": 3,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "backend-architect"
+      ],
+      "required_reviewers": [
+        "qa-lead"
+      ],
+      "related_change_request": "CR-0004",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api",
+        "admin",
+        "contracts"
+      ],
+      "affected_pages": [
+        "/supplier#mapping"
+      ],
+      "affected_files": [],
+      "created_at": "2026-10-06",
+      "updated_at": "2026-10-06",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0117.md"
     }
   ]
 }
