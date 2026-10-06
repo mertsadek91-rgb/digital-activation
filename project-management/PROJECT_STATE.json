@@ -4,7 +4,7 @@
   "current_phase": "Staging live on Coolify (new./admin./api.digital-activation.com); legacy WordPress still serves the apex; validation before production cutover",
   "current_milestone": "MILESTONE-0001",
   "current_milestone_progress": 93,
-  "progress": 76,
+  "progress": 77,
   "health": "ATTENTION_REQUIRED",
   "health_reasons": [
     "BUG-0024 is an open HIGH backend issue",
@@ -12,8 +12,8 @@
     "BUG-0026 is an open HIGH backend issue",
     "BUG-0027 is an open HIGH backend issue"
   ],
-  "total_tasks": 74,
-  "active_tasks": 16,
+  "total_tasks": 75,
+  "active_tasks": 17,
   "blocked_tasks": 0,
   "review_tasks": 2,
   "qa_tasks": 0,
@@ -45,6 +45,6 @@
   "active_agents": 7,
   "file_collisions": 0,
   "validation_problems": 0,
-  "canonical_events": 746,
-  "last_activity": "2026-10-06T12:46:03Z"
+  "canonical_events": 748,
+  "last_activity": "2026-10-06T13:30:50Z"
 }

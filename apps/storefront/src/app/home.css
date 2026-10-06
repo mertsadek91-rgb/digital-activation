@@ -917,3 +917,13 @@
     font-size: var(--text-xs);
   }
 }
+
+/* The article image on a card (TASK-0121); the icon panel stays for articles without one. */
+.article-art.has-image {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-surface-2);
+}
+.article-art.has-image img {
+  object-fit: cover;
+}

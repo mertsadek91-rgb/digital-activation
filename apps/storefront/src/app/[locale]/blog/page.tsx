@@ -9,6 +9,7 @@ import { isArabic } from '../../../i18n/locale';
 import { getPosts } from '../../../lib/api';
 import { robotsMeta } from '../../../lib/seo';
 import { formatArticleDate, readingLabel } from '../../../lib/format';
+import { ArticleArt } from '../../../components/article-art';
 import { Breadcrumbs } from '../../../components/breadcrumbs';
 import { ArrowIcon, BookIcon } from '../../../components/icons';
 
@@ -121,9 +122,11 @@ export default async function BlogPage({ params }: Props) {
             {posts.map((post) => (
               <li key={post.slug} className="article">
                 <Link href={`${prefix}${ROUTES.post(post.slug)}`}>
-                  <span className="article-art" aria-hidden="true">
-                    <BookIcon size={64} />
-                  </span>
+                  <ArticleArt
+                    hero={post.hero}
+                    iconSize={64}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                  />
                   <span className="article-meta">
                     {post.publishedAt ? (
                       <time dateTime={post.publishedAt}>
