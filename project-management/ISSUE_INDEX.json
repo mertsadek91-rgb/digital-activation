@@ -442,6 +442,23 @@
       ],
       "id": "BUG-0023",
       "file": "issues/BUG-0023.md"
+    },
+    {
+      "created_at": "2026-10-06",
+      "updated_at": "2026-10-06",
+      "id": "BUG-0024",
+      "title": "AI copy fails with claude-sonnet-5-5: the OpenCode client always sends temperature, which the model rejects with a 400",
+      "category": "backend",
+      "severity": "HIGH",
+      "module": "api/supplier/ai",
+      "affected_system": "NODEJS_BACKEND",
+      "assigned_agent": "backend-architect",
+      "manager": "pm-03",
+      "release_blocker": false,
+      "status": "IN_PROGRESS",
+      "verification": "Owner report on staging 2026-10-06: OpenCode 400 for claude-sonnet-5-5 (messages): temperature is deprecated for this model. apps/api/src/supplier/ai/opencode.ts buildRequest put temperature in every body.",
+      "related_change_request": "CR-0004",
+      "file": "issues/BUG-0024.md"
     }
   ]
 }
