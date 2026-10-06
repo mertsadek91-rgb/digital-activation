@@ -244,6 +244,7 @@ function MappingRowView({
             <input
               type="search"
               dir="ltr"
+              aria-label={t('searchLine')}
               placeholder={t('searchLine')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}

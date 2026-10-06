@@ -106,7 +106,13 @@ export function CreateFromLine({
           <div className="supplier-form-row">
             <label className="field">
               <span>{t('createNameAr')}</span>
-              <input value={draft.nameAr} onChange={(event) => set('nameAr', event.target.value)} />
+              {/* Focus lands here once the proposal replaces the button. */}
+              <input
+                dir="rtl"
+                autoFocus
+                value={draft.nameAr}
+                onChange={(event) => set('nameAr', event.target.value)}
+              />
             </label>
             <label className="field">
               <span>{t('createNameEn')}</span>

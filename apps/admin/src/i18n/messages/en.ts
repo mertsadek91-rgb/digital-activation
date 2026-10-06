@@ -1435,6 +1435,7 @@ export const en: AdminMessages = {
     cardRibbonHint: 'One to three short lines, separated by /',
     cardChip: 'Chip {n}',
     cardIcon: 'Icon',
+    cardIconOf: 'Chip {n} icon',
     cardIcon_key: 'Key',
     cardIcon_bolt: 'Bolt',
     cardIcon_shield: 'Shield',

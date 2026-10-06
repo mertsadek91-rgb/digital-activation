@@ -1421,6 +1421,7 @@ export const ar = {
     cardRibbonHint: 'سطر إلى ثلاثة أسطر قصيرة، يفصل بينها /',
     cardChip: 'الشارة {n}',
     cardIcon: 'الأيقونة',
+    cardIconOf: 'أيقونة الشارة {n}',
     cardIcon_key: 'مفتاح',
     cardIcon_bolt: 'برق',
     cardIcon_shield: 'درع',

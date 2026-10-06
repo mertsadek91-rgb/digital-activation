@@ -84,6 +84,7 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
           <label className="field">
             <span>{t('cardTitle')}</span>
             <input
+              dir="auto"
               value={spec.title}
               maxLength={80}
               onChange={(event) => setSpec({ ...spec, title: event.target.value })}
@@ -92,6 +93,7 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
           <label className="field">
             <span>{t('cardRibbon')}</span>
             <input
+              dir="auto"
               value={spec.ribbon.join(' / ')}
               placeholder="مدى / الحياة"
               onChange={(event) =>
@@ -112,13 +114,14 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
               <label className="field">
                 <span>{t('cardChip', { n: index + 1 })}</span>
                 <input
+                  dir="auto"
                   value={spec.chips[index].label}
                   maxLength={24}
                   onChange={(event) => setChip(index, { label: event.target.value })}
                 />
               </label>
               <label className="field">
-                <span>{t('cardIcon')}</span>
+                <span>{t('cardIconOf', { n: index + 1 })}</span>
                 <select
                   value={spec.chips[index].icon}
                   onChange={(event) => setChip(index, { icon: event.target.value as Icon })}
@@ -211,7 +214,7 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
             <p className="meta">{t('cardNoPreview')}</p>
           )}
           {notes.map((line) => (
-            <p key={line} className="notice">
+            <p key={line} className="notice" role="status" dir="auto">
               {line}
             </p>
           ))}

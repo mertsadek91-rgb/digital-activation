@@ -668,7 +668,16 @@ function terms(variant: TermsVariant): string {
     variant.licensePeriodUnit === 'LIFETIME'
       ? say('مدى الحياة', 'lifetime')
       : `${String(variant.licensePeriodValue ?? 1)} ${unitLabel(variant.licensePeriodUnit)}`;
-  return `${period} · ${String(variant.deviceCount)} ${say('جهاز', variant.deviceCount === 1 ? 'device' : 'devices')}`;
+  return `${period} · ${devices(variant.deviceCount)}`;
+}
+
+/** "1 جهاز", "2 جهازان", "5 أجهزة", "20 جهازاً" — the Arabic count agrees with its noun. */
+function devices(n: number): string {
+  if (panelLocale() === 'en') return `${String(n)} ${n === 1 ? 'device' : 'devices'}`;
+  if (n === 1) return 'جهاز واحد';
+  if (n === 2) return 'جهازان';
+  if (n >= 3 && n <= 10) return `${String(n)} أجهزة`;
+  return `${String(n)} جهازاً`;
 }
 
 function unitLabel(unit: string): string {

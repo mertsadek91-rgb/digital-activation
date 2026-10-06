@@ -75,8 +75,11 @@
   vertical-align: top;
 }
 
+/* Faded by colour, not opacity: opacity took text and badges below AA
+   contrast (REV-0162). Badges keep their own colours. */
 .supplier-table tr.is-muted td {
-  opacity: 0.6;
+  color: var(--color-ink-secondary);
+  background: var(--color-card-alt);
 }
 
 .supplier-table tr.is-warning td {
@@ -287,7 +290,21 @@
   .supplier-actions button,
   .supplier-actions .as-button,
   .supplier-toolbar .search,
-  .mapping-suggestions .chip {
+  .mapping-suggestions .chip,
+  .mapping-matches button,
+  .ai-preview button {
+    min-block-size: 44px;
+  }
+
+  .supplier-actions button.btn-sm,
+  .mapping-linked button,
+  .mapping-picker button {
+    min-inline-size: 44px;
+  }
+
+  .supplier-check,
+  .mapping-options .check,
+  .supplier-actions .check {
     min-block-size: 44px;
   }
 

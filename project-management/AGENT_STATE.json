@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 14,
+      "reviews_recorded": 18,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T15:01:02Z"
+      "last_activity": "2026-10-06T07:16:54Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -237,11 +237,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 3,
+      "reviews_recorded": 7,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T15:01:03Z"
+      "last_activity": "2026-10-06T07:16:55Z"
     },
     {
       "id": "interaction-designer",
@@ -410,7 +410,7 @@
       "opportunities": [],
       "workload": 9,
       "blockers": [],
-      "last_activity": "2026-10-06T06:17:03Z"
+      "last_activity": "2026-10-06T07:19:19Z"
     },
     {
       "id": "api-architect",
@@ -708,11 +708,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 13,
+      "reviews_recorded": 17,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-05T14:54:41Z"
+      "last_activity": "2026-10-06T07:12:50Z"
     },
     {
       "id": "functional-qa-engineer",
