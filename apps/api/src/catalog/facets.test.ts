@@ -94,6 +94,7 @@ describe('toFacetProduct', () => {
         priceUsd: usd('40.00'),
         compareAtUsd: null,
         fulfillmentMode: FulfillmentMode.FROM_STOCK,
+        supplierOutOfStock: false,
         inventory: { onHand: 2, reserved: 2 },
       },
       {
@@ -103,6 +104,7 @@ describe('toFacetProduct', () => {
         priceUsd: usd('60.00'),
         compareAtUsd: usd('80.00'),
         fulfillmentMode: FulfillmentMode.ON_DEMAND,
+        supplierOutOfStock: false,
         inventory: null,
       },
     ],

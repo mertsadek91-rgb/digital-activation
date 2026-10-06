@@ -144,8 +144,11 @@ export function formatFulfillment(mode: FulfillmentMode, t: FormatT, inStock?: b
       if (inStock === false) return t('fulfillment.fromStockOut');
       return t('fulfillment.fromStock');
     case 'ON_DEMAND':
+      // Made to order, and the supplier is out of it (CR-0004).
+      if (inStock === false) return t('fulfillment.outNow');
       return t('fulfillment.onDemand');
     case 'MANUAL_SETUP':
+      if (inStock === false) return t('fulfillment.outNow');
       return t('fulfillment.manualSetup');
   }
 }

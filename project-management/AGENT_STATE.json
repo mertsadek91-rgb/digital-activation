@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 11,
+      "reviews_recorded": 14,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T12:19:30Z"
+      "last_activity": "2026-10-05T15:01:02Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -237,11 +237,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 0,
+      "reviews_recorded": 3,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": null
+      "last_activity": "2026-10-05T15:01:03Z"
     },
     {
       "id": "interaction-designer",
@@ -313,11 +313,16 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [],
+      "supporting": [
+        "TASK-0111",
+        "TASK-0112",
+        "TASK-0113",
+        "TASK-0114"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 2,
       "blockers": [],
       "last_activity": "2026-10-05T12:19:45Z"
     },
@@ -336,12 +341,16 @@
         "TASK-0034"
       ],
       "supporting": [
-        "TASK-0004"
+        "TASK-0004",
+        "TASK-0111",
+        "TASK-0112",
+        "TASK-0113",
+        "TASK-0114"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 2.5,
+      "workload": 4.5,
       "blockers": [],
       "last_activity": "2026-10-02T06:50:36Z"
     },
@@ -378,11 +387,15 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": "TASK-0040",
+      "state": "WORKING",
+      "current_task": "TASK-0111",
       "assignments": [
         "TASK-0040",
-        "TASK-0041"
+        "TASK-0041",
+        "TASK-0111",
+        "TASK-0112",
+        "TASK-0113",
+        "TASK-0114"
       ],
       "supporting": [
         "TASK-0004",
@@ -395,9 +408,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 5,
+      "workload": 9,
       "blockers": [],
-      "last_activity": "2026-09-29T17:25:36Z"
+      "last_activity": "2026-10-06T06:06:01Z"
     },
     {
       "id": "api-architect",
@@ -695,11 +708,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 9,
+      "reviews_recorded": 13,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-01T11:44:33Z"
+      "last_activity": "2026-10-05T14:54:41Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -911,7 +924,7 @@
       ],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-09-29T12:47:55Z"
+      "last_activity": "2026-10-05T13:48:02Z"
     },
     {
       "id": "embedded-product-engineer",

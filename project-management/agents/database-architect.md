@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -52,6 +52,10 @@
 
 - TASK-0040 — Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002) (BACKLOG, 0%)
 - TASK-0041 — Import legacy customers and orders with forced password reset (BACKLOG, 0%)
+- TASK-0111 — Supplier sync phase 1: read the supplier Google Sheet (values, strikethrough, merged categories), snapshot and diff it, log every change, admin data and settings pages (IN_PROGRESS, 80%)
+- TASK-0112 — Supplier sync phase 2: variant-to-sheet mapping by name, markup pricing proposals with apply one/selected/all, strikethrough sets notify-me (IN_PROGRESS, 75%)
+- TASK-0113 — Supplier sync phase 3: OpenCode AI provider (model list, model choice) and AI-generated ar/en product copy saved as drafts, create product from a sheet row (IN_PROGRESS, 80%)
+- TASK-0114 — Supplier sync phase 4: product card image generator in the legacy card template (brand logo, term ribbon, product name, two chips), AI fills the card text (IN_PROGRESS, 75%)
 
 ## Supporting
 

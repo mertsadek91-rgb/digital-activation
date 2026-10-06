@@ -66,6 +66,8 @@ export interface FacetSourceRow {
     compareAtUsd: Prisma.Decimal | null;
     fulfillmentMode: FulfillmentMode;
     inventory: { onHand: number; reserved: number } | null;
+    /** The supplier sheet has the line struck through (CR-0004). */
+    supplierOutOfStock: boolean;
   }[];
 }
 
@@ -87,7 +89,7 @@ export function toFacetProduct(row: FacetSourceRow, sale: LiveSale | null): Face
         term: termBucket(variant.licensePeriodUnit),
         devices: deviceBucket(variant.deviceCount),
         priceUsd: priced.priceUsd.toNumber(),
-        buyable: stocked ? sellable > 0 : true,
+        buyable: variant.supplierOutOfStock ? false : stocked ? sellable > 0 : true,
         // `salePriced` turns the pre-sale price into the compare-at, so one
         // test covers both a seasonal sale and a variant's own strike-through.
         onSale: priced.compareAtUsd !== null && priced.compareAtUsd.greaterThan(priced.priceUsd),

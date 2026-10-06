@@ -26,6 +26,7 @@ export type IconName =
   | 'promotions'
   | 'marketing'
   | 'redirects'
+  | 'supplier'
   | 'pages'
   | 'blog'
   | 'brands'
@@ -66,6 +67,8 @@ const PATHS: Record<IconName, string> = {
   marketing:
     'M3 11v2a1 1 0 0 0 1 1h2l5 4V6l-5 4H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12',
   redirects: 'M4 4v7a4 4 0 0 0 4 4h12M15 10l5 5-5 5',
+  // A sheet with a refresh arrow: the supplier list, read on a schedule.
+  supplier: 'M4 3h10l6 6v12H4zM14 3v6h6M8 13h8M8 17h5M17 15a3 3 0 1 1-1-2.2M17 12v2h-2',
   pages:
     'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
   blog: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',

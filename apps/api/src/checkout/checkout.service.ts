@@ -123,7 +123,9 @@ export class CheckoutService {
     const unsellable = fresh.items.filter(
       (item) =>
         item.variant.status !== PublishStatus.PUBLISHED ||
-        item.variant.product.status !== PublishStatus.PUBLISHED,
+        item.variant.product.status !== PublishStatus.PUBLISHED ||
+        // Struck through on the supplier's sheet since it was added (CR-0004).
+        item.variant.supplierOutOfStock,
     );
     if (unsellable.length > 0) {
       throw new BadRequestException(

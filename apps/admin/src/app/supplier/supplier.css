@@ -1,0 +1,253 @@
+/* Supplier price sheet (CR-0004). Built on the panel's tokens and classes. */
+
+.supplier-tabs {
+  margin-block: var(--space-4, 16px);
+}
+
+.supplier-settings {
+  display: grid;
+  gap: 16px;
+}
+
+.supplier-form {
+  display: grid;
+  gap: 14px;
+}
+
+.supplier-form-row {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+}
+
+.supplier-check {
+  margin-inline-start: 0;
+}
+
+.supplier-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.supplier-sync {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.supplier-sync p {
+  margin: 0;
+}
+
+.supplier-rules ul {
+  margin: 0;
+  padding-inline-start: 1.2em;
+  display: grid;
+  gap: 6px;
+  color: var(--color-ink-secondary);
+  font-size: var(--text-sm);
+}
+
+.supplier-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-block-end: 12px;
+}
+
+.supplier-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.supplier-filters .chip .tab-count {
+  margin-inline-start: 6px;
+}
+
+.supplier-table td {
+  vertical-align: top;
+}
+
+.supplier-table tr.is-muted td {
+  opacity: 0.6;
+}
+
+.supplier-table tr.is-warning td {
+  background: color-mix(in srgb, var(--color-warning, #b7791f) 8%, transparent);
+}
+
+.supplier-struck {
+  text-decoration: line-through;
+  color: var(--color-ink-muted);
+}
+
+.supplier-states {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.supplier-large {
+  color: var(--color-danger, #c53030);
+  font-weight: 700;
+}
+
+.supplier-json {
+  max-inline-size: 22rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.supplier-skips {
+  margin: 6px 0 0;
+  padding-inline-start: 1.2em;
+}
+
+.mapping-cell {
+  min-inline-size: 18rem;
+}
+
+.mapping-picker,
+.mapping-linked {
+  display: grid;
+  gap: 8px;
+}
+
+.mapping-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.mapping-suggestions .chip {
+  white-space: normal;
+  text-align: start;
+}
+
+.mapping-matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  max-block-size: 14rem;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.mapping-matches button {
+  inline-size: 100%;
+  justify-content: flex-start;
+  white-space: normal;
+  text-align: start;
+  min-block-size: 32px;
+  padding: 4px 8px;
+}
+
+.mapping-matches button.is-active {
+  font-weight: 700;
+}
+
+.mapping-chosen {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-success, #2f855a);
+}
+
+.mapping-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.mapping-options .field {
+  max-inline-size: 10rem;
+}
+
+.create-from-line {
+  display: grid;
+  gap: 10px;
+  padding-block: 8px;
+}
+
+.ai-preview .ai-fields {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: 6px 16px;
+  margin: 0 0 16px;
+}
+
+.ai-preview .ai-fields dt {
+  font-weight: 600;
+  color: var(--color-ink-secondary);
+}
+
+.ai-preview .ai-fields dd {
+  margin: 0;
+}
+
+.ai-body {
+  display: grid;
+  gap: 10px;
+  border-block-start: 1px solid var(--color-border);
+  padding-block-start: 12px;
+}
+
+.ai-body h3,
+.ai-body h4,
+.ai-body p {
+  margin: 0;
+}
+
+.ai-answer {
+  font-weight: 600;
+}
+
+.ai-rich {
+  white-space: pre-line;
+}
+
+.ai-faq dt {
+  font-weight: 600;
+}
+
+.ai-faq dd {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 640px) {
+  .ai-preview .ai-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card-designer {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 420px);
+  align-items: start;
+}
+
+.card-preview img {
+  inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 900px) {
+  .card-designer {
+    grid-template-columns: 1fr;
+  }
+}

@@ -42,7 +42,8 @@ type NavKey =
   | 'redirects'
   | 'contentPages'
   | 'contentBlog'
-  | 'contentBrands';
+  | 'contentBrands'
+  | 'supplier';
 
 type NavItem = {
   key: NavKey;
@@ -290,6 +291,7 @@ export function Nav({
         { key: 'products', label: t('products'), icon: 'products', path: 'products' },
         { key: 'categories', label: t('categories'), icon: 'categories', path: 'categories' },
         { key: 'vault', label: t('vault'), icon: 'vault', path: 'vault' },
+        { key: 'supplier', label: t('supplier'), icon: 'supplier', path: 'supplier' },
       ],
     },
     {

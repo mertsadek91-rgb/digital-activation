@@ -31,7 +31,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-02T11:40:28Z"
+      "last_activity": "2026-10-05T13:59:16Z"
     },
     {
       "id": "pm-01",
@@ -98,10 +98,18 @@
         "accessibility-specialist"
       ],
       "active_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0111",
+        "TASK-0112",
+        "TASK-0113",
+        "TASK-0114"
       ],
       "owned_tasks": [
-        "TASK-0101"
+        "TASK-0101",
+        "TASK-0111",
+        "TASK-0112",
+        "TASK-0113",
+        "TASK-0114"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -111,7 +119,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-05T12:25:09Z"
+      "last_activity": "2026-10-05T14:51:12Z"
     },
     {
       "id": "pm-04",
@@ -229,7 +237,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-05T12:33:38Z"
+      "last_activity": "2026-10-05T14:51:01Z"
     },
     {
       "id": "pm-07",

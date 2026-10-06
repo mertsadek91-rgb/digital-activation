@@ -29,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { RetentionModule } from './retention/retention.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
+import { SupplierModule } from './supplier/supplier.module.js';
 import { VaultModule } from './vault/vault.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
 
@@ -100,6 +101,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     OffersModule,
     WhatsappModule,
     AnalyticsModule,
+    SupplierModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ExplicitThrottlerGuard }],
