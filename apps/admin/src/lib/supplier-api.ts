@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  AiCopyJob,
   ApplySupplierPrices,
   CardDefaults,
   CardPreview,
@@ -9,7 +10,6 @@ import type {
   SaveCard,
   DraftProduct,
   GenerateCopy,
-  GeneratedCopy,
   SupplierAiModels,
   SupplierAiSettings,
   SupplierAiStatus,
@@ -78,11 +78,13 @@ export const supplierAiApi = {
     request<SupplierAiStatus>('/admin/supplier/ai', { method: 'PUT', body: JSON.stringify(input) }),
   models: () => request<SupplierAiModels>('/admin/supplier/ai/models'),
   test: () => request<SupplierAiTest>('/admin/supplier/ai/test', { method: 'POST', body: '{}' }),
+  /** Starts copy generation in the background; poll `copyJob` for the result. */
   copy: (input: GenerateCopy) =>
-    request<GeneratedCopy>('/admin/supplier/ai/copy', {
+    request<AiCopyJob>('/admin/supplier/ai/copy', {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  copyJob: (id: string) => request<AiCopyJob>(`/admin/supplier/ai/copy/${encodeURIComponent(id)}`),
   draft: (itemId: string) =>
     request<DraftProduct>(`/admin/supplier/ai/draft/${encodeURIComponent(itemId)}`, {
       method: 'POST',

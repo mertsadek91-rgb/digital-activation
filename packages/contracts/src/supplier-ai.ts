@@ -90,6 +90,26 @@ export const generatedCopySchema = z.object({
 });
 export type GeneratedCopy = z.infer<typeof generatedCopySchema>;
 
+/**
+ * Copy is generated in the background (BUG-0026). Two languages from a large
+ * model take longer than the 100 seconds Cloudflare holds a request open in
+ * front of the API, so the request starts a job and the panel polls it.
+ */
+export const AI_JOB_STATUSES = ['RUNNING', 'DONE', 'FAILED'] as const;
+export const aiCopyJobSchema = z.object({
+  id: z.string(),
+  status: z.enum(AI_JOB_STATUSES),
+  productSlug: z.string(),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+  result: generatedCopySchema.nullable(),
+  error: z.string().nullable(),
+});
+export type AiCopyJob = z.infer<typeof aiCopyJobSchema>;
+
+/** The Setting key one job is kept under. */
+export const aiCopyJobKey = (id: string): string => `supplier.ai.job.${id}`;
+
 // --- a new product from a sheet line --------------------------------------------
 
 export const draftProductSchema = z.object({

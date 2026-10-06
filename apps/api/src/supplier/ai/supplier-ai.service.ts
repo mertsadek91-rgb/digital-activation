@@ -1,5 +1,8 @@
+import { randomUUID } from 'node:crypto';
+
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
+  type AiCopyJob,
   type DraftProduct,
   type GenerateCopy,
   type GeneratedCopy,
@@ -10,6 +13,8 @@ import {
   type SupplierAiStatus,
   type SupplierAiTest,
   activationMethodSchema,
+  aiCopyJobKey,
+  aiCopyJobSchema,
   editableBlockSchema,
   generatedLocaleCopySchema,
   licensePeriodUnitSchema,
@@ -17,7 +22,7 @@ import {
   productKindSchema,
   supplierAiSettingsSchema,
 } from '@da/contracts';
-import { Locale, PublishStatus } from '@da/db';
+import { Locale, type Prisma, PublishStatus } from '@da/db';
 import { z } from 'zod';
 
 import { bodyText } from '../../admin/readiness.js';
@@ -43,6 +48,11 @@ import {
   draftSystemPrompt,
   draftUserPrompt,
 } from './prompts.js';
+
+/** Longer than any generation can run: past it a RUNNING job has died. */
+const JOB_STALE_MS = 15 * 60 * 1000;
+/** Finished jobs are kept a day, for a panel left open overnight. */
+const JOB_KEEP_MS = 24 * 60 * 60 * 1000;
 
 type Actor = { staffId: string; ip?: string | undefined; userAgent?: string | undefined };
 
@@ -204,29 +214,124 @@ export class SupplierAiService {
     const notes: string[] = [];
     const result: GeneratedCopy = { model, ar: null, en: null, notes };
 
-    for (const locale of input.locales) {
-      const prompt = copyUserPrompt({
-        locale,
-        facts,
-        focusKeywords: input.focusKeywords,
-        sample: locale === 'ar' ? sample : null,
-      });
-      try {
-        const copy = await this.askForCopy(client, {
-          model,
-          protocol,
-          system: copySystemPrompt(settings.instructions),
-          prompt,
-          temperature: settings.temperature,
-          notes,
-          locale,
-        });
-        result[locale] = copy;
-      } catch (error) {
-        throw this.asBadRequest(error);
-      }
+    // Both languages at once: they share nothing but the facts, and in
+    // sequence two answers from a large model took minutes.
+    try {
+      await Promise.all(
+        input.locales.map(async (locale) => {
+          result[locale] = await this.askForCopy(client, {
+            model,
+            protocol,
+            system: copySystemPrompt(settings.instructions),
+            prompt: copyUserPrompt({
+              locale,
+              facts,
+              focusKeywords: input.focusKeywords,
+              sample: locale === 'ar' ? sample : null,
+            }),
+            temperature: settings.temperature,
+            notes,
+            locale,
+          });
+        }),
+      );
+    } catch (error) {
+      throw this.asBadRequest(error);
     }
     return result;
+  }
+
+  // --- copy jobs --------------------------------------------------------------
+
+  /**
+   * Starts copy generation in the background and returns the job at once
+   * (BUG-0026). Generation outlives the 100 s Cloudflare holds a request open,
+   * which surfaced in the panel as a CORS failure. What can fail fast — no
+   * key, no model, no such product — still fails here, in the request.
+   *
+   * The job lives in the `Setting` table, so any replica can answer the poll
+   * and a reload of the panel does not lose it. Finished jobs older than a
+   * day are removed as new ones start.
+   */
+  async startCopyJob(input: GenerateCopy): Promise<AiCopyJob> {
+    this.client();
+    this.protocol(await this.settings());
+    const exists = await this.prisma.client.product.count({ where: { slug: input.productSlug } });
+    if (!exists) throw new NotFoundException(say('لا يوجد منتج بهذا الرابط.', 'No such product.'));
+
+    const job: AiCopyJob = {
+      id: randomUUID(),
+      status: 'RUNNING',
+      productSlug: input.productSlug,
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      result: null,
+      error: null,
+    };
+    await this.saveJob(job);
+    void this.pruneJobs();
+
+    void this.generateCopy(input).then(
+      (result) =>
+        this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
+      (error: unknown) =>
+        this.saveJob({
+          ...job,
+          status: 'FAILED',
+          error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
+          finishedAt: new Date().toISOString(),
+        }),
+    );
+    return job;
+  }
+
+  async copyJob(id: string): Promise<AiCopyJob> {
+    const row = await this.prisma.client.setting.findUnique({ where: { key: aiCopyJobKey(id) } });
+    const parsed = aiCopyJobSchema.safeParse(row?.value);
+    if (!parsed.success)
+      throw new NotFoundException(say('لا توجد مهمة بهذا المعرّف.', 'No such job.'));
+    const job = parsed.data;
+    // A job whose process died (a deploy, a restart) would read RUNNING
+    // forever; past the longest a generation can take, it has failed.
+    if (job.status === 'RUNNING' && Date.now() - Date.parse(job.startedAt) > JOB_STALE_MS) {
+      const failed: AiCopyJob = {
+        ...job,
+        status: 'FAILED',
+        error: say(
+          'توقفت المهمة قبل أن تكتمل (أُعيد تشغيل الخادم على الأغلب). أعد المحاولة.',
+          'The job stopped before it finished (most likely a server restart). Try again.',
+        ),
+        finishedAt: new Date().toISOString(),
+      };
+      await this.saveJob(failed);
+      return failed;
+    }
+    return job;
+  }
+
+  private async saveJob(job: AiCopyJob): Promise<void> {
+    const key = aiCopyJobKey(job.id);
+    const value = job as unknown as Prisma.InputJsonValue;
+    await this.prisma.client.setting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+  }
+
+  private async pruneJobs(): Promise<void> {
+    try {
+      await this.prisma.client.setting.deleteMany({
+        where: {
+          key: { startsWith: aiCopyJobKey('') },
+          updatedAt: { lt: new Date(Date.now() - JOB_KEEP_MS) },
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Pruning AI jobs failed: ${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
   }
 
   /**

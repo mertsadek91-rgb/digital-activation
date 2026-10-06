@@ -473,7 +473,8 @@ export const supplierRoutes = [
       ms: 840,
     },
   ],
-  ['POST /v1/admin/supplier/ai/copy', aiCopy],
+  ['POST /v1/admin/supplier/ai/copy', { id: 'job-1', status: 'RUNNING', productSlug: 'windows-11-pro', startedAt: now, finishedAt: null, result: null, error: null }],
+  ['GET /v1/admin/supplier/ai/copy/job-1', { id: 'job-1', status: 'DONE', productSlug: 'windows-11-pro', startedAt: now, finishedAt: now, result: aiCopy, error: null }],
   [
     'POST /v1/admin/supplier/ai/draft/it_2',
     {

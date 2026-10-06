@@ -5,13 +5,14 @@ import {
   SEO_LENGTH_GUIDE,
   type AiProtocol,
   type EditableBlock,
+  type GenerateCopy,
   type GeneratedCopy,
   type GeneratedLocaleCopy,
   type SupplierAiModels,
   type SupplierAiStatus,
 } from '@da/contracts';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
@@ -52,6 +53,15 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
   const [keywords, setKeywords] = useState('');
   const [locales, setLocales] = useState<Locale[]>(['ar', 'en']);
   const [copy, setCopy] = useState<GeneratedCopy | null>(null);
+  // Seconds the current generation has been running, shown on its button.
+  const [elapsed, setElapsed] = useState(0);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +88,27 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
       })
       .catch(() => setProducts([]));
   }, [load]);
+
+  /**
+   * Starts a background job and polls it every few seconds (BUG-0026): the
+   * generation outlives the 100 s Cloudflare keeps a request open. Gives up
+   * after 12 minutes, which is past anything a model takes; the server marks
+   * a job that long dead anyway.
+   */
+  async function generate(input: GenerateCopy): Promise<GeneratedCopy> {
+    const job = await supplierAiApi.copy(input);
+    const started = Date.now();
+    setElapsed(0);
+    for (;;) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      if (!mounted.current) throw new Error(t('aiCancelled'));
+      setElapsed(Math.round((Date.now() - started) / 1000));
+      const current = await supplierAiApi.copyJob(job.id);
+      if (current.status === 'DONE' && current.result) return current.result;
+      if (current.status === 'FAILED') throw new Error(current.error ?? t('loadFailed'));
+      if (Date.now() - started > 12 * 60 * 1000) throw new Error(t('aiTimedOut'));
+    }
+  }
 
   async function run(label: string, work: () => Promise<void>) {
     setBusy(label);
@@ -303,17 +334,11 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
                 void run('copy', async () => {
                   setCopy(null);
                   setCardSlug(slug);
-                  setCopy(
-                    await supplierAiApi.copy({
-                      productSlug: slug,
-                      locales,
-                      focusKeywords: keywords,
-                    }),
-                  );
+                  setCopy(await generate({ productSlug: slug, locales, focusKeywords: keywords }));
                 })
               }
             >
-              {busy === 'copy' ? t('aiGenerating') : t('aiGenerate')}
+              {busy === 'copy' ? t('aiGeneratingFor', { seconds: elapsed }) : t('aiGenerate')}
             </button>
             {slug ? (
               <Link className="as-button ghost" href={`/products/${encodeURIComponent(slug)}`}>
