@@ -192,7 +192,13 @@ export class SupplierAiService {
   }
 
   /** One call to the chosen model, its answer parsed as a JSON object. */
-  async completeJson(system: string, prompt: string, maxTokens: number): Promise<unknown> {
+  async completeJson(
+    system: string,
+    prompt: string,
+    maxTokens: number,
+    /** Longer for long answers (BUG-0028); the client's default otherwise. */
+    timeoutMs?: number,
+  ): Promise<unknown> {
     const settings = await this.settings();
     const protocol = this.protocol(settings);
     try {
@@ -203,6 +209,7 @@ export class SupplierAiService {
         prompt,
         maxTokens,
         temperature: settings.temperature,
+        timeoutMs,
       });
       return extractJson(text);
     } catch (error) {

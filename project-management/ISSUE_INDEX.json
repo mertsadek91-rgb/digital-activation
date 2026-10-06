@@ -510,6 +510,23 @@
       "verification": "Owner report on staging 2026-10-06: OpenCode returned no text for glm-5.3 after a long wait.",
       "related_change_request": "CR-0004",
       "file": "issues/BUG-0027.md"
+    },
+    {
+      "created_at": "2026-10-06",
+      "updated_at": "2026-10-06",
+      "title": "Article studio: writing an article fails with \"OpenCode did not answer: The operation was aborted due to timeout\" - every OpenCode call is cut at 180 s, too short for a 1500-2000 word article",
+      "category": "backend",
+      "severity": "HIGH",
+      "module": "api/studio",
+      "affected_system": "NODEJS_BACKEND",
+      "assigned_agent": "backend-architect",
+      "manager": "pm-03",
+      "release_blocker": false,
+      "status": "IN_PROGRESS",
+      "verification": "Owner screenshot on staging 2026-10-06: write from own title (Windows Server 2025 install) ended in the timeout error.",
+      "related_change_request": "CR-0006",
+      "id": "BUG-0028",
+      "file": "issues/BUG-0028.md"
     }
   ]
 }

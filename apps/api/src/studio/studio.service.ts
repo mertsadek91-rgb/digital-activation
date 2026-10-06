@@ -40,8 +40,19 @@ import { bodyWordCount, countWords, keepKnownLinks } from './studio-text.js';
 
 type Actor = { staffId: string };
 
-/** Past anything a model takes; a RUNNING job older than this has died. */
-const JOB_STALE_MS = 20 * 60 * 1000;
+/**
+ * How long one model call may take (BUG-0028). An article of 1,500-2,000
+ * words written as JSON by a thinking model runs past the client's default
+ * three minutes; ideas are shorter. Jobs run in the background, so waiting
+ * costs nothing but the panel's patience.
+ */
+const ARTICLE_TIMEOUT_MS = 9 * 60 * 1000;
+const IDEAS_TIMEOUT_MS = 5 * 60 * 1000;
+/**
+ * Past anything a job takes — an article is up to two calls of
+ * ARTICLE_TIMEOUT_MS — so a RUNNING job older than this has died.
+ */
+const JOB_STALE_MS = 30 * 60 * 1000;
 const JOB_KEEP_MS = 24 * 60 * 60 * 1000;
 /** Below this the draft is sent back once to be lengthened. */
 const TOO_SHORT = ARTICLE_LENGTH.min - 100;
@@ -303,6 +314,7 @@ export class StudioService {
         ideasSystemPrompt(),
         ideasUserPrompt({ inventory, thread: state.thread, message: input.message }),
         8000,
+        IDEAS_TIMEOUT_MS,
       );
       const answer = ideaAnswerSchema.parse(raw);
       const productSlugs = new Set(inventory.products.map((p) => p.slug));
@@ -417,7 +429,7 @@ export class StudioService {
     let best: ReturnType<typeof shapeArticle> | null = null;
     let prompt = base;
     for (let attempt = 0; attempt < 2; attempt += 1) {
-      const raw = await this.ai.completeJson(system, prompt, 16_000);
+      const raw = await this.ai.completeJson(system, prompt, 16_000, ARTICLE_TIMEOUT_MS);
       const parsed = articleAnswerSchema.safeParse(raw);
       if (!parsed.success) {
         prompt = `${base}\n\nYour previous answer was rejected: ${parsed.error.issues

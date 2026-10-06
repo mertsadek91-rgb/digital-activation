@@ -231,6 +231,36 @@ describe('OpenCodeClient temperature fallback', () => {
     ).rejects.toBeInstanceOf(OpenCodeError);
   });
 
+  it('waits as long as the caller asks, and says so plainly when the wait runs out (BUG-0028)', async () => {
+    const timeouts: number[] = [];
+    const real = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms: number) => {
+      timeouts.push(ms);
+      return real(ms);
+    });
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      new DOMException('The operation was aborted due to timeout', 'TimeoutError'),
+    );
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1');
+    const input = {
+      model: 'glm-5.3',
+      protocol: 'chat' as const,
+      system: 'S',
+      prompt: 'P',
+      maxTokens: 10,
+    };
+
+    const long = client.complete({ ...input, timeoutMs: 9 * 60_000 });
+    await expect(long).rejects.toBeInstanceOf(OpenCodeError);
+    await expect(long).rejects.toThrow(/9/);
+    await expect(client.complete(input)).rejects.toThrow(/3/);
+    expect(timeouts).toEqual([9 * 60_000, 180_000]);
+    // The limit is ours, never part of what is sent to the provider.
+    expect('timeoutMs' in (buildRequest({ ...input, timeoutMs: 1 }, 'KEY').body as object)).toBe(
+      false,
+    );
+  });
+
   it('omits temperature from every protocol when it is undefined', () => {
     for (const protocol of ['messages', 'chat'] as const) {
       const wire = buildRequest(
