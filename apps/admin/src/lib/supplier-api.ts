@@ -2,6 +2,8 @@
 
 import type {
   AiCopyJob,
+  AiSectionJob,
+  GenerateSection,
   LogoColor,
   ApplySupplierPrices,
   CardDefaults,
@@ -91,6 +93,14 @@ export const supplierAiApi = {
       method: 'POST',
       body: JSON.stringify(input),
     }),
+  /** Starts writing or improving one product-page section in the background. */
+  section: (input: GenerateSection) =>
+    request<AiSectionJob>('/admin/supplier/ai/section', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  sectionJob: (id: string) =>
+    request<AiSectionJob>(`/admin/supplier/ai/section/${encodeURIComponent(id)}`),
   copyJob: (id: string) => request<AiCopyJob>(`/admin/supplier/ai/copy/${encodeURIComponent(id)}`),
   draft: (itemId: string) =>
     request<DraftProduct>(`/admin/supplier/ai/draft/${encodeURIComponent(itemId)}`, {

@@ -3,6 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   type AiCopyJob,
+  type AiSectionJob,
+  type GenerateSection,
+  type SectionResult,
+  aiSectionJobKey,
+  aiSectionJobSchema,
+  sectionResultSchema,
   type DraftProduct,
   type GenerateCopy,
   type GeneratedCopy,
@@ -40,6 +46,7 @@ import {
   familyOf,
   protocolFor,
 } from './opencode.js';
+import { sectionSystemPrompt, sectionUserPrompt } from './section-prompts.js';
 import {
   type CurrentPage,
   type ProductFacts,
@@ -348,6 +355,144 @@ export class SupplierAiService {
     return job;
   }
 
+  // --- one section of a page (CR-0005) ----------------------------------------
+
+  /**
+   * Writes or improves one section — SEO fields, activation how-to, FAQ,
+   * steps or specification table — in the background, as copy jobs do.
+   * Fast failures (no key, no model, no product) still fail in the request.
+   */
+  async startSectionJob(input: GenerateSection): Promise<AiSectionJob> {
+    this.client();
+    this.protocol(await this.settings());
+    const exists = await this.prisma.client.product.count({ where: { slug: input.productSlug } });
+    if (!exists) throw new NotFoundException(say('لا يوجد منتج بهذا الرابط.', 'No such product.'));
+
+    const job: AiSectionJob = {
+      id: randomUUID(),
+      status: 'RUNNING',
+      section: input.section,
+      startedAt: new Date().toISOString(),
+      finishedAt: null,
+      result: null,
+      error: null,
+    };
+    await this.saveSectionJob(job);
+    void this.pruneJobs();
+    void this.generateSection(input).then(
+      (result) =>
+        this.saveSectionJob({
+          ...job,
+          status: 'DONE',
+          result,
+          finishedAt: new Date().toISOString(),
+        }),
+      (error: unknown) =>
+        this.saveSectionJob({
+          ...job,
+          status: 'FAILED',
+          error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
+          finishedAt: new Date().toISOString(),
+        }),
+    );
+    return job;
+  }
+
+  async sectionJob(id: string): Promise<AiSectionJob> {
+    const row = await this.prisma.client.setting.findUnique({
+      where: { key: aiSectionJobKey(id) },
+    });
+    const parsed = aiSectionJobSchema.safeParse(row?.value);
+    if (!parsed.success)
+      throw new NotFoundException(say('لا توجد مهمة بهذا المعرّف.', 'No such job.'));
+    const job = parsed.data;
+    if (job.status === 'RUNNING' && Date.now() - Date.parse(job.startedAt) > JOB_STALE_MS) {
+      const failed: AiSectionJob = {
+        ...job,
+        status: 'FAILED',
+        error: say(
+          'توقفت المهمة قبل أن تكتمل (أُعيد تشغيل الخادم على الأغلب). أعد المحاولة.',
+          'The job stopped before it finished (most likely a server restart). Try again.',
+        ),
+        finishedAt: new Date().toISOString(),
+      };
+      await this.saveSectionJob(failed);
+      return failed;
+    }
+    return job;
+  }
+
+  async generateSection(input: GenerateSection): Promise<SectionResult> {
+    const settings = await this.settings();
+    const protocol = this.protocol(settings);
+    const facts = await this.facts(input.productSlug);
+    const stored = await this.prisma.client.productTranslation.findFirst({
+      where: {
+        product: { slug: input.productSlug },
+        locale: input.locale === 'en' ? Locale.EN : Locale.AR,
+      },
+      select: { body: true },
+    });
+    const current = hasContent(input.current) ? JSON.stringify(input.current) : null;
+    const client = this.client();
+    const system = sectionSystemPrompt(input.section, settings.instructions);
+    const base = sectionUserPrompt({
+      section: input.section,
+      locale: input.locale,
+      facts,
+      pageText: pageText(stored?.body ?? []),
+      current,
+      instructions: input.instructions,
+      focusKeywords: input.focusKeywords,
+    });
+
+    let prompt = base;
+    let lastError = '';
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const text = await client.complete({
+          model: settings.model ?? '',
+          protocol,
+          system,
+          prompt,
+          maxTokens: 8000,
+          temperature: settings.temperature,
+        });
+        const raw = extractJson(text) as Record<string, unknown>;
+        // Blocks carry their type; the model is not asked to repeat it.
+        const shaped =
+          input.section === 'faq' || input.section === 'steps' || input.section === 'specTable'
+            ? { section: input.section, block: { ...raw, type: input.section } }
+            : { ...raw, section: input.section };
+        const parsed = sectionResultSchema.safeParse(shaped);
+        if (parsed.success) return parsed.data;
+        lastError = parsed.error.issues
+          .slice(0, 6)
+          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+          .join('; ');
+      } catch (error) {
+        if (error instanceof OpenCodeError && error.status !== null && error.status !== 200) {
+          throw this.asBadRequest(error);
+        }
+        lastError = error instanceof Error ? error.message : 'unreadable answer';
+      }
+      prompt = `${base}\n\nYour previous answer was rejected: ${lastError}. Return the corrected JSON object only.`;
+    }
+    throw this.asBadRequest(
+      new OpenCodeError(`The model's answer did not fit the section: ${lastError}`, null),
+    );
+  }
+
+  private async saveSectionJob(job: AiSectionJob): Promise<void> {
+    const key = aiSectionJobKey(job.id);
+    const value = job as unknown as Prisma.InputJsonValue;
+    await this.prisma.client.setting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value },
+    });
+  }
+
   private async saveJob(job: AiCopyJob): Promise<void> {
     const key = aiCopyJobKey(job.id);
     const value = job as unknown as Prisma.InputJsonValue;
@@ -362,7 +507,10 @@ export class SupplierAiService {
     try {
       await this.prisma.client.setting.deleteMany({
         where: {
-          key: { startsWith: aiCopyJobKey('') },
+          OR: [
+            { key: { startsWith: aiCopyJobKey('') } },
+            { key: { startsWith: aiSectionJobKey('') } },
+          ],
           updatedAt: { lt: new Date(Date.now() - JOB_KEEP_MS) },
         },
       });
@@ -721,4 +869,14 @@ export function pageText(blocks: unknown): string {
     }
   }
   return out.filter(Boolean).join('\n\n');
+}
+
+/** Whether a section's current content has anything in it worth improving. */
+function hasContent(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(hasContent);
+  if (typeof value === 'object')
+    return Object.values(value as Record<string, unknown>).some(hasContent);
+  return false;
 }

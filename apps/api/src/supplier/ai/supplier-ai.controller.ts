@@ -2,6 +2,9 @@ import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type AiCopyJob,
+  type AiSectionJob,
+  type GenerateSection,
+  generateSectionSchema,
   type DraftProduct,
   type GenerateCopy,
   type SupplierAiModels,
@@ -72,6 +75,18 @@ export class SupplierAiController {
   @ApiOperation({ summary: 'A copy job: RUNNING, or DONE with the copy, or FAILED with why' })
   copyJob(@Param('id') id: string): Promise<AiCopyJob> {
     return this.ai.copyJob(id);
+  }
+
+  @Post('section')
+  @ApiOperation({ summary: 'Start writing or improving one section of a product page (not saved)' })
+  section(@Body(new ZodPipe(generateSectionSchema)) body: GenerateSection): Promise<AiSectionJob> {
+    return this.ai.startSectionJob(body);
+  }
+
+  @Get('section/:id')
+  @ApiOperation({ summary: 'A section job: RUNNING, DONE with the section, or FAILED with why' })
+  sectionJob(@Param('id') id: string): Promise<AiSectionJob> {
+    return this.ai.sectionJob(id);
   }
 
   @Post('draft/:itemId')

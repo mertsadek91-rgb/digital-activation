@@ -48,7 +48,7 @@ const answerFirstBlock = z.object({
   text: z.string().trim().min(40).max(600),
 });
 
-const stepsBlock = z.object({
+export const stepsBlockSchema = z.object({
   type: z.literal('steps'),
   title: z.string().trim().max(200).optional(),
   steps: z
@@ -57,7 +57,7 @@ const stepsBlock = z.object({
     .max(12),
 });
 
-const faqBlock = z.object({
+export const faqBlockSchema = z.object({
   type: z.literal('faq'),
   title: z.string().trim().max(200).optional(),
   items: z
@@ -68,7 +68,7 @@ const faqBlock = z.object({
     .max(20),
 });
 
-const specTableBlock = z.object({
+export const specTableBlockSchema = z.object({
   type: z.literal('specTable'),
   title: z.string().trim().max(200).optional(),
   rows: z
@@ -96,9 +96,9 @@ export const editableBlockSchema = z.discriminatedUnion('type', [
   richTextBlock,
   headingBlock,
   answerFirstBlock,
-  stepsBlock,
-  faqBlock,
-  specTableBlock,
+  stepsBlockSchema,
+  faqBlockSchema,
+  specTableBlockSchema,
 ]);
 export type EditableBlock = z.infer<typeof editableBlockSchema>;
 

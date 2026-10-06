@@ -287,6 +287,9 @@ export const api = {
    */
   dashboard: () => request<AdminDashboard>('/admin/dashboard'),
 
+  /** The storefront origin, for "view in store" links (ADMIN, CATALOG). */
+  site: () => request<{ storefrontUrl: string }>('/admin/site'),
+
   login: (email: string, password: string, totp?: string) =>
     request<StaffLoginResult>('/auth/staff/login', {
       method: 'POST',

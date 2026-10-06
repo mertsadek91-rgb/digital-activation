@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
+import { AiSectionButton } from './ai-section';
 
 /**
  * The activation how-to, one step per line.
@@ -23,12 +24,15 @@ export function HowToForm({
   canWrite,
   onSaved,
   onError,
+  canUseAi = false,
 }: {
   slug: string;
   locale: 'ar' | 'en';
   canWrite: boolean;
   onSaved: () => void;
   onError: (message: string) => void;
+  /** Offer AI for the steps (ADMIN and CATALOG). */
+  canUseAi?: boolean;
 }) {
   const t = useT('products');
   const c = useT('common');
@@ -88,6 +92,19 @@ export function HowToForm({
           .finally(() => setBusy(false));
       }}
     >
+      {canWrite && canUseAi && text !== null ? (
+        <AiSectionButton
+          slug={slug}
+          locale={locale}
+          section="activation"
+          hasContent={lines.length > 0}
+          current={() => ({ steps: lines })}
+          onResult={(result) => {
+            if (result.section === 'activation') setText(result.steps.join('\n'));
+          }}
+        />
+      ) : null}
+
       <label className="grow">
         {t('howToLabel')}
         <textarea

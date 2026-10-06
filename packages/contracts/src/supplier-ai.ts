@@ -6,7 +6,12 @@ import {
   platformSchema,
   productKindSchema,
 } from './catalog.js';
-import { editableBlockSchema } from './product-content.js';
+import {
+  editableBlockSchema,
+  faqBlockSchema,
+  specTableBlockSchema,
+  stepsBlockSchema,
+} from './product-content.js';
 import { localeSchema } from './primitives.js';
 
 /**
@@ -129,6 +134,60 @@ export type AiCopyJob = z.infer<typeof aiCopyJobSchema>;
 
 /** The Setting key one job is kept under. */
 export const aiCopyJobKey = (id: string): string => `supplier.ai.job.${id}`;
+
+// --- one section of a product page ----------------------------------------------
+
+/**
+ * One section of the product editor written or improved on its own
+ * (CR-0005): the SEO fields, the activation how-to, or one of the body's
+ * FAQ, steps and specification blocks. The result comes back in the shape
+ * that section's form edits, and the form keeps it unsaved for review.
+ */
+export const AI_SECTIONS = ['seo', 'activation', 'faq', 'steps', 'specTable'] as const;
+export const aiSectionSchema = z.enum(AI_SECTIONS);
+export type AiSection = z.infer<typeof aiSectionSchema>;
+
+export const generateSectionSchema = z.object({
+  productSlug: z.string().trim().min(1),
+  locale: localeSchema,
+  section: aiSectionSchema,
+  /** The section's content as it is on screen, unsaved edits included. */
+  current: z.unknown().optional(),
+  instructions: z.string().trim().max(1000).default(''),
+  focusKeywords: z.string().trim().max(300).default(''),
+});
+export type GenerateSection = z.infer<typeof generateSectionSchema>;
+
+export const sectionResultSchema = z.discriminatedUnion('section', [
+  z.object({
+    section: z.literal('seo'),
+    seoTitle: z.string().trim().min(1).max(200),
+    seoDescription: z.string().trim().min(1).max(500),
+    shortDesc: z.string().trim().min(1).max(200),
+    keywords: z.array(z.string().trim().min(1).max(80)).max(12),
+  }),
+  z.object({
+    section: z.literal('activation'),
+    steps: z.array(z.string().trim().min(3).max(500)).min(1).max(12),
+  }),
+  z.object({ section: z.literal('faq'), block: faqBlockSchema }),
+  z.object({ section: z.literal('steps'), block: stepsBlockSchema }),
+  z.object({ section: z.literal('specTable'), block: specTableBlockSchema }),
+]);
+export type SectionResult = z.infer<typeof sectionResultSchema>;
+
+export const aiSectionJobSchema = z.object({
+  id: z.string(),
+  status: z.enum(AI_JOB_STATUSES),
+  section: aiSectionSchema,
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+  result: sectionResultSchema.nullable(),
+  error: z.string().nullable(),
+});
+export type AiSectionJob = z.infer<typeof aiSectionJobSchema>;
+
+export const aiSectionJobKey = (id: string): string => `supplier.ai.section.${id}`;
 
 // --- a new product from a sheet line --------------------------------------------
 

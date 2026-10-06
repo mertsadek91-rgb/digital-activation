@@ -39,6 +39,19 @@ import { AdminService } from './admin.service.js';
 export class AdminController {
   constructor(private readonly admin: AdminService) {}
 
+  /**
+   * Where the storefront is, for links from the panel ("view in store").
+   * From STOREFRONT_URL, the same origin the API already allows and links to
+   * in emails, so a domain move changes one variable rather than a build.
+   * The roles that edit products; READONLY's list is the owner's (2026-10-02).
+   */
+  @Roles('ADMIN', 'CATALOG')
+  @Get('site')
+  @ApiOperation({ summary: 'The storefront origin, for links from the panel' })
+  site(): { storefrontUrl: string } {
+    return { storefrontUrl: (process.env.STOREFRONT_URL ?? '').replace(/\/+$/, '') };
+  }
+
   @AnyStaff()
   @Get('products')
   @ZodResponse(adminProductListSchema)

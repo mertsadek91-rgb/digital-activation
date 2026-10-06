@@ -315,15 +315,16 @@
       "assignments": [
         "TASK-0115",
         "TASK-0116",
-        "TASK-0117"
+        "TASK-0117",
+        "TASK-0118"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 3,
+      "workload": 4,
       "blockers": [],
-      "last_activity": "2026-10-06T11:32:08Z"
+      "last_activity": "2026-10-06T12:21:57Z"
     },
     {
       "id": "backend-architect",
@@ -343,12 +344,13 @@
         "TASK-0004",
         "TASK-0115",
         "TASK-0116",
-        "TASK-0117"
+        "TASK-0117",
+        "TASK-0118"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4,
+      "workload": 4.5,
       "blockers": [],
       "last_activity": "2026-10-06T10:57:01Z"
     },
