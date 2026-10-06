@@ -1,7 +1,14 @@
 import { generatedLocaleCopySchema } from '@da/contracts';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildRequest, extractJson, protocolFor, readText } from './opencode.js';
+import {
+  OpenCodeClient,
+  OpenCodeError,
+  buildRequest,
+  extractJson,
+  protocolFor,
+  readText,
+} from './opencode.js';
 import { copySystemPrompt, copyUserPrompt, draftUserPrompt } from './prompts.js';
 import { normaliseCopy, slugify } from './supplier-ai.service.js';
 
@@ -158,5 +165,77 @@ describe('slugify', () => {
       'windows-11-10-pro-retail-key-1-pc',
     );
     expect(slugify('ويندوز')).toBe('');
+  });
+});
+
+describe('OpenCodeClient temperature fallback', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const ok = (text: string) =>
+    new Response(JSON.stringify({ content: [{ type: 'text', text }] }), { status: 200 });
+  const refused = () =>
+    new Response(
+      JSON.stringify({
+        error: {
+          message:
+            'Upstream request failed: [invalid_request_error] `temperature` is deprecated for this model.',
+        },
+      }),
+      { status: 400 },
+    );
+
+  it('retries once without temperature, then leaves it out for that model', async () => {
+    const bodies: Record<string, unknown>[] = [];
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation((_url, init) => {
+      const body = JSON.parse(init?.body as string) as Record<string, unknown>;
+      bodies.push(body);
+      return Promise.resolve('temperature' in body ? refused() : ok('hello'));
+    });
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1');
+    const input = {
+      model: 'model-without-temperature',
+      protocol: 'messages' as const,
+      system: 'S',
+      prompt: 'P',
+      maxTokens: 10,
+      temperature: 0.5,
+    };
+
+    expect(await client.complete(input)).toBe('hello');
+    expect(bodies.map((body) => 'temperature' in body)).toEqual([true, false]);
+
+    // The next call for the same model goes straight out without it.
+    expect(await client.complete(input)).toBe('hello');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect('temperature' in (bodies[2] ?? {})).toBe(false);
+  });
+
+  it('does not retry other 400s', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: { message: 'max_tokens too large' } }), { status: 400 }),
+    );
+    const client = new OpenCodeClient('KEY', 'https://example.test/v1');
+    await expect(
+      client.complete({
+        model: 'other-model',
+        protocol: 'chat',
+        system: 'S',
+        prompt: 'P',
+        maxTokens: 10,
+        temperature: 0.2,
+      }),
+    ).rejects.toBeInstanceOf(OpenCodeError);
+  });
+
+  it('omits temperature from every protocol when it is undefined', () => {
+    for (const protocol of ['messages', 'chat'] as const) {
+      const wire = buildRequest(
+        { model: 'm', protocol, system: 'S', prompt: 'P', maxTokens: 1, temperature: undefined },
+        'KEY',
+      );
+      expect('temperature' in (wire.body as Record<string, unknown>)).toBe(false);
+    }
   });
 });

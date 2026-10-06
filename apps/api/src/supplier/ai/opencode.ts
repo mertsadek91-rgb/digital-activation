@@ -38,7 +38,8 @@ export interface CompletionInput {
   system: string;
   prompt: string;
   maxTokens: number;
-  temperature: number;
+  /** Left out of the request when undefined: some models refuse the parameter. */
+  temperature?: number | undefined;
 }
 
 export interface WireRequest {
@@ -48,6 +49,7 @@ export interface WireRequest {
 }
 
 export function buildRequest(input: CompletionInput, apiKey: string): WireRequest {
+  const temperature = input.temperature === undefined ? {} : { temperature: input.temperature };
   const bearer = { authorization: `Bearer ${apiKey}` };
   switch (input.protocol) {
     case 'messages':
@@ -57,7 +59,7 @@ export function buildRequest(input: CompletionInput, apiKey: string): WireReques
         body: {
           model: input.model,
           max_tokens: input.maxTokens,
-          temperature: input.temperature,
+          ...temperature,
           system: input.system,
           messages: [{ role: 'user', content: input.prompt }],
         },
@@ -80,7 +82,7 @@ export function buildRequest(input: CompletionInput, apiKey: string): WireReques
         body: {
           systemInstruction: { parts: [{ text: input.system }] },
           contents: [{ role: 'user', parts: [{ text: input.prompt }] }],
-          generationConfig: { maxOutputTokens: input.maxTokens, temperature: input.temperature },
+          generationConfig: { maxOutputTokens: input.maxTokens, ...temperature },
         },
       };
     default:
@@ -90,7 +92,7 @@ export function buildRequest(input: CompletionInput, apiKey: string): WireReques
         body: {
           model: input.model,
           max_tokens: input.maxTokens,
-          temperature: input.temperature,
+          ...temperature,
           messages: [
             { role: 'system', content: input.system },
             { role: 'user', content: input.prompt },
@@ -159,6 +161,9 @@ function providerError(body: unknown): string {
   return '';
 }
 
+/** Models that refused `temperature` in this process. */
+const NO_TEMPERATURE = new Set<string>();
+
 export class OpenCodeClient {
   constructor(
     private readonly apiKey: string,
@@ -180,6 +185,28 @@ export class OpenCodeClient {
   }
 
   async complete(input: CompletionInput): Promise<string> {
+    // A model that has refused `temperature` before is asked without it.
+    const request = NO_TEMPERATURE.has(input.model) ? { ...input, temperature: undefined } : input;
+    try {
+      return await this.send(request);
+    } catch (error) {
+      // Newer models (claude-sonnet-5-5 among them) reject the parameter
+      // outright with a 400. Retry once without it and remember the model
+      // for the life of the process, rather than failing every generation.
+      if (
+        error instanceof OpenCodeError &&
+        error.status === 400 &&
+        request.temperature !== undefined &&
+        /temperature/i.test(error.message)
+      ) {
+        NO_TEMPERATURE.add(input.model);
+        return this.send({ ...request, temperature: undefined });
+      }
+      throw error;
+    }
+  }
+
+  private async send(input: CompletionInput): Promise<string> {
     const wire = buildRequest(input, this.apiKey);
     let response: Response;
     try {

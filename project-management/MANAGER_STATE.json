@@ -110,7 +110,9 @@
         "CONSENSUS-0001"
       ],
       "opportunities": [],
-      "risks": [],
+      "risks": [
+        "BUG-0024"
+      ],
       "last_activity": "2026-10-06T07:12:17Z"
     },
     {
