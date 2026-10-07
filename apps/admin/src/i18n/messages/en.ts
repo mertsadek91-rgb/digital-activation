@@ -570,12 +570,10 @@ export const en: AdminMessages = {
     amountsHeading: 'Amounts',
     subtotal: 'Subtotal',
     discount: 'Discount',
-    tax: 'Tax',
     total: 'Total (USD)',
     charged: 'Charged ({currency})',
     billingHeading: 'Billing details',
     billingName: 'Name',
-    billingVat: 'VAT number',
     noBilling: 'No billing details were entered.',
 
     summaryHeading: 'Summary',
@@ -1879,7 +1877,7 @@ export const en: AdminMessages = {
     configure: 'Settings',
     trustTitle: 'Trust and guarantee',
     trustBody:
-      'Guarantee text, the instant-delivery promise, and registration and VAT numbers, on the product and checkout pages.',
+      'Guarantee text, the instant-delivery promise, and the registration number, on the product and checkout pages.',
     renewalsTitle: 'Renewal reminders',
     renewalsBody:
       'Messages before a time-limited licence runs out, with a one-click renewal link — and a discount only for customers who agreed to marketing.',
@@ -2024,7 +2022,6 @@ export const en: AdminMessages = {
     registrationLede:
       'Shown in the footer of every page, and on the product and checkout pages. An empty field is not shown.',
     commercialRegistration: 'Commercial registration number',
-    vatNumber: 'VAT number',
     maroofUrl: 'The store’s page on Maroof',
     maroofHint: 'A link starting with https://',
     maroofInvalid: 'That is not a valid link.',
@@ -2044,8 +2041,6 @@ export const en: AdminMessages = {
     sfDeliveryEn: 'Delivery',
     sfCrAr: 'السجل التجاري',
     sfCrEn: 'Commercial registration',
-    sfVatAr: 'الرقم الضريبي',
-    sfVatEn: 'VAT number',
     sfMaroofAr: 'صفحتنا على منصة معروف',
     sfMaroofEn: 'Our page on Maroof',
   },

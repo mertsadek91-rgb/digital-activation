@@ -236,12 +236,6 @@ export function FactsCard({
             <dd dir="ltr">−${amounts.discountUsd}</dd>
           </>
         ) : null}
-        {Number(amounts.taxUsd) > 0 ? (
-          <>
-            <dt>{t('tax')}</dt>
-            <dd dir="ltr">${amounts.taxUsd}</dd>
-          </>
-        ) : null}
         <dt className="kv__total">{t('total')}</dt>
         <dd className="kv__total" dir="ltr">
           ${amounts.totalUsd}
@@ -267,12 +261,6 @@ export function FactsCard({
             <>
               <dt>{t('company')}</dt>
               <dd>{billing.company}</dd>
-            </>
-          ) : null}
-          {billing.vat ? (
-            <>
-              <dt>{t('billingVat')}</dt>
-              <dd dir="ltr">{billing.vat}</dd>
             </>
           ) : null}
           {billing.country ? (

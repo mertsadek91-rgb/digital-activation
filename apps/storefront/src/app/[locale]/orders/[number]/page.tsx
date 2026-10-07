@@ -285,12 +285,6 @@ export default function OrderPage() {
                   <dd>−{formatPrice(order.discount)}</dd>
                 </div>
               ) : null}
-              {Number(order.tax.amount) > 0 ? (
-                <div>
-                  <dt>{tc('tax')}</dt>
-                  <dd>{formatPrice(order.tax)}</dd>
-                </div>
-              ) : null}
               <div className="totals-total">
                 <dt>{tc('total')}</dt>
                 <dd>{formatPrice(order.total)}</dd>

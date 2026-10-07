@@ -399,17 +399,27 @@ export default function CartPage() {
           }}
         />
 
-        {/* The way on, at the end of the page and above the phone's fixed bar
-            (owner, 2026-10-07): more offers, or straight to checkout. On a
-            desktop the summary card beside the lines already holds both. */}
-        <div className="cart-end-actions">
-          <Link href={`${prefix}${ROUTES.store}?onSale=1`} className="btn btn-outline">
-            {t('browseOffers')}
-          </Link>
-          <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
-            {t('checkout')}
-            <ArrowIcon size={18} />
-          </Link>
+        {/* Fixed above the phone's bottom bar (owner, 2026-10-07; TASK-0125):
+            the total the checkout will charge, then more offers or straight
+            to checkout. On a desktop the summary card beside the lines holds
+            all three, so the bar is hidden there. */}
+        <div className="cart-end-actions" role="region" aria-label={t('summary')}>
+          <p className="cart-end-total">
+            <span>{tc('total')}</span>
+            <strong>{formatPrice(cart.total)}</strong>
+            {Number(cart.discount.amount) > 0 ? (
+              <s className="cart-end-was">{formatPrice(cart.subtotal)}</s>
+            ) : null}
+          </p>
+          <div className="cart-end-buttons">
+            <Link href={`${prefix}${ROUTES.store}?onSale=1`} className="btn btn-outline">
+              {t('browseOffers')}
+            </Link>
+            <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
+              {t('checkout')}
+              <ArrowIcon size={18} />
+            </Link>
+          </div>
         </div>
       </main>
     </>

@@ -38,7 +38,6 @@ export function BusinessQuote({
     name: '',
     email: '',
     phone: '',
-    vatNumber: '',
     seats: String(minSeats),
     message: '',
     website: '',
@@ -69,7 +68,6 @@ export function BusinessQuote({
       name: form.name.trim(),
       email: form.email.trim(),
       ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
-      ...(form.vatNumber.trim() ? { vatNumber: form.vatNumber.trim() } : {}),
       productSlug,
       seats: Math.max(1, Number.parseInt(form.seats, 10) || minSeats),
       ...(form.message.trim() ? { message: form.message.trim() } : {}),
@@ -129,10 +127,6 @@ export function BusinessQuote({
                     autoComplete="tel"
                     maxLength={40}
                   />
-                </label>
-                <label>
-                  {t('vatNumber')} <span className="growth-optional">{t('optional')}</span>
-                  <input {...field('vatNumber')} dir="ltr" maxLength={40} />
                 </label>
               </div>
               <label>

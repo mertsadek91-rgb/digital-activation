@@ -121,16 +121,6 @@ export default function TrustSettingsPage() {
                     onChange={(event) => set({ commercialRegistration: event.target.value })}
                   />
                 </label>
-                <label className="signals-text">
-                  <span>{t('vatNumber')}</span>
-                  <input
-                    type="text"
-                    dir="ltr"
-                    maxLength={100}
-                    value={draft.vatNumber}
-                    onChange={(event) => set({ vatNumber: event.target.value })}
-                  />
-                </label>
                 <label className="signals-text signals-wide">
                   <span>{t('maroofUrl')}</span>
                   <input
@@ -184,20 +174,15 @@ function TrustPreview({ settings, lang }: { settings: TrustSettings; lang: 'ar' 
           guarantee: t('sfGuaranteeAr'),
           delivery: t('sfDeliveryAr'),
           cr: t('sfCrAr'),
-          vat: t('sfVatAr'),
           maroof: t('sfMaroofAr'),
         }
       : {
           guarantee: t('sfGuaranteeEn'),
           delivery: t('sfDeliveryEn'),
           cr: t('sfCrEn'),
-          vat: t('sfVatEn'),
           maroof: t('sfMaroofEn'),
         };
-  const registration =
-    settings.commercialRegistration.trim() ||
-    settings.vatNumber.trim() ||
-    settings.maroofUrl.trim();
+  const registration = settings.commercialRegistration.trim() || settings.maroofUrl.trim();
 
   return (
     <div className="signals-preview-card" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
@@ -223,11 +208,6 @@ function TrustPreview({ settings, lang }: { settings: TrustSettings; lang: 'ar' 
           {settings.commercialRegistration.trim() ? (
             <span>
               {labels.cr}: <bdi dir="ltr">{settings.commercialRegistration.trim()}</bdi>
-            </span>
-          ) : null}
-          {settings.vatNumber.trim() ? (
-            <span>
-              {labels.vat}: <bdi dir="ltr">{settings.vatNumber.trim()}</bdi>
             </span>
           ) : null}
           {settings.maroofUrl.trim() ? <span className="signals-link">{labels.maroof}</span> : null}
