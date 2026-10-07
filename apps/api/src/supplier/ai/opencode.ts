@@ -44,7 +44,15 @@ export interface CompletionInput {
   maxTokens: number;
   /** Left out of the request when undefined: some models refuse the parameter. */
   temperature?: number | undefined;
+  /**
+   * How long to wait for the whole answer. Short work keeps the default; a
+   * long article from a thinking model can take several minutes (BUG-0028).
+   */
+  timeoutMs?: number | undefined;
 }
+
+/** The wait for one answer when the caller does not say otherwise. */
+export const DEFAULT_TIMEOUT_MS = 180_000;
 
 export interface WireRequest {
   path: string;
@@ -294,6 +302,7 @@ export class OpenCodeClient {
 
   private async send(input: CompletionInput): Promise<string> {
     const wire = buildRequest(input, this.apiKey);
+    const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     let response: Response;
     try {
       response = await fetch(`${this.base}${wire.path}`, {
@@ -305,9 +314,19 @@ export class OpenCodeClient {
           ...wire.headers,
         },
         body: JSON.stringify(wire.body),
-        signal: AbortSignal.timeout(180_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        const minutes = Math.round(timeoutMs / 60_000);
+        throw new OpenCodeError(
+          say(
+            `لم يُكمل النموذج ${input.model} الجواب خلال ${String(minutes)} دقائق. أعد المحاولة أو اختر نموذجاً أسرع.`,
+            `${input.model} did not finish its answer within ${String(minutes)} minutes. Try again or pick a faster model.`,
+          ),
+          null,
+        );
+      }
       throw new OpenCodeError(
         `OpenCode did not answer: ${error instanceof Error ? error.message : 'unknown'}`,
         null,

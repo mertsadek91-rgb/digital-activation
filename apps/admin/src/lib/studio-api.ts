@@ -20,7 +20,10 @@ export const studioApi = {
   job: (id: string) => request<StudioJob>(`/admin/studio/jobs/${encodeURIComponent(id)}`),
 };
 
-/** Polls a studio job every 3 s until it finishes; gives up after 15 minutes. */
+/**
+ * Polls a studio job every 3 s until it finishes; gives up after 30 minutes,
+ * when the API itself calls a RUNNING job dead (BUG-0028).
+ */
 export async function waitForStudioJob(
   id: string,
   hooks: { onElapsed: (seconds: number) => void; isActive: () => boolean; timedOut: string },
@@ -32,6 +35,6 @@ export async function waitForStudioJob(
     hooks.onElapsed(Math.round((Date.now() - started) / 1000));
     const job = await studioApi.job(id);
     if (job.status !== 'RUNNING') return job;
-    if (Date.now() - started > 15 * 60 * 1000) throw new Error(hooks.timedOut);
+    if (Date.now() - started > 30 * 60 * 1000) throw new Error(hooks.timedOut);
   }
 }
