@@ -99,6 +99,13 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   VAULT_KEY_VERSION: z.coerce.number().int().min(1).default(1),
+  /**
+   * Salts every licence fingerprint (vault/kek.ts). Required in production
+   * (TASK-0011): unsalted, a stolen fingerprint column confirms guessed keys.
+   * Set once and never changed; to set or change it on a vault that has rows,
+   * run `pnpm --filter @da/api vault:refingerprint` right after.
+   */
+  VAULT_FINGERPRINT_SALT: z.string().optional(),
 
   // Cloudflare R2, through the S3 API.
   S3_ENDPOINT: z.string().url().optional(),
@@ -273,6 +280,11 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   // it would put the one key that unwraps every licence into an environment
   // variable, on the same host as the ciphertext.
   if (env.NODE_ENV === 'production') {
+    if (!env.VAULT_FINGERPRINT_SALT || env.VAULT_FINGERPRINT_SALT.length < 32) {
+      throw new Error(
+        'VAULT_FINGERPRINT_SALT must be set in production, at least 32 characters (TASK-0011). Generate one with `pnpm secrets:generate`, then run `pnpm --filter @da/api vault:refingerprint --apply` if the vault already has keys.',
+      );
+    }
     if (env.KEK_PROVIDER !== 'aws-kms') {
       throw new Error(
         `KEK_PROVIDER=${env.KEK_PROVIDER} is not allowed in production. Use aws-kms — the KEK must not be recoverable from a compromised host.`,
