@@ -3382,6 +3382,45 @@
       "updated_at": "2026-10-07",
       "reaudit": null,
       "file": "tasks/completed/TASK-0124.md"
+    },
+    {
+      "id": "TASK-0125",
+      "title": "Cart on phones and tablets: a fixed bar above the bottom navigation with the cart total and the browse-offers + checkout buttons",
+      "type": "improvement",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/cart"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/[locale]/cart/page.tsx",
+        "apps/storefront/src/app/cart.css"
+      ],
+      "created_at": "2026-10-07",
+      "updated_at": "2026-10-07",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0125.md"
     }
   ]
 }
