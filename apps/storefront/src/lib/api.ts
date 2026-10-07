@@ -453,9 +453,8 @@ export function getProduct(
 /**
  * Published reviews for a product, with the aggregate over the same rows.
  *
- * Revalidated faster than the product itself. A review that has just been
- * approved is the one piece of this page somebody is waiting to see appear,
- * and five minutes of a stale product description costs nothing by comparison.
+ * Revalidated every minute, like the product itself: a review that has just
+ * been approved is something somebody is waiting to see appear.
  */
 export function getProductReviews(
   slug: string,

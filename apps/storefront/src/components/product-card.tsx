@@ -21,7 +21,20 @@ import { BoltIcon, ProductGlyph, ShieldCheckIcon } from './icons';
  * shipping an animation runtime; `.card:hover` in catalog.css already lifts
  * it, in CSS.
  */
-export function ProductCard({ card, locale }: { card: CatalogCard; locale: string }) {
+export function ProductCard({
+  card,
+  locale,
+  priority = false,
+}: {
+  card: CatalogCard;
+  locale: string;
+  /**
+   * Load the image at once instead of lazily: for the first row of a listing,
+   * whose first image is the page's LCP element (a lazy one waited about five
+   * seconds on staging before it even started loading — TASK-0101).
+   */
+  priority?: boolean;
+}) {
   const t = useTranslations('productCard');
   const to = useTranslations('offers');
   const tc = useTranslations('common');
@@ -44,6 +57,7 @@ export function ProductCard({ card, locale }: { card: CatalogCard; locale: strin
               alt={card.image.alt}
               fill
               sizes="(max-width: 700px) 50vw, 260px"
+              priority={priority}
             />
           ) : (
             <ProductGlyph slug={card.slug} />

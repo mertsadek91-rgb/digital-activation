@@ -328,7 +328,7 @@
       "opportunities": [],
       "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-07T07:36:38Z"
+      "last_activity": "2026-10-07T08:27:21Z"
     },
     {
       "id": "backend-architect",
@@ -713,11 +713,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 24,
+      "reviews_recorded": 25,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-07T06:22:05Z"
+      "last_activity": "2026-10-07T08:27:09Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -790,7 +790,7 @@
       "opportunities": [],
       "workload": 7.5,
       "blockers": [],
-      "last_activity": "2026-10-02T11:07:15Z"
+      "last_activity": "2026-10-07T08:27:29Z"
     },
     {
       "id": "performance-engineer",

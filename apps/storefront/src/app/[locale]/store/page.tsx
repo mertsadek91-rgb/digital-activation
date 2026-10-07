@@ -164,8 +164,8 @@ export default async function StorePage({ params, searchParams }: Props) {
         ) : (
           <MotionFadeIn>
             <div className="grid">
-              {store.products.map((card) => (
-                <ProductCard key={card.slug} card={card} locale={locale} />
+              {store.products.map((card, index) => (
+                <ProductCard key={card.slug} card={card} locale={locale} priority={index < 2} />
               ))}
             </div>
           </MotionFadeIn>

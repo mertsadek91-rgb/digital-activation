@@ -4347,3 +4347,36 @@ a.as-button.ghost:hover {
 .image-generator[open] > summary {
   margin-block-end: 8px;
 }
+/* A flex summary loses the browser's disclosure triangle, so draw one: it
+   points along the reading direction when closed and down when open. */
+.image-generator > summary {
+  list-style: none;
+}
+.image-generator > summary::-webkit-details-marker {
+  display: none;
+}
+.image-generator > summary::before {
+  content: '';
+  inline-size: 8px;
+  block-size: 8px;
+  border-block-end: 2px solid currentColor;
+  border-inline-end: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+/* The borders are logical, so in RTL the corner is already mirrored and the
+   same turn points the other way: swap the two angles. */
+.image-generator > summary:dir(rtl)::before {
+  transform: rotate(45deg);
+}
+.image-generator[open] > summary::before {
+  transform: rotate(45deg);
+}
+.image-generator[open] > summary:dir(rtl)::before {
+  transform: rotate(-45deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .image-generator > summary::before {
+    transition: none;
+  }
+}
