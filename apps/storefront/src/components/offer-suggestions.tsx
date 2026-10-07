@@ -89,7 +89,7 @@ function SuggestionCard({
         ) : null}
         <p className="offer-card-for">{t('goesWith', { name: item.forProduct.name })}</p>
         {/* The price and the button on one row, the button at the end (owner,
-            2026-10-07; TASK-0126): the card is one block, not a block and a
+            2026-10-07; TASK-0127): the card is one block, not a block and a
             button under it. */}
         <div className="offer-card-foot">
           <p className="offer-card-price">
