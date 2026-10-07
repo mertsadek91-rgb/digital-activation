@@ -821,7 +821,7 @@
     "close": "إغلاق",
     "keepShopping": "متابعة التسوق",
     "viewCart": "عرض السلة",
-    "cartTitle": "يكمّل ما في سلتك",
+    "cartTitle": "أضف إلى السلة",
     "setupTitle": "أكمل تجهيزك",
     "setupLede": "منتجات تكمّل ما اشتريت. الإضافة تفتح سلة جديدة، ولا يُخصم أي مبلغ قبل أن تدفع بنفسك.",
     "setupAdded": "أُضيف إلى سلة جديدة.",
@@ -830,7 +830,7 @@
     "couponSupersededVolume": "لم يُطبَّق الكود: خصم الكمية أكبر، والخصومات لا تُجمع.",
     "couponSupersededPair": "لم يُطبَّق الكود: خصم المنتجات المتكاملة أكبر، والخصومات لا تُجمع.",
     "progressNext": "{count, plural, zero {أضف {count, number, latn} ترخيص} one {أضف ترخيصاً واحداً} two {أضف ترخيصين} few {أضف {count, number, latn} تراخيص} many {أضف {count, number, latn} ترخيصاً} other {أضف {count, number, latn} ترخيص}} لتوفّر {percent, number, latn}٪ على السلة كلها.",
-    "progressTop": "حصلت على أعلى خصم كمية: {percent, number, latn}٪.",
+    "progressTop": "حصلت على خصم إضافي: {percent, number, latn}٪.",
     "progressLabel": "التقدّم نحو خصم الكمية",
     "saleBadge": "{name}: خصم {percent, number, latn}٪",
     "saleBadgeNoName": "تخفيض {percent, number, latn}٪",
@@ -840,7 +840,7 @@
     "countdownDays": "{days, plural, zero {{days, number, latn} يوم} one {يوم} two {يومين} few {{days, number, latn} أيام} many {{days, number, latn} يوماً} other {{days, number, latn} يوم}} و ",
     "countdownOver": "انتهى التخفيض. حدِّث الصفحة لرؤية السعر الحالي.",
     "unlockWholeCart": "أضفه واحصل على خصم {percent}% على كامل السلة",
-    "cartTitleUnlock": "أضف منتجاً واحداً واحصل على خصم {percent}% على كامل السلة"
+    "cartTitleUnlock": "أضف إلى السلة واحصل على خصم {percent}%"
   },
   "filters": {
     "title": "تصفية النتائج",

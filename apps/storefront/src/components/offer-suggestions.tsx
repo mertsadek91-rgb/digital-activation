@@ -88,17 +88,38 @@ function SuggestionCard({
           <p className="offer-card-unlock">{t('unlockWholeCart', { percent: unlockPercent })}</p>
         ) : null}
         <p className="offer-card-for">{t('goesWith', { name: item.forProduct.name })}</p>
-        <p className="offer-card-price">
-          <strong>{formatPrice(item.card.price)}</strong>
-          {item.card.price.compareAt ? (
-            <s>
-              {formatPrice({
-                amount: item.card.price.compareAt,
-                currency: item.card.price.currency,
-              })}
-            </s>
-          ) : null}
-        </p>
+        {/* The price and the button on one row, the button at the end (owner,
+            2026-10-07; TASK-0127): the card is one block, not a block and a
+            button under it. */}
+        <div className="offer-card-foot">
+          <p className="offer-card-price">
+            <strong>{formatPrice(item.card.price)}</strong>
+            {item.card.price.compareAt ? (
+              <s>
+                {formatPrice({
+                  amount: item.card.price.compareAt,
+                  currency: item.card.price.currency,
+                })}
+              </s>
+            ) : null}
+          </p>
+          <div className="offer-card-action">
+            {variantId ? (
+              <button
+                type="button"
+                className="btn btn-ghost"
+                disabled={state !== 'idle'}
+                onClick={() => void add(variantId)}
+              >
+                {state === 'added' ? t('addedOne') : state === 'busy' ? t('adding') : t('add')}
+              </button>
+            ) : (
+              <Link href={href} className="btn btn-ghost">
+                {t('choose')}
+              </Link>
+            )}
+          </div>
+        </div>
         {item.card.sale ? <DiscountLicence number={item.card.sale.licenceNumber} /> : null}
         {item.pairPercent > 0 ? (
           <>
@@ -113,22 +134,6 @@ function SuggestionCard({
             {error}
           </p>
         ) : null}
-      </div>
-      <div className="offer-card-action">
-        {variantId ? (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            disabled={state !== 'idle'}
-            onClick={() => void add(variantId)}
-          >
-            {state === 'added' ? t('addedOne') : state === 'busy' ? t('adding') : t('add')}
-          </button>
-        ) : (
-          <Link href={href} className="btn btn-ghost">
-            {t('choose')}
-          </Link>
-        )}
       </div>
     </li>
   );
