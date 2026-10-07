@@ -17,6 +17,7 @@ function production(overrides: Record<string, string | undefined> = {}): Record<
     REDIS_URL: 'redis://localhost:6379',
     JWT_ACCESS_SECRET: crypto.randomBytes(48).toString('base64url'),
     LINK_SIGNING_SECRET: crypto.randomBytes(48).toString('base64url'),
+    VAULT_FINGERPRINT_SALT: crypto.randomBytes(32).toString('base64url'),
     KEK_PROVIDER: 'aws-kms',
     AWS_KMS_KEY_ID: 'arn:aws:kms:us-east-2:000000000000:key/test',
     AWS_REGION: 'us-east-2',
@@ -264,5 +265,24 @@ describe('validateEnv — the link signing key (TASK-0018)', () => {
     expect(() => validateEnv(production({ LINK_SIGNING_SECRET: 'too-short' }))).toThrow(
       /LINK_SIGNING_SECRET/,
     );
+  });
+});
+
+describe('validateEnv — fingerprint salt in production (TASK-0011)', () => {
+  it('refuses to boot without the salt', () => {
+    expect(() => validateEnv(production({ VAULT_FINGERPRINT_SALT: undefined }))).toThrow(
+      /VAULT_FINGERPRINT_SALT must be set in production/,
+    );
+  });
+
+  it('refuses a salt too short to be secret', () => {
+    expect(() => validateEnv(production({ VAULT_FINGERPRINT_SALT: 'short' }))).toThrow(
+      /at least 32 characters/,
+    );
+  });
+
+  it('boots with a generated salt, and keeps it in the validated env', () => {
+    const env = validateEnv(production());
+    expect(typeof env.VAULT_FINGERPRINT_SALT).toBe('string');
   });
 });

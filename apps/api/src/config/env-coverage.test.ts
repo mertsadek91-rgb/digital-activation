@@ -15,8 +15,6 @@ const EXEMPT: Record<string, string> = {
   // Integration-suite switches, read by the test harness only.
   TEST_DATABASE_URL: 'test harness',
   ALLOW_REMOTE_TEST_DATABASE: 'test harness',
-  // Changing where this comes from changes every fingerprint: owner decision TASK-0011.
-  VAULT_FINGERPRINT_SALT: 'TASK-0011',
   // Legacy alias of VAULT_KEY_VERSION, honoured only for hosts that set it
   // directly (vault/kek.ts `version`). Deliberately not accepted from the file.
   KEK_VERSION: 'legacy host-only alias',

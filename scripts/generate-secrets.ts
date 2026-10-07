@@ -52,6 +52,14 @@ const SPECS: SecretSpec[] = [
     note: 'Postgres role da_vault — same',
   },
   {
+    key: 'VAULT_FINGERPRINT_SALT',
+    bytes: 32,
+    encoding: 'base64url',
+    note: 'salts licence fingerprints — API only; set ONCE and never change it (TASK-0011). If the vault already holds keys, run vault:refingerprint --apply after setting it',
+    // Added after most .env files were written; required in production only.
+    optional: true,
+  },
+  {
     key: 'JWT_ACCESS_SECRET',
     bytes: 48,
     encoding: 'base64url',
