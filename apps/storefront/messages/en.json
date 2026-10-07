@@ -821,7 +821,7 @@
     "close": "Close",
     "keepShopping": "Keep shopping",
     "viewCart": "View cart",
-    "cartTitle": "Goes well with your cart",
+    "cartTitle": "Add to your cart",
     "setupTitle": "Complete your setup",
     "setupLede": "These go with what you bought. Adding one starts a new cart — nothing is charged until you check out yourself.",
     "setupAdded": "Added to a new cart.",
@@ -830,7 +830,7 @@
     "couponSupersededVolume": "Code not applied: the volume discount is larger, and discounts do not combine.",
     "couponSupersededPair": "Code not applied: the pair discount is larger, and discounts do not combine.",
     "progressNext": "{count, plural, one {Add # more licence} other {Add # more licences}} to save {percent}% on the whole cart.",
-    "progressTop": "You have the largest volume discount: {percent}%.",
+    "progressTop": "You got an extra discount: {percent}%.",
     "progressLabel": "Progress to the volume discount",
     "saleBadge": "{name}: {percent}% off",
     "saleBadgeNoName": "{percent}% off",
@@ -840,7 +840,7 @@
     "countdownDays": "{days, plural, one {# day} other {# days}} ",
     "countdownOver": "The sale has ended. Refresh the page to see the current price.",
     "unlockWholeCart": "Add it and get {percent}% off your whole cart",
-    "cartTitleUnlock": "Add one more item and get {percent}% off your whole cart"
+    "cartTitleUnlock": "Add to your cart and get {percent}% off"
   },
   "filters": {
     "title": "Filters",
