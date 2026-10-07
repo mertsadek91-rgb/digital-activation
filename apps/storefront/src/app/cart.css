@@ -446,52 +446,63 @@ a.cart-line-name:hover {
   inset-inline: 0;
   inset-block-end: var(--buy-bar-offset, 0px);
   z-index: 44;
-  display: grid;
+  /* One row (owner, 2026-10-07): the total, then the two buttons beside it. */
+  display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 10px var(--spacing-1) 12px;
+  padding: 8px 12px;
   background: var(--color-bg);
   border-block-start: 1px solid var(--color-border);
   box-shadow: 0 -6px 16px 0 rgb(23 33 43 / 0.08);
 }
+/* The total stacks its label over the amount, so it stays narrow. */
 .cart-end-total {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  display: grid;
+  flex: none;
+  gap: 0;
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-ink-body);
+  font-size: var(--text-xs);
+  line-height: 1.3;
+  color: var(--color-ink-muted);
 }
 .cart-end-total strong {
   font-family: var(--font-latin);
-  font-size: var(--text-xl);
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--color-brand);
   font-variant-numeric: tabular-nums;
 }
+/* The pre-discount total does not fit the row; the summary card shows it. */
 .cart-end-was {
-  font-family: var(--font-latin);
-  font-size: var(--text-sm);
-  color: var(--color-ink-muted);
+  display: none;
 }
 .cart-end-buttons {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 6px;
+  min-inline-size: 0;
 }
 .cart-end-buttons .btn {
   min-inline-size: 0;
-  padding-inline: 12px;
+  min-block-size: 44px;
+  padding: 6px 8px;
+  gap: 4px;
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
+.cart-end-buttons .btn svg {
+  inline-size: 16px;
+  block-size: 16px;
+}
 @media (max-width: 63.99rem) {
-  /* Room for the bar under the page's last block. */
-  /* The bar is 115px; under 48rem the bottom navigation sits below it too
+  /* The bar is 61px; under 48rem the bottom navigation sits below it too
      (--buy-bar-offset), and the page's own end needs room for both. */
   .cart-page {
-    padding-block-end: calc(var(--buy-bar-offset, 0px) + 132px);
+    padding-block-end: calc(var(--buy-bar-offset, 0px) + 80px);
   }
   html body:has(.cart-end-actions) .whatsapp-fab {
-    inset-block-end: calc(var(--buy-bar-offset, 0px) + 128px);
+    inset-block-end: calc(var(--buy-bar-offset, 0px) + 76px);
   }
 }
 @media (min-width: 64rem) {
