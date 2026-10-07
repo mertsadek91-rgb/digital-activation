@@ -357,6 +357,102 @@ a.cart-line-name:hover {
   }
 }
 
+/*
+ * The cart page's rows, by area (TASK-0123): the mark and the words, then
+ * the price under them with the stepper and the bin at the end of the same
+ * row. On a phone that keeps each line to two short rows (owner, 2026-10-07);
+ * the order page, which shares the classes, keeps the layout above.
+ */
+.cart-page .cart-line {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'media body controls'
+    'media price controls';
+  row-gap: 4px;
+}
+.cart-page .cart-line-media {
+  grid-area: media;
+}
+.cart-page .cart-line-body {
+  grid-area: body;
+}
+.cart-page .cart-line-price {
+  grid-area: price;
+  margin: 0;
+}
+.cart-page .cart-line-controls {
+  grid-area: controls;
+  align-self: center;
+  flex-wrap: nowrap;
+}
+@media (max-width: 34rem) {
+  .cart-page .cart-line {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    grid-template-areas:
+      'media body body'
+      'price price controls';
+    gap: 8px 12px;
+    padding: 12px 14px;
+  }
+  .cart-page .cart-line-media,
+  .cart-page .cart-line-media .iconbox {
+    inline-size: 40px;
+    block-size: 40px;
+  }
+  /* One line of the licence description; the full text is on the product. */
+  .cart-page .cart-line-spec {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: var(--text-xs);
+  }
+  .cart-page .cart-line-price {
+    align-self: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+  }
+  .cart-page .cart-line-price strong {
+    font-size: var(--text-lg);
+  }
+  .cart-page .cart-line-controls {
+    grid-column: auto;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  /* A tighter stepper: 44px targets, 40px tall. */
+  .cart-page .cart-line .stepper {
+    block-size: 44px;
+  }
+  .cart-page .cart-line .stepper output {
+    min-inline-size: 32px;
+  }
+  .cart-page .btn-remove {
+    inline-size: 44px;
+    block-size: 44px;
+  }
+}
+
+/* The end of the cart page: browse offers and checkout, side by side, above
+   the phone's fixed bar (owner, 2026-10-07). Phones and tablets only: from
+   64rem the summary card beside the lines holds both. */
+.cart-end-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.cart-end-actions .btn {
+  min-inline-size: 0;
+  padding-inline: 12px;
+  white-space: nowrap;
+}
+@media (min-width: 64rem) {
+  .cart-end-actions {
+    display: none;
+  }
+}
+
 /* The kit's `coupon`: a label, the field, the outline button, full width. */
 .coupon {
   display: grid;

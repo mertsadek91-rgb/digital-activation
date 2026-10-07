@@ -550,7 +550,17 @@ function cart(locale, currency) {
     ),
   );
   const subtotal = lines.reduce((sum, l) => sum + Number(l.lineTotal.amount), 0);
-  const discount = cartState.coupon ? subtotal * 0.1 : 0;
+  // Sample whole-cart tiers (TASK-0123): 2 items take 5% off, 4 take 10%.
+  const itemCount = lines.reduce((sum, l) => sum + l.qty, 0);
+  const TIERS = [
+    { minItems: 2, percent: 5 },
+    { minItems: 4, percent: 10 },
+  ];
+  const applied = [...TIERS].reverse().find((tier) => itemCount >= tier.minItems) ?? null;
+  const nextTier = TIERS.find((tier) => itemCount < tier.minItems) ?? null;
+  const couponOff = cartState.coupon ? subtotal * 0.1 : 0;
+  const volumeOff = applied ? (subtotal * applied.percent) / 100 : 0;
+  const discount = Math.max(couponOff, volumeOff);
   const money = (n) => ({ amount: n.toFixed(2), currency, compareAt: null, discountPercent: null });
   return {
     token: 'mock-cart',
@@ -569,9 +579,25 @@ function cart(locale, currency) {
         }
       : null,
     couponError: cartState.couponError,
-    automaticDiscount: null,
-    couponSuperseded: false,
-    volume: null,
+    automaticDiscount:
+      volumeOff > couponOff && applied
+        ? {
+            kind: 'volume',
+            percent: applied.percent,
+            amount: money(volumeOff),
+            licenceNumber: 'DL-2026-11',
+          }
+        : null,
+    couponSuperseded: Boolean(cartState.coupon) && volumeOff > couponOff,
+    volume:
+      lines.length > 0
+        ? {
+            applied,
+            next: nextTier ? { ...nextTier, itemsToGo: nextTier.minItems - itemCount } : null,
+            showProgressBar: true,
+            licenceNumber: 'DL-2026-11',
+          }
+        : null,
     reservationExpiresAt: null,
     adjustments: [],
   };
@@ -844,6 +870,21 @@ function stage4(req, url, body, send, locale, currency) {
     cartState.coupon = null;
     cartState.couponError = null;
     return done(200, cart(locale, currency));
+  }
+  if (path === '/v1/offers/suggestions') {
+    const inCart = new Set(cartState.lines.map((l) => l.slug));
+    const items = PRODUCTS.filter((p) => !inCart.has(p.slug) && (p.variants ?? 1) === 1)
+      .slice(0, 2)
+      .map((p) => ({
+        card: card(p, locale, currency),
+        forProduct: {
+          slug: cartState.lines[0]?.slug ?? 'windows-11-pro',
+          name: PRODUCTS.find((x) => x.slug === (cartState.lines[0]?.slug ?? 'windows-11-pro'))
+            .name[locale],
+        },
+        pairPercent: 0,
+      }));
+    return done(200, { items, licenceNumber: 'DL-2026-11' });
   }
   if (path === '/v1/checkout' && req.method === 'POST')
     return done(200, checkout(locale, currency));

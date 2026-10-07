@@ -3288,6 +3288,50 @@
       "updated_at": "2026-10-07",
       "reaudit": null,
       "file": "tasks/completed/TASK-0122.md"
+    },
+    {
+      "id": "TASK-0123",
+      "title": "Cart: compact phone rows (price, quantity and bin on one line), browse-offers + checkout buttons at the page end, and suggestion cards that name the whole-cart volume discount they unlock",
+      "type": "improvement",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/cart"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/[locale]/cart/page.tsx",
+        "apps/storefront/src/app/cart.css",
+        "apps/storefront/src/app/offers.css",
+        "apps/storefront/src/components/offer-suggestions.tsx",
+        "apps/storefront/mock/",
+        "apps/storefront/messages/ar.json",
+        "apps/storefront/messages/en.json"
+      ],
+      "created_at": "2026-10-07",
+      "updated_at": "2026-10-07",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0123.md"
     }
   ]
 }

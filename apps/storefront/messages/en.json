@@ -347,7 +347,8 @@
     "unitPrice": "{price} each",
     "increase": "Increase quantity",
     "decrease": "Decrease quantity",
-    "couponApplied": "Code applied"
+    "couponApplied": "Code applied",
+    "browseOffers": "Browse offers"
   },
   "checkout": {
     "title": "Checkout",
@@ -840,7 +841,9 @@
     "saleEnds": "Sale ends {date}",
     "countdown": "The sale price ends in {days}<ltr>{time}</ltr>",
     "countdownDays": "{days, plural, one {# day} other {# days}} ",
-    "countdownOver": "The sale has ended. Refresh the page to see the current price."
+    "countdownOver": "The sale has ended. Refresh the page to see the current price.",
+    "unlockWholeCart": "Add it and get {percent}% off your whole cart",
+    "cartTitleUnlock": "Add one more item and get {percent}% off your whole cart"
   },
   "filters": {
     "title": "Filters",

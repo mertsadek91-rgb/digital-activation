@@ -42,11 +42,14 @@ function SuggestionCard({
   item,
   locale,
   licenceNumber,
+  unlockPercent,
   onAdded,
 }: {
   item: OfferSuggestion;
   locale: string;
   licenceNumber: string;
+  /** The whole-cart tier adding this card reaches, when it is the next one. */
+  unlockPercent?: number | null | undefined;
   onAdded?: ((cart: Cart) => void) | undefined;
 }) {
   const t = useTranslations('offers');
@@ -81,6 +84,9 @@ function SuggestionCard({
         <Link href={href} className="offer-card-name">
           {item.card.name}
         </Link>
+        {unlockPercent ? (
+          <p className="offer-card-unlock">{t('unlockWholeCart', { percent: unlockPercent })}</p>
+        ) : null}
         <p className="offer-card-for">{t('goesWith', { name: item.forProduct.name })}</p>
         <p className="offer-card-price">
           <strong>{formatPrice(item.card.price)}</strong>
@@ -132,11 +138,18 @@ export function SuggestionList({
   items,
   locale,
   licenceNumber,
+  unlockPercent,
   onAdded,
 }: {
   items: OfferSuggestion[];
   locale: string;
   licenceNumber: string;
+  /**
+   * Set on the cart page when one more item reaches the next volume tier: each
+   * card then says that adding it takes that percent off the whole cart
+   * (TASK-0123). The number is the API's tier, not recomputed here.
+   */
+  unlockPercent?: number | null;
   onAdded?: (cart: Cart) => void;
 }) {
   const t = useTranslations('offers');
@@ -150,6 +163,7 @@ export function SuggestionList({
             item={item}
             locale={locale}
             licenceNumber={licenceNumber}
+            unlockPercent={unlockPercent}
             onAdded={onAdded}
           />
         ))}
