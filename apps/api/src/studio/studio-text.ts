@@ -5,7 +5,15 @@ import type { EditableBlock } from '@da/contracts';
  * body, the summary's length, and which links survive.
  */
 
-const ANCHOR = /<a\b[^>]*\bhref\s*=\s*"([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
+/** An anchor and its text; the href is read from the attributes apart. */
+const ANCHOR = /<a\b([^>]*)>([\s\S]*?)<\/a\s*>/gi;
+/** An href in any of the three ways HTML allows: "…", '…' or bare (REV-0174). */
+const HREF = /\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i;
+/** A private-use character marking a kept anchor while stray tags are removed. */
+const HOLD = String.fromCharCode(0xe000);
+const HELD = new RegExp(`${HOLD}(\\d+)${HOLD}`, 'g');
+/** Anchor tags left over once the closed anchors are handled. */
+const STRAY_ANCHOR_TAG = /<\/?a\b[^>]*>/gi;
 
 /** Words in a string: anything between spaces with a letter or digit in it. */
 export function countWords(text: string): number {
@@ -74,15 +82,29 @@ export function keepKnownLinks(
   siteHosts: string[],
 ): { html: string; kept: string[]; dropped: number } {
   const kept: string[] = [];
+  const anchors: string[] = [];
   let dropped = 0;
-  const out = html.replace(ANCHOR, (_match, href: string, text: string) => {
-    const path = sitePath(href, siteHosts);
-    if (path && allowed.has(path)) {
-      kept.push(path);
-      return `<a href="${path}">${text}</a>`;
-    }
-    dropped += 1;
-    return text;
-  });
+  const out = html
+    .replace(ANCHOR, (_match, attributes: string, text: string) => {
+      const found = HREF.exec(attributes);
+      const href = found ? (found[1] ?? found[2] ?? found[3] ?? '') : '';
+      const path = sitePath(href, siteHosts);
+      if (path && allowed.has(path)) {
+        kept.push(path);
+        // Held aside so the stray-tag pass below cannot touch it.
+        // Its text keeps no anchor of its own: a nested <a> is not a link.
+        anchors.push(`<a href="${path}">${text.replace(STRAY_ANCHOR_TAG, '')}</a>`);
+        return `${HOLD}${String(anchors.length - 1)}${HOLD}`;
+      }
+      dropped += 1;
+      return text;
+    })
+    // An anchor never closed is no link a reader should follow: its tag goes
+    // and its text stays.
+    .replace(STRAY_ANCHOR_TAG, () => {
+      dropped += 1;
+      return '';
+    })
+    .replace(HELD, (_match, index: string) => anchors[Number(index)] ?? '');
   return { html: out, kept, dropped };
 }

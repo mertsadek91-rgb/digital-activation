@@ -324,18 +324,29 @@ export class SupplierAiService {
     await this.saveJob(job);
     void this.pruneJobs();
 
-    void this.generateCopy(input, (partial) => this.saveJob({ ...job, result: partial })).then(
-      (result) =>
-        this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
-      (error: unknown) =>
-        this.saveJob({
-          ...job,
-          status: 'FAILED',
-          error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
-          finishedAt: new Date().toISOString(),
-        }),
-    );
+    void this.generateCopy(input, (partial) => this.saveJob({ ...job, result: partial }))
+      .then(
+        (result) =>
+          this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
+        (error: unknown) =>
+          this.saveJob({
+            ...job,
+            status: 'FAILED',
+            error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
+            finishedAt: new Date().toISOString(),
+          }),
+      )
+      // Saving the outcome can fail too (the database away); an unhandled
+      // rejection would take the whole API down (REV-0172).
+      .catch((error: unknown) => this.jobLost(job.id, error));
     return job;
+  }
+
+  /** A job whose outcome could not be saved: logged; it goes stale and reads as failed. */
+  private jobLost(id: string, error: unknown): void {
+    this.logger.error(
+      `AI job ${id} finished but its outcome was not saved: ${error instanceof Error ? error.message : 'unknown'}`,
+    );
   }
 
   async copyJob(id: string): Promise<AiCopyJob> {
@@ -386,22 +397,26 @@ export class SupplierAiService {
     };
     await this.saveSectionJob(job);
     void this.pruneJobs();
-    void this.generateSection(input).then(
-      (result) =>
-        this.saveSectionJob({
-          ...job,
-          status: 'DONE',
-          result,
-          finishedAt: new Date().toISOString(),
-        }),
-      (error: unknown) =>
-        this.saveSectionJob({
-          ...job,
-          status: 'FAILED',
-          error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
-          finishedAt: new Date().toISOString(),
-        }),
-    );
+    void this.generateSection(input)
+      .then(
+        (result) =>
+          this.saveSectionJob({
+            ...job,
+            status: 'DONE',
+            result,
+            finishedAt: new Date().toISOString(),
+          }),
+        (error: unknown) =>
+          this.saveSectionJob({
+            ...job,
+            status: 'FAILED',
+            error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
+            finishedAt: new Date().toISOString(),
+          }),
+      )
+      // Saving the outcome can fail too (the database away); an unhandled
+      // rejection would take the whole API down (REV-0172).
+      .catch((error: unknown) => this.jobLost(job.id, error));
     return job;
   }
 
@@ -883,7 +898,13 @@ function hasContent(value: unknown): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value === 'string') return value.trim().length > 0;
   if (Array.isArray(value)) return value.some(hasContent);
+  // A block's own keys (its type, a heading level) are not content: an empty
+  // FAQ is still a section to write, not one to improve (REV-0173).
   if (typeof value === 'object')
-    return Object.values(value as Record<string, unknown>).some(hasContent);
+    return Object.entries(value as Record<string, unknown>).some(
+      ([key, entry]) => !STRUCTURAL_KEYS.has(key) && hasContent(entry),
+    );
   return false;
 }
+
+const STRUCTURAL_KEYS = new Set(['type', 'level', 'id']);

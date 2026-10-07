@@ -151,8 +151,16 @@ export const generateSectionSchema = z.object({
   productSlug: z.string().trim().min(1),
   locale: localeSchema,
   section: aiSectionSchema,
-  /** The section's content as it is on screen, unsaved edits included. */
-  current: z.unknown().optional(),
+  /**
+   * The section's content as it is on screen, unsaved edits included. Capped
+   * well above any real section; the prompt reads only its start (REV-0173).
+   */
+  current: z
+    .unknown()
+    .optional()
+    .refine((value) => value === undefined || JSON.stringify(value).length <= 100_000, {
+      message: 'The section is too large to send.',
+    }),
   instructions: z.string().trim().max(1000).default(''),
   focusKeywords: z.string().trim().max(300).default(''),
 });

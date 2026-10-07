@@ -254,7 +254,10 @@ describe('OpenCodeClient temperature fallback', () => {
     await expect(long).rejects.toBeInstanceOf(OpenCodeError);
     await expect(long).rejects.toThrow(/9/);
     await expect(client.complete(input)).rejects.toThrow(/3/);
-    expect(timeouts).toEqual([9 * 60_000, 180_000]);
+    // The wait is what is left of one deadline, so a few ms under the asked value.
+    expect(timeouts).toHaveLength(2);
+    expect(Math.abs((timeouts[0] ?? 0) - 9 * 60_000)).toBeLessThan(1000);
+    expect(Math.abs((timeouts[1] ?? 0) - 180_000)).toBeLessThan(1000);
     // The limit is ours, never part of what is sent to the provider.
     expect('timeoutMs' in (buildRequest({ ...input, timeoutMs: 1 }, 'KEY').body as object)).toBe(
       false,
