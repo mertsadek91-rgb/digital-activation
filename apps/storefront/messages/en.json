@@ -146,7 +146,6 @@
     "total": "Total",
     "subtotal": "Subtotal",
     "discount": "Discount",
-    "tax": "Tax",
     "breadcrumb": "Breadcrumb",
     "encryptedConnection": "Encrypted connection",
     "draft": "Draft",
@@ -739,7 +738,6 @@
     "delivery": "Delivery",
     "registration": "Registration details",
     "commercialRegistration": "Commercial registration",
-    "vatNumber": "VAT number",
     "maroof": "Our page on Maroof"
   },
   "socialProof": {
@@ -760,12 +758,11 @@
   "businessQuote": {
     "link": "Need {count}+ licences? Get a business quote",
     "title": "Business quote",
-    "lede": "For {product}. We reply with a written quote and a VAT invoice, usually within one working day.",
+    "lede": "For {product}. We reply with a written quote, usually within one working day.",
     "company": "Company name",
     "name": "Your name",
     "email": "Email",
     "phone": "Phone",
-    "vatNumber": "VAT number",
     "optional": "(optional)",
     "seats": "Number of licences",
     "message": "Anything else",

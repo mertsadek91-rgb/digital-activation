@@ -55,7 +55,6 @@ export const growthApi = {
     name: string;
     email: string;
     phone?: string;
-    vatNumber?: string;
     productSlug?: string;
     seats: number;
     message?: string;
