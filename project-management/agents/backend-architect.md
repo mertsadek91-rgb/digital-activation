@@ -57,10 +57,3 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0115 — Improve-with-AI panel in the product editor: reads the page (unsaved blocks, saved SEO, facts), rewrites to the house rules, applies into the editor unsaved (IN_PROGRESS, 85%)
-- TASK-0116 — Card designer: upload a product logo (shrunk in the browser, validated on the server), card colour from the logo (IN_PROGRESS, 85%)
-- TASK-0117 — Supplier mapping: skip a variant that this supplier does not sell (hidden from every linking list, shown under a Skipped filter, can be put back) (IN_PROGRESS, 90%)
-- TASK-0118 — Product editor: write or improve each section with AI (SEO fields, activation how-to, FAQ, steps, specification table) and a View in store link; logo upload shown as a button (IN_PROGRESS, 90%)
-- TASK-0119 — Article studio in the admin: inventory, AI ideas with chat, write a 1500-2000 word draft article with summary, headings, FAQ, verified internal links, SEO fields and an image prompt (IN_PROGRESS, 80%)
-- TASK-0120 — Article image: upload in the article editor, served by the content API, shown on the article page, in og:image and in the Article JSON-LD (with inLanguage) (IN_PROGRESS, 80%)
-- TASK-0121 — Article image on article cards: blog index, home latest articles, product page articles and more-articles, with the icon kept when there is no image (IN_PROGRESS, 80%)
