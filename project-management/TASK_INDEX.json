@@ -3249,6 +3249,44 @@
       "updated_at": "2026-10-06",
       "reaudit": null,
       "file": "tasks/active/TASK-0121.md"
+    },
+    {
+      "id": "TASK-0122",
+      "title": "Product page: smaller product title (about 28px desktop, 22px phone) so the price, licence choice and buy button sit in the first screen on long real names",
+      "type": "improvement",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/store/[slug]"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/catalog.css"
+      ],
+      "created_at": "2026-10-07",
+      "updated_at": "2026-10-07",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0122.md"
     }
   ]
 }

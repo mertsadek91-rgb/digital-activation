@@ -679,9 +679,11 @@ a.pagination-step:hover {
 .gallery .product-glyph {
   inline-size: 48%;
 }
+/* Shorter on a phone than the kit's 280px (TASK-0122): with a real, long
+   product name under it, 280px left the price below the first screen. */
 @media (max-width: 767.98px) {
   .gallery {
-    block-size: 280px;
+    block-size: 220px;
     padding: 16px;
   }
 }
@@ -839,10 +841,15 @@ a.pagination-step:hover {
   flex-direction: column;
   gap: 16px;
 }
+/* The product's name, at reading size rather than display size (TASK-0122).
+   Real names are long and carry both languages ("مفتاح تفعيل أوفيس 2024 …
+   Office 2024 PowerPoint Retail Bind Key"); at 48px they ran to five lines
+   and pushed the price and the buy button out of the first screen. */
 .buybox h1 {
   margin: 0;
-  font-size: var(--text-4xl);
-  line-height: 1.2;
+  font-size: clamp(1.375rem, 1rem + 1vw, 1.75rem);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .buybox .lede {
   font-size: var(--text-base);
