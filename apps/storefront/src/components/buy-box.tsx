@@ -297,20 +297,6 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
         </fieldset>
       ) : null}
 
-      {/* The kit's `data-list`: two columns of quiet boxes, a small label over
-          a bold answer, each with the mark the cart and the licence email use. */}
-      <dl className="specs data-list">
-        {specs.map((spec) => (
-          <div key={spec.kind}>
-            <span className="spec-mark" aria-hidden="true">
-              <SpecMark kind={spec.kind} />
-            </span>
-            <dt>{spec.label}</dt>
-            <dd>{spec.value}</dd>
-          </div>
-        ))}
-      </dl>
-
       {lowStock ? (
         <p className="stock stock-low">
           {t('onlyLeft', { count: String(selected.available ?? 0) })}
@@ -361,6 +347,23 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
           </div>
         )}
       </div>
+
+      {/* The kit's `data-list`: two columns of quiet boxes, a small label over
+          a bold answer, each with the mark the cart and the licence email use.
+          After the buy button rather than before it (owner, 2026-10-07): the
+          choice and the button come first, so they sit in the first screen;
+          the facts that support the choice follow (TASK-0122). */}
+      <dl className="specs data-list">
+        {specs.map((spec) => (
+          <div key={spec.kind}>
+            <span className="spec-mark" aria-hidden="true">
+              <SpecMark kind={spec.kind} />
+            </span>
+            <dt>{spec.label}</dt>
+            <dd>{spec.value}</dd>
+          </div>
+        ))}
+      </dl>
 
       {/* The same controls, following the page down. Always in the document
           and slid in by the CSS transition on `is-shown`, like the header's

@@ -3281,7 +3281,8 @@
         "/store/[slug]"
       ],
       "affected_files": [
-        "apps/storefront/src/app/catalog.css"
+        "apps/storefront/src/app/catalog.css",
+        "apps/storefront/src/components/buy-box.tsx"
       ],
       "created_at": "2026-10-07",
       "updated_at": "2026-10-07",
