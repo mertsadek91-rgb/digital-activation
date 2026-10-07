@@ -455,18 +455,33 @@ export class SupplierService {
         ),
       );
     }
-    const ids = await this.skipped(source.id);
-    const before = ids.has(variantId);
-    if (skip) ids.add(variantId);
-    else ids.delete(variantId);
-    if (before !== skip) {
-      const key = supplierSkipKey(source.id);
-      const value = [...ids];
-      await this.prisma.client.setting.upsert({
-        where: { key },
-        update: { value },
-        create: { key, value },
-      });
+    // Read, change and write the list under a row lock, so two skips at the
+    // same moment cannot each write a list without the other's (REV-0169).
+    const key = supplierSkipKey(source.id);
+    const changed = await this.prisma.client.$transaction(async (tx) => {
+      await tx.setting.upsert({ where: { key }, update: {}, create: { key, value: [] } });
+      await tx.$queryRaw`SELECT "key" FROM "public"."Setting" WHERE "key" = ${key} FOR UPDATE`;
+      const row = await tx.setting.findUnique({ where: { key } });
+      const parsed = supplierSkipListSchema.safeParse(row?.value ?? []);
+      // A list that no longer reads is not rewritten from empty: that would
+      // put every skipped variant back without anyone asking.
+      if (!parsed.success) {
+        throw new BadRequestException(
+          say(
+            'تعذّرت قراءة قائمة المتخطّاة المحفوظة، فلم يُغيَّر شيء.',
+            'The saved skipped list could not be read, so nothing was changed.',
+          ),
+        );
+      }
+      const ids = new Set(parsed.data);
+      const before = ids.has(variantId);
+      if (skip) ids.add(variantId);
+      else ids.delete(variantId);
+      if (before === skip) return false;
+      await tx.setting.update({ where: { key }, data: { value: [...ids] } });
+      return true;
+    });
+    if (changed) {
       await this.audit.record({
         actorId: actor.staffId,
         entity: 'Variant',

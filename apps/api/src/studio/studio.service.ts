@@ -223,21 +223,28 @@ export class StudioService {
     };
     await this.saveJob(job);
     void this.pruneJobs();
-    void work().then(
-      (result) =>
-        this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
-      (error: unknown) => {
-        this.logger.warn(
-          `Studio ${kind} job failed: ${error instanceof Error ? error.message : 'unknown'}`,
-        );
-        return this.saveJob({
-          ...job,
-          status: 'FAILED',
-          error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
-          finishedAt: new Date().toISOString(),
-        });
-      },
-    );
+    void work()
+      .then(
+        (result) =>
+          this.saveJob({ ...job, status: 'DONE', result, finishedAt: new Date().toISOString() }),
+        (error: unknown) => {
+          this.logger.warn(
+            `Studio ${kind} job failed: ${error instanceof Error ? error.message : 'unknown'}`,
+          );
+          return this.saveJob({
+            ...job,
+            status: 'FAILED',
+            error: (error instanceof Error ? error.message : 'unknown error').slice(0, 1000),
+            finishedAt: new Date().toISOString(),
+          });
+        },
+      )
+      // Saving the outcome can fail too; never leave the rejection unhandled.
+      .catch((error: unknown) =>
+        this.logger.error(
+          `Studio job ${job.id} finished but its outcome was not saved: ${error instanceof Error ? error.message : 'unknown'}`,
+        ),
+      );
     return job;
   }
 
@@ -357,9 +364,13 @@ export class StudioService {
           at: now,
         },
       ].slice(-40);
+      // Read again before writing: the model call takes minutes, and an idea
+      // dismissed or drafted meanwhile must keep that change (REV-0174).
+      const latest = await this.state();
+      const added = thread.slice(state.thread.length);
       await this.saveState({
-        ideas: [...fresh, ...state.ideas.filter((idea) => idea.status !== 'NEW')].slice(0, 120),
-        thread,
+        ideas: [...fresh, ...latest.ideas.filter((idea) => idea.status !== 'NEW')].slice(0, 120),
+        thread: [...latest.thread, ...added].slice(-40),
       });
       return { reply: thread[thread.length - 1]?.text ?? '', ideas: fresh.length };
     });
@@ -476,8 +487,9 @@ export class StudioService {
     const productSlugs = [
       ...new Set([...(idea?.relatedProductSlugs ?? []), ...best.relatedProductSlugs]),
     ];
+    // Published only: a draft or archived product is no related product (REV-0174).
     const products = await this.prisma.client.product.findMany({
-      where: { slug: { in: productSlugs } },
+      where: { slug: { in: productSlugs }, status: PublishStatus.PUBLISHED },
       select: { id: true, slug: true },
     });
     if (products.length > 0) {

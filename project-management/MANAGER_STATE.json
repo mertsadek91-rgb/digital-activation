@@ -105,7 +105,8 @@
         "TASK-0118",
         "TASK-0119",
         "TASK-0120",
-        "TASK-0121"
+        "TASK-0121",
+        "TASK-0126"
       ],
       "owned_tasks": [
         "TASK-0101",
@@ -115,7 +116,8 @@
         "TASK-0118",
         "TASK-0119",
         "TASK-0120",
-        "TASK-0121"
+        "TASK-0121",
+        "TASK-0126"
       ],
       "reviews": [],
       "blocked_work": [],
@@ -131,7 +133,7 @@
         "BUG-0027",
         "BUG-0028"
       ],
-      "last_activity": "2026-10-06T07:12:17Z"
+      "last_activity": "2026-10-07T06:34:27Z"
     },
     {
       "id": "pm-04",

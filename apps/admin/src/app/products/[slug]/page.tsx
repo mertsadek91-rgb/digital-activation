@@ -14,6 +14,7 @@ import { ContentForm } from '../content-form';
 import { CopyForm } from '../copy-form';
 import { HowToForm } from '../how-to-form';
 import { IdentityForm } from '../identity-form';
+import { ProductImageGenerator } from '../image-generator';
 import { ImagesForm } from '../images-form';
 import { LinksForm } from '../links-form';
 import { ReadinessChecks } from '../readiness-checks';
@@ -68,6 +69,7 @@ export default function ProductEditPage() {
   const [active, setActive] = useState<SectionId>('readiness');
   // The storefront origin, for the "view in store" link.
   const [storefront, setStorefront] = useState<string | null>(null);
+  const [imagesVersion, setImagesVersion] = useState(0);
   // Bumped when the AI panel saves SEO copy, so the copy form reloads it.
   const [copyVersion, setCopyVersion] = useState(0);
 
@@ -363,7 +365,24 @@ export default function ProductEditPage() {
           ) : null}
 
           <section id="section-images" className="edit-section">
-            <ImagesForm slug={slug} canWrite={canWrite} onChanged={onSaved} onError={onError} />
+            <ImagesForm
+              key={`images-${String(imagesVersion)}`}
+              slug={slug}
+              canWrite={canWrite}
+              onChanged={onSaved}
+              onError={onError}
+            />
+            {canWrite && row ? (
+              <ProductImageGenerator
+                slug={slug}
+                imageCount={row.imageCount}
+                onSaved={() => {
+                  // The new card is one of this product's images now.
+                  setImagesVersion((version) => version + 1);
+                  onSaved();
+                }}
+              />
+            ) : null}
           </section>
 
           {seesTerms ? (

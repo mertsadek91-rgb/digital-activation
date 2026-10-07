@@ -45,6 +45,28 @@ describe('article checks (CR-0006)', () => {
     expect(result.html).toContain('that and Microsoft');
   });
 
+  it('reads every way of writing an href, and leaves no stray anchor (REV-0174)', () => {
+    const allowed = new Set(['/store/windows-11-pro']);
+    const result = keepKnownLinks(
+      [
+        "<p><a href='https://evil.com/x'>single</a>",
+        '<a href=https://evil.com/y>bare</a>',
+        "<a href='//evil.com'>protocol-relative</a>",
+        "<a HREF='/store/windows-11-pro/'>kept</a>",
+        '<a href="/store/windows-11-pro"><a href="https://evil.com">nested</a></a>',
+        '<a href="https://evil.com/z">never closed</p>',
+      ].join(' '),
+      allowed,
+      hosts,
+    );
+    expect(result.kept).toEqual(['/store/windows-11-pro', '/store/windows-11-pro']);
+    expect(result.html).not.toMatch(/evil\.com/);
+    expect(result.html).toContain('<a href="/store/windows-11-pro">kept</a>');
+    expect(result.html).toContain('<a href="/store/windows-11-pro">nested</a>');
+    expect(result.html).toContain('never closed');
+    expect(result.dropped).toBeGreaterThanOrEqual(4);
+  });
+
   it('shapes an answer: drops malformed blocks, checks links, counts words', () => {
     const shaped = shapeArticle(
       {

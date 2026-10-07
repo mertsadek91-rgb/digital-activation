@@ -220,13 +220,11 @@ export default async function PostPage({ params }: Props) {
               {post.more.map((other) => (
                 <li key={other.slug} className="article">
                   <Link href={`${prefix}${ROUTES.post(other.slug)}`}>
-                    {other.hero ? (
-                      <ArticleArt
-                        hero={other.hero}
-                        iconSize={64}
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
-                      />
-                    ) : null}
+                    <ArticleArt
+                      hero={other.hero}
+                      iconSize={64}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 380px"
+                    />
                     <span className="article-meta">
                       {other.readingMinutes > 0 ? (
                         <span>{readingLabel(other.readingMinutes, tf)}</span>

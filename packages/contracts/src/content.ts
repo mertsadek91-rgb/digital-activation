@@ -218,6 +218,15 @@ export const suggestionsSchema = z.object({
 });
 export type Suggestions = z.infer<typeof suggestionsSchema>;
 
+/** An article image (CR-0006): the card picture and the page's lead picture. */
+export const articleImageSchema = z.object({
+  url: z.string(),
+  width: z.number().int(),
+  height: z.number().int(),
+  alt: z.string(),
+});
+export type ArticleImage = z.infer<typeof articleImageSchema>;
+
 /**
  * The blog.
  *
@@ -227,14 +236,6 @@ export type Suggestions = z.infer<typeof suggestionsSchema>;
  * migration whose whole risk is losing organic traffic, dropping the only
  * editorial content would have been the one avoidable loss.
  */
-export const articleImageSchema = z.object({
-  url: z.string(),
-  width: z.number().int(),
-  height: z.number().int(),
-  alt: z.string(),
-});
-export type ArticleImage = z.infer<typeof articleImageSchema>;
-
 export const articleCardSchema = z.object({
   slug: slugSchema,
   locale: localeSchema,
