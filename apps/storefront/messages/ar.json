@@ -347,7 +347,8 @@
     "unitPrice": "{price} للوحدة",
     "increase": "زيادة الكمية",
     "decrease": "تقليل الكمية",
-    "couponApplied": "تم تطبيق الرمز"
+    "couponApplied": "تم تطبيق الرمز",
+    "browseOffers": "تصفح العروض"
   },
   "checkout": {
     "title": "إتمام الشراء",
@@ -840,7 +841,9 @@
     "saleEnds": "ينتهي التخفيض في {date}",
     "countdown": "ينتهي سعر التخفيض خلال {days}<ltr>{time}</ltr>",
     "countdownDays": "{days, plural, zero {{days, number, latn} يوم} one {يوم} two {يومين} few {{days, number, latn} أيام} many {{days, number, latn} يوماً} other {{days, number, latn} يوم}} و ",
-    "countdownOver": "انتهى التخفيض. حدِّث الصفحة لرؤية السعر الحالي."
+    "countdownOver": "انتهى التخفيض. حدِّث الصفحة لرؤية السعر الحالي.",
+    "unlockWholeCart": "أضفه واحصل على خصم {percent}% على كامل السلة",
+    "cartTitleUnlock": "أضف منتجاً واحداً واحصل على خصم {percent}% على كامل السلة"
   },
   "filters": {
     "title": "تصفية النتائج",

@@ -390,11 +390,27 @@ export default function CartPage() {
           slugs={cart.lines.map((line) => line.productSlug)}
           locale={locale}
           currency={cart.currency}
+          unlockPercent={
+            cart.volume?.next && cart.volume.next.itemsToGo === 1 ? cart.volume.next.percent : null
+          }
           onAdded={(next) => {
             setCart(next);
             router.refresh();
           }}
         />
+
+        {/* The way on, at the end of the page and above the phone's fixed bar
+            (owner, 2026-10-07): more offers, or straight to checkout. On a
+            desktop the summary card beside the lines already holds both. */}
+        <div className="cart-end-actions">
+          <Link href={`${prefix}${ROUTES.store}?onSale=1`} className="btn btn-outline">
+            {t('browseOffers')}
+          </Link>
+          <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
+            {t('checkout')}
+            <ArrowIcon size={18} />
+          </Link>
+        </div>
       </main>
     </>
   );
@@ -436,11 +452,13 @@ function CartSuggestions({
   slugs,
   locale,
   currency,
+  unlockPercent,
   onAdded,
 }: {
   slugs: string[];
   locale: string;
   currency: string;
+  unlockPercent: number | null;
   onAdded: (cart: Cart) => void;
 }) {
   const to = useTranslations('offers');
@@ -467,11 +485,14 @@ function CartSuggestions({
   if (!data || data.items.length === 0) return null;
   return (
     <section className="offer-strip" aria-labelledby="cart-suggestions">
-      <h2 id="cart-suggestions">{to('cartTitle')}</h2>
+      <h2 id="cart-suggestions">
+        {unlockPercent ? to('cartTitleUnlock', { percent: unlockPercent }) : to('cartTitle')}
+      </h2>
       <SuggestionList
         items={data.items}
         locale={locale}
         licenceNumber={data.licenceNumber}
+        unlockPercent={unlockPercent}
         onAdded={onAdded}
       />
     </section>
@@ -551,16 +572,18 @@ function Line({
             })}
           </p>
         ) : null}
-
-        <p className="cart-line-price">
-          <strong>{formatPrice(line.lineTotal)}</strong>
-          {line.qty > 1 ? (
-            <span className="cart-line-unit">
-              {t('unitPrice', { price: formatPrice(line.unitPrice) })}
-            </span>
-          ) : null}
-        </p>
       </div>
+
+      {/* Its own cell, so on a phone it shares one row with the stepper and the
+          bin under the name (owner, 2026-10-07; TASK-0123). */}
+      <p className="cart-line-price">
+        <strong>{formatPrice(line.lineTotal)}</strong>
+        {line.qty > 1 ? (
+          <span className="cart-line-unit">
+            {t('unitPrice', { price: formatPrice(line.unitPrice) })}
+          </span>
+        ) : null}
+      </p>
 
       <div className="cart-line-controls">
         <div className="stepper" role="group" aria-label={t('quantity')}>
