@@ -449,6 +449,30 @@ So:
    should return no rows. Anyone still listed can instead be re-run through
    the create-staff script, which issues a new password and re-enrols TOTP.
 
+### `VAULT_FINGERPRINT_SALT` — setting or changing it (TASK-0011)
+
+The fingerprint is how an import or a manual delivery spots a licence already
+in the vault. A production API refuses to boot without a salt of at least 32
+characters (`pnpm secrets:generate` makes one). The check runs only when
+`NODE_ENV=production`; on a host still at the default `development` the API
+boots with whatever is there, including nothing.
+
+Setting it on a vault that already holds keys, or changing it, leaves the
+stored fingerprints under the old salt. Until they are recomputed, a licence
+already in stock or already delivered no longer matches, and could be stocked
+and sold again. So:
+
+1. **Freeze key imports and manual fulfilment** (no "Add keys", no manual
+   delivery from the queue) before the API restarts with the new salt.
+2. Deploy, then from the API's terminal:
+   `pnpm --filter @da/api vault:refingerprint` — a report of counts and row
+   ids, never a licence.
+3. `pnpm --filter @da/api vault:refingerprint --apply`. Re-run until it
+   reports `failed: 0`; a second run changes nothing already done. Rows
+   reported as holding the same licence are left alone — which one to keep is
+   a person's call.
+4. Lift the freeze.
+
 ## 6. Cloudflare R2 — media
 
 Decided 2026-09-09. S3-compatible with no egress fees, and images are the

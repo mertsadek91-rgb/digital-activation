@@ -143,8 +143,8 @@ export default async function SearchPage({ params, searchParams }: Props) {
 
         {results.products.length > 0 ? (
           <div className="grid">
-            {results.products.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
+            {results.products.map((card, index) => (
+              <ProductCard key={card.slug} card={card} locale={locale} priority={index < 2} />
             ))}
           </div>
         ) : null}

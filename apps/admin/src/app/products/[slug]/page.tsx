@@ -1,6 +1,6 @@
 'use client';
 
-import { ROUTES, type AdminProductRow, type Readiness } from '@da/contracts';
+import { ROUTES, type AdminProductRow, type ProductImages, type Readiness } from '@da/contracts';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useStaff } from '../../../lib/use-staff';
@@ -69,7 +69,8 @@ export default function ProductEditPage() {
   const [active, setActive] = useState<SectionId>('readiness');
   // The storefront origin, for the "view in store" link.
   const [storefront, setStorefront] = useState<string | null>(null);
-  const [imagesVersion, setImagesVersion] = useState(0);
+  // The list the card generator's save answered with, for the images form.
+  const [generatedImages, setGeneratedImages] = useState<ProductImages | null>(null);
   // Bumped when the AI panel saves SEO copy, so the copy form reloads it.
   const [copyVersion, setCopyVersion] = useState(0);
 
@@ -366,19 +367,19 @@ export default function ProductEditPage() {
 
           <section id="section-images" className="edit-section">
             <ImagesForm
-              key={`images-${String(imagesVersion)}`}
               slug={slug}
               canWrite={canWrite}
               onChanged={onSaved}
               onError={onError}
+              incoming={generatedImages}
             />
             {canWrite && row ? (
               <ProductImageGenerator
                 slug={slug}
                 imageCount={row.imageCount}
-                onSaved={() => {
+                onSaved={(images) => {
                   // The new card is one of this product's images now.
-                  setImagesVersion((version) => version + 1);
+                  setGeneratedImages(images);
                   onSaved();
                 }}
               />

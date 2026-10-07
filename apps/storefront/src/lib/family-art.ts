@@ -18,9 +18,12 @@ export interface FamilyArt {
 }
 
 export const FAMILY_ART: readonly FamilyArt[] = [
-  { family: 'windows', src: '/home/windows.webp', width: 560, height: 506 },
-  { family: 'office', src: '/home/office.webp', width: 560, height: 489 },
-  { family: 'adobe', src: '/home/adobe.webp', width: 560, height: 552 },
+  // All four are 560 x 569 (transparent padding top and bottom): the hero
+  // slider shows one after another, and a later slide drawn even slightly
+  // larger than the first became a new, late LCP (8.4 s on staging, TASK-0101).
+  { family: 'windows', src: '/home/windows.webp', width: 560, height: 569 },
+  { family: 'office', src: '/home/office.webp', width: 560, height: 569 },
+  { family: 'adobe', src: '/home/adobe.webp', width: 560, height: 569 },
   { family: 'autodesk', src: '/home/autodesk.webp', width: 560, height: 569 },
 ];
 

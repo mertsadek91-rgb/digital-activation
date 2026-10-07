@@ -90,6 +90,36 @@
         "3012"
       ],
       "port": 3012
+    },
+    {
+      "name": "admin-mock-api-4011",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "apps/admin/mock/api.mjs"
+      ],
+      "env": {
+        "MOCK_API_PORT": "4011",
+        "MOCK_API_ORIGIN": "http://localhost:3013"
+      },
+      "port": 4011
+    },
+    {
+      "name": "admin-webpack-3013",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@da/admin",
+        "exec",
+        "next",
+        "dev",
+        "--webpack",
+        "--port",
+        "3013"
+      ],
+      "env": {
+        "NEXT_PUBLIC_API_URL": "http://localhost:4011"
+      },
+      "port": 3013
     }
   ]
 }

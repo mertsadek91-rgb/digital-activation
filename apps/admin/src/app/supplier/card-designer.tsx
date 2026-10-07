@@ -1,6 +1,11 @@
 'use client';
 
-import { CARD_ICONS, type CardDefaults, type CardSpecInput } from '@da/contracts';
+import {
+  CARD_ICONS,
+  type CardDefaults,
+  type CardSpecInput,
+  type ProductImages,
+} from '@da/contracts';
 import { useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
@@ -17,11 +22,17 @@ export function CardDesigner({
   slug,
   aiReady,
   onSaved,
+  embedded = false,
 }: {
   slug: string;
   aiReady: boolean;
-  /** After the card is saved as a product image (the product page refreshes its list). */
-  onSaved?: () => void;
+  /** After the card is saved as a product image, with the product's whole image list. */
+  onSaved?: (images: ProductImages) => void;
+  /**
+   * Inside another panel that already titles it (the product page): no card
+   * frame and no heading of its own.
+   */
+  embedded?: boolean;
 }) {
   const t = useT('supplier');
   const c = useT('common');
@@ -82,10 +93,15 @@ export function CardDesigner({
       return { ...current, chips };
     });
 
+  const Frame = embedded ? 'div' : 'section';
   return (
-    <section className="card">
-      <h2>{t('cardHeading')}</h2>
-      <p className="lede-sm">{t('cardLede')}</p>
+    <Frame className={embedded ? 'card-designer-embedded' : 'card'}>
+      {embedded ? null : (
+        <>
+          <h2>{t('cardHeading')}</h2>
+          <p className="lede-sm">{t('cardLede')}</p>
+        </>
+      )}
       {!defaults.fontsAvailable ? <p className="notice">{t('cardNoFonts')}</p> : null}
 
       <div className="card-designer">
@@ -258,9 +274,12 @@ export function CardDesigner({
               disabled={busy !== null}
               onClick={() =>
                 void run('save', async () => {
-                  await supplierCardApi.save(slug, { ...spec, isHero });
+                  const images = await supplierCardApi.save(slug, { ...spec, isHero });
                   setNote(t('cardSaved'));
-                  onSaved?.();
+                  // The product has a main image now; a second card in the
+                  // same visit must not replace it unless asked to.
+                  setIsHero(false);
+                  onSaved?.(images);
                 })
               }
             >
@@ -291,7 +310,7 @@ export function CardDesigner({
           {note}
         </p>
       ) : null}
-    </section>
+    </Frame>
   );
 }
 

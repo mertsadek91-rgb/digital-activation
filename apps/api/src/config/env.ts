@@ -222,6 +222,9 @@ export function finalProcessorConfigured(env: Record<string, string | undefined>
   return Boolean(env.FP_BASE_URL && env.FP_SITE_ID && env.FP_SECRET);
 }
 
+/** The shortest fingerprint salt production boots with; vault:refingerprint applies it too. */
+export const MIN_FINGERPRINT_SALT_LENGTH = 32;
+
 /** Every key validateEnv keeps, and so every key ConfigModule copies into process.env. */
 export const ENV_KEYS: readonly string[] = Object.keys(envSchema.shape);
 
@@ -280,7 +283,10 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   // it would put the one key that unwraps every licence into an environment
   // variable, on the same host as the ciphertext.
   if (env.NODE_ENV === 'production') {
-    if (!env.VAULT_FINGERPRINT_SALT || env.VAULT_FINGERPRINT_SALT.length < 32) {
+    if (
+      !env.VAULT_FINGERPRINT_SALT ||
+      env.VAULT_FINGERPRINT_SALT.length < MIN_FINGERPRINT_SALT_LENGTH
+    ) {
       throw new Error(
         'VAULT_FINGERPRINT_SALT must be set in production, at least 32 characters (TASK-0011). Generate one with `pnpm secrets:generate`, then run `pnpm --filter @da/api vault:refingerprint --apply` if the vault already has keys.',
       );

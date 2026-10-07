@@ -1960,6 +1960,20 @@
       "ts": "2026-10-07T06:22:05Z",
       "actor": "qa-lead",
       "event": "E20261007062205-5cc762"
+    },
+    {
+      "review_id": "REV-0175",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Fresh-context review of 4b2b06b: no blockers. Role gating matches (card + AI status routes allow ADMIN/CATALOG, OWNER via guard); supplier.css fully prefixed and already loaded on the page; revalidate 60 s safe for both getProduct callers; RTL logical properties. 7 minor: open prop snapped panel shut after save; key remount dropped unsaved alt text and raced uploads; flex summary lost its marker; designer fetched defaults while closed; double frame + extra h2; isHero stuck true for a second card; stale reviews comment. All 7 fixed in the follow-up (initial-only open state, incoming list instead of remount, logical chevron, mount on first open, embedded mode, isHero reset, comment), rendered ar+en on the admin mock.",
+      "round": 1,
+      "target": "TASK-0126",
+      "ts": "2026-10-07T08:27:09Z",
+      "actor": "qa-lead",
+      "event": "E20261007082709-c888d4"
     }
   ],
   "invalidated_reviews": [

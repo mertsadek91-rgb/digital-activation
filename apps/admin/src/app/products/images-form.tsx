@@ -69,12 +69,19 @@ export function ImagesForm({
   canWrite,
   onChanged,
   onError,
+  incoming = null,
 }: {
   slug: string;
   canWrite: boolean;
   /** Fired after any write, so the row's readiness counters refresh. */
   onChanged: () => void;
   onError: (message: string) => void;
+  /**
+   * A list another part of the page just wrote (the card generator's save
+   * answers with the whole list). Replaces the shown list without a reload,
+   * so alt text being typed and an upload in flight are not thrown away.
+   */
+  incoming?: ProductImages | null;
 }) {
   const t = useT('products');
   const c = useT('common');
@@ -94,6 +101,10 @@ export function ImagesForm({
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (incoming) setData(incoming);
+  }, [incoming]);
 
   /** Every write returns the whole list, so the server's answer is the state. */
   async function write(action: () => Promise<ProductImages>): Promise<void> {

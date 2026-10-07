@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { MIN_FINGERPRINT_SALT_LENGTH } from '../config/env.js';
 import { KekService, fingerprint, open } from './kek.js';
 import { VaultPrismaService } from './vault-prisma.service.js';
 
@@ -15,7 +16,8 @@ import { VaultPrismaService } from './vault-prisma.service.js';
  * spots a licence already in the vault. Rows fingerprinted under another salt
  * no longer match, so a key sold once could be stocked and sold again. Only
  * the fingerprint column changes; the sealed licence is opened in memory to
- * hash it, never printed, and its buffer is dropped at once.
+ * hash it and is never printed or logged (it is a JS string, so it stays in
+ * memory until garbage collection; nothing else holds a reference to it).
  *
  * Two rows that turn out to hold the same licence are reported by id and left
  * untouched — the unique index would refuse the second write, and which one
@@ -40,6 +42,15 @@ async function main(): Promise<void> {
   const missing = REQUIRED.filter((key) => !process.env[key]);
   if (missing.length > 0) {
     console.error(`Not set: ${missing.join(', ')}. Nothing was read.`);
+    process.exitCode = 1;
+    return;
+  }
+  // The same rule the production API boots with: rewriting every fingerprint
+  // under a salt the API will then refuse would need a second full run.
+  if ((process.env.VAULT_FINGERPRINT_SALT ?? '').length < MIN_FINGERPRINT_SALT_LENGTH) {
+    console.error(
+      `VAULT_FINGERPRINT_SALT is shorter than ${String(MIN_FINGERPRINT_SALT_LENGTH)} characters; the production API refuses it. Nothing was read.`,
+    );
     process.exitCode = 1;
     return;
   }

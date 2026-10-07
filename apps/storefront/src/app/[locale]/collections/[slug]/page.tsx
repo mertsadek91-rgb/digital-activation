@@ -220,8 +220,8 @@ export default async function CollectionPage({ params, searchParams }: Props) {
           )
         ) : (
           <div className="grid">
-            {collection.products.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
+            {collection.products.map((card, index) => (
+              <ProductCard key={card.slug} card={card} locale={locale} priority={index < 2} />
             ))}
           </div>
         )}

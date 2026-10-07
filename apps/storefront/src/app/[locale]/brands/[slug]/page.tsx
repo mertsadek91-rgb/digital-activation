@@ -232,8 +232,8 @@ export default async function BrandPage({ params, searchParams }: Props) {
           )
         ) : (
           <div className="grid">
-            {brand.products.map((card) => (
-              <ProductCard key={card.slug} card={card} locale={locale} />
+            {brand.products.map((card, index) => (
+              <ProductCard key={card.slug} card={card} locale={locale} priority={index < 2} />
             ))}
           </div>
         )}
