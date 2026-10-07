@@ -4328,3 +4328,22 @@ a.as-button.ghost:hover {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* The product card generator inside the product page (images section). */
+.image-generator {
+  margin-block-start: 20px;
+  padding: 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+}
+.image-generator > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  min-block-size: 44px;
+}
+.image-generator[open] > summary {
+  margin-block-end: 8px;
+}

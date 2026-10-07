@@ -319,15 +319,16 @@
         "TASK-0118",
         "TASK-0119",
         "TASK-0120",
-        "TASK-0121"
+        "TASK-0121",
+        "TASK-0126"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 7,
+      "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-07T07:03:12Z"
+      "last_activity": "2026-10-07T07:30:48Z"
     },
     {
       "id": "backend-architect",

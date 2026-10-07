@@ -441,7 +441,10 @@ export function getProduct(
 ): Promise<CatalogProductWithRelated | null> {
   return request(
     `/catalog/products/${encodeURIComponent(slug)}`,
-    options,
+    // A minute, not five: an image or text saved in the panel was missing from
+    // the product page for up to five minutes while the listings already
+    // showed it, which read as a bug.
+    { ...options, revalidate: options.revalidate ?? 60 },
     catalogProductWithRelatedSchema,
     'strict',
   );

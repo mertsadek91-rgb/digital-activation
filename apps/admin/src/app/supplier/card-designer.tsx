@@ -13,7 +13,16 @@ type Icon = (typeof CARD_ICONS)[number];
  * ribbon, wave, name, two chips. A person sets the words (or asks the model
  * for them), previews, and saves it into the product's images.
  */
-export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean }) {
+export function CardDesigner({
+  slug,
+  aiReady,
+  onSaved,
+}: {
+  slug: string;
+  aiReady: boolean;
+  /** After the card is saved as a product image (the product page refreshes its list). */
+  onSaved?: () => void;
+}) {
   const t = useT('supplier');
   const c = useT('common');
   const [defaults, setDefaults] = useState<CardDefaults | null>(null);
@@ -251,6 +260,7 @@ export function CardDesigner({ slug, aiReady }: { slug: string; aiReady: boolean
                 void run('save', async () => {
                   await supplierCardApi.save(slug, { ...spec, isHero });
                   setNote(t('cardSaved'));
+                  onSaved?.();
                 })
               }
             >
