@@ -186,6 +186,9 @@ export class CardService {
   }
 }
 
+/** What an uploaded logo may be, read from its bytes. */
+const LOGO_FORMATS = new Set(['png', 'jpeg', 'webp']);
+
 /**
  * An uploaded logo's bytes, checked to be an image sharp can read before it
  * reaches the renderer, so a bad file is a clear refusal rather than a 500.
@@ -194,6 +197,11 @@ async function uploadedLogo(dataUrl: string): Promise<Buffer> {
   try {
     const bytes = decodeDataUrl(dataUrl);
     const meta = await sharp(bytes).metadata();
+    // The content decides, not the label: SVG text sent as "image/png" is
+    // still SVG to sharp, and only raster logos are accepted (REV-0168).
+    if (!LOGO_FORMATS.has(meta.format ?? '')) {
+      throw new UnreadableImageError(`unsupported format ${meta.format ?? 'unknown'}`);
+    }
     if (!meta.width || !meta.height) throw new UnreadableImageError('no dimensions');
     return bytes;
   } catch (error) {

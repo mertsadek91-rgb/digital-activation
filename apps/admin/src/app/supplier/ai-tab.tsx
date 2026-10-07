@@ -78,11 +78,12 @@ export function AiTab({ isAdmin, initialSlug }: { isAdmin: boolean; initialSlug:
 
   useEffect(() => {
     void load();
-    supplierApi
-      .mapping('all')
-      .then((mapping) => {
+    // "all" leaves out variants skipped for this supplier; their products still
+    // get AI copy and a card, so the skipped list is read too (REV-0169).
+    Promise.all([supplierApi.mapping('all'), supplierApi.mapping('skipped')])
+      .then((mappings) => {
         const seen = new Map<string, string>();
-        for (const row of mapping.rows)
+        for (const row of mappings.flatMap((mapping) => mapping.rows))
           if (!seen.has(row.productSlug)) seen.set(row.productSlug, row.productName);
         setProducts([...seen].map(([value, name]) => ({ slug: value, name })));
       })

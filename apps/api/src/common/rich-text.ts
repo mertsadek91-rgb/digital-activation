@@ -118,6 +118,8 @@ const URL_ATTRIBUTES = new Set(['href', 'src']);
 
 function safeUrl(value: string): boolean {
   const url = value.trim().toLowerCase();
+  // "//host/x" is another site wearing a path's clothes (REV-0174).
+  if (url.startsWith('//') || url.startsWith('/\\')) return false;
   if (url.startsWith('/') || url.startsWith('#') || url.startsWith('./')) return true;
   return url.startsWith('https://') || url.startsWith('http://') || url.startsWith('mailto:');
 }

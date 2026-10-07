@@ -51,6 +51,21 @@ export interface CompletionInput {
   timeoutMs?: number | undefined;
 }
 
+function isTimeout(error: unknown): boolean {
+  return error instanceof Error && (error.name === 'TimeoutError' || error.name === 'AbortError');
+}
+
+function timedOut(model: string, timeoutMs: number): OpenCodeError {
+  const minutes = Math.max(1, Math.round(timeoutMs / 60_000));
+  return new OpenCodeError(
+    say(
+      `لم يُكمل النموذج ${model} الجواب خلال ${String(minutes)} دقائق. أعد المحاولة أو اختر نموذجاً أسرع.`,
+      `${model} did not finish its answer within ${String(minutes)} minutes. Try again or pick a faster model.`,
+    ),
+    null,
+  );
+}
+
 /** The wait for one answer when the caller does not say otherwise. */
 export const DEFAULT_TIMEOUT_MS = 180_000;
 
@@ -300,9 +315,15 @@ export class OpenCodeClient {
     }
   }
 
-  private async send(input: CompletionInput): Promise<string> {
+  /**
+   * One request. `deadline` is shared with the empty-answer retry below, so
+   * the retry spends what is left of the caller's wait rather than a fresh
+   * one, and a job cannot outlive its stale window (REV-0174).
+   */
+  private async send(input: CompletionInput, deadline?: number): Promise<string> {
     const wire = buildRequest(input, this.apiKey);
     const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const until = deadline ?? Date.now() + timeoutMs;
     let response: Response;
     try {
       response = await fetch(`${this.base}${wire.path}`, {
@@ -314,25 +335,23 @@ export class OpenCodeClient {
           ...wire.headers,
         },
         body: JSON.stringify(wire.body),
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(Math.max(1000, until - Date.now())),
       });
     } catch (error) {
-      if (error instanceof Error && error.name === 'TimeoutError') {
-        const minutes = Math.round(timeoutMs / 60_000);
-        throw new OpenCodeError(
-          say(
-            `لم يُكمل النموذج ${input.model} الجواب خلال ${String(minutes)} دقائق. أعد المحاولة أو اختر نموذجاً أسرع.`,
-            `${input.model} did not finish its answer within ${String(minutes)} minutes. Try again or pick a faster model.`,
-          ),
-          null,
-        );
-      }
+      if (isTimeout(error)) throw timedOut(input.model, timeoutMs);
       throw new OpenCodeError(
         `OpenCode did not answer: ${error instanceof Error ? error.message : 'unknown'}`,
         null,
       );
     }
-    const body: unknown = await response.json().catch(() => null);
+    // The wait covers the body too: a timeout while it streams in is the same
+    // timeout, not an empty answer.
+    let body: unknown = null;
+    try {
+      body = await response.json();
+    } catch (error) {
+      if (isTimeout(error)) throw timedOut(input.model, timeoutMs);
+    }
     if (!response.ok) {
       // Some providers echo the credential they rejected; never pass it on.
       const reason = providerError(body).split(this.apiKey).join('[redacted]');
@@ -349,7 +368,10 @@ export class OpenCodeClient {
     // answer starts, the answer field is empty. Once, with a larger budget.
     const why = whyEmpty(input.protocol, body);
     if (why.stoppedForLength && input.maxTokens < MAX_TOKENS_CEILING) {
-      return this.send({ ...input, maxTokens: Math.min(input.maxTokens * 2, MAX_TOKENS_CEILING) });
+      return this.send(
+        { ...input, maxTokens: Math.min(input.maxTokens * 2, MAX_TOKENS_CEILING) },
+        until,
+      );
     }
     throw new OpenCodeError(
       why.stoppedForLength

@@ -843,6 +843,10 @@ export const en: AdminMessages = {
     stock: 'Stock',
     images: 'Images',
     imagesHeading: 'Product images',
+    imageGenHeading: 'Generate the product image',
+    imageGenMissing: 'No image yet',
+    imageGenLede:
+      'Draws the product card in the store’s template from the brand colour (or a logo you upload) and the product’s name; AI can suggest the words. Saved straight into this product’s images.',
     imagesLede:
       'The first image is the one the catalog and search results show. Every picture is resized in your browser and re-encoded on the server — the original is not stored.',
     imagesEmpty: 'No images. The product indexes without one and sells worse.',
