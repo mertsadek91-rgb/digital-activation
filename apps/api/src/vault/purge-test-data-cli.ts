@@ -8,6 +8,7 @@ import { VaultPrismaService } from './vault-prisma.service.js';
 /**
  * Clears staging's test data before launch: every order, customer and the
  * reviews on them; every licence key revoked (owner decision 2026-10-08).
+ * Run it before launch stock is imported: it revokes AVAILABLE keys too.
  * See purge-test-data.ts for what goes and in what order.
  *
  *   pnpm --filter @da/api data:purge-test
@@ -41,10 +42,18 @@ function print(report: PurgeReport): void {
   console.log(
     `  licence keys:        ${String(report.keys)} (${report.applied ? 'revoked' : 'to revoke'}; the vault keeps the rows)`,
   );
-  const stock = Object.entries(report.stockTaken);
+  const states = Object.entries(report.keysByState);
+  if (states.length > 0) {
+    console.log(
+      `    by state:          ${states.map(([state, n]) => `${state} ${String(n)}`).join(', ')}`,
+    );
+  }
+  const stock = Object.entries(report.stock);
   if (stock.length > 0) {
-    console.log('  stock taken off:');
-    for (const [variantId, taken] of stock) console.log(`    ${variantId}: -${String(taken)}`);
+    console.log('  stock recounted (onHand):');
+    for (const [variantId, { from, to }] of stock) {
+      console.log(`    ${variantId}: ${String(from)} -> ${String(to)}`);
+    }
   }
   if (!report.applied) {
     console.log('');

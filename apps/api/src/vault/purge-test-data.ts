@@ -1,4 +1,6 @@
 import {
+  ActorType,
+  KeyAccessAction,
   LicenseKeyState,
   Prisma,
   ReviewStatus,
@@ -9,39 +11,55 @@ import {
 /**
  * Clears the test data off the one environment before it takes real orders
  * (owner decision 2026-10-08: every order, customer, review and licence key
- * on staging is a test). Run through `purge-test-data-cli.ts`.
+ * on staging is a test). Run through `purge-test-data-cli.ts`, and before
+ * launch stock is imported: every key that is not already revoked is revoked.
  *
  * What it does, in this order:
  *
- *  1. In one app-database transaction: deletes every order with what hangs
- *     off it — refunds and payments first (they are Restrict on purpose: a
- *     real payment must never go with its order), then the orders, whose
- *     lines, notes, status history, invoices, coupon usages, review invites,
- *     reviews and renewal reminders cascade — gives each coupon back its
- *     usages, recomputes the rating of every product that lost a review, and
- *     deletes every customer (sessions, addresses and the rest cascade).
- *  2. In the vault: revokes every licence key that is not already revoked.
- *     The vault role has no DELETE grant, by design, so a key is retired, not
- *     erased: REVOKED is never sold, sent or revealed again, and the row and
- *     its access log stay as the record. A test key must not go back to
- *     stock — it could be sold to a real customer.
- *  3. In the app database: takes the revoked AVAILABLE/RESERVED keys off each
- *     variant's onHand, with a REVOKED stock movement, so the product pages
- *     stop offering stock that is gone.
+ *  1. In one app-database transaction, after counting again inside it:
+ *     - retires every coupon that belonged to a person — issued to a
+ *       customer, single-use, or a referral friend code. Their owner is about
+ *       to be deleted, and `issuedTo` is SetNull: left active they would work
+ *       for anybody holding the code;
+ *     - gives the other coupons back their usages;
+ *     - deletes the email log of those orders and customers. Order numbers
+ *       count on from the highest one left, so the first real order is
+ *       DA-…-00001 again, and the log is matched by order number: kept, it
+ *       would skip a real customer's emails as "already sent" and show test
+ *       emails on a real order;
+ *     - deletes refunds and payments (Restrict on purpose: a real payment
+ *       must never go with its order), then the orders — lines, notes, status
+ *       history, invoices, coupon usages, review invites and reviews cascade —
+ *       and the renewal reminders, which hold plain ids, not relations;
+ *     - recomputes the rating of every product that lost a review;
+ *     - deletes every customer (sessions, addresses and the rest cascade).
+ *  2. In the vault: revokes every licence key that is not already revoked,
+ *     with a REVOKE access-log row per key, written first. The vault role has
+ *     no DELETE grant, by design, so a key is retired, not erased: REVOKED is
+ *     never assigned, sent or shown to a customer again. A test key must not
+ *     go back to stock — it could be sold to a real customer.
+ *  3. Recounts onHand for every variant with a key this tool revoked, from the
+ *     vault — as the fulfilment service's own recount does, and never below
+ *     what a cart in checkout holds (`reserved <= onHand` is a constraint).
+ *     Chosen from the vault, not from this run, so a run that stopped after
+ *     step 2 is finished by the next one.
  *
  * A step that fails leaves the steps before it done and the ones after it
- * untouched; running again picks up what is left (the counts it expects are
- * then the new report's).
+ * untouched; running again picks up what is left (with the counts of the new
+ * report).
  *
  * Guards: it refuses to write unless told the exact counts the report shows
- * (so it cannot be run blind, or after real orders arrived), and refuses
- * outright above TEST_DATA_CEILING orders or customers — a store with that
- * much is trading, and this is not the tool for it.
+ * (so it cannot be run blind, or after real orders arrived), counts again
+ * inside the transaction, and refuses outright above TEST_DATA_CEILING
+ * orders or customers — a store with that much is trading.
  */
 
 export const TEST_DATA_CEILING = 50;
 
 export const REVOKE_REASON = 'test data purge before launch (owner decision 2026-10-08)';
+
+/** Generous: the database is remote, and every statement is a round trip. */
+const TRANSACTION = { timeout: 120_000, maxWait: 10_000 } as const;
 
 export interface PurgeCounts {
   orders: number;
@@ -54,8 +72,10 @@ export interface PurgeReport extends PurgeCounts {
   refunds: number;
   orderLines: number;
   reviews: number;
-  /** Variant ids whose onHand drops, and by how much. */
-  stockTaken: Record<string, number>;
+  /** Keys to revoke, by state: AVAILABLE ones are stock somebody imported. */
+  keysByState: Partial<Record<LicenseKeyState, number>>;
+  /** Variants whose onHand was recounted, old → new. Empty in a report. */
+  stock: Record<string, { from: number; to: number }>;
   applied: boolean;
 }
 
@@ -105,12 +125,6 @@ const LIVE_KEY_STATES = [
   LicenseKeyState.EXPIRED,
 ];
 
-/** Keys that count in a variant's onHand. */
-const STOCK_STATES: readonly LicenseKeyState[] = [
-  LicenseKeyState.AVAILABLE,
-  LicenseKeyState.RESERVED,
-];
-
 export async function purgeTestData(input: {
   app: PrismaClient;
   vault: PrismaClient;
@@ -129,16 +143,12 @@ export async function purgeTestData(input: {
     app.review.count(),
     vault.licenseKey.findMany({
       where: { state: { in: LIVE_KEY_STATES } },
-      select: { id: true, variantId: true, state: true },
+      select: { id: true, state: true },
     }),
   ]);
 
-  const stockTaken: Record<string, number> = {};
-  for (const key of keys) {
-    if (STOCK_STATES.includes(key.state)) {
-      stockTaken[key.variantId] = (stockTaken[key.variantId] ?? 0) + 1;
-    }
-  }
+  const keysByState: PurgeReport['keysByState'] = {};
+  for (const key of keys) keysByState[key.state] = (keysByState[key.state] ?? 0) + 1;
 
   const report: PurgeReport = {
     orders,
@@ -148,95 +158,164 @@ export async function purgeTestData(input: {
     refunds,
     orderLines,
     reviews,
-    stockTaken,
+    keysByState,
+    stock: {},
     applied: false,
   };
   if (!input.apply) return report;
 
   const refused = refusal({ orders, customers, keys: keys.length }, input.expected);
   if (refused) throw new Error(refused);
+  const expected = input.expected as PurgeCounts;
 
   // 1. The app database, all or nothing.
-  await app.$transaction(
-    async (tx) => {
-      const usages = await tx.promotionUsage.groupBy({
-        by: ['promotionId'],
+  await app.$transaction(async (tx) => {
+    // Counted again in here: what is deleted is what was agreed to.
+    const [ordersNow, customersNow] = await Promise.all([tx.order.count(), tx.customer.count()]);
+    if (ordersNow !== expected.orders || customersNow !== expected.customers) {
+      throw new Error(
+        `The database changed while the purge started (orders ${String(ordersNow)}, customers ${String(customersNow)}). Nothing was written; run the report again.`,
+      );
+    }
+
+    const numbers = (await tx.order.findMany({ select: { number: true } })).map((o) => o.number);
+    const customerIds = (await tx.customer.findMany({ select: { id: true } })).map((c) => c.id);
+
+    // Personal coupons stop working before their owners go.
+    const personal = await tx.promotion.findMany({
+      where: {
+        OR: [
+          { issuedToId: { not: null } },
+          { singleUse: true },
+          { referralRedemption: { isNot: null } },
+        ],
+      },
+      select: { id: true },
+    });
+    const retired = new Set(personal.map((promotion) => promotion.id));
+    if (retired.size > 0) {
+      await tx.promotion.updateMany({
+        where: { id: { in: [...retired] } },
+        data: { isActive: false },
+      });
+    }
+
+    // Shared coupons get back the uses the test orders took.
+    const usages = await tx.promotionUsage.groupBy({ by: ['promotionId'], _count: { _all: true } });
+    for (const usage of usages) {
+      if (retired.has(usage.promotionId)) continue;
+      await tx.promotion.update({
+        where: { id: usage.promotionId },
+        data: { usageCount: { decrement: usage._count._all } },
+      });
+    }
+    // Never below zero: a capped checkout can leave a usage row uncounted.
+    await tx.promotion.updateMany({ where: { usageCount: { lt: 0 } }, data: { usageCount: 0 } });
+
+    // The email log of these orders and people (see the module comment).
+    if (numbers.length > 0) {
+      await tx.notificationLog.deleteMany({
+        where: {
+          OR: numbers.map((number) => ({ payload: { path: ['orderNumber'], equals: number } })),
+        },
+      });
+    }
+    if (customerIds.length > 0) {
+      await tx.notificationLog.deleteMany({ where: { customerId: { in: customerIds } } });
+    }
+
+    const reviewed = await tx.review.findMany({
+      select: { productId: true },
+      distinct: ['productId'],
+    });
+
+    await tx.refund.deleteMany({});
+    await tx.payment.deleteMany({});
+    await tx.order.deleteMany({});
+    await tx.renewalReminder.deleteMany({});
+
+    for (const { productId } of reviewed) {
+      const rating = await tx.review.aggregate({
+        where: { productId, status: ReviewStatus.APPROVED },
+        _avg: { rating: true },
         _count: { _all: true },
       });
-      const reviewed = await tx.review.findMany({
-        select: { productId: true },
-        distinct: ['productId'],
+      const count = rating._count._all;
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          ratingCount: count,
+          ratingAvg: new Prisma.Decimal(count > 0 ? (rating._avg.rating ?? 0).toFixed(2) : '0.00'),
+        },
       });
+    }
 
-      await tx.refund.deleteMany({});
-      await tx.payment.deleteMany({});
-      await tx.order.deleteMany({});
+    await tx.customer.deleteMany({});
+  }, TRANSACTION);
 
-      for (const usage of usages) {
-        await tx.promotion.update({
-          where: { id: usage.promotionId },
-          data: { usageCount: { decrement: usage._count._all } },
-        });
-      }
-      // Never below zero, whatever the counter said before.
-      await tx.promotion.updateMany({
-        where: { usageCount: { lt: 0 } },
-        data: { usageCount: 0 },
-      });
-
-      for (const { productId } of reviewed) {
-        const rating = await tx.review.aggregate({
-          where: { productId, status: ReviewStatus.APPROVED },
-          _avg: { rating: true },
-          _count: { _all: true },
-        });
-        const count = rating._count._all;
-        await tx.product.update({
-          where: { id: productId },
-          data: {
-            ratingCount: count,
-            ratingAvg: new Prisma.Decimal(
-              count > 0 ? (rating._avg.rating ?? 0).toFixed(2) : '0.00',
-            ),
-          },
-        });
-      }
-
-      await tx.customer.deleteMany({});
-    },
-    { timeout: 120_000 },
-  );
-
-  // 2. The vault: retire, never erase.
+  // 2. The vault: retire, never erase; the access log first.
   if (keys.length > 0) {
-    await vault.licenseKey.updateMany({
-      where: { id: { in: keys.map((key) => key.id) }, state: { in: LIVE_KEY_STATES } },
-      data: { state: LicenseKeyState.REVOKED, revokedAt: new Date(), revokedReason: REVOKE_REASON },
-    });
+    const ids = keys.map((key) => key.id);
+    await vault.$transaction(async (tx) => {
+      await tx.keyAccessLog.createMany({
+        data: ids.map((licenseKeyId) => ({
+          licenseKeyId,
+          action: KeyAccessAction.REVOKE,
+          actorType: ActorType.SYSTEM,
+        })),
+      });
+      await tx.licenseKey.updateMany({
+        where: { id: { in: ids }, state: { in: LIVE_KEY_STATES } },
+        data: {
+          state: LicenseKeyState.REVOKED,
+          revokedAt: new Date(),
+          revokedReason: REVOKE_REASON,
+        },
+      });
+    }, TRANSACTION);
   }
 
-  // 3. Stock that is gone stops being offered.
-  const variants = Object.entries(stockTaken);
-  if (variants.length > 0) {
+  // 3. onHand from the vault, for every variant this tool has touched.
+  const touched = await vault.licenseKey.findMany({
+    where: { revokedReason: REVOKE_REASON },
+    select: { variantId: true },
+    distinct: ['variantId'],
+  });
+  const variantIds = touched.map((row) => row.variantId);
+  if (variantIds.length > 0) {
+    const available = await vault.licenseKey.groupBy({
+      by: ['variantId'],
+      where: {
+        variantId: { in: variantIds },
+        state: LicenseKeyState.AVAILABLE,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+      _count: true,
+    });
+    const truth = new Map(available.map((row) => [row.variantId, row._count]));
+
     await app.$transaction(async (tx) => {
-      for (const [variantId, taken] of variants) {
+      for (const variantId of variantIds) {
         const level = await tx.inventoryLevel.findUnique({
           where: { variantId },
-          select: { onHand: true },
+          select: { onHand: true, reserved: true },
         });
         if (!level) continue;
-        const onHand = Math.max(0, level.onHand - taken);
-        await tx.inventoryLevel.update({ where: { variantId }, data: { onHand } });
+        // Never below what a cart in checkout is already holding.
+        const next = Math.max(truth.get(variantId) ?? 0, level.reserved);
+        if (next === level.onHand) continue;
+        await tx.inventoryLevel.update({ where: { variantId }, data: { onHand: next } });
         await tx.stockMovement.create({
           data: {
             variantId,
-            delta: onHand - level.onHand,
+            delta: next - level.onHand,
             reason: StockMovementReason.REVOKED,
             note: REVOKE_REASON,
           },
         });
+        report.stock[variantId] = { from: level.onHand, to: next };
       }
-    });
+    }, TRANSACTION);
   }
 
   report.applied = true;

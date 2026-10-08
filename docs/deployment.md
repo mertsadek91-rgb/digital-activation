@@ -950,11 +950,17 @@ staging is a test. From the API's terminal in Coolify:
    refuses outright above 50 orders or customers.
 3. Run the report again: everything should read 0.
 
-Orders go with their lines, payments, notes, reviews and coupon usages;
-customers with their sessions and addresses. Licence keys are **revoked**,
-not deleted — the vault role has no DELETE grant — so they are never sold or
-sent again, and their stock comes off each product. Notification and audit
-logs stay.
+Run it **before importing launch stock**: it revokes every key that is not
+already revoked, AVAILABLE ones included (the report lists them by state).
+
+Orders go with their lines, payments, notes, reviews, coupon usages and their
+email log — numbering starts again at 00001, and a kept log would mark a real
+order's emails as already sent. Customers go with their sessions and
+addresses. Coupons issued to a person, single-use codes and referral codes
+are switched off; shared coupons get their uses back. Licence keys are
+**revoked**, not deleted — the vault role has no DELETE grant — with a REVOKE
+row in the key access log, and onHand is recounted from the vault. The audit
+log stays.
 
 ### Go / no-go, the day before
 
