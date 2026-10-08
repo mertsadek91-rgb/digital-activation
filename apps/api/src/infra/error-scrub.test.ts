@@ -305,3 +305,26 @@ describe('round-2 review gaps (TASK-0031)', () => {
     expect(maskOrderPaths('Order DA-2026-00187 failed')).toBe('Order DA-2026-00187 failed');
   });
 });
+
+describe('the installed @sentry/node', () => {
+  // A variable, as in the adapter, so TypeScript does not resolve it.
+  const packageName = '@sentry/node';
+  // The adapter loads the SDK by name and casts it, so nothing else checks
+  // that the real package still exports what the adapter calls. CI installs
+  // it; a laptop that has not run `pnpm install` since TASK-0031 skips this.
+  const installed = (() => {
+    try {
+      require.resolve(packageName);
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  it.skipIf(!installed && !process.env.CI)('exports init, captureException and flush', async () => {
+    const sdk = (await import(packageName)) as Record<string, unknown>;
+    expect(typeof sdk.init).toBe('function');
+    expect(typeof sdk.captureException).toBe('function');
+    expect(typeof sdk.flush).toBe('function');
+  });
+});

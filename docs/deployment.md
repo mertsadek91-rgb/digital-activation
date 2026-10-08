@@ -237,16 +237,12 @@ installed.
 Every 5xx — an unexpected exception, a 5xx `HttpException`, or a Prisma error
 the API does not map to a 4xx — is passed to an `ErrorReporter`
 (`apps/api/src/infra/error-reporter.ts`). The default reports nowhere; the
-error is still logged. `SENTRY_DSN` is the switch for Sentry, but
-`@sentry/node` is **not installed yet**, so setting it alone only logs a warning
-at boot. To turn it on:
-
-```bash
-pnpm --filter @da/api add @sentry/node
-```
-
-then set `SENTRY_DSN` on the API resource and redeploy. The adapter loads the
-package by name at runtime, so no code change is needed. Events carry the
+error is still logged. `SENTRY_DSN` is the switch for Sentry: `@sentry/node`
+is a dependency of the API (TASK-0031), so setting `SENTRY_DSN` on the API
+resource and redeploying is all it takes; the boot log then says "Server
+errors are reported to Sentry". Create the project in Sentry as a Node.js
+project and copy its DSN; Sentry's default alert rule emails the account on a
+new issue. Events carry the
 status, method, route pattern and request id — no URL, body or user data,
 since an order URL or a reveal response carries a licence key. Pending events
 are flushed on shutdown.
@@ -270,6 +266,28 @@ generate it with `pnpm secrets:generate`. It must differ from `INTERNAL_API_KEY`
 and the API refuses to boot if they match, because that key also steers the
 per-visitor rate limits. The probes answer 503 while firing and 404 without the
 key, allow 30 requests a minute per address, and are neither logged nor reported.
+
+**The monitoring set-up (owner decision 2026-10-08, TASK-0031: every free
+option, alerts by Telegram and email):**
+
+1. **Uptime Kuma** as a Coolify service (one-click template), on its own
+   subdomain behind a login. It sends custom headers, checks every 60 s and
+   notifies by Telegram (a bot from @BotFather plus the chat id) and by email
+   (SMTP). Monitors, each set to alert after 2 failed checks:
+   - `https://api.digital-activation.com/health/ready`
+   - `https://api.digital-activation.com/health/sweeps` and
+     `/health/delivery`, each with header `x-da-monitor: <MONITOR_API_KEY>`
+   - `https://new.digital-activation.com/` and `https://admin.digital-activation.com/`
+     (expect 200 / 307)
+2. **An outside monitor** (UptimeRobot's free plan, 5-minute checks, email)
+   on `/health/ready` and the storefront home. Uptime Kuma runs on the same
+   host, so it goes silent with it; this one does not. It sends no custom
+   header, so it watches only the two public URLs — never give it the key.
+3. **Sentry** (free plan) for server errors, as above.
+
+Test each channel once: stop nothing in production — instead add a monitor
+on a URL that 404s, confirm the Telegram message and the email arrive, then
+delete it.
 **`AUTO_DELIVERY`** (optional, `on`|`off`, default `on`) is the incident switch
 for automatic licence delivery. With `off`, keys are still assigned on payment
 but nothing is emailed: lines wait in the admin fulfilment queue for staff to

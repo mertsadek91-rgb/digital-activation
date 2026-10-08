@@ -31,6 +31,7 @@
     "@nestjs/schedule": "catalog:",
     "@nestjs/swagger": "catalog:",
     "@nestjs/throttler": "catalog:",
+    "@sentry/node": "catalog:",
     "argon2": "catalog:",
     "bullmq": "catalog:",
     "fastify": "catalog:",
