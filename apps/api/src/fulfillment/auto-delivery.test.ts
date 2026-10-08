@@ -137,6 +137,9 @@ function build(options?: {
           return Promise.resolve(found ? { id: 'log-1' } : null);
         },
       },
+      variant: {
+        findUnique: () => Promise.resolve({ credentialKind: 'ACTIVATION_KEY' }),
+      },
       order: {
         findUnique: () =>
           Promise.resolve({ ...order, items: items.map((item) => ({ ...item, variant })) }),
@@ -146,7 +149,20 @@ function build(options?: {
           const item = itemById(where.id);
           return Promise.resolve(item ? withOrder(item) : null);
         },
-        findMany: () => Promise.resolve(items.map((item) => ({ ...item }))),
+        // With the relations the queue reads; the other callers ignore them.
+        findMany: () =>
+          Promise.resolve(
+            items.map((item) => ({
+              ...item,
+              variantSpecSnapshot: null,
+              order: { ...order, placedAt: new Date(0), paidAt: new Date(0) },
+              variant: {
+                ...variant,
+                credentialKind: 'ACTIVATION_KEY',
+                requiresActivationEmail: false,
+              },
+            })),
+          ),
         update: ({ where, data }: { where: { id: string }; data: Partial<FakeItem> }) => {
           const item = itemById(where.id);
           if (!item) throw new Error('no item');
@@ -172,11 +188,17 @@ function build(options?: {
   } as unknown as PrismaService;
 
   const vault = {
+    fulfilManually: ({ orderItemId }: { orderItemId: string }) => {
+      bound = orderItemId;
+      return Promise.resolve({ licenseKeyId: 'key-pasted' });
+    },
     assign: ({ orderItemId }: { orderItemId: string }) => {
       bound = orderItemId;
       return Promise.resolve({ assigned: ['key-1'], short: 0 });
     },
     isBound: (orderItemId: string) => Promise.resolve(bound === orderItemId),
+    boundOrderItemIds: (ids: string[]) =>
+      Promise.resolve(new Set(ids.filter((id) => id === bound))),
     openForDelivery: ({ actor }: { orderItemId: string; actor: Actor }) => {
       accessLog.push({ actorId: actor.staffId, actorType: actor.kind });
       events.push('access-logged');
@@ -369,6 +391,37 @@ describe('automatic delivery of stocked lines (BUG-0021)', () => {
       }),
     ).rejects.toThrow(/تعذّر إرسال البريد/); // the email could not be sent;
     expect(world.items[0]?.fulfillmentState).toBe(FulfillmentState.AUTO_ASSIGNED);
+  });
+
+  it('moves a pasted line whose email failed to "key bound, not sent", and the retry sends it (BUG-0029)', async () => {
+    const world = build({ mailFails: true });
+    const line = world.items[0];
+    if (!line) throw new Error('no line');
+    line.fulfillmentState = FulfillmentState.MANUAL_QUEUE;
+
+    await expect(
+      world.service.fulfilManually({
+        orderItemId: 'item-1',
+        secret: { kind: 'ACTIVATION_KEY', key: 'AAAAA-BBBBB-CCCCC' },
+        actor: staff,
+      }),
+    ).rejects.toThrow(/المفتاح محفوظ ومربوط بالطلب/); // the key is stored and bound
+    // Not MANUAL_QUEUE ("needs a supplier order") beside a bound key.
+    expect(line.fulfillmentState).toBe(FulfillmentState.AUTO_ASSIGNED);
+    expect(line.deliveredAt).toBeNull();
+    expect(line.assignedKeyIds).toEqual(['key-pasted']);
+    // The queue offers the send for it, not another paste.
+    const [row] = await world.service.queue({ includeDone: false, limit: 50 });
+    expect(row).toMatchObject({
+      orderItemId: 'item-1',
+      state: FulfillmentState.AUTO_ASSIGNED,
+      hasKey: true,
+    });
+
+    world.transport.fails = false;
+    const sent = await world.service.deliverAssigned({ orderItemId: 'item-1', actor: staff });
+    expect(sent.state).toBe(FulfillmentState.DELIVERED);
+    expect(line.fulfillmentState).toBe(FulfillmentState.DELIVERED);
   });
 
   it('delivers on the staff retry once mail recovers, in the staff member name', async () => {

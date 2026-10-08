@@ -188,9 +188,21 @@ function LineRow({
   const [reason, setReason] = useState<string>(FAIL_REASONS[0].value);
 
   const isAccount = line.credentialKind === 'ACCOUNT_CREDENTIALS';
-  const waiting = line.fulfillmentState === 'MANUAL_QUEUE' || line.fulfillmentState === 'PENDING';
-  const reserved = line.fulfillmentState === 'AUTO_ASSIGNED';
   const delivered = line.fulfillmentState === 'DELIVERED';
+  // A key bound in the vault but never sent is "reserved, not sent" whatever
+  // the line's own state says: a pasted code whose email failed used to leave
+  // the line in MANUAL_QUEUE beside an ASSIGNED key, offering "paste the code"
+  // again (refused) instead of the send (BUG-0029). Fixed in the API; this
+  // covers lines written before the fix.
+  // Only for a line still waiting: a FAILED line keeps its key bound, and
+  // offering the send there would deliver a line somebody deliberately failed.
+  const keyBound =
+    (line.fulfillmentState === 'MANUAL_QUEUE' || line.fulfillmentState === 'PENDING') &&
+    (keys?.keys.some((key) => key.state === 'ASSIGNED') ?? false);
+  const waiting =
+    !keyBound && (line.fulfillmentState === 'MANUAL_QUEUE' || line.fulfillmentState === 'PENDING');
+  const reserved = keyBound || line.fulfillmentState === 'AUTO_ASSIGNED';
+  const shownState = keyBound ? 'AUTO_ASSIGNED' : line.fulfillmentState;
 
   return (
     <>
@@ -222,9 +234,7 @@ function LineRow({
           <strong>${line.lineTotal}</strong>
         </td>
         <td>
-          <span className={`pill ${STATE_PILL[line.fulfillmentState]}`}>
-            {t(`stateLabel${line.fulfillmentState}`)}
-          </span>
+          <span className={`pill ${STATE_PILL[shownState]}`}>{t(`stateLabel${shownState}`)}</span>
           {line.deliveredAt ? (
             <span className="meta lines-table__when">
               {t('deliveredOn', { at: stamp(line.deliveredAt) })}
@@ -237,7 +247,8 @@ function LineRow({
           ) : null}
         </td>
         <td className="actions">
-          {canFulfil && (waiting || reserved) ? (
+          {/* Only a line with no key: the API refuses a paste on a bound line. */}
+          {canFulfil && waiting ? (
             <button
               type="button"
               className={form === 'paste' ? 'is-active' : undefined}

@@ -696,11 +696,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 25,
+      "reviews_recorded": 26,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-07T08:27:09Z"
+      "last_activity": "2026-10-08T11:04:15Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -773,7 +773,7 @@
       "opportunities": [],
       "workload": 7.5,
       "blockers": [],
-      "last_activity": "2026-10-08T11:20:23Z"
+      "last_activity": "2026-10-08T11:58:45Z"
     },
     {
       "id": "performance-engineer",
@@ -844,7 +844,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-10-08T09:12:03Z"
+      "last_activity": "2026-10-08T10:22:34Z"
     },
     {
       "id": "release-manager",

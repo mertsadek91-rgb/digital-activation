@@ -1977,6 +1977,20 @@
     },
     {
       "review_id": "REV-0176",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Round 1 FAIL: queue page still offered paste and hid send (hasKey from assignedKeyIds, written only after a successful send); minor: a FAILED line with a bound key showed as reserved with a send button. Round 2 (b60ce62) PASS_WITH_NOTES: queue hasKey now read from the vault (boundOrderItemIds, one indexed query, ids only), failed-send update writes assignedKeyIds, lines tab limits the fallback to MANUAL_QUEUE/PENDING. No automatic re-send path (stranded sweep takes PENDING only; onOrderPaid skips AUTO_ASSIGNED); health checks, dashboard, refreshOrderState unaffected; vaultPrisma stays in vault/. Notes: boundOrderItemIds only exercised through a fake (test:int not run); a webhook race between read and guarded update can leave MANUAL_QUEUE, now harmless in the UI.",
+      "round": 1,
+      "target": "BUG-0029",
+      "ts": "2026-10-08T11:04:15Z",
+      "actor": "qa-lead",
+      "event": "E20261008110415-9adcb2"
+    },
+    {
+      "review_id": "REV-0176",
       "reviewer": "security-engineer",
       "executor": "subagent:security-reviewer",
       "review_type": "SECURITY",
