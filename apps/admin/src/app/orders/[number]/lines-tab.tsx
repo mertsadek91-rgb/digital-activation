@@ -194,7 +194,11 @@ function LineRow({
   // the line in MANUAL_QUEUE beside an ASSIGNED key, offering "paste the code"
   // again (refused) instead of the send (BUG-0029). Fixed in the API; this
   // covers lines written before the fix.
-  const keyBound = !delivered && (keys?.keys.some((key) => key.state === 'ASSIGNED') ?? false);
+  // Only for a line still waiting: a FAILED line keeps its key bound, and
+  // offering the send there would deliver a line somebody deliberately failed.
+  const keyBound =
+    (line.fulfillmentState === 'MANUAL_QUEUE' || line.fulfillmentState === 'PENDING') &&
+    (keys?.keys.some((key) => key.state === 'ASSIGNED') ?? false);
   const waiting =
     !keyBound && (line.fulfillmentState === 'MANUAL_QUEUE' || line.fulfillmentState === 'PENDING');
   const reserved = keyBound || line.fulfillmentState === 'AUTO_ASSIGNED';

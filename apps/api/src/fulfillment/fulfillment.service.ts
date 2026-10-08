@@ -393,6 +393,11 @@ export class FulfillmentService implements OnModuleInit {
       },
     });
 
+    // Asked of the vault: a pasted code whose email failed is bound there
+    // while the line's own assignedKeyIds may still be empty (BUG-0029), and
+    // the queue must offer the send, not a paste the vault would refuse.
+    const bound = await this.vault.boundOrderItemIds(items.map((item) => item.id));
+
     return items.map((item) => ({
       orderItemId: item.id,
       orderNumber: item.order.number,
@@ -409,7 +414,7 @@ export class FulfillmentService implements OnModuleInit {
       credentialKind: item.variant.credentialKind,
       deliverySlaSeconds: item.variant.deliverySlaSeconds,
       requiresActivationEmail: item.variant.requiresActivationEmail,
-      hasKey: item.assignedKeyIds.length > 0,
+      hasKey: bound.has(item.id),
     }));
   }
 
@@ -653,7 +658,7 @@ export class FulfillmentService implements OnModuleInit {
       // (BUG-0029). The guard keeps a concurrent send from being overwritten.
       await this.prisma.client.orderItem.updateMany({
         where: { id: item.id, fulfillmentState: item.fulfillmentState },
-        data: { fulfillmentState: FulfillmentState.AUTO_ASSIGNED },
+        data: { fulfillmentState: FulfillmentState.AUTO_ASSIGNED, assignedKeyIds: [licenseKeyId] },
       });
       throw new BadRequestException(
         say(
