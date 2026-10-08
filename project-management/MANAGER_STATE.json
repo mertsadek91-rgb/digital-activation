@@ -105,7 +105,9 @@
         "TASK-0101",
         "TASK-0128"
       ],
-      "reviews": [],
+      "reviews": [
+        "TASK-0128"
+      ],
       "blocked_work": [],
       "pending_decisions": [],
       "consensus": [

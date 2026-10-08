@@ -329,8 +329,8 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0128",
+      "state": "AVAILABLE",
+      "current_task": "TASK-0021",
       "assignments": [
         "TASK-0021",
         "TASK-0034",
@@ -344,7 +344,7 @@
       "opportunities": [],
       "workload": 3.5,
       "blockers": [],
-      "last_activity": "2026-10-08T11:06:04Z"
+      "last_activity": "2026-10-08T12:24:00Z"
     },
     {
       "id": "backend-engineer",
@@ -752,7 +752,7 @@
       "staffed": true,
       "executor": "subagent:security-reviewer",
       "squads": [],
-      "state": "WAITING",
+      "state": "REVIEWING",
       "current_task": "TASK-0004",
       "assignments": [
         "TASK-0004",
@@ -768,10 +768,12 @@
         "TASK-0043",
         "TASK-0100"
       ],
-      "reviews": [],
+      "reviews": [
+        "TASK-0128"
+      ],
       "reviews_recorded": 25,
       "opportunities": [],
-      "workload": 7.5,
+      "workload": 8,
       "blockers": [],
       "last_activity": "2026-10-08T11:58:45Z"
     },
@@ -844,7 +846,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-10-08T10:22:34Z"
+      "last_activity": "2026-10-08T12:34:04Z"
     },
     {
       "id": "release-manager",
