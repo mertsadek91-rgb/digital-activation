@@ -726,9 +726,13 @@ const orderKeys = (number) => {
       productName: 'ويندوز 11 برو',
       state: delivered ? 'DELIVERED' : 'MANUAL_QUEUE',
       deliveredAt: delivered ? iso(60 * n - 20) : null,
+      // DA-2026-01187: a pasted code whose email failed, written before
+      // BUG-0029 was fixed: the line still says MANUAL_QUEUE, the key is bound.
       keys: delivered
         ? [{ licenseKeyId: `lk_${n}`, state: 'DELIVERED', deliveredAt: iso(60 * n - 20) }]
-        : [],
+        : number === 'DA-2026-01187'
+          ? [{ licenseKeyId: `lk_${n}`, state: 'ASSIGNED', deliveredAt: null }]
+          : [],
     },
   ];
 };

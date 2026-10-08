@@ -393,6 +393,11 @@ export class FulfillmentService implements OnModuleInit {
       },
     });
 
+    // Asked of the vault: a pasted code whose email failed is bound there
+    // while the line's own assignedKeyIds may still be empty (BUG-0029), and
+    // the queue must offer the send, not a paste the vault would refuse.
+    const bound = await this.vault.boundOrderItemIds(items.map((item) => item.id));
+
     return items.map((item) => ({
       orderItemId: item.id,
       orderNumber: item.order.number,
@@ -409,7 +414,7 @@ export class FulfillmentService implements OnModuleInit {
       credentialKind: item.variant.credentialKind,
       deliverySlaSeconds: item.variant.deliverySlaSeconds,
       requiresActivationEmail: item.variant.requiresActivationEmail,
-      hasKey: item.assignedKeyIds.length > 0,
+      hasKey: bound.has(item.id),
     }));
   }
 
@@ -645,8 +650,16 @@ export class FulfillmentService implements OnModuleInit {
     });
     if (!sent.ok) {
       // The key is in the vault and bound to the line — that part is done and
-      // must not be undone. The line stays in the queue so the send can be
-      // retried, and the failure is on the record.
+      // must not be undone. The line moves to AUTO_ASSIGNED, the state of a
+      // bound key that has not been sent, which is what the automatic path
+      // leaves after a failed email too. Left in MANUAL_QUEUE it read as
+      // "needs a supplier order" beside an ASSIGNED key, offered "paste the
+      // code" again (refused: the line already has one) and hid the retry
+      // (BUG-0029). The guard keeps a concurrent send from being overwritten.
+      await this.prisma.client.orderItem.updateMany({
+        where: { id: item.id, fulfillmentState: item.fulfillmentState },
+        data: { fulfillmentState: FulfillmentState.AUTO_ASSIGNED, assignedKeyIds: [licenseKeyId] },
+      });
       throw new BadRequestException(
         say(
           `المفتاح محفوظ ومربوط بالطلب، لكن إرسال البريد فشل (${sent.error ?? 'سبب غير معروف'}). أعد المحاولة من الطابور.`,

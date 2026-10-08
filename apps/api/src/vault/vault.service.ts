@@ -412,6 +412,20 @@ export class VaultService {
     return found !== null;
   }
 
+  /**
+   * Of these lines, the ones with a key bound — one query for a whole list,
+   * without opening anything. The fulfilment queue reads it, because the
+   * line's own `assignedKeyIds` is written only once a send succeeds.
+   */
+  async boundOrderItemIds(orderItemIds: string[]): Promise<Set<string>> {
+    if (orderItemIds.length === 0) return new Set();
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: { orderItemId: { in: orderItemIds } },
+      select: { orderItemId: true },
+    });
+    return new Set(rows.flatMap((row) => (row.orderItemId ? [row.orderItemId] : [])));
+  }
+
   /** Records that the keys on a line actually went out. */
   async markDelivered(orderItemId: string): Promise<number> {
     const { count } = await this.vault.client.licenseKey.updateMany({

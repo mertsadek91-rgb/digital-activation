@@ -527,6 +527,23 @@
       "related_change_request": "CR-0006",
       "id": "BUG-0028",
       "file": "issues/BUG-0028.md"
+    },
+    {
+      "created_at": "2026-10-08",
+      "updated_at": "2026-10-08",
+      "title": "Pasted code whose email failed left the line in MANUAL_QUEUE beside an ASSIGNED key: the panel showed \"needs a supplier order\", offered paste again (refused) and hid the send retry",
+      "category": "backend",
+      "severity": "MEDIUM",
+      "module": "api/fulfillment, admin/orders",
+      "affected_system": "NODEJS_BACKEND",
+      "assigned_agent": "backend-architect",
+      "manager": "pm-03",
+      "status": "IN_PROGRESS",
+      "verification": "Owner screenshot on staging 2026-10-08: DA-DEMO-00002, three lines with key ASSIGNED and state needs-supplier-order, buttons paste/unavailable. Code: fulfilManually left MANUAL_QUEUE on send failure while the automatic path leaves AUTO_ASSIGNED.",
+      "related_change_request": "CR-0001",
+      "release_blocker": false,
+      "id": "BUG-0029",
+      "file": "issues/BUG-0029.md"
     }
   ]
 }

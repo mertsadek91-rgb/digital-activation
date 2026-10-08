@@ -343,7 +343,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-10-06T13:47:01Z"
+      "last_activity": "2026-10-08T10:57:48Z"
     },
     {
       "id": "backend-engineer",
@@ -695,11 +695,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 25,
+      "reviews_recorded": 26,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-07T08:27:09Z"
+      "last_activity": "2026-10-08T11:04:15Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -843,7 +843,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-10-08T09:12:03Z"
+      "last_activity": "2026-10-08T10:22:34Z"
     },
     {
       "id": "release-manager",

@@ -19,7 +19,7 @@
   "review_tasks": 3,
   "qa_tasks": 0,
   "completed_tasks": 58,
-  "open_bugs": 7,
+  "open_bugs": 8,
   "legacy_and_migration_issues": 2,
   "legacy_and_migration_by_severity": {
     "CRITICAL": 0,
@@ -40,12 +40,12 @@
   "opportunities_open": 2,
   "opportunities_ready_for_decision": 1,
   "watchlist": 1,
-  "reviews_recorded": 141,
-  "independent_reviews": 141,
+  "reviews_recorded": 142,
+  "independent_reviews": 142,
   "owner_attention": 9,
   "active_agents": 6,
   "file_collisions": 0,
   "validation_problems": 0,
-  "canonical_events": 812,
-  "last_activity": "2026-10-08T09:12:03Z"
+  "canonical_events": 816,
+  "last_activity": "2026-10-08T11:04:15Z"
 }
