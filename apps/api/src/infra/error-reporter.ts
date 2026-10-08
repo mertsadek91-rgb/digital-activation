@@ -54,10 +54,9 @@ export interface SentryLike {
 /**
  * The Sentry adapter.
  *
- * `@sentry/node` is not a dependency yet, so it is loaded by name at runtime
- * rather than imported: the API compiles and boots without it, and adding the
- * package (see docs/deployment.md, "Error reporting") is all it takes to turn
- * this on. Nothing identifying goes with the event — no PII, no URL, no body —
+ * `@sentry/node` is loaded by name at runtime rather than imported, and only
+ * when `SENTRY_DSN` is set: without a DSN the SDK is never loaded, and a build
+ * without the package still boots (it logs a warning and reports nowhere). Nothing identifying goes with the event — no PII, no URL, no body —
  * because an order URL or a reveal response is a licence key in transit. What
  * the SDK adds by itself (the request it saw, breadcrumbs, the exception
  * message) passes through `scrubEvent` first: see error-scrub.ts.

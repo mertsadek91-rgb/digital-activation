@@ -49,7 +49,7 @@
 ## Current tasks
 
 - TASK-0030 — Backup policy and a recorded restore drill (IN_PROGRESS, 30%)
-- TASK-0031 — Error reporting and alerting, including the delivery-latency target (WAITING_INFORMATION, 20%)
+- TASK-0031 — Error reporting and alerting, including the delivery-latency target (IN_PROGRESS, 20%)
 
 ## Supporting
 
