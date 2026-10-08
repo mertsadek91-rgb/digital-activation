@@ -14,9 +14,9 @@
     "BUG-0028 is an open HIGH backend issue"
   ],
   "total_tasks": 82,
-  "active_tasks": 11,
+  "active_tasks": 10,
   "blocked_tasks": 0,
-  "review_tasks": 3,
+  "review_tasks": 4,
   "qa_tasks": 0,
   "completed_tasks": 58,
   "open_bugs": 8,
@@ -43,9 +43,9 @@
   "reviews_recorded": 143,
   "independent_reviews": 143,
   "owner_attention": 9,
-  "active_agents": 7,
+  "active_agents": 6,
   "file_collisions": 0,
   "validation_problems": 0,
-  "canonical_events": 819,
-  "last_activity": "2026-10-08T11:58:45Z"
+  "canonical_events": 822,
+  "last_activity": "2026-10-08T12:34:04Z"
 }

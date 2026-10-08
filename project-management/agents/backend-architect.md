@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | WORKING |
+| Current state | AVAILABLE |
 
 ## Responsibilities
 
@@ -53,7 +53,7 @@
 
 - TASK-0021 — Implement Final Processor for checkout and admin (MANAGER_REVIEW, 90%)
 - TASK-0034 — Decide where scheduled work runs: API process or the BullMQ worker (BACKLOG, 0%)
-- TASK-0128 — One-off tool to clear staging test data before launch: delete every order (payments, lines, reviews, coupon usages) and customer, revoke every licence key, take revoked stock off onHand; report-only by default, writes only with the exact reported counts (IN_PROGRESS, 80%)
+- TASK-0128 — One-off tool to clear staging test data before launch: delete every order (payments, lines, reviews, coupon usages) and customer, revoke every licence key, take revoked stock off onHand; report-only by default, writes only with the exact reported counts (MANAGER_REVIEW, 80%)
 
 ## Supporting
 
