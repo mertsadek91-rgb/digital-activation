@@ -264,8 +264,9 @@ The last two need `MONITOR_API_KEY` in the header `x-da-monitor`, so the uptime
 service must be able to send a custom header. Set the key on the API only and
 generate it with `pnpm secrets:generate`. It must differ from `INTERNAL_API_KEY`,
 and the API refuses to boot if they match, because that key also steers the
-per-visitor rate limits. The probes answer 503 while firing and 404 without the
-key, allow 30 requests a minute per address, and are neither logged nor reported.
+per-visitor rate limits. The probes answer 503 while firing, 401 to a request without the
+right key, and 404 when the API has no key set at all (so a 401 from outside
+confirms the key is in place), allow 30 requests a minute per address, and are neither logged nor reported.
 
 **The monitoring set-up (owner decision 2026-10-08, TASK-0031: every free
 option, alerts by Telegram and email):**
