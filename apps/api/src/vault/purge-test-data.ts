@@ -178,7 +178,11 @@ export async function purgeTestData(input: {
       );
     }
 
-    const numbers = (await tx.order.findMany({ select: { number: true } })).map((o) => o.number);
+    // Only what was counted goes: a row committed after this read is left
+    // alone, whatever the isolation level.
+    const counted = await tx.order.findMany({ select: { id: true, number: true } });
+    const orderIds = counted.map((order) => order.id);
+    const numbers = counted.map((order) => order.number);
     const customerIds = (await tx.customer.findMany({ select: { id: true } })).map((c) => c.id);
 
     // Personal coupons stop working before their owners go.
@@ -229,10 +233,10 @@ export async function purgeTestData(input: {
       distinct: ['productId'],
     });
 
-    await tx.refund.deleteMany({});
-    await tx.payment.deleteMany({});
-    await tx.order.deleteMany({});
-    await tx.renewalReminder.deleteMany({});
+    await tx.refund.deleteMany({ where: { payment: { orderId: { in: orderIds } } } });
+    await tx.payment.deleteMany({ where: { orderId: { in: orderIds } } });
+    await tx.order.deleteMany({ where: { id: { in: orderIds } } });
+    await tx.renewalReminder.deleteMany({ where: { orderId: { in: orderIds } } });
 
     for (const { productId } of reviewed) {
       const rating = await tx.review.aggregate({
@@ -250,7 +254,7 @@ export async function purgeTestData(input: {
       });
     }
 
-    await tx.customer.deleteMany({});
+    await tx.customer.deleteMany({ where: { id: { in: customerIds } } });
   }, TRANSACTION);
 
   // 2. The vault: retire, never erase; the access log first.

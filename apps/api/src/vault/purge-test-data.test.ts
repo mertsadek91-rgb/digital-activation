@@ -52,7 +52,11 @@ function build(options?: {
   const appTx = {
     order: {
       count: () => Promise.resolve(options?.ordersInsideTransaction ?? state.orders),
-      findMany: () => Promise.resolve([{ number: 'DA-2026-00001' }, { number: 'DA-DEMO-00001' }]),
+      findMany: () =>
+        Promise.resolve([
+          { id: 'o1', number: 'DA-2026-00001' },
+          { id: 'o2', number: 'DA-DEMO-00001' },
+        ]),
       deleteMany: () => {
         writes.push('orders');
         state.orders = 0;
