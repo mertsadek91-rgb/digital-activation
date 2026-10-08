@@ -12,6 +12,7 @@
     "openapi": "tsc -p tsconfig.build.json && node dist/common/openapi-cli.js openapi.json",
     "vault:rewrap": "tsc -p tsconfig.build.json && node dist/vault/rewrap-cli.js",
     "vault:refingerprint": "tsc -p tsconfig.build.json && node dist/vault/refingerprint-cli.js",
+    "data:purge-test": "tsc -p tsconfig.build.json && node dist/vault/purge-test-data-cli.js",
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
