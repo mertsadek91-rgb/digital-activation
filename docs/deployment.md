@@ -938,6 +938,30 @@ and anything else still on Hostinger. A rollback cannot fall back to plain HTTP.
 Submitting the domain to the preload list is a separate, deliberate decision;
 the header alone does not do it.
 
+### Clearing the test data (once, before the first real order)
+
+Owner decision 2026-10-08: every order, customer, review and licence key on
+staging is a test. From the API's terminal in Coolify:
+
+1. `pnpm --filter @da/api data:purge-test` — a report of counts, nothing
+   written. It ends with the exact command to write.
+2. Run that command: `--apply --expect-orders N --expect-customers N
+--expect-keys N`. It refuses if any count changed since the report, and
+   refuses outright above 50 orders or customers.
+3. Run the report again: everything should read 0.
+
+Run it **before importing launch stock**: it revokes every key that is not
+already revoked, AVAILABLE ones included (the report lists them by state).
+
+Orders go with their lines, payments, notes, reviews, coupon usages and their
+email log — numbering starts again at 00001, and a kept log would mark a real
+order's emails as already sent. Customers go with their sessions and
+addresses. Coupons issued to a person, single-use codes and referral codes
+are switched off; shared coupons get their uses back. Licence keys are
+**revoked**, not deleted — the vault role has no DELETE grant — with a REVOKE
+row in the key access log, and onHand is recounted from the vault. The audit
+log stays.
+
 ### Go / no-go, the day before
 
 All must hold; any one missing is a no-go.
