@@ -137,6 +137,9 @@ function build(options?: {
           return Promise.resolve(found ? { id: 'log-1' } : null);
         },
       },
+      variant: {
+        findUnique: () => Promise.resolve({ credentialKind: 'ACTIVATION_KEY' }),
+      },
       order: {
         findUnique: () =>
           Promise.resolve({ ...order, items: items.map((item) => ({ ...item, variant })) }),
@@ -172,6 +175,10 @@ function build(options?: {
   } as unknown as PrismaService;
 
   const vault = {
+    fulfilManually: ({ orderItemId }: { orderItemId: string }) => {
+      bound = orderItemId;
+      return Promise.resolve({ licenseKeyId: 'key-pasted' });
+    },
     assign: ({ orderItemId }: { orderItemId: string }) => {
       bound = orderItemId;
       return Promise.resolve({ assigned: ['key-1'], short: 0 });
@@ -369,6 +376,29 @@ describe('automatic delivery of stocked lines (BUG-0021)', () => {
       }),
     ).rejects.toThrow(/تعذّر إرسال البريد/); // the email could not be sent;
     expect(world.items[0]?.fulfillmentState).toBe(FulfillmentState.AUTO_ASSIGNED);
+  });
+
+  it('moves a pasted line whose email failed to "key bound, not sent", and the retry sends it (BUG-0029)', async () => {
+    const world = build({ mailFails: true });
+    const line = world.items[0];
+    if (!line) throw new Error('no line');
+    line.fulfillmentState = FulfillmentState.MANUAL_QUEUE;
+
+    await expect(
+      world.service.fulfilManually({
+        orderItemId: 'item-1',
+        secret: { kind: 'ACTIVATION_KEY', key: 'AAAAA-BBBBB-CCCCC' },
+        actor: staff,
+      }),
+    ).rejects.toThrow(/المفتاح محفوظ ومربوط بالطلب/); // the key is stored and bound
+    // Not MANUAL_QUEUE ("needs a supplier order") beside a bound key.
+    expect(line.fulfillmentState).toBe(FulfillmentState.AUTO_ASSIGNED);
+    expect(line.deliveredAt).toBeNull();
+
+    world.transport.fails = false;
+    const sent = await world.service.deliverAssigned({ orderItemId: 'item-1', actor: staff });
+    expect(sent.state).toBe(FulfillmentState.DELIVERED);
+    expect(line.fulfillmentState).toBe(FulfillmentState.DELIVERED);
   });
 
   it('delivers on the staff retry once mail recovers, in the staff member name', async () => {

@@ -645,8 +645,16 @@ export class FulfillmentService implements OnModuleInit {
     });
     if (!sent.ok) {
       // The key is in the vault and bound to the line — that part is done and
-      // must not be undone. The line stays in the queue so the send can be
-      // retried, and the failure is on the record.
+      // must not be undone. The line moves to AUTO_ASSIGNED, the state of a
+      // bound key that has not been sent, which is what the automatic path
+      // leaves after a failed email too. Left in MANUAL_QUEUE it read as
+      // "needs a supplier order" beside an ASSIGNED key, offered "paste the
+      // code" again (refused: the line already has one) and hid the retry
+      // (BUG-0029). The guard keeps a concurrent send from being overwritten.
+      await this.prisma.client.orderItem.updateMany({
+        where: { id: item.id, fulfillmentState: item.fulfillmentState },
+        data: { fulfillmentState: FulfillmentState.AUTO_ASSIGNED },
+      });
       throw new BadRequestException(
         say(
           `المفتاح محفوظ ومربوط بالطلب، لكن إرسال البريد فشل (${sent.error ?? 'سبب غير معروف'}). أعد المحاولة من الطابور.`,
