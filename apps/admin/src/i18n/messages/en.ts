@@ -1294,6 +1294,7 @@ export const en: AdminMessages = {
     historyReason: 'Reason: {reason}',
     actionReasonLabel: 'Reason — recorded with your name and the time',
     actionReasonPlaceholder: 'e.g. the key was pasted wrong',
+    reasonNoKey: 'Never write the key itself in the reason.',
   },
 
   payments: {

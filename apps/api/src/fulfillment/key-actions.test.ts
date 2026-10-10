@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import { KeyAccessAction, LicenseKeyState } from '@da/db';
 import { describe, expect, it } from 'vitest';
 
@@ -19,10 +20,23 @@ import { FulfillmentService } from './fulfillment.service.js';
 function build(options?: {
   keyState?: LicenseKeyState;
   importResult?: { imported: number; duplicatesSkipped: number; invalidSkipped: number };
+  /** The old key sells between the check and the revoke. */
+  revokeConflict?: boolean;
+  /** The audit write fails. */
+  auditFails?: boolean;
+  /** Two reveals by one person, three seconds apart, with two reasons. */
+  twoReveals?: boolean;
 }) {
   const calls: string[] = [];
   const audits: { action: string; after?: unknown; before?: unknown }[] = [];
-  const meta = { variantId: 'variant-1', state: options?.keyState ?? LicenseKeyState.AVAILABLE };
+  const meta = {
+    variantId: 'variant-1',
+    state: options?.keyState ?? LicenseKeyState.AVAILABLE,
+    expiresAt: new Date('2027-01-01T00:00:00Z'),
+    supplierId: 'supplier-1',
+    costUsd: '4.50',
+  };
+  const imports: Record<string, unknown>[] = [];
   let onHand = 3;
 
   const vault = {
@@ -37,6 +51,7 @@ function build(options?: {
     },
     revoke: (input: { onlyIfAvailable?: boolean }) => {
       calls.push(`vault.revoke${input.onlyIfAvailable ? ' (only if available)' : ''}`);
+      if (options?.revokeConflict) return Promise.reject(new ConflictException('sold meanwhile'));
       return Promise.resolve({
         state: LicenseKeyState.REVOKED,
         variantId: 'variant-1',
@@ -44,8 +59,9 @@ function build(options?: {
       });
     },
     keyMeta: () => Promise.resolve(meta),
-    importKeys: () => {
+    importKeys: (input: Record<string, unknown>) => {
       calls.push('vault.import');
+      imports.push(input);
       return Promise.resolve(
         options?.importResult ?? { imported: 1, duplicatesSkipped: 0, invalidSkipped: 0 },
       );
@@ -53,6 +69,16 @@ function build(options?: {
     availability: () => Promise.resolve({ 'variant-1': 2 }),
     history: () =>
       Promise.resolve([
+        ...(options?.twoReveals
+          ? [
+              {
+                action: KeyAccessAction.REVEAL,
+                actorId: 'staff-1',
+                ip: null,
+                createdAt: new Date('2026-10-10T10:00:03Z'),
+              },
+            ]
+          : []),
         {
           action: KeyAccessAction.REVEAL,
           actorId: 'staff-1',
@@ -81,8 +107,19 @@ function build(options?: {
       },
       stockMovement: { create: () => Promise.resolve({}) },
       auditLog: {
+        // Newest first, as the service asks for them.
         findMany: () =>
           Promise.resolve([
+            ...(options?.twoReveals
+              ? [
+                  {
+                    actorId: 'staff-1',
+                    action: 'vault.reveal',
+                    after: { reason: 'second look' },
+                    createdAt: new Date('2026-10-10T10:00:04Z'),
+                  },
+                ]
+              : []),
             {
               actorId: 'staff-1',
               action: 'vault.reveal',
@@ -96,6 +133,7 @@ function build(options?: {
 
   const audit = {
     record: (input: { action: string; after?: unknown; before?: unknown }) => {
+      if (options?.auditFails) return Promise.reject(new Error('audit down'));
       calls.push(`audit ${input.action}`);
       audits.push(input);
       return Promise.resolve();
@@ -103,7 +141,7 @@ function build(options?: {
   } as unknown as AuditService;
 
   const service = new FulfillmentService(prisma, vault, audit, {} as MailService);
-  return { service, calls, audits };
+  return { service, calls, audits, imports };
 }
 
 const actor: Actor = { staffId: 'staff-1', totpAt: Date.now() };
@@ -122,11 +160,19 @@ describe('one key, by a person', () => {
     expect(world.audits[0]?.after).toEqual({ reason: 'support ticket 42' });
   });
 
-  it('revokes, recounts the stock from the vault, and records why', async () => {
+  it('withholds the key when its reason cannot be stored', async () => {
+    const world = build({ auditFails: true });
+    await expect(
+      world.service.revealKey({ licenseKeyId: 'k1', reason: 'support ticket 42', actor }),
+    ).rejects.toThrow(/audit down/);
+  });
+
+  it('revokes, records why, then recounts the stock from the vault', async () => {
     const world = build();
     await world.service.revokeKey({ licenseKeyId: 'k1', reason: 'leaked', actor });
 
-    expect(world.calls).toEqual(['vault.revoke', 'onHand 2', 'audit vault.revoke']);
+    // The reason is on record before the recount can fail.
+    expect(world.calls).toEqual(['vault.revoke', 'audit vault.revoke', 'onHand 2']);
     expect(world.audits[0]?.after).toEqual({ state: LicenseKeyState.REVOKED, reason: 'leaked' });
   });
 
@@ -139,7 +185,18 @@ describe('one key, by a person', () => {
       actor,
     });
 
-    expect(result).toEqual({ imported: 1, revoked: true });
+    expect(result).toMatchObject({ imported: 1, revoked: true });
+    // The new key inherits the old one's deadline, supplier and cost.
+    expect(world.imports[0]).toMatchObject({
+      supplierId: 'supplier-1',
+      costUsd: '4.50',
+      expiresAt: new Date('2027-01-01T00:00:00Z'),
+    });
+    expect(world.audits.find((a) => a.action === 'vault.replace')?.after).toEqual({
+      reason: 'pasted wrong',
+      imported: 1,
+      oldKeyRevoked: true,
+    });
     expect(world.calls.indexOf('vault.import')).toBeLessThan(
       world.calls.indexOf('vault.revoke (only if available)'),
     );
@@ -173,6 +230,32 @@ describe('one key, by a person', () => {
       }),
     ).rejects.toThrow(/موجود في الخزنة من قبل/);
     expect(world.calls).toEqual(['vault.import']);
+  });
+
+  it('says so when the old key sold meanwhile: the new key stays, nothing is hidden', async () => {
+    const world = build({ revokeConflict: true });
+    const result = await world.service.replaceKey({
+      licenseKeyId: 'k1',
+      code: 'NEW-KEY-0001',
+      reason: 'pasted wrong',
+      actor,
+    });
+
+    expect(result).toMatchObject({ imported: 1, revoked: false });
+    expect(result.message).toMatch(/بيع أو حُجز للتو/);
+    expect(world.audits.find((a) => a.action === 'vault.replace')?.after).toMatchObject({
+      oldKeyRevoked: false,
+    });
+  });
+
+  it('keeps each reason with its own reveal when two are seconds apart', async () => {
+    const world = build({ twoReveals: true });
+    const rows = await world.service.keyHistory('k1');
+    expect(rows.map((row) => row.reason)).toEqual([
+      'second look',
+      'customer says the key is wrong',
+      null,
+    ]);
   });
 
   it('shows the reason beside the access it belongs to', async () => {

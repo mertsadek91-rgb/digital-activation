@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -551,7 +552,7 @@ export class FulfillmentService implements OnModuleInit {
     onlyIfAvailable?: boolean;
   }): Promise<{ state: LicenseKeyState }> {
     const revoked = await this.vault.revoke(input);
-    await this.recount(revoked.variantId, input.actor);
+    // The why goes on record before anything else can fail.
     await this.audit.record({
       actorId: input.actor.staffId,
       entity: 'LicenseKey',
@@ -561,6 +562,10 @@ export class FulfillmentService implements OnModuleInit {
       after: { state: revoked.state, reason: input.reason },
       ip: input.actor.ip,
       userAgent: input.actor.userAgent,
+    });
+    await this.recount(revoked.variantId, input.actor, {
+      reason: StockMovementReason.REVOKED,
+      note: 'Recounted from the vault after a key was revoked.',
     });
     return { state: revoked.state };
   }
@@ -579,7 +584,7 @@ export class FulfillmentService implements OnModuleInit {
     code: string;
     reason: string;
     actor: Actor;
-  }): Promise<{ imported: number; revoked: boolean }> {
+  }): Promise<{ imported: number; revoked: boolean; message: string }> {
     const meta = await this.vault.keyMeta(input.licenseKeyId);
     if (!meta)
       throw new NotFoundException(say('لا يوجد مفتاح بهذا المعرّف.', 'No key with that id.'));
@@ -592,9 +597,13 @@ export class FulfillmentService implements OnModuleInit {
       );
     }
 
+    // The new key takes the old one's deadline, supplier and cost with it.
     const result = await this.importKeys({
       variantId: meta.variantId,
       block: input.code,
+      supplierId: meta.supplierId ?? undefined,
+      costUsd: meta.costUsd ?? undefined,
+      expiresAt: meta.expiresAt ?? undefined,
       actor: input.actor,
     });
     if (result.imported !== 1) {
@@ -611,13 +620,44 @@ export class FulfillmentService implements OnModuleInit {
       );
     }
 
-    await this.revokeKey({
-      licenseKeyId: input.licenseKeyId,
-      reason: `replaced: ${input.reason}`,
-      actor: input.actor,
-      onlyIfAvailable: true,
+    // The old key sold or was reserved meanwhile: the new one is real stock
+    // now, and the one that went is the one pasted wrong. Say both.
+    let revoked = true;
+    try {
+      await this.revokeKey({
+        licenseKeyId: input.licenseKeyId,
+        reason: `replaced: ${input.reason}`,
+        actor: input.actor,
+        onlyIfAvailable: true,
+      });
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+      revoked = false;
+    }
+
+    await this.audit.record({
+      actorId: input.actor.staffId,
+      entity: 'LicenseKey',
+      entityId: input.licenseKeyId,
+      action: 'vault.replace',
+      after: { reason: input.reason, imported: 1, oldKeyRevoked: revoked },
+      ip: input.actor.ip,
+      userAgent: input.actor.userAgent,
     });
-    return { imported: 1, revoked: true };
+
+    return {
+      imported: 1,
+      revoked,
+      message: revoked
+        ? say(
+            'استُبدل المفتاح: أُدخل الجديد وأُلغي القديم.',
+            'Key replaced: the new one is in, the old one revoked.',
+          )
+        : say(
+            'أُدخل المفتاح الجديد، لكن القديم بيع أو حُجز للتو فلم يُلغَ. راجع الطلب الذي ذهب إليه: قد يكون هو المفتاح الخاطئ.',
+            'The new key is in, but the old one was sold or reserved just now and was not revoked. Check the order it went to: it may be the wrong key.',
+          ),
+    };
   }
 
   /** The stock list of one variant: ids, states and dates, never a key. */
@@ -640,13 +680,24 @@ export class FulfillmentService implements OnModuleInit {
       }),
     ]);
     const act: Record<string, string> = { REVEAL: 'vault.reveal', REVOKE: 'vault.revoke' };
+    // Each audit row explains one access row at most, the nearest in time:
+    // two reveals a few seconds apart keep their own reasons.
+    const used = new Set<number>();
     return access.map((row) => {
-      const match = audits.find(
-        (audit) =>
-          audit.action === act[row.action] &&
-          audit.actorId === row.actorId &&
-          Math.abs(audit.createdAt.getTime() - row.createdAt.getTime()) < 60_000,
-      );
+      let best = -1;
+      let bestGap = 60_000;
+      audits.forEach((audit, index) => {
+        if (used.has(index) || audit.action !== act[row.action] || audit.actorId !== row.actorId) {
+          return;
+        }
+        const gap = Math.abs(audit.createdAt.getTime() - row.createdAt.getTime());
+        if (gap < bestGap) {
+          best = index;
+          bestGap = gap;
+        }
+      });
+      if (best >= 0) used.add(best);
+      const match = best >= 0 ? audits[best] : undefined;
       const after = match?.after as { reason?: unknown } | null | undefined;
       return {
         ...row,
@@ -679,7 +730,14 @@ export class FulfillmentService implements OnModuleInit {
    * holds converges on the truth after a half-finished import or a manual
    * adjustment that drifted; adding a delta inherits every past mistake.
    */
-  private async recount(variantId: string, actor: Actor): Promise<void> {
+  private async recount(
+    variantId: string,
+    actor: Actor,
+    why: { reason: StockMovementReason; note: string } = {
+      reason: StockMovementReason.IMPORT,
+      note: 'Recounted from the vault after an import.',
+    },
+  ): Promise<void> {
     const truth = (await this.vault.availability([variantId]))[variantId] ?? 0;
 
     const level = await this.prisma.client.inventoryLevel.findUnique({
@@ -703,12 +761,12 @@ export class FulfillmentService implements OnModuleInit {
       data: {
         variantId,
         delta: next - previous,
-        reason: StockMovementReason.IMPORT,
+        reason: why.reason,
         // Stated rather than left to the SYSTEM default: "who last changed
         // this count" is the first question asked when a number looks wrong.
         actorId: actor.staffId,
         actorType: actor.kind ?? ActorType.STAFF,
-        note: 'Recounted from the vault after an import.',
+        note: why.note,
       },
     });
 

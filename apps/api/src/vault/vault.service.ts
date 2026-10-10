@@ -78,12 +78,17 @@ export class VaultService {
   private requireFreshTotp(actor: Actor): void {
     const age = Math.floor(Date.now() / 1000) - actor.totpAt;
     if (age > STEP_UP_WINDOW_SECONDS) {
-      throw new ForbiddenException(
-        say(
+      // A code the panel can tell from a refusal by role: only this 403 asks
+      // for a TOTP code and repeats the act.
+      throw new ForbiddenException({
+        statusCode: 403,
+        error: 'Forbidden',
+        code: 'step_up_required',
+        message: say(
           'يتطلّب هذا الإجراء إعادة إدخال رمز المصادقة الثنائية.',
           'This action needs your two-factor code again.',
         ),
-      );
+      });
     }
   }
 
@@ -554,6 +559,13 @@ export class VaultService {
     });
     if (!before)
       throw new NotFoundException(say('لا يوجد مفتاح بهذا المعرّف.', 'No key with that id.'));
+    // A second revoke would overwrite revokedAt and revokedReason: the record
+    // of the first one is evidence, and stays as it was.
+    if (before.state === LicenseKeyState.REVOKED) {
+      throw new BadRequestException(
+        say('هذا المفتاح ملغى من قبل.', 'This key is already revoked.'),
+      );
+    }
 
     const { count } = await this.vault.client.licenseKey.updateMany({
       where: {
@@ -579,13 +591,18 @@ export class VaultService {
   }
 
   /** One key's variant and state, without opening it. */
-  async keyMeta(
-    licenseKeyId: string,
-  ): Promise<{ variantId: string; state: LicenseKeyState } | null> {
-    return this.vault.client.licenseKey.findUnique({
+  async keyMeta(licenseKeyId: string): Promise<{
+    variantId: string;
+    state: LicenseKeyState;
+    expiresAt: Date | null;
+    supplierId: string | null;
+    costUsd: string | null;
+  } | null> {
+    const row = await this.vault.client.licenseKey.findUnique({
       where: { id: licenseKeyId },
-      select: { variantId: true, state: true },
+      select: { variantId: true, state: true, expiresAt: true, supplierId: true, costUsd: true },
     });
+    return row ? { ...row, costUsd: row.costUsd?.toFixed(2) ?? null } : null;
   }
 
   /**

@@ -77,15 +77,22 @@ export function KeyActions({
         onNote(t('revoked'));
         onChanged?.();
       } else {
-        await api.replaceKey(licenseKeyId, code.trim(), reason.trim());
-        onNote(t('replaced'));
+        const result = await api.replaceKey(licenseKeyId, code.trim(), reason.trim());
+        // The server says which happened: both, or the new key in and the old
+        // one sold meanwhile (then the order it went to needs a look).
+        if (result.revoked) onNote(t('replaced'));
+        else onError(result.message);
         onChanged?.();
       }
       onError(null);
       close();
     } catch (caught) {
       // A stale challenge is the expected refusal: ask for a code, then repeat.
-      if (caught instanceof ApiError && caught.status === 403) {
+      if (
+        caught instanceof ApiError &&
+        caught.status === 403 &&
+        caught.code === 'step_up_required'
+      ) {
         setStepUp(true);
         return;
       }
@@ -190,6 +197,7 @@ export function KeyActions({
               required
               autoFocus
             />
+            <small>{t('reasonNoKey')}</small>
           </label>
           <div className="key-actions__buttons">
             <button type="submit" disabled={busy || reason.trim().length < 3}>

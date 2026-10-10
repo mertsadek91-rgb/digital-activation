@@ -515,7 +515,11 @@ function OrderLookup({
     } catch (caught) {
       // A stale challenge is the expected refusal, not a failure: ask for a
       // code and try again rather than sending the person back to the login.
-      if (caught instanceof ApiError && caught.status === 403) {
+      if (
+        caught instanceof ApiError &&
+        caught.status === 403 &&
+        caught.code === 'step_up_required'
+      ) {
         setStepUp({ keyId });
         return;
       }

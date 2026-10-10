@@ -876,7 +876,7 @@ export const api = {
 
   /** Swaps one unsold stock key for a corrected one. 403 asks for a step-up. */
   replaceKey: (licenseKeyId: string, code: string, reason: string) =>
-    request<{ imported: number; revoked: boolean }>(
+    request<{ imported: number; revoked: boolean; message: string }>(
       `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/replace`,
       { method: 'POST', body: JSON.stringify({ code, reason }) },
     ),

@@ -1283,6 +1283,7 @@ export const ar = {
     historyReason: 'السبب: {reason}',
     actionReasonLabel: 'السبب — يُسجَّل مع اسمك ووقتك',
     actionReasonPlaceholder: 'مثلاً: لُصق المفتاح خطأً',
+    reasonNoKey: 'لا تكتب المفتاح نفسه في السبب.',
   },
 
   payments: {

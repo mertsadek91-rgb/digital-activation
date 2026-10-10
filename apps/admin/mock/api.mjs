@@ -742,7 +742,9 @@ const orderKeys = (number) => {
 // challenge is older than a quarter of an hour; a step-up clears it.
 const keyGate = { fresh: false };
 const gated = (answer) =>
-  keyGate.fresh ? answer : { __status: 403, body: { message: 'Step-up required' } };
+  keyGate.fresh
+    ? answer
+    : { __status: 403, body: { message: 'Step-up required', code: 'step_up_required' } };
 const vaultStock = [
   {
     variantId: 'v_canva',
