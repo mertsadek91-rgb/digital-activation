@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -13,6 +14,7 @@ import {
   ActorType,
   FulfillmentMode,
   FulfillmentState,
+  LicenseKeyState,
   Locale,
   NotificationChannel,
   OrderStatus,
@@ -510,6 +512,213 @@ export class FulfillmentService implements OnModuleInit {
     return result;
   }
 
+  // --- one key, by a person: read, revoke, replace --------------------------
+  //
+  // Every one of these is ADMIN-only at the route and needs a TOTP challenge
+  // from the last quarter of an hour inside the vault. The vault's access log
+  // says who touched a key and when; the reason a person typed goes to the
+  // audit log beside it (KeyAccessLog has no column for it), so "why" is on
+  // the record too. Nothing here logs or returns any part of a key except
+  // revealKey's answer itself.
+
+  /** Shows one key to a member of staff, and records why they asked. */
+  async revealKey(input: { licenseKeyId: string; reason: string; actor: Actor }) {
+    const secret = await this.vault.reveal({
+      licenseKeyId: input.licenseKeyId,
+      actor: input.actor,
+    });
+    // After the vault's own REVEAL row, before the answer leaves: a key is not
+    // shown unless the reason for showing it is stored.
+    await this.audit.record({
+      actorId: input.actor.staffId,
+      entity: 'LicenseKey',
+      entityId: input.licenseKeyId,
+      action: 'vault.reveal',
+      after: { reason: input.reason },
+      ip: input.actor.ip,
+      userAgent: input.actor.userAgent,
+    });
+    return secret;
+  }
+
+  /**
+   * Takes one key out of circulation, with a reason, and recounts the stock:
+   * a revoked AVAILABLE key was being offered on the product page.
+   */
+  async revokeKey(input: {
+    licenseKeyId: string;
+    reason: string;
+    actor: Actor;
+    onlyIfAvailable?: boolean;
+  }): Promise<{ state: LicenseKeyState }> {
+    const revoked = await this.vault.revoke(input);
+    // The why goes on record before anything else can fail.
+    await this.audit.record({
+      actorId: input.actor.staffId,
+      entity: 'LicenseKey',
+      entityId: input.licenseKeyId,
+      action: 'vault.revoke',
+      before: { state: revoked.previous },
+      after: { state: revoked.state, reason: input.reason },
+      ip: input.actor.ip,
+      userAgent: input.actor.userAgent,
+    });
+    await this.recount(revoked.variantId, input.actor, {
+      reason: StockMovementReason.REVOKED,
+      note: 'Recounted from the vault after a key was revoked.',
+    });
+    return { state: revoked.state };
+  }
+
+  /**
+   * Corrects a key that was pasted wrong: the new one goes in, then the old
+   * one is revoked. Unsold stock only — a key on an order is the customer's,
+   * and is answered with a resend or a revoke, never swapped underneath them.
+   *
+   * In that order on purpose. If the new key is refused (a duplicate, not a
+   * key) nothing has changed; if the old key sold in between, its revoke is
+   * refused and the new key simply stays in stock.
+   */
+  async replaceKey(input: {
+    licenseKeyId: string;
+    code: string;
+    reason: string;
+    actor: Actor;
+  }): Promise<{ imported: number; revoked: boolean; message: string }> {
+    const meta = await this.vault.keyMeta(input.licenseKeyId);
+    if (!meta)
+      throw new NotFoundException(say('لا يوجد مفتاح بهذا المعرّف.', 'No key with that id.'));
+    if (meta.state !== LicenseKeyState.AVAILABLE) {
+      throw new BadRequestException(
+        say(
+          'يُستبدل المفتاح المتاح في المخزون فقط. مفتاح على طلب يُعاد إرساله أو يُلغى.',
+          'Only an available key in stock can be replaced. A key on an order is resent or revoked.',
+        ),
+      );
+    }
+
+    // The new key takes the old one's deadline, supplier and cost with it.
+    const result = await this.importKeys({
+      variantId: meta.variantId,
+      block: input.code,
+      supplierId: meta.supplierId ?? undefined,
+      costUsd: meta.costUsd ?? undefined,
+      expiresAt: meta.expiresAt ?? undefined,
+      actor: input.actor,
+    });
+    if (result.imported !== 1) {
+      throw new BadRequestException(
+        result.duplicatesSkipped > 0
+          ? say(
+              'المفتاح الجديد موجود في الخزنة من قبل. لم يتغيّر شيء.',
+              'The new key is already in the vault. Nothing changed.',
+            )
+          : say(
+              'المفتاح الجديد غير صالح لهذا المنتج. لم يتغيّر شيء.',
+              'The new key is not valid for this product. Nothing changed.',
+            ),
+      );
+    }
+
+    // The old key sold or was reserved meanwhile: the new one is real stock
+    // now, and the one that went is the one pasted wrong. Say both.
+    // Whatever happens to the old key, the replacement goes on record: the
+    // new key is already stock by now.
+    let revoked = false;
+    let failure: Error | null = null;
+    try {
+      await this.revokeKey({
+        licenseKeyId: input.licenseKeyId,
+        reason: `replaced: ${input.reason}`,
+        actor: input.actor,
+        onlyIfAvailable: true,
+      });
+      revoked = true;
+    } catch (error) {
+      failure = error instanceof Error ? error : new Error(String(error));
+    }
+
+    await this.audit.record({
+      actorId: input.actor.staffId,
+      entity: 'LicenseKey',
+      entityId: input.licenseKeyId,
+      action: 'vault.replace',
+      after: { reason: input.reason, imported: 1, oldKeyRevoked: revoked },
+      ip: input.actor.ip,
+      userAgent: input.actor.userAgent,
+    });
+
+    // Sold, reserved or revoked by somebody else meanwhile: answered below.
+    // Anything else is a real failure, now that the record is written.
+    if (
+      failure &&
+      !(failure instanceof ConflictException) &&
+      !(failure instanceof BadRequestException)
+    ) {
+      throw failure;
+    }
+
+    return {
+      imported: 1,
+      revoked,
+      message: revoked
+        ? say(
+            'استُبدل المفتاح: أُدخل الجديد وأُلغي القديم.',
+            'Key replaced: the new one is in, the old one revoked.',
+          )
+        : say(
+            'أُدخل المفتاح الجديد، لكن القديم لم يُلغَ لأن حالته تغيّرت للتو (بيع أو حُجز أو أُلغي). إن كان بيع، فراجع الطلب الذي ذهب إليه: قد يكون هو المفتاح الخاطئ.',
+            'The new key is in, but the old one was not revoked: it changed state just now (sold, reserved or revoked). If it sold, check the order it went to: it may be the wrong key.',
+          ),
+    };
+  }
+
+  /** The stock list of one variant: ids, states and dates, never a key. */
+  variantKeys(variantId: string) {
+    return this.vault.keysForVariant(variantId);
+  }
+
+  /**
+   * Who touched a key and when, with the reason they gave where there is one
+   * (matched from the audit log: same person, same act, within a minute).
+   */
+  async keyHistory(licenseKeyId: string) {
+    const [access, audits] = await Promise.all([
+      this.vault.history(licenseKeyId),
+      this.prisma.client.auditLog.findMany({
+        where: { entity: 'LicenseKey', entityId: licenseKeyId },
+        select: { actorId: true, action: true, after: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+      }),
+    ]);
+    const act: Record<string, string> = { REVEAL: 'vault.reveal', REVOKE: 'vault.revoke' };
+    // Each audit row explains one access row at most, the nearest in time:
+    // two reveals a few seconds apart keep their own reasons.
+    const used = new Set<number>();
+    return access.map((row) => {
+      let best = -1;
+      let bestGap = 60_000;
+      audits.forEach((audit, index) => {
+        if (used.has(index) || audit.action !== act[row.action] || audit.actorId !== row.actorId) {
+          return;
+        }
+        const gap = Math.abs(audit.createdAt.getTime() - row.createdAt.getTime());
+        if (gap < bestGap) {
+          best = index;
+          bestGap = gap;
+        }
+      });
+      if (best >= 0) used.add(best);
+      const match = best >= 0 ? audits[best] : undefined;
+      const after = match?.after as { reason?: unknown } | null | undefined;
+      return {
+        ...row,
+        reason: typeof after?.reason === 'string' ? after.reason : null,
+      };
+    });
+  }
+
   /**
    * Writes the vault's true count across to the number the shop sells against.
    *
@@ -534,7 +743,14 @@ export class FulfillmentService implements OnModuleInit {
    * holds converges on the truth after a half-finished import or a manual
    * adjustment that drifted; adding a delta inherits every past mistake.
    */
-  private async recount(variantId: string, actor: Actor): Promise<void> {
+  private async recount(
+    variantId: string,
+    actor: Actor,
+    why: { reason: StockMovementReason; note: string } = {
+      reason: StockMovementReason.IMPORT,
+      note: 'Recounted from the vault after an import.',
+    },
+  ): Promise<void> {
     const truth = (await this.vault.availability([variantId]))[variantId] ?? 0;
 
     const level = await this.prisma.client.inventoryLevel.findUnique({
@@ -558,12 +774,12 @@ export class FulfillmentService implements OnModuleInit {
       data: {
         variantId,
         delta: next - previous,
-        reason: StockMovementReason.IMPORT,
+        reason: why.reason,
         // Stated rather than left to the SYSTEM default: "who last changed
         // this count" is the first question asked when a number looks wrong.
         actorId: actor.staffId,
         actorType: actor.kind ?? ActorType.STAFF,
-        note: 'Recounted from the vault after an import.',
+        note: why.note,
       },
     });
 

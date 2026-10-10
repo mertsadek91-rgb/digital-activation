@@ -2002,6 +2002,20 @@
       "ts": "2026-10-08T11:20:23Z",
       "actor": "security-engineer",
       "event": "E20261008112023-d0c579"
+    },
+    {
+      "review_id": "REV-0177",
+      "reviewer": "security-engineer",
+      "executor": "subagent:security-reviewer",
+      "review_type": "SECURITY",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Round 1 (18c524a) PASS_WITH_NOTES: ADMIN at every key route plus requireFreshTotp inside the vault (replace checks TOTP in importKeys before any write); no key material in logs, audit payloads, errors or the panel; 200 cap enforced; vaultPrisma confined. 8 minor: replace after a sale told the user nothing true; history could pair the wrong reason; re-revoke overwrote the first record; revoke recount logged IMPORT and audited after recount; replacement lost expiry/supplier/cost; no replace audit row; reason field could hold a key; any 403 opened the TOTP prompt. Round 2 (ba54d1b): all eight fixed on the API; R1 major (UI) - the not-revoked warning was cleared in the same handler; R2 minor - replace audit skipped when the old key was revoked by someone else. Round 3 (af67a48, 31a3af7): warning kept beside the key and rendered on the mock (survives the reload); replace audit written in every case; 28 fulfilment tests, 777 API tests.",
+      "round": 1,
+      "target": "TASK-0129",
+      "ts": "2026-10-10T11:38:37Z",
+      "actor": "security-engineer",
+      "event": "E20261010113837-e232fd"
     }
   ],
   "invalidated_reviews": [
