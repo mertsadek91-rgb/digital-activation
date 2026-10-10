@@ -625,7 +625,7 @@ export class FulfillmentService implements OnModuleInit {
     // Whatever happens to the old key, the replacement goes on record: the
     // new key is already stock by now.
     let revoked = false;
-    let failure: unknown = null;
+    let failure: Error | null = null;
     try {
       await this.revokeKey({
         licenseKeyId: input.licenseKeyId,
@@ -635,7 +635,7 @@ export class FulfillmentService implements OnModuleInit {
       });
       revoked = true;
     } catch (error) {
-      failure = error;
+      failure = error instanceof Error ? error : new Error(String(error));
     }
 
     await this.audit.record({
