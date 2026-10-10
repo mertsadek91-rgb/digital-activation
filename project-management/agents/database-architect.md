@@ -56,7 +56,7 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
-- TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (WAITING_INFORMATION, 20%)
+- TASK-0011 — Enforce a fingerprint salt in production without breaking existing fingerprints (MANAGER_REVIEW, 95%)
 - TASK-0030 — Backup policy and a recorded restore drill (IN_PROGRESS, 30%)
 - TASK-0043 — Owner decision — which legacy customers, orders and licence keys migrate (WAITING_INFORMATION, 20%)
 - TASK-0044 — Plan the staging-to-production transition of the single Coolify environment (WAITING_INFORMATION, 70%)

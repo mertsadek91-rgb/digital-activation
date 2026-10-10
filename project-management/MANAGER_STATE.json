@@ -114,13 +114,7 @@
         "CONSENSUS-0001"
       ],
       "opportunities": [],
-      "risks": [
-        "BUG-0024",
-        "BUG-0025",
-        "BUG-0026",
-        "BUG-0027",
-        "BUG-0028"
-      ],
+      "risks": [],
       "last_activity": "2026-10-07T06:34:27Z"
     },
     {
@@ -229,7 +223,9 @@
         "TASK-0099",
         "TASK-0100"
       ],
-      "reviews": [],
+      "reviews": [
+        "TASK-0011"
+      ],
       "blocked_work": [],
       "pending_decisions": [
         "DEC-0012",
