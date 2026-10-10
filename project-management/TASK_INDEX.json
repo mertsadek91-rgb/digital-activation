@@ -216,10 +216,10 @@
       "id": "TASK-0011",
       "title": "Enforce a fingerprint salt in production without breaking existing fingerprints",
       "type": "security",
-      "status": "WAITING_INFORMATION",
-      "stage": "ANALYSIS",
+      "status": "MANAGER_REVIEW",
+      "stage": "MANAGER_REVIEW",
       "priority": "MEDIUM",
-      "progress": 20,
+      "progress": 95,
       "authority_level": 4,
       "risk": "MEDIUM",
       "primary_agent": "security-engineer",
@@ -248,9 +248,9 @@
         "apps/api/src/vault/kek.ts"
       ],
       "created_at": "2026-09-29",
-      "updated_at": "2026-09-30",
+      "updated_at": "2026-10-10",
       "reaudit": "VALID_BUT_REWRITE",
-      "file": "tasks/active/TASK-0011.md"
+      "file": "tasks/review/TASK-0011.md"
     },
     {
       "id": "TASK-0012",
