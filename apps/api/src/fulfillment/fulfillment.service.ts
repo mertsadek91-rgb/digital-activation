@@ -622,7 +622,10 @@ export class FulfillmentService implements OnModuleInit {
 
     // The old key sold or was reserved meanwhile: the new one is real stock
     // now, and the one that went is the one pasted wrong. Say both.
-    let revoked = true;
+    // Whatever happens to the old key, the replacement goes on record: the
+    // new key is already stock by now.
+    let revoked = false;
+    let failure: unknown = null;
     try {
       await this.revokeKey({
         licenseKeyId: input.licenseKeyId,
@@ -630,9 +633,9 @@ export class FulfillmentService implements OnModuleInit {
         actor: input.actor,
         onlyIfAvailable: true,
       });
+      revoked = true;
     } catch (error) {
-      if (!(error instanceof ConflictException)) throw error;
-      revoked = false;
+      failure = error;
     }
 
     await this.audit.record({
@@ -645,6 +648,16 @@ export class FulfillmentService implements OnModuleInit {
       userAgent: input.actor.userAgent,
     });
 
+    // Sold, reserved or revoked by somebody else meanwhile: answered below.
+    // Anything else is a real failure, now that the record is written.
+    if (
+      failure &&
+      !(failure instanceof ConflictException) &&
+      !(failure instanceof BadRequestException)
+    ) {
+      throw failure;
+    }
+
     return {
       imported: 1,
       revoked,
@@ -654,8 +667,8 @@ export class FulfillmentService implements OnModuleInit {
             'Key replaced: the new one is in, the old one revoked.',
           )
         : say(
-            'أُدخل المفتاح الجديد، لكن القديم بيع أو حُجز للتو فلم يُلغَ. راجع الطلب الذي ذهب إليه: قد يكون هو المفتاح الخاطئ.',
-            'The new key is in, but the old one was sold or reserved just now and was not revoked. Check the order it went to: it may be the wrong key.',
+            'أُدخل المفتاح الجديد، لكن القديم لم يُلغَ لأن حالته تغيّرت للتو (بيع أو حُجز أو أُلغي). إن كان بيع، فراجع الطلب الذي ذهب إليه: قد يكون هو المفتاح الخاطئ.',
+            'The new key is in, but the old one was not revoked: it changed state just now (sold, reserved or revoked). If it sold, check the order it went to: it may be the wrong key.',
           ),
     };
   }

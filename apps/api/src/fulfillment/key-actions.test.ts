@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { KeyAccessAction, LicenseKeyState } from '@da/db';
 import { describe, expect, it } from 'vitest';
 
@@ -22,6 +22,8 @@ function build(options?: {
   importResult?: { imported: number; duplicatesSkipped: number; invalidSkipped: number };
   /** The old key sells between the check and the revoke. */
   revokeConflict?: boolean;
+  /** Somebody else revokes it first, or the revoke fails for another reason. */
+  revokeError?: 'already' | 'boom';
   /** The audit write fails. */
   auditFails?: boolean;
   /** Two reveals by one person, three seconds apart, with two reasons. */
@@ -52,6 +54,10 @@ function build(options?: {
     revoke: (input: { onlyIfAvailable?: boolean }) => {
       calls.push(`vault.revoke${input.onlyIfAvailable ? ' (only if available)' : ''}`);
       if (options?.revokeConflict) return Promise.reject(new ConflictException('sold meanwhile'));
+      if (options?.revokeError === 'already') {
+        return Promise.reject(new BadRequestException('already revoked'));
+      }
+      if (options?.revokeError === 'boom') return Promise.reject(new Error('vault unreachable'));
       return Promise.resolve({
         state: LicenseKeyState.REVOKED,
         variantId: 'variant-1',
@@ -242,8 +248,34 @@ describe('one key, by a person', () => {
     });
 
     expect(result).toMatchObject({ imported: 1, revoked: false });
-    expect(result.message).toMatch(/بيع أو حُجز للتو/);
+    expect(result.message).toMatch(/تغيّرت للتو/);
     expect(world.audits.find((a) => a.action === 'vault.replace')?.after).toMatchObject({
+      oldKeyRevoked: false,
+    });
+  });
+
+  it('records the replacement even when the old key was revoked by somebody else, or the revoke broke', async () => {
+    const already = build({ revokeError: 'already' });
+    const result = await already.service.replaceKey({
+      licenseKeyId: 'k1',
+      code: 'NEW-KEY-0001',
+      reason: 'pasted wrong',
+      actor,
+    });
+    expect(result).toMatchObject({ imported: 1, revoked: false });
+    expect(already.audits.find((a) => a.action === 'vault.replace')).toBeDefined();
+
+    const broken = build({ revokeError: 'boom' });
+    await expect(
+      broken.service.replaceKey({
+        licenseKeyId: 'k1',
+        code: 'NEW-KEY-0001',
+        reason: 'pasted wrong',
+        actor,
+      }),
+    ).rejects.toThrow(/vault unreachable/);
+    // Written before the failure is passed on: the new key is stock already.
+    expect(broken.audits.find((a) => a.action === 'vault.replace')?.after).toMatchObject({
       oldKeyRevoked: false,
     });
   });

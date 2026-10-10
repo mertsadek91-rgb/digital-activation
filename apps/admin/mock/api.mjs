@@ -808,7 +808,17 @@ const dynamic = [
   ],
   [
     /^POST \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/replace$/,
-    () => gated({ imported: 1, revoked: true }),
+    (m) =>
+      gated(
+        m[1] === 'lk_canva_2'
+          ? {
+              imported: 1,
+              revoked: false,
+              message:
+                'أُدخل المفتاح الجديد، لكن القديم لم يُلغَ لأن حالته تغيّرت للتو (بيع أو حُجز أو أُلغي). إن كان بيع، فراجع الطلب الذي ذهب إليه: قد يكون هو المفتاح الخاطئ.',
+            }
+          : { imported: 1, revoked: true },
+      ),
   ],
   [
     /^GET \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/history$/,

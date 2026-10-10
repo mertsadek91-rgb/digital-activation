@@ -49,6 +49,9 @@ export function KeyActions({
   const [busy, setBusy] = useState(false);
   const [shown, setShown] = useState<RevealResult | null>(null);
   const [history, setHistory] = useState<KeyHistoryRow[] | null>(null);
+  // Kept here, beside the key it is about: the page's own banner is cleared
+  // by the reload a replacement triggers, and this one must be read.
+  const [warning, setWarning] = useState<string | null>(null);
 
   const offers = (action: KeyAction): boolean => actions.includes(action);
   const canRevoke = offers('revoke') && state !== 'REVOKED';
@@ -81,7 +84,7 @@ export function KeyActions({
         // The server says which happened: both, or the new key in and the old
         // one sold meanwhile (then the order it went to needs a look).
         if (result.revoked) onNote(t('replaced'));
-        else onError(result.message);
+        else setWarning(result.message);
         onChanged?.();
       }
       onError(null);
@@ -255,6 +258,15 @@ export function KeyActions({
             {c('cancel')}
           </button>
         </form>
+      ) : null}
+
+      {warning ? (
+        <p className="notice" role="alert" dir="auto">
+          {warning}{' '}
+          <button type="button" className="linky" onClick={() => setWarning(null)}>
+            {c('hide')}
+          </button>
+        </p>
       ) : null}
 
       {shown ? (
