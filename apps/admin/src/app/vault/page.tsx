@@ -6,8 +6,9 @@ import { useStaff } from '../../lib/use-staff';
 import { useCallback, useEffect, useState } from 'react';
 
 import { useT } from '../../i18n/provider';
-import { api, ApiError, refreshSession } from '../../lib/api';
+import { api, ApiError, refreshSession, type VariantKeyRow } from '../../lib/api';
 import { Nav } from '../nav';
+import { KeyActions } from './key-actions';
 
 /**
  * The vault.
@@ -92,6 +93,7 @@ export default function VaultPage() {
                   row={row}
                   canStock={canStock}
                   canEditKind={canEditKind}
+                  canReveal={canReveal}
                   onKindSaved={() => void load()}
                   onNote={setNote}
                   onImported={(result) => {
@@ -241,6 +243,7 @@ function StockRow({
   row,
   canStock,
   canEditKind,
+  canReveal,
   onImported,
   onKindSaved,
   onError,
@@ -249,6 +252,8 @@ function StockRow({
   row: VaultStockRow;
   canStock: boolean;
   canEditKind: boolean;
+  /** Reading, revoking and replacing a key: ADMIN (OWNER passes). */
+  canReveal: boolean;
   onImported: (result: {
     imported: number;
     duplicatesSkipped: number;
@@ -265,6 +270,15 @@ function StockRow({
   const [cost, setCost] = useState('');
   const [expires, setExpires] = useState('');
   const [busy, setBusy] = useState(false);
+  const [keys, setKeys] = useState<VariantKeyRow[] | null>(null);
+
+  async function loadKeys(): Promise<void> {
+    try {
+      setKeys(await api.variantKeys(row.variantId));
+    } catch (caught) {
+      onError(caught instanceof Error ? caught.message : t('loadFailed'));
+    }
+  }
 
   const available = row.counts.AVAILABLE ?? 0;
   const isAccount = row.credentialKind === 'ACCOUNT_CREDENTIALS';
@@ -301,8 +315,59 @@ function StockRow({
               {open ? c('cancel') : isAccount ? t('enterAccounts') : t('enterKeys')}
             </button>
           ) : null}
+          {canStock ? (
+            <button
+              type="button"
+              className="linky"
+              aria-expanded={keys !== null}
+              onClick={() => (keys ? setKeys(null) : void loadKeys())}
+            >
+              {keys ? t('hideKeys') : t('showKeys')}
+            </button>
+          ) : null}
         </td>
       </tr>
+
+      {keys ? (
+        <tr className="drawer">
+          <td colSpan={8}>
+            {keys.length === 0 ? (
+              <p className="meta">{t('noVariantKeys')}</p>
+            ) : (
+              <ul className="key-list">
+                {keys.map((key) => (
+                  <li key={key.licenseKeyId}>
+                    <span className="slug" dir="ltr">
+                      {key.licenseKeyId}
+                    </span>
+                    <span className="pill pill-draft">{key.state}</span>
+                    <span className="meta">
+                      {t('keyAdded', { at: key.createdAt.slice(0, 10) })}
+                    </span>
+                    {key.revokedReason ? (
+                      <span className="meta" dir="auto">
+                        {t('keyRevokedBecause', { reason: key.revokedReason })}
+                      </span>
+                    ) : null}
+                    <KeyActions
+                      licenseKeyId={key.licenseKeyId}
+                      state={key.state}
+                      actions={canReveal ? ['reveal', 'replace', 'revoke', 'history'] : ['history']}
+                      onChanged={() => {
+                        void loadKeys();
+                        onKindSaved();
+                      }}
+                      onError={onError}
+                      onNote={onNote}
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {keys.length >= 200 ? <p className="meta">{t('keysCapped', { count: 200 })}</p> : null}
+          </td>
+        </tr>
+      ) : null}
 
       {open ? (
         <tr className="drawer">

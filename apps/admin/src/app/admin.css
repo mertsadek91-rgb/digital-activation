@@ -4380,3 +4380,28 @@ a.as-button.ghost:hover {
     transition: none;
   }
 }
+
+/* One key's actions (read, revoke, replace, history), in the order's lines
+   tab and in a variant's stock list in the vault. */
+.key-actions {
+  display: grid;
+  gap: 8px;
+  inline-size: 100%;
+}
+.key-actions__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.key-actions__form {
+  max-inline-size: 520px;
+}
+.key-actions button.danger {
+  color: var(--color-danger);
+}
+.line-key {
+  display: grid;
+  gap: 6px;
+  margin-block-start: 6px;
+}

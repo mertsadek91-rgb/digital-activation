@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -41,6 +42,9 @@ export interface Actor {
   ip?: string | undefined;
   userAgent?: string | undefined;
 }
+
+/** The most keys one variant's stock list shows. */
+const VARIANT_KEY_LIMIT = 200;
 
 /**
  * The licence vault.
@@ -535,20 +539,85 @@ export class VaultService {
     licenseKeyId: string;
     reason: string;
     actor: Actor;
-  }): Promise<{ state: LicenseKeyState }> {
+    /**
+     * Only while the key is still unsold stock. A replacement uses it: the
+     * key could be reserved for a cart or bound to an order between the check
+     * and the write, and that one must not be pulled from under its buyer.
+     */
+    onlyIfAvailable?: boolean;
+  }): Promise<{ state: LicenseKeyState; variantId: string; previous: LicenseKeyState }> {
     this.requireFreshTotp(input.actor);
 
-    const row = await this.vault.client.licenseKey.update({
+    const before = await this.vault.client.licenseKey.findUnique({
       where: { id: input.licenseKeyId },
+      select: { id: true, state: true, variantId: true },
+    });
+    if (!before)
+      throw new NotFoundException(say('لا يوجد مفتاح بهذا المعرّف.', 'No key with that id.'));
+
+    const { count } = await this.vault.client.licenseKey.updateMany({
+      where: {
+        id: before.id,
+        state: input.onlyIfAvailable ? LicenseKeyState.AVAILABLE : before.state,
+      },
       data: {
         state: LicenseKeyState.REVOKED,
         revokedAt: new Date(),
         revokedReason: input.reason,
       },
-      select: { id: true, state: true },
     });
-    await this.log(row.id, KeyAccessAction.REVOKE, input.actor);
-    return { state: row.state };
+    if (count !== 1) {
+      throw new ConflictException(
+        say(
+          'تغيّرت حالة المفتاح للتو (بيع أو حُجز). لم يُلغَ شيء؛ حدّث الصفحة.',
+          'The key changed state just now (sold or reserved). Nothing was revoked; refresh.',
+        ),
+      );
+    }
+    await this.log(before.id, KeyAccessAction.REVOKE, input.actor);
+    return { state: LicenseKeyState.REVOKED, variantId: before.variantId, previous: before.state };
+  }
+
+  /** One key's variant and state, without opening it. */
+  async keyMeta(
+    licenseKeyId: string,
+  ): Promise<{ variantId: string; state: LicenseKeyState } | null> {
+    return this.vault.client.licenseKey.findUnique({
+      where: { id: licenseKeyId },
+      select: { variantId: true, state: true },
+    });
+  }
+
+  /**
+   * The keys of one variant — ids, states and dates, never what they say.
+   * Newest first, capped: a stock list, not an export.
+   */
+  async keysForVariant(variantId: string): Promise<
+    {
+      licenseKeyId: string;
+      state: LicenseKeyState;
+      createdAt: Date;
+      expiresAt: Date | null;
+      deliveredAt: Date | null;
+      revokedAt: Date | null;
+      revokedReason: string | null;
+    }[]
+  > {
+    const rows = await this.vault.client.licenseKey.findMany({
+      where: { variantId },
+      orderBy: { createdAt: 'desc' },
+      take: VARIANT_KEY_LIMIT,
+      select: {
+        id: true,
+        state: true,
+        createdAt: true,
+        expiresAt: true,
+        deliveredAt: true,
+        revokedAt: true,
+        revokedReason: true,
+      },
+    });
+    return rows.map(({ id, ...row }) => ({ licenseKeyId: id, ...row }));
   }
 
   /** Sweeps keys whose activation window has closed. */

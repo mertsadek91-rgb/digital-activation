@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import { useT } from '../../../i18n/provider';
 import { api } from '../../../lib/api';
+import { KeyActions } from '../../vault/key-actions';
 import { stamp } from '../order-shared';
 import type { Notice } from './page';
 
@@ -69,6 +70,9 @@ export function LinesTab({
   const c = useT('common');
   const canFulfil = ['OWNER', 'ADMIN', 'FULFILLMENT'].includes(me.role);
   const canResend = ['OWNER', 'ADMIN', 'SUPPORT', 'FULFILLMENT'].includes(me.role);
+  // Reading a key is the vault's rule: ADMIN (OWNER passes), a reason and a
+  // fresh TOTP challenge, enforced by the API whatever this shows.
+  const canReadKeys = ['OWNER', 'ADMIN'].includes(me.role);
   const paid = !['PENDING_PAYMENT', 'CANCELLED', 'FAILED'].includes(detail.status);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -116,6 +120,8 @@ export function LinesTab({
                 orderNumber={detail.number}
                 canFulfil={canFulfil && paid}
                 canResend={canResend}
+                canReadKeys={canReadKeys}
+                onNotice={onNotice}
                 busy={busy === line.orderItemId}
                 onFulfil={(secret, cost) =>
                   act(
@@ -161,6 +167,8 @@ function LineRow({
   keysKnown,
   canFulfil,
   canResend,
+  canReadKeys,
+  onNotice,
   busy,
   onFulfil,
   onDeliver,
@@ -173,6 +181,8 @@ function LineRow({
   orderNumber: string;
   canFulfil: boolean;
   canResend: boolean;
+  canReadKeys: boolean;
+  onNotice: (notice: Notice | null) => void;
   busy: boolean;
   onFulfil: (secret: SecretInput, cost?: string) => Promise<void>;
   onDeliver: () => Promise<void>;
@@ -216,8 +226,20 @@ function LineRow({
             <span className="line-keys">
               {keys && keys.keys.length > 0 ? (
                 keys.keys.map((key) => (
-                  <span key={key.licenseKeyId} className={`pill ${KEY_PILL[key.state]}`}>
-                    {t('keyState', { state: key.state })}
+                  <span key={key.licenseKeyId} className="line-key">
+                    <span className={`pill ${KEY_PILL[key.state]}`}>
+                      {t('keyState', { state: key.state })}
+                    </span>
+                    {/* Read it here, without copying the order number to the vault. */}
+                    {canReadKeys ? (
+                      <KeyActions
+                        licenseKeyId={key.licenseKeyId}
+                        state={key.state}
+                        actions={['reveal', 'history']}
+                        onError={(text) => onNotice(text ? { kind: 'error', text } : null)}
+                        onNote={(text) => onNotice({ kind: 'ok', text })}
+                      />
+                    ) : null}
                   </span>
                 ))
               ) : (

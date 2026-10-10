@@ -737,8 +737,90 @@ const orderKeys = (number) => {
   ];
 };
 
+// --- one key, by a person (read / revoke / replace) -----------------------
+// The first gated act of a session answers 403, as the API does when the TOTP
+// challenge is older than a quarter of an hour; a step-up clears it.
+const keyGate = { fresh: false };
+const gated = (answer) =>
+  keyGate.fresh ? answer : { __status: 403, body: { message: 'Step-up required' } };
+const vaultStock = [
+  {
+    variantId: 'v_canva',
+    sku: 'CANVA-EDU-LIFE',
+    productName: 'كانفا للتعليم — مدى الحياة',
+    productSlug: 'canva-edu-life',
+    counts: { AVAILABLE: 2, DELIVERED: 1, REVOKED: 0 },
+    mode: 'FROM_STOCK',
+    credentialKind: 'ACTIVATION_KEY',
+  },
+];
+const variantKeys = () => [
+  {
+    licenseKeyId: 'lk_canva_3',
+    state: 'AVAILABLE',
+    createdAt: iso(60),
+    expiresAt: null,
+    deliveredAt: null,
+    revokedAt: null,
+    revokedReason: null,
+  },
+  {
+    licenseKeyId: 'lk_canva_2',
+    state: 'AVAILABLE',
+    createdAt: iso(61),
+    expiresAt: null,
+    deliveredAt: null,
+    revokedAt: null,
+    revokedReason: null,
+  },
+  {
+    licenseKeyId: 'lk_canva_1',
+    state: 'DELIVERED',
+    createdAt: iso(62),
+    expiresAt: null,
+    deliveredAt: iso(30),
+    revokedAt: null,
+    revokedReason: null,
+  },
+];
+
 /** Paths with a parameter in them, matched after the exact table above. */
 const dynamic = [
+  [/^GET \/v1\/admin\/fulfillment\/vault\/stock$/, () => vaultStock],
+  [/^GET \/v1\/admin\/fulfillment\/vault\/stock\/([^/]+)\/keys$/, () => variantKeys()],
+  [
+    /^POST \/v1\/auth\/staff\/step-up$/,
+    () => {
+      keyGate.fresh = true;
+      return { staff: me };
+    },
+  ],
+  [
+    /^POST \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/reveal$/,
+    () =>
+      gated({ kind: 'ACTIVATION_KEY', key: 'MOCK-TEST-KEY-0001', username: null, password: null }),
+  ],
+  [
+    /^POST \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/revoke$/,
+    () => gated({ state: 'REVOKED' }),
+  ],
+  [
+    /^POST \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/replace$/,
+    () => gated({ imported: 1, revoked: true }),
+  ],
+  [
+    /^GET \/v1\/admin\/fulfillment\/vault\/keys\/([^/]+)\/history$/,
+    () => [
+      {
+        action: 'REVEAL',
+        actorId: 'staff_owner',
+        ip: null,
+        createdAt: iso(5),
+        reason: 'العميل يقول إن المفتاح لا يُفعَّل',
+      },
+      { action: 'IMPORT', actorId: 'staff_owner', ip: null, createdAt: iso(60), reason: null },
+    ],
+  ],
   ...supplierDynamic,
   ...supplierSectionDynamic,
   ...studioDynamic,
@@ -842,6 +924,12 @@ createServer(async (req, res) => {
   if (body === undefined) {
     res.writeHead(404);
     res.end(JSON.stringify({ message: `mock: no fixture for ${req.method} ${path}` }));
+    return;
+  }
+  // A fixture may answer with a status of its own: { __status, body }.
+  if (body && typeof body === 'object' && '__status' in body) {
+    res.writeHead(body.__status);
+    res.end(JSON.stringify(body.body));
     return;
   }
   res.writeHead(200);

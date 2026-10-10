@@ -115,6 +115,26 @@ export interface WhatsappTestInput {
   purpose: WhatsappPurpose;
   locale: 'ar' | 'en';
 }
+/** Who touched a key, when, and the reason they gave if there was one. */
+export interface KeyHistoryRow {
+  action: string;
+  actorId: string | null;
+  ip: string | null;
+  createdAt: string;
+  reason?: string | null;
+}
+
+/** A key in a variant's stock list. Never its value. */
+export interface VariantKeyRow {
+  licenseKeyId: string;
+  state: string;
+  createdAt: string;
+  expiresAt: string | null;
+  deliveredAt: string | null;
+  revokedAt: string | null;
+  revokedReason: string | null;
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -844,8 +864,21 @@ export const api = {
     ),
 
   keyHistory: (licenseKeyId: string) =>
-    request<{ action: string; actorId: string | null; ip: string | null; createdAt: string }[]>(
+    request<KeyHistoryRow[]>(
       `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/history`,
+    ),
+
+  /** One variant's keys: ids, states and dates. Never what they say. */
+  variantKeys: (variantId: string) =>
+    request<VariantKeyRow[]>(
+      `/admin/fulfillment/vault/stock/${encodeURIComponent(variantId)}/keys`,
+    ),
+
+  /** Swaps one unsold stock key for a corrected one. 403 asks for a step-up. */
+  replaceKey: (licenseKeyId: string, code: string, reason: string) =>
+    request<{ imported: number; revoked: boolean }>(
+      `/admin/fulfillment/vault/keys/${encodeURIComponent(licenseKeyId)}/replace`,
+      { method: 'POST', body: JSON.stringify({ code, reason }) },
     ),
 
   /**

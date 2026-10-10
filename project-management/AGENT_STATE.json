@@ -313,11 +313,13 @@
       "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [],
+      "supporting": [
+        "TASK-0129"
+      ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 0.5,
       "blockers": [],
       "last_activity": "2026-10-07T11:37:25Z"
     },
@@ -329,12 +331,13 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": "TASK-0021",
+      "state": "WORKING",
+      "current_task": "TASK-0129",
       "assignments": [
         "TASK-0021",
         "TASK-0034",
-        "TASK-0128"
+        "TASK-0128",
+        "TASK-0129"
       ],
       "supporting": [
         "TASK-0004"
@@ -342,9 +345,9 @@
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 3.5,
+      "workload": 4.5,
       "blockers": [],
-      "last_activity": "2026-10-10T06:19:56Z"
+      "last_activity": "2026-10-10T11:15:57Z"
     },
     {
       "id": "backend-engineer",
