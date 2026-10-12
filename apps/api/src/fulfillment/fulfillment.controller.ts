@@ -24,6 +24,21 @@ import { type Actor, VaultService } from '../vault/vault.service.js';
 import { FulfillmentService } from './fulfillment.service.js';
 
 /**
+ * Replacing one stock key: the corrected licence, one line, and why. Kept
+ * here rather than in @da/contracts until the panel's contract grows a form
+ * of its own; the panel sends the same two fields.
+ */
+const replaceKeySchema = z.object({
+  reason: z.string().trim().min(3).max(200),
+  code: z
+    .string()
+    .trim()
+    .min(4)
+    .max(4000)
+    .refine((value) => !/[\r\n]/.test(value), 'One key, on one line.'),
+});
+
+/**
  * The supplier queue and the vault, for staff.
  *
  * Behind StaffGuard, and every write behind a role. FULFILLMENT is the role
@@ -216,10 +231,15 @@ export class FulfillmentController {
   @ApiOperation({ summary: 'Show one licence to a named member of staff' })
   async reveal(
     @Param('licenseKeyId') licenseKeyId: string,
-    @Body(new ZodPipe(revealSchema)) _body: z.infer<typeof revealSchema>,
+    @Body(new ZodPipe(revealSchema)) body: z.infer<typeof revealSchema>,
     @Req() request: StaffRequest,
   ): Promise<RevealResult> {
-    const secret = await this.vault.reveal({ licenseKeyId, actor: this.actor(request) });
+    // Through fulfilment so the reason is stored beside the vault's REVEAL row.
+    const secret = await this.fulfillment.revealKey({
+      licenseKeyId,
+      reason: body.reason,
+      actor: this.actor(request),
+    });
     // Already split by the vault. Passed through field by field so the panel
     // can label each part rather than printing one run-together string.
     return {
@@ -230,6 +250,7 @@ export class FulfillmentController {
     };
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @Roles('ADMIN')
   @Post('vault/keys/:licenseKeyId/revoke')
   @ApiOperation({ summary: 'Take a licence out of circulation, with a reason' })
@@ -238,23 +259,63 @@ export class FulfillmentController {
     @Body(new ZodPipe(markFailedSchema)) body: z.infer<typeof markFailedSchema>,
     @Req() request: StaffRequest,
   ) {
-    return this.vault.revoke({
+    // Through fulfilment: a revoked stock key has to come off the count too.
+    return this.fulfillment.revokeKey({
       licenseKeyId,
       reason: body.reason,
       actor: this.actor(request),
     });
   }
 
+  /**
+   * Corrects a stock key that was pasted wrong: the new one in, the old one
+   * revoked. ADMIN, a reason and a fresh TOTP challenge, as for a revoke.
+   */
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Roles('ADMIN')
+  @Post('vault/keys/:licenseKeyId/replace')
+  @ApiOperation({ summary: 'Replace one unsold stock key, with a reason' })
+  replace(
+    @Param('licenseKeyId') licenseKeyId: string,
+    @Body(new ZodPipe(replaceKeySchema)) body: z.infer<typeof replaceKeySchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.fulfillment.replaceKey({
+      licenseKeyId,
+      code: body.code,
+      reason: body.reason,
+      actor: this.actor(request),
+    });
+  }
+
+  /** One variant's keys — ids, states and dates. Never what they say. */
+  @Roles('ADMIN', 'FULFILLMENT')
+  @Get('vault/stock/:variantId/keys')
+  @ApiOperation({ summary: 'The keys of one variant: ids, states, dates. Never plaintext.' })
+  async variantKeys(@Param('variantId') variantId: string) {
+    const rows = await this.fulfillment.variantKeys(variantId);
+    return rows.map((row) => ({
+      licenseKeyId: row.licenseKeyId,
+      state: row.state,
+      createdAt: row.createdAt.toISOString(),
+      expiresAt: row.expiresAt?.toISOString() ?? null,
+      deliveredAt: row.deliveredAt?.toISOString() ?? null,
+      revokedAt: row.revokedAt?.toISOString() ?? null,
+      revokedReason: row.revokedReason,
+    }));
+  }
+
   @Roles('ADMIN', 'FULFILLMENT')
   @Get('vault/keys/:licenseKeyId/history')
   @ApiOperation({ summary: 'Who touched a key and when. Never what it says.' })
   async history(@Param('licenseKeyId') licenseKeyId: string) {
-    const rows = await this.vault.history(licenseKeyId);
+    const rows = await this.fulfillment.keyHistory(licenseKeyId);
     return rows.map((row) => ({
       action: row.action,
       actorId: row.actorId,
       ip: row.ip,
       createdAt: row.createdAt.toISOString(),
+      reason: row.reason,
     }));
   }
 }

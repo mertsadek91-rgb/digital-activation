@@ -11,7 +11,7 @@
 | Max authority | Level 5 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -54,6 +54,7 @@
 - TASK-0021 — Implement Final Processor for checkout and admin (MANAGER_REVIEW, 90%)
 - TASK-0034 — Decide where scheduled work runs: API process or the BullMQ worker (BACKLOG, 0%)
 - TASK-0128 — One-off tool to clear staging test data before launch: delete every order (payments, lines, reviews, coupon usages) and customer, revoke every licence key, take revoked stock off onHand; report-only by default, writes only with the exact reported counts (MANAGER_REVIEW, 80%)
+- TASK-0129 — Read a licence from the order page; list a variant stock keys in the vault with read, revoke and replace - each with a reason and a fresh TOTP challenge; the reason is stored in the audit log and shown in the key history; a revoke recounts stock (IN_PROGRESS, 85%)
 
 ## Supporting
 
