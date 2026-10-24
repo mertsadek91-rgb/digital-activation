@@ -4,7 +4,9 @@ packages:
   - 'workers/*'
 
 # Single source of truth for dependency versions across the monorepo.
-# Verified against the npm registry on 2026-09-09.
+# Verified against the npm registry on 2026-09-09; the security floors
+# (next, @nestjs/*, fastify, @fastify/static, zod, sharp, nodemailer) were
+# raised on 2026-10-24 for the advisories in TASK-0132.
 catalog:
   # --- language & tooling ---
   typescript:
@@ -31,12 +33,12 @@ catalog:
   pg: ^8.23.0
   '@types/pg': ^8.23.1
   dotenv: ^17.4.2
-  zod: ^4.5.4
+  zod: ^4.6.7
 
   # --- api (NestJS 12) ---
-  '@nestjs/common': ^12.0.1
-  '@nestjs/core': ^12.0.1
-  '@nestjs/platform-fastify': ^12.0.1
+  '@nestjs/common': ^12.2.0
+  '@nestjs/core': ^12.2.0
+  '@nestjs/platform-fastify': ^12.2.0
   '@nestjs/config': ^12.0.0
   '@nestjs/jwt': ^12.0.1
   '@nestjs/swagger': ^12.0.1
@@ -46,16 +48,16 @@ catalog:
   '@nestjs/schematics': ^12.0.0
   reflect-metadata: ^0.2.2
   rxjs: ^7.8.1
-  fastify: ^5.4.0
+  fastify: ^5.12.7
   # SwaggerModule serves its UI through this on the Fastify adapter.
-  '@fastify/static': ^8.2.0
+  '@fastify/static': ^10.1.7
   '@fastify/cookie': ^11.1.2 # httpOnly session cookies
   nestjs-pino: ^5.1.0
   pino: ^10.3.1
   pino-pretty: ^13.1.0
 
   # --- storefront & admin (Next 16 / React 19) ---
-  next: ^16.3.4
+  next: ^16.4.3
   react: ^19.2.8
   react-dom: ^19.2.8
   '@types/react': ^19.2.0
@@ -83,7 +85,7 @@ catalog:
   # Object storage. R2 is S3-compatible, so this is the same client.
   '@aws-sdk/client-s3': ^3.1129.0
   # Image processing for the media import: resize, re-encode, strip EXIF.
-  sharp: ^0.35.4
+  sharp: ^0.35.5
   # Server error reporting (TASK-0031). Loaded by name in
   # apps/api/src/infra/error-reporter.ts; off until SENTRY_DSN is set.
   '@sentry/node': ^11.5.0
@@ -91,6 +93,6 @@ catalog:
   resend: ^6.26.0
   # SMTP for development (mailpit) and for any host that gives you SMTP
   # rather than an API. Resend is the production transport.
-  nodemailer: ^10.0.3
+  nodemailer: ^10.2.1
   '@types/nodemailer': ^8.0.1
   web-push: ^3.6.7

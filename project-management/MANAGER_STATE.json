@@ -138,12 +138,14 @@
         "ai-integration-architect"
       ],
       "active_tasks": [
-        "TASK-0021"
+        "TASK-0021",
+        "TASK-0132"
       ],
       "owned_tasks": [
         "TASK-0021",
         "TASK-0034",
-        "TASK-0041"
+        "TASK-0041",
+        "TASK-0132"
       ],
       "reviews": [
         "TASK-0021"
@@ -159,7 +161,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-03T07:22:45Z"
+      "last_activity": "2026-10-24T07:55:50Z"
     },
     {
       "id": "pm-05",
@@ -241,7 +243,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-06T07:12:22Z"
+      "last_activity": "2026-10-24T07:55:58Z"
     },
     {
       "id": "pm-07",

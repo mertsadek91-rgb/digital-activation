@@ -9,7 +9,7 @@ import {
   type CustomerSecret,
   type LicenceList,
 } from '@da/contracts';
-import { ActorType, FulfillmentState, Locale, OrderStatus, type Prisma } from '@da/db';
+import { ActorType, FulfillmentState, Locale, OrderStatus, type Prisma, RiskLevel } from '@da/db';
 
 import { parseActivationSteps } from '../common/activation-steps.js';
 import { FulfillmentService } from '../fulfillment/fulfillment.service.js';
@@ -58,6 +58,9 @@ const LINK_MINUTES = 15;
 /** One link a minute per address. A slower brake than the IP throttle, and a
  *  different one: it stops this route being used to mail-bomb a stranger. */
 const LINK_COOLDOWN_SECONDS = 60;
+
+/** The risk levels at which staff may not deliver, so the customer may not read either. */
+const HELD_RISK: RiskLevel[] = [RiskLevel.HIGH, RiskLevel.BLOCKED];
 
 export interface CustomerActor {
   customerId: string;
@@ -301,7 +304,7 @@ export class AccountService {
       // its own, so the order's does the tie-breaking.
       orderBy: [{ deliveredAt: 'desc' }, { order: { placedAt: 'desc' } }],
       include: {
-        order: { select: { number: true, placedAt: true, locale: true } },
+        order: { select: { number: true, placedAt: true, locale: true, riskLevel: true } },
         variant: {
           select: {
             credentialKind: true,
@@ -339,7 +342,8 @@ export class AccountService {
         credentialKind: item.variant.credentialKind,
         activationSteps: parseActivationSteps(translation?.activationSteps),
         warrantyDays: item.variant.warrantyDays,
-        hasSecret: readable.has(item.id),
+        // A held order keeps its lines on the list but offers nothing to read.
+        hasSecret: readable.has(item.id) && !HELD_RISK.includes(item.order.riskLevel),
         expiresAt: deadlines.get(item.id)?.toISOString() ?? null,
       };
     });
@@ -361,6 +365,13 @@ export class AccountService {
    */
   async reveal(input: { orderItemId: string; actor: CustomerActor }): Promise<CustomerSecret[]> {
     const item = await this.ownedItem(input.orderItemId, input.actor.customerId);
+    // Only what has been sent can be read again; releasing a held line is
+    // staff's decision (BUG-0030). The vault checks the key's own state too.
+    if (item.fulfillmentState !== FulfillmentState.DELIVERED) {
+      throw new NotFoundException(
+        'لا يوجد مفتاح جاهز على هذا البند بعد. سيصلك بالبريد فور تسليمه.',
+      );
+    }
 
     const secrets = await this.vault.revealForCustomer({
       orderItemId: item.id,
@@ -426,6 +437,10 @@ export class AccountService {
               OrderStatus.COMPLETED,
             ],
           },
+          // The hold both staff delivery paths obey (a dispute sets BLOCKED
+          // and leaves the status alone). A held order's lines answer as if
+          // they were not there, for the reveal and the resend alike.
+          riskLevel: { notIn: HELD_RISK },
         },
       },
       select: { id: true, fulfillmentState: true },

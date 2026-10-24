@@ -209,7 +209,10 @@ h1 {
   white-space: nowrap;
   flex-shrink: 0;
   background: var(--color-bg);
-  transition: all 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
 }
 .subnav a:hover {
   border-color: var(--color-brand);
@@ -256,7 +259,10 @@ h1 {
   white-space: nowrap;
   flex-shrink: 0;
   background: var(--color-bg);
-  transition: all 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
 }
 .sorts a:hover {
   border-color: var(--color-brand);

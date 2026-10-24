@@ -64,6 +64,7 @@
 - TASK-0040 — Plan the legacy key migration into the vault and the scrub of the source (CONSENSUS-0002) (BACKLOG, 0%)
 - TASK-0043 — Owner decision — which legacy customers, orders and licence keys migrate (WAITING_INFORMATION, 20%)
 - TASK-0100 — Agent containment beyond the command guard: OS-level sandbox or allowlisted shell, so destructive, secret-read and state-write bypasses (REV-0113, REV-0115) are impossible rather than parsed (BACKLOG, 0%)
+- TASK-0132 — Security upgrades: Next.js 16.4.3, @nestjs 12.2, fastify 5.12.7, @fastify/static 10, nodemailer, sharp, zod 4.6.7 (re-cut patch), transitive overrides; Node 22.23.4 floor for CI and the Coolify build with a preinstall guard (IN_PROGRESS, 90%)
 
 ## Pending reviews
 

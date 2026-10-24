@@ -451,9 +451,10 @@
      and switches ON at once: a panel that is still hidden when it opens
      cannot take focus, and the header moves focus into it on open. */
   visibility: hidden;
+  /* Panels open slower than they close: 400ms in, 350ms out. */
   transition:
-    transform 300ms var(--ease-out),
-    visibility 0s linear 300ms;
+    transform var(--duration-medium) var(--ease-smooth-out),
+    visibility 0s linear var(--duration-medium);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -467,7 +468,7 @@
   transform: translateX(0) !important;
   visibility: visible;
   transition:
-    transform 300ms var(--ease-out),
+    transform var(--duration-slow) var(--ease-smooth-out),
     visibility 0s;
 }
 @media (prefers-reduced-motion: reduce) {

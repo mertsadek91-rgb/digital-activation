@@ -17,7 +17,7 @@ mertsadekist. Plan: `docs/plan.html`. Deploy runbook: `docs/deployment.md`.
 
 ## Stack
 
-pnpm 9 · Turbo · Node ≥ 22.12 · TypeScript **6.0.x (pinned — not 7)**
+pnpm 9 · Turbo · Node ≥ 22.23.4 (`.node-version`; older refuses to install) · TypeScript **6.0.x (pinned — not 7)**
 `apps/storefront` Next.js 16 · `apps/admin` Next.js 16 · `apps/api` NestJS 12 on
 Fastify · `packages/db` Prisma 7 (pg adapter), PostgreSQL 18, schemas `public`
 

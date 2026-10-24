@@ -140,7 +140,8 @@
   transition:
     background 160ms ease,
     color 160ms ease,
-    border-color 160ms ease;
+    border-color 160ms ease,
+    scale var(--duration-quick) var(--ease-smooth-out);
 }
 .btn:hover {
   background: var(--color-brand-hover);
@@ -776,7 +777,7 @@
   inline-size: 32px;
   block-size: 32px;
   color: var(--color-ink-muted);
-  transition: transform 160ms ease;
+  transition: transform var(--duration-fast) var(--ease-smooth-out);
 }
 .faqrow[open] .faq-toggle {
   transform: rotate(45deg);
