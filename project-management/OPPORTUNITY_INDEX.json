@@ -366,6 +366,13 @@
       "relation": "RELATED",
       "ts": "2026-10-05T12:19:44Z",
       "actor": "performance-engineer"
+    },
+    {
+      "from": "TASK-0131",
+      "to": "BUG-0030",
+      "relation": "RELATED",
+      "ts": "2026-10-24T07:38:21Z",
+      "actor": "auth-rbac-specialist"
     }
   ],
   "ranking": {

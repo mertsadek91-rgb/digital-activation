@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -51,7 +51,7 @@
 
 ## Current tasks
 
-- none
+- TASK-0132 — Security upgrades: Next.js 16.4.3, @nestjs 12.2, fastify 5.12.7, @fastify/static 10, nodemailer, sharp, zod 4.6.7 (re-cut patch), transitive overrides; Node 22.23.4 floor for CI and the Coolify build with a preinstall guard (IN_PROGRESS, 90%)
 
 ## Supporting
 

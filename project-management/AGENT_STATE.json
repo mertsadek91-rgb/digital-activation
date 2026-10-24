@@ -289,18 +289,20 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0132",
+      "assignments": [
+        "TASK-0132"
+      ],
       "supporting": [
         "TASK-0101"
       ],
       "reviews": [],
       "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-10-02T11:03:56Z"
+      "last_activity": "2026-10-24T08:04:05Z"
     },
     {
       "id": "frontend-engineer",
@@ -321,7 +323,7 @@
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-07T11:37:25Z"
+      "last_activity": "2026-10-24T08:08:33Z"
     },
     {
       "id": "backend-architect",
@@ -441,7 +443,7 @@
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-02T06:12:09Z"
+      "last_activity": "2026-10-24T08:03:33Z"
     },
     {
       "id": "crm-workflow-architect",
@@ -699,11 +701,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 26,
+      "reviews_recorded": 28,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-08T11:04:15Z"
+      "last_activity": "2026-10-24T08:03:36Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -769,16 +771,17 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0100"
+        "TASK-0100",
+        "TASK-0132"
       ],
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 26,
+      "reviews_recorded": 27,
       "opportunities": [],
-      "workload": 8,
+      "workload": 8.5,
       "blockers": [],
-      "last_activity": "2026-10-10T11:38:37Z"
+      "last_activity": "2026-10-24T08:03:43Z"
     },
     {
       "id": "performance-engineer",

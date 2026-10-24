@@ -3573,6 +3573,146 @@
       "updated_at": "2026-10-10",
       "reaudit": null,
       "file": "tasks/active/TASK-0129.md"
+    },
+    {
+      "id": "TASK-0130",
+      "title": "Install the owner-requested design and security agent skills (impeccable, make-interfaces-feel-better, transitions.dev, GSAP, Cloudflare security-audit) and run a storefront motion and polish pass with them: motion tokens, press feedback, dialog and menu entrances, accordion height, explicit transitions, tabular prices",
+      "type": "improvement",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront",
+        ".claude/skills"
+      ],
+      "affected_pages": [
+        "/",
+        "/store",
+        "/store/<slug>",
+        "/cart"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/globals.css",
+        "apps/storefront/src/app/home.css",
+        "apps/storefront/src/app/catalog.css",
+        "apps/storefront/src/app/header.css",
+        "apps/storefront/src/app/offers.css",
+        "apps/storefront/src/app/growth.css",
+        ".claude/skills/"
+      ],
+      "created_at": "2026-10-24",
+      "updated_at": "2026-10-24",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0130.md"
+    },
+    {
+      "id": "TASK-0131",
+      "title": "Fix BUG-0030: the customer reveal and the licence list honour the same holds as staff delivery - only DELIVERED keys on DELIVERED lines, never on a HIGH or BLOCKED risk order",
+      "type": "bugfix",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "auth-rbac-specialist",
+      "responsible_manager": "pm-06",
+      "supporting_agents": [],
+      "required_reviewers": [
+        "security-engineer",
+        "pm-06",
+        "pm-04"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "api/account",
+        "api/vault"
+      ],
+      "affected_pages": [
+        "/account/licences"
+      ],
+      "affected_files": [
+        "apps/api/src/account/account.service.ts",
+        "apps/api/src/vault/vault.service.ts",
+        "apps/api/src/account/account-reveal.test.ts",
+        "apps/api/src/vault/reveal-for-customer.test.ts"
+      ],
+      "created_at": "2026-10-24",
+      "updated_at": "2026-10-24",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0131.md"
+    },
+    {
+      "id": "TASK-0132",
+      "title": "Security upgrades: Next.js 16.4.3, @nestjs 12.2, fastify 5.12.7, @fastify/static 10, nodemailer, sharp, zod 4.6.7 (re-cut patch), transitive overrides; Node 22.23.4 floor for CI and the Coolify build with a preinstall guard",
+      "type": "improvement",
+      "status": "IN_PROGRESS",
+      "stage": "IMPLEMENTATION",
+      "priority": "HIGH",
+      "progress": 90,
+      "authority_level": 3,
+      "risk": "MEDIUM",
+      "primary_agent": "frontend-architect",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "security-engineer"
+      ],
+      "required_reviewers": [
+        "qa-lead"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "toolchain",
+        "ci"
+      ],
+      "affected_pages": [],
+      "affected_files": [
+        "pnpm-workspace.yaml",
+        "package.json",
+        "pnpm-lock.yaml",
+        "patches/",
+        ".github/workflows/",
+        ".node-version",
+        ".nvmrc",
+        "docs/",
+        "scripts/check-node.mjs",
+        "CLAUDE.md"
+      ],
+      "created_at": "2026-10-24",
+      "updated_at": "2026-10-24",
+      "reaudit": null,
+      "file": "tasks/active/TASK-0132.md"
     }
   ]
 }
