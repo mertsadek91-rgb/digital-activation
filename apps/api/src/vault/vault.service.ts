@@ -475,16 +475,14 @@ export class VaultService {
    * that has not proved it.
    *
    * What it does keep is the ordering: the access row is written before the
-   * plaintext exists. And it refuses a key that is not delivered yet; a
-   * customer reading a key still sitting in stock would be reading somebody
-   * else's inventory.
+   * plaintext exists. And it refuses a key that is not delivered yet. An
+   * ASSIGNED key is bound to the line but has not gone out — held by the
+   * AUTO_DELIVERY switch, a failed send or a risk hold — and releasing it is a
+   * decision for staff, not something the buyer can do by asking (BUG-0030).
    */
   async revealForCustomer(input: { orderItemId: string; actor: Actor }): Promise<ParsedSecret[]> {
     const rows = await this.vault.client.licenseKey.findMany({
-      where: {
-        orderItemId: input.orderItemId,
-        state: { in: [LicenseKeyState.DELIVERED, LicenseKeyState.ASSIGNED] },
-      },
+      where: { orderItemId: input.orderItemId, state: LicenseKeyState.DELIVERED },
     });
     if (rows.length === 0) {
       throw new NotFoundException(
@@ -500,14 +498,11 @@ export class VaultService {
     return opened;
   }
 
-  /** Whether a line has anything readable, without opening it. */
+  /** Whether a line has anything `revealForCustomer` would open, without opening it. */
   async hasReadableSecret(orderItemIds: string[]): Promise<Set<string>> {
     if (orderItemIds.length === 0) return new Set();
     const rows = await this.vault.client.licenseKey.findMany({
-      where: {
-        orderItemId: { in: orderItemIds },
-        state: { in: [LicenseKeyState.DELIVERED, LicenseKeyState.ASSIGNED] },
-      },
+      where: { orderItemId: { in: orderItemIds }, state: LicenseKeyState.DELIVERED },
       select: { orderItemId: true, expiresAt: true },
     });
     return new Set(rows.map((row) => row.orderItemId).filter((id): id is string => id !== null));
