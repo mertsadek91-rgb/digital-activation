@@ -159,6 +159,21 @@ start command:
 `pnpm db:generate` must run before any build: the Prisma client is generated,
 not committed.
 
+**Node.js version.** `.node-version` and `.nvmrc` name **22.23.4**, the
+October 2026 security release (TASK-0132); CI reads the same file. The build
+pack chooses Node from those files and `engines`, but the repository cannot
+force its patch level, so the root `preinstall` (`scripts/check-node.mjs`)
+refuses `pnpm install` on anything older — a build that would ship an
+unpatched runtime fails instead of deploying; the running container stays
+up. Nixpacks takes only the **major** from these files (`NIXPACKS_NODE_VERSION`
+too): the patch level is whatever its nixpkgs snapshot ships, so setting that
+variable cannot fix a refused build. If a build fails there, switch the
+resource's build pack to **Railpack**, which installs the exact version in
+`.node-version` through mise, keeping the same build and start commands; do
+not remove the check. Before the first deploy with the check, read the Node
+version in a current build log, and confirm a running container with `node -v`
+in its Coolify terminal.
+
 Health checks: `GET /health` and `GET /health/ready` on the API. The readiness
 probe round-trips the database and answers **503** when it cannot, so a
 database outage takes the replica out of rotation rather than producing a
