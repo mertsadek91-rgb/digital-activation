@@ -3670,10 +3670,10 @@
       "id": "TASK-0132",
       "title": "Security upgrades: Next.js 16.4.3, @nestjs 12.2, fastify 5.12.7, @fastify/static 10, nodemailer, sharp, zod 4.6.7 (re-cut patch), transitive overrides; Node 22.23.4 floor for CI and the Coolify build with a preinstall guard",
       "type": "improvement",
-      "status": "IN_PROGRESS",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "HIGH",
-      "progress": 90,
+      "progress": 100,
       "authority_level": 3,
       "risk": "MEDIUM",
       "primary_agent": "frontend-architect",
@@ -3712,7 +3712,7 @@
       "created_at": "2026-10-24",
       "updated_at": "2026-10-24",
       "reaudit": null,
-      "file": "tasks/active/TASK-0132.md"
+      "file": "tasks/completed/TASK-0132.md"
     }
   ]
 }
