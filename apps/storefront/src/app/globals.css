@@ -145,6 +145,95 @@ summary {
   unicode-bidi: isolate;
   direction: ltr;
   font-family: var(--font-latin);
+  /* Equal-width digits: a total that changes as a stepper moves does not
+     shift the words beside it. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Body copy breaks without a lone last word (headings already balance). */
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+/*
+ * Motion tokens (TASK-0130), the transitions.dev scale by usage: opens take
+ * longer than closes, surfaces ease out exponentially, and a pre-scale is
+ * never smaller than 0.96. `--ease-out` stays the kit's curve from @da/ui.
+ */
+:root {
+  --duration-quick: 150ms; /* close, press, small swaps */
+  --duration-fast: 250ms; /* dropdown / dialog open, accordion */
+  --duration-medium: 350ms; /* panel close */
+  --duration-slow: 400ms; /* panel open */
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --scale-dialog: 0.96;
+  --scale-menu: 0.97;
+}
+
+/* Press feedback: a button gives a little under the finger (the transition
+   is on `.btn` in home.css). */
+.btn:active:not(:disabled) {
+  scale: 0.96;
+}
+
+/*
+ * Entrances for the surfaces React mounts when they open — the dialogs and
+ * the product menu. They grow from just under full size and fade in; they
+ * leave at once, because dismissal should never wait on an animation.
+ */
+@keyframes surface-in {
+  from {
+    opacity: 0;
+    scale: var(--surface-from, var(--scale-dialog));
+  }
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .offer-dialog,
+  .growth-dialog {
+    animation: surface-in var(--duration-fast) var(--ease-smooth-out) both;
+  }
+  .offer-overlay,
+  .growth-backdrop {
+    animation: backdrop-in var(--duration-fast) var(--ease-smooth-out) both;
+  }
+  .mega-panel {
+    --surface-from: var(--scale-menu);
+    transform-origin: top left;
+    animation: surface-in var(--duration-fast) var(--ease-smooth-out) both;
+  }
+  [dir='rtl'] .mega-panel {
+    transform-origin: top right;
+  }
+}
+
+/*
+ * The FAQ rows open to their height instead of jumping to it, where the
+ * browser can animate to `auto` (::details-content + interpolate-size).
+ * Elsewhere a row opens at once, as before.
+ */
+@supports (interpolate-size: allow-keywords) {
+  @media (prefers-reduced-motion: no-preference) {
+    .faqrow {
+      interpolate-size: allow-keywords;
+    }
+    .faqrow::details-content {
+      block-size: 0;
+      overflow: clip;
+      transition:
+        block-size var(--duration-fast) var(--ease-smooth-out),
+        content-visibility var(--duration-fast) allow-discrete;
+    }
+    .faqrow[open]::details-content {
+      block-size: auto;
+    }
+  }
 }
 
 /*
