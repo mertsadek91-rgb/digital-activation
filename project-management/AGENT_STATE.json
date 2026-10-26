@@ -289,20 +289,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "WORKING",
-      "current_task": "TASK-0132",
-      "assignments": [
-        "TASK-0132"
-      ],
+      "state": "AVAILABLE",
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0101"
       ],
       "reviews": [],
       "reviews_recorded": 1,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-24T08:04:05Z"
+      "last_activity": "2026-10-24T10:57:03Z"
     },
     {
       "id": "frontend-engineer",
@@ -771,15 +769,14 @@
         "TASK-0021",
         "TASK-0040",
         "TASK-0043",
-        "TASK-0100",
-        "TASK-0132"
+        "TASK-0100"
       ],
       "reviews": [
         "TASK-0128"
       ],
       "reviews_recorded": 30,
       "opportunities": [],
-      "workload": 8.5,
+      "workload": 8,
       "blockers": [],
       "last_activity": "2026-10-26T06:50:08Z"
     },

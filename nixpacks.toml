@@ -1,0 +1,15 @@
+# Coolify builds storefront, admin and api with Nixpacks from this directory.
+#
+# Nixpacks takes Node's major version from `.nvmrc` / `engines`, and the patch
+# level from the nixpkgs snapshot it ships with — which gave Node 22.19.0, so
+# the security floor in `scripts/check-node.mjs` (22.23.4) refused every build
+# of PR #56. Pinning the snapshot is what pins the patch: this is the head of
+# the nixos-26.05 channel on 2026-10-21, the first with nodejs_22 22.23.4
+# (nixpkgs commit cb2177f999c5). A channel commit, not a raw master one, so
+# the Node binary comes from the NixOS cache instead of compiling per build.
+#
+# When the next Node security release lands: take the newest nixos-26.05
+# channel commit whose pkgs/development/web/nodejs/v22.nix has the fixed
+# version, and raise `.node-version` and the floor in check-node.mjs with it.
+[phases.setup]
+nixpkgsArchive = 'da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36'
