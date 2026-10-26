@@ -34,7 +34,7 @@ loadEnv({ path: path.join(__dirname, '..', '..', '..', '..', '.env'), quiet: tru
 
 import { Locale, prisma } from '../../src/index.js';
 
-import { type Lang, type ProductFacts, propose } from './copy.js';
+import { type Lang, type ProductFacts, propose, statedVariants } from './copy.js';
 
 /**
  * `--tighten` exists because the floor and the ceiling are different rules.
@@ -138,7 +138,7 @@ async function main(): Promise<void> {
       name,
       brand: product.brand?.name ?? null,
       hasGoldenWarranty: product.hasGoldenWarranty,
-      variants: product.variants.map((variant) => ({
+      variants: statedVariants(product.variants).map((variant) => ({
         licensePeriodValue: variant.licensePeriodValue,
         licensePeriodUnit: variant.licensePeriodUnit,
         deviceCount: variant.deviceCount,
@@ -149,6 +149,8 @@ async function main(): Promise<void> {
         warrantyDays: variant.warrantyDays,
       })),
     };
+    // No variant states both a term and a device count (TASK-0134): nothing true to write.
+    if (facts.variants.length === 0) continue;
 
     for (const lang of langs) {
       const locale = lang === 'en' ? Locale.EN : Locale.AR;

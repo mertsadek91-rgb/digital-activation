@@ -73,6 +73,12 @@ export const supplierApi = {
     request<SupplierMappingRow>(`/admin/supplier/links/${encodeURIComponent(variantId)}`, {
       method: 'DELETE',
     }),
+  /** Mark a variant out of stock by hand, or back in stock (TASK-0134). */
+  setStock: (variantId: string, outOfStock: boolean) =>
+    request<SupplierMappingRow>(`/admin/supplier/stock/${encodeURIComponent(variantId)}`, {
+      method: 'PUT',
+      body: JSON.stringify({ outOfStock }),
+    }),
   /** Skip a variant (not sold by this supplier) or put it back into linking. */
   setSkipped: (variantId: string, skip: boolean) =>
     request<SupplierMappingRow>(`/admin/supplier/skips/${encodeURIComponent(variantId)}`, {

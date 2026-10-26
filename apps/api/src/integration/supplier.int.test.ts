@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { SupplierSyncService } from '../supplier/supplier-sync.service.js';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service.js';
 import { SupplierService } from '../supplier/supplier.service.js';
 
 import {
@@ -214,6 +215,91 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
       sha256: createHash('sha256').update(bytes).digest('hex'),
       status: 'FAILED',
     });
+  });
+
+  it('marks a variant out of stock by hand, keeps it out through a sync, and clears it only by hand', async () => {
+    const supplier = harness.get(SupplierService);
+    const id = catalogue.madeToOrder.variantId;
+    const row = await supplier.setManualStock(id, true, actor);
+    expect(row).toMatchObject({ manualOutOfStock: true, supplierOutOfStock: true });
+    expect(
+      (await harness.db.variant.findUniqueOrThrow({ where: { id } })).manualOutOfStockAt,
+    ).not.toBeNull();
+
+    const cart = shopper(harness);
+    expect((await cart.request('POST', '/v1/cart/items', { variantId: id, qty: 1 })).status).toBe(
+      400,
+    );
+
+    // Linked to a line the sheet has in stock: the sheet does not undo a person.
+    await harness.db.supplierItem.update({
+      where: { id: itemId },
+      data: { missingSince: null, outOfStock: false },
+    });
+    await supplier.setLink(id, { itemId, followStock: true }, actor);
+    await harness.get(SupplierSyncService).reconcileStock({ variantIds: [id] }, actor.staffId);
+    expect((await harness.db.variant.findUniqueOrThrow({ where: { id } })).supplierOutOfStock).toBe(
+      true,
+    );
+
+    const back = await supplier.setManualStock(id, false, actor);
+    expect(back).toMatchObject({ manualOutOfStock: false, supplierOutOfStock: false });
+    expect(
+      await harness.db.auditLog.count({
+        where: { entityId: id, action: 'variant.marked_out_of_stock' },
+      }),
+    ).toBe(1);
+    await supplier.removeLink(id, actor);
+  });
+
+  it('emails the people who asked while it was marked out, once it is back', async () => {
+    const supplier = harness.get(SupplierService);
+    const alerts = harness.get(SubscriptionsService);
+    const id = catalogue.madeToOrder.variantId;
+    await supplier.setManualStock(id, true, actor);
+    const email = `waiting-${catalogue.run}@example.test`;
+    await alerts.requestStockAlert({ email, variantId: id, locale: 'ar' });
+    const stored = await harness.db.stockAlert.findFirstOrThrow({
+      where: { email, variantId: id },
+    });
+    expect(stored.notifiedAt).toBeNull();
+
+    await supplier.setManualStock(id, false, actor);
+    await alerts.sweep();
+    expect(
+      (await harness.db.stockAlert.findUniqueOrThrow({ where: { id: stored.id } })).notifiedAt,
+    ).not.toBeNull();
+  });
+
+  it('puts the line with the same years and devices first among the suggestions', async () => {
+    const supplier = harness.get(SupplierService);
+    const id = catalogue.madeToOrder.variantId;
+    const variant = await harness.db.variant.update({
+      where: { id },
+      data: { deviceCount: 2, licensePeriodUnit: 'YEAR', licensePeriodValue: 3 },
+      include: { product: { include: { translations: true } } },
+    });
+    const name =
+      variant.product.translations.find((t) => t.locale === 'EN')?.name ?? variant.product.slug;
+    const sourceId = (await harness.db.supplierItem.findUniqueOrThrow({ where: { id: itemId } }))
+      .sourceId;
+    // The wrong sibling first, with the closer-looking name.
+    for (const terms of ['Key 3 Device 2 Year', 'Key 2 Device 3 Year']) {
+      await harness.db.supplierItem.create({
+        data: { sourceId, nameKey: `${name} ${terms}`.toLowerCase(), name: `${name} ${terms}` },
+      });
+    }
+
+    const mapping = await supplier.mapping({ filter: 'all' });
+    const row = mapping.rows.find((entry) => entry.variantId === id);
+    expect(row?.suggestions[0]?.name).toBe(`${name} Key 2 Device 3 Year`);
+    expect(row?.suggestions[0]?.terms).toMatchObject({
+      devices: 2,
+      devicesMatch: 'MATCH',
+      periodMatch: 'MATCH',
+    });
+    const wrong = row?.suggestions.find((entry) => entry.name.endsWith('Key 3 Device 2 Year'));
+    expect(wrong?.terms).toMatchObject({ devicesMatch: 'DIFFERENT', periodMatch: 'DIFFERENT' });
   });
 
   it('refuses to skip a linked variant', async () => {

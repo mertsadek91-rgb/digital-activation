@@ -145,17 +145,14 @@ export function BuyBox({ product, locale }: { product: CatalogProduct; locale: s
    * and the structured data read, so the page cannot describe a variant the
    * shop would not actually deliver.
    */
+  // A term or device count the product does not state is left out (TASK-0134).
+  const term = formatLicensePeriod(selected, tf);
+  const devices = formatDevices(selected.deviceCount, tf);
   const specs: { kind: SpecKind; label: string; value: string }[] = [
-    {
-      kind: 'term',
-      label: t('specTerm'),
-      value: formatLicensePeriod(selected, tf),
-    },
-    {
-      kind: 'devices',
-      label: t('specDevices'),
-      value: formatDevices(selected.deviceCount, tf),
-    },
+    ...(term === null ? [] : [{ kind: 'term' as const, label: t('specTerm'), value: term }]),
+    ...(devices === null
+      ? []
+      : [{ kind: 'devices' as const, label: t('specDevices'), value: devices }]),
     {
       kind: 'activation',
       label: t('specActivation'),

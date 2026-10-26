@@ -13,6 +13,7 @@ import type {
 import { Locale, Prisma, PublishStatus, refreshProductPrice } from '@da/db';
 
 import { AuditService } from '../auth/audit.service.js';
+import { termValue } from '../common/licence-term.js';
 import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -106,11 +107,11 @@ export class CatalogEditService {
           priceUsd: new Prisma.Decimal(input.variant.priceUsd),
           licensePeriodUnit: input.variant.licensePeriodUnit,
           // The same normalisation the edit form applies: a count beside
-          // LIFETIME is a count of nothing.
-          licensePeriodValue:
-            input.variant.licensePeriodUnit === 'LIFETIME'
-              ? null
-              : (input.variant.licensePeriodValue ?? 1),
+          // LIFETIME or UNSPECIFIED is a count of nothing.
+          licensePeriodValue: termValue(
+            input.variant.licensePeriodUnit,
+            input.variant.licensePeriodValue,
+          ),
           deviceCount: input.variant.deviceCount,
           platform: input.variant.platform,
           activationMethod: input.variant.activationMethod,
@@ -167,8 +168,7 @@ export class CatalogEditService {
           sku,
           priceUsd: new Prisma.Decimal(input.priceUsd),
           licensePeriodUnit: input.licensePeriodUnit,
-          licensePeriodValue:
-            input.licensePeriodUnit === 'LIFETIME' ? null : (input.licensePeriodValue ?? 1),
+          licensePeriodValue: termValue(input.licensePeriodUnit, input.licensePeriodValue),
           deviceCount: input.deviceCount,
           platform: input.platform,
           activationMethod: input.activationMethod,
@@ -464,7 +464,8 @@ export class CatalogEditService {
     }
 
     /*
-     * A licence term is a number and a unit, or it is lifetime.
+     * A licence term is a number and a unit, or it is lifetime, or the
+     * product states none (TASK-0134).
      *
      * "3" with unit LIFETIME is three of nothing, and "LIFETIME" with a count
      * renders as "lifetime for 3 years" on the product page. Normalised here
@@ -476,8 +477,7 @@ export class CatalogEditService {
       input.licensePeriodValue === undefined
         ? variant.licensePeriodValue
         : input.licensePeriodValue;
-    if (nextUnit === 'LIFETIME') nextValue = null;
-    else if (nextValue === null) nextValue = 1;
+    nextValue = termValue(nextUnit, nextValue);
 
     const before = {
       priceUsd: variant.priceUsd.toFixed(2),

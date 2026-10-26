@@ -127,7 +127,8 @@ export const variantTermsSchema = z.object({
 
   licensePeriodValue: z.number().int().nullable(),
   licensePeriodUnit: licensePeriodUnitSchema,
-  deviceCount: z.number().int(),
+  /** 0 means unlimited; null means not stated. */
+  deviceCount: z.number().int().nullable(),
   platform: platformSchema,
   activationMethod: activationMethodSchema,
   fulfillmentMode: fulfillmentModeSchema,
@@ -154,10 +155,11 @@ export const setVariantTermsSchema = z
     compareAtUsd: optionalMoneySchema.optional(),
     costUsd: optionalMoneySchema.optional(),
 
-    /** Null with unit LIFETIME; a positive count otherwise. */
+    /** Null with unit LIFETIME or UNSPECIFIED; a positive count otherwise. */
     licensePeriodValue: z.number().int().min(1).max(120).nullable().optional(),
     licensePeriodUnit: licensePeriodUnitSchema.optional(),
-    deviceCount: z.number().int().min(1).max(10_000).optional(),
+    /** 0 means unlimited; null means the product states no device count. */
+    deviceCount: z.number().int().min(0).max(10_000).nullable().optional(),
     platform: platformSchema.optional(),
     activationMethod: activationMethodSchema.optional(),
     fulfillmentMode: fulfillmentModeSchema.optional(),

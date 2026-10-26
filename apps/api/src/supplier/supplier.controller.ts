@@ -15,6 +15,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type ApplySupplierPrices,
   type ApplySupplierPricesResult,
+  type SetManualStock,
   type SetSupplierLink,
   type SetSupplierSource,
   type SupplierItems,
@@ -29,6 +30,7 @@ import {
   type SupplierUploadInput,
   applySupplierPricesSchema,
   linkBySkuSchema,
+  setManualStockSchema,
   setSupplierLinkSchema,
   setSupplierSourceSchema,
   supplierItemsQuerySchema,
@@ -186,6 +188,16 @@ export class SupplierController {
     @Req() request: StaffRequest,
   ): Promise<SupplierMappingRow> {
     return this.supplier.setSkipped(variantId, false, actor(request));
+  }
+
+  @Put('stock/:variantId')
+  @ApiOperation({ summary: 'Mark a variant out of stock by hand, or back in stock' })
+  setStock(
+    @Param('variantId') variantId: string,
+    @Body(new ZodPipe(setManualStockSchema)) body: SetManualStock,
+    @Req() request: StaffRequest,
+  ): Promise<SupplierMappingRow> {
+    return this.supplier.setManualStock(variantId, body.outOfStock, actor(request));
   }
 
   @Get('prices')

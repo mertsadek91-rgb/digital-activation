@@ -38,8 +38,9 @@ import type { FxTable } from './pricing.js';
 /** What a filter needs to know about one variant, already bucketed. */
 export interface FacetVariant {
   platform: Platform;
-  term: TermBucket;
-  devices: DeviceBucket;
+  /** Null when the product states no term or device count: in no box (TASK-0134). */
+  term: TermBucket | null;
+  devices: DeviceBucket | null;
   /** After any live sale: the price the card would show, in USD. */
   priceUsd: number;
   /** Buyable now — a stocked line with stock left, or any made-to-order one. */
@@ -61,7 +62,7 @@ export interface FacetSourceRow {
   variants: {
     platform: Platform;
     licensePeriodUnit: LicensePeriodUnit;
-    deviceCount: number;
+    deviceCount: number | null;
     priceUsd: Prisma.Decimal;
     compareAtUsd: Prisma.Decimal | null;
     fulfillmentMode: FulfillmentMode;
@@ -124,11 +125,12 @@ export function variantMatches(
   if (skip !== 'platform' && filters.platform.length > 0) {
     if (!filters.platform.includes(variant.platform)) return false;
   }
-  if (skip !== 'term' && filters.term.length > 0 && !filters.term.includes(variant.term)) {
-    return false;
+  // A variant in no box (no stated term or device count) fails any choice made there.
+  if (skip !== 'term' && filters.term.length > 0) {
+    if (variant.term === null || !filters.term.includes(variant.term)) return false;
   }
   if (skip !== 'devices' && filters.devices.length > 0) {
-    if (!filters.devices.includes(variant.devices)) return false;
+    if (variant.devices === null || !filters.devices.includes(variant.devices)) return false;
   }
   if (skip !== 'price') {
     if (filters.minUsd !== null && variant.priceUsd < filters.minUsd) return false;

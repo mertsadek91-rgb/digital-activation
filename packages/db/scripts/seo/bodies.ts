@@ -31,6 +31,7 @@ import { Locale, prisma, PublishStatus } from '../../src/index.js';
 
 import { buildBody } from './body.js';
 import type { Lang, ProductFacts } from './copy.js';
+import { statedVariants } from './copy.js';
 
 /** The gate's own floor, copied for the reason `index.ts` gives. */
 const BODY_MIN_WORDS = 120;
@@ -102,7 +103,7 @@ async function main(): Promise<void> {
       name,
       brand: product.brand?.name ?? null,
       hasGoldenWarranty: product.hasGoldenWarranty,
-      variants: product.variants.map((variant) => ({
+      variants: statedVariants(product.variants).map((variant) => ({
         licensePeriodValue: variant.licensePeriodValue,
         licensePeriodUnit: variant.licensePeriodUnit,
         deviceCount: variant.deviceCount,
@@ -113,6 +114,8 @@ async function main(): Promise<void> {
         warrantyDays: variant.warrantyDays,
       })),
     };
+    // No variant states both a term and a device count (TASK-0134): nothing true to write.
+    if (facts.variants.length === 0) continue;
 
     for (const lang of langs) {
       const locale = lang === 'en' ? Locale.EN : Locale.AR;

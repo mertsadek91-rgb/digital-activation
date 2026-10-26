@@ -17,7 +17,8 @@ import { localeSchema, moneySchema, paginationSchema, slugSchema } from './primi
  * rich results.
  */
 
-export const licensePeriodUnitSchema = z.enum(['DAY', 'MONTH', 'YEAR', 'LIFETIME']);
+/** UNSPECIFIED: the product states no term (TASK-0134); shown without one. */
+export const licensePeriodUnitSchema = z.enum(['DAY', 'MONTH', 'YEAR', 'LIFETIME', 'UNSPECIFIED']);
 export const platformSchema = z.enum(['WINDOWS', 'MAC', 'LINUX', 'CROSS_PLATFORM']);
 export const activationMethodSchema = z.enum([
   'RETAIL_ONLINE',
@@ -99,8 +100,8 @@ export const catalogVariantSchema = z.object({
   sku: z.string(),
   licensePeriodValue: z.number().int().nullable(),
   licensePeriodUnit: licensePeriodUnitSchema,
-  /** 0 means unlimited. */
-  deviceCount: z.number().int().min(0),
+  /** 0 means unlimited; null means the product states no device count. */
+  deviceCount: z.number().int().min(0).nullable(),
   platform: platformSchema,
   activationMethod: activationMethodSchema,
   deliverySlaSeconds: z.number().int().min(0),
@@ -278,7 +279,9 @@ export const TERM_BUCKETS = ['lifetime', 'year', 'month'] as const;
 export const termBucketSchema = z.enum(TERM_BUCKETS);
 export type TermBucket = z.infer<typeof termBucketSchema>;
 
-export function termBucket(unit: z.infer<typeof licensePeriodUnitSchema>): TermBucket {
+/** Null for a product that states no term: it sits in no term box. */
+export function termBucket(unit: z.infer<typeof licensePeriodUnitSchema>): TermBucket | null {
+  if (unit === 'UNSPECIFIED') return null;
   if (unit === 'LIFETIME') return 'lifetime';
   if (unit === 'YEAR') return 'year';
   return 'month';
@@ -293,7 +296,9 @@ export const DEVICE_BUCKETS = ['1', '2-5', '5+'] as const;
 export const deviceBucketSchema = z.enum(DEVICE_BUCKETS);
 export type DeviceBucket = z.infer<typeof deviceBucketSchema>;
 
-export function deviceBucket(count: number): DeviceBucket {
+/** Null for a product that states no device count. */
+export function deviceBucket(count: number | null): DeviceBucket | null {
+  if (count === null) return null;
   if (count === 1) return '1';
   if (count >= 2 && count <= 5) return '2-5';
   return '5+';

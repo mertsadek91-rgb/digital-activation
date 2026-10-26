@@ -52,9 +52,10 @@ export const createVariantSchema = z.object({
   sku: skuSchema,
   priceUsd: moneySchema,
   licensePeriodUnit: licensePeriodUnitSchema.default('LIFETIME'),
-  /** Ignored when the unit is LIFETIME, which the server normalises. */
+  /** Ignored when the unit is LIFETIME or UNSPECIFIED, which the server normalises. */
   licensePeriodValue: z.number().int().min(1).max(120).nullable().default(null),
-  deviceCount: z.number().int().min(1).max(10_000).default(1),
+  /** 0 means unlimited; null means the product states no device count. */
+  deviceCount: z.number().int().min(0).max(10_000).nullable().default(1),
   platform: platformSchema.default('WINDOWS'),
   activationMethod: activationMethodSchema.default('RETAIL_ONLINE'),
   fulfillmentMode: fulfillmentModeSchema.default('ON_DEMAND'),

@@ -2717,6 +2717,15 @@ a.as-button.ghost:hover {
     box-shadow 150ms ease;
   min-block-size: 44px;
 }
+/* "Another term…": the number and the unit side by side under the dropdown (TASK-0134). */
+.term-custom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--spacing-2);
+  align-items: end;
+  min-inline-size: 0;
+}
+
 .terms-grid input:focus-visible,
 .terms-grid select:focus-visible {
   outline: none;

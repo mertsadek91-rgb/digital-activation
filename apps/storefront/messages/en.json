@@ -91,6 +91,7 @@
       "CROSS_PLATFORM": "Cross-platform"
     },
     "devicesUnlimited": "Unlimited",
+    "standard": "Standard edition",
     "devices": "{count, plural, one {# device} other {# devices}}",
     "delivery": {
       "instant": "Instant delivery",

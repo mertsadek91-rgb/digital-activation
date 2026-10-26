@@ -186,13 +186,13 @@ export class RenewalSweepService {
    * recorded yet.
    *
    * Read in batches and decided in code, because the end date is arithmetic on
-   * a JSON snapshot that SQL cannot do cleanly. Lifetime licences are filtered
-   * out in the query, which is most of this catalog.
+   * a JSON snapshot that SQL cannot do cleanly. Lifetime licences, and those
+   * that state no term, are filtered out in the query: most of this catalog.
    */
   private async findDue(settings: RenewalSettings, now: Date): Promise<DueLine[]> {
     const due: DueLine[] = [];
     const timeLimited: Prisma.OrderItemWhereInput[] = [
-      { variant: { licensePeriodUnit: { not: 'LIFETIME' } } },
+      { variant: { licensePeriodUnit: { notIn: ['LIFETIME', 'UNSPECIFIED'] } } },
       ...(['DAY', 'MONTH', 'YEAR'] as const).map((unit) => ({
         variantSpecSnapshot: { path: ['licensePeriodUnit'], equals: unit },
       })),

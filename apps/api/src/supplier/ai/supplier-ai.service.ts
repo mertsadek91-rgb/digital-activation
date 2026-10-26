@@ -33,8 +33,10 @@ import { z } from 'zod';
 
 import { bodyText } from '../../admin/readiness.js';
 import { AuditService } from '../../auth/audit.service.js';
+import { termValue, termsForPrompt } from '../../common/licence-term.js';
 import { say } from '../../common/panel-locale.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { parseLineTerms } from '../line-terms.js';
 import { proposePrice } from '../pricing.js';
 
 import {
@@ -72,7 +74,7 @@ const draftAnswerSchema = z.object({
   kind: productKindSchema.catch('KEY'),
   licensePeriodUnit: licensePeriodUnitSchema.catch('LIFETIME'),
   licensePeriodValue: z.coerce.number().int().min(1).max(120).nullable().catch(null),
-  deviceCount: z.coerce.number().int().min(1).max(10_000).catch(1),
+  deviceCount: z.coerce.number().int().min(0).max(10_000).nullable().catch(1),
   platform: platformSchema.catch('WINDOWS'),
   activationMethod: activationMethodSchema.catch('RETAIL_ONLINE'),
   brand: z.string().trim().max(80).nullable().catch(null),
@@ -629,7 +631,7 @@ export class SupplierAiService {
       ),
       kind: product.kind,
       variants: product.variants.map((variant) => ({
-        terms: `${variant.licensePeriodUnit === 'LIFETIME' ? 'lifetime licence' : `${String(variant.licensePeriodValue ?? 1)} ${variant.licensePeriodUnit.toLowerCase()}(s)`}, ${String(variant.deviceCount)} device(s)`,
+        terms: termsForPrompt(variant),
         platform: variant.platform,
         activationMethod: variant.activationMethod,
         deliveryMinutes: Math.max(1, Math.round(variant.deliverySlaSeconds / 60)),
@@ -733,6 +735,13 @@ export class SupplierAiService {
       ? proposePrice(item.costUsd, item.source.markupPercent, item.source.rounding).toFixed(2)
       : '0.00';
 
+    // What the line's own name states wins over the model's reading of it
+    // (TASK-0134): the same parser the link suggestions use, so a product made
+    // from a line is offered that line again as an exact match.
+    const stated = parseLineTerms(item.name);
+    const unit = stated.period?.unit ?? answer.licensePeriodUnit;
+    const value = stated.period ? stated.period.value : answer.licensePeriodValue;
+
     return {
       model,
       slug,
@@ -740,10 +749,11 @@ export class SupplierAiService {
       nameEn: answer.nameEn,
       kind: answer.kind,
       sku,
-      licensePeriodUnit: answer.licensePeriodUnit,
-      licensePeriodValue:
-        answer.licensePeriodUnit === 'LIFETIME' ? null : (answer.licensePeriodValue ?? 1),
-      deviceCount: answer.deviceCount,
+      licensePeriodUnit: unit,
+      licensePeriodValue: termValue(unit, value),
+      // An unsure "N PC" may be a version ("Windows 11 PC"): the model decides then.
+      deviceCount:
+        stated.devicesSure && stated.devices !== null ? stated.devices : answer.deviceCount,
       platform: answer.platform,
       activationMethod: answer.activationMethod,
       priceUsd: price,

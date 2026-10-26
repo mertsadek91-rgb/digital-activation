@@ -51,7 +51,7 @@ export const cartLineSchema = z.object({
    */
   licensePeriodValue: z.number().int().nullable(),
   licensePeriodUnit: licensePeriodUnitSchema,
-  deviceCount: z.number().int().min(0),
+  deviceCount: z.number().int().min(0).nullable(),
   activationMethod: activationMethodSchema,
   deliverySlaSeconds: z.number().int().min(0),
   fulfillmentMode: fulfillmentModeSchema,

@@ -186,9 +186,11 @@ model Variant {
   productId String
   sku       String  @unique
 
-  licensePeriodValue Int? /// null when unit is LIFETIME
+  licensePeriodValue Int? /// null when unit is LIFETIME or UNSPECIFIED
   licensePeriodUnit  LicensePeriodUnit @default(LIFETIME)
-  deviceCount        Int               @default(1)
+  /// 0 means unlimited; null means the product does not state a device count
+  /// (TASK-0134), and the storefront shows none.
+  deviceCount        Int?              @default(1)
   platform           Platform          @default(WINDOWS)
   activationMethod   ActivationMethod  @default(RETAIL_ONLINE)
 
@@ -236,6 +238,16 @@ model Variant {
   /// back-in-stock sweep emails the people waiting once it clears. Applies to
   /// ON_DEMAND lines, which otherwise can never be out of stock.
   supplierOutOfStock Boolean @default(false)
+
+  /// A person marked this variant out of stock on the supplier linking page
+  /// (TASK-0134): the supplier no longer offers it, or it vanished from the
+  /// list. The sync never clears it; only "back in stock" does. It feeds
+  /// `supplierOutOfStock`, which stays the one flag every reader checks, so
+  /// the cart, checkout, storefront and the back-in-stock email need no change.
+  manualOutOfStock   Boolean   @default(false)
+  /// When a person last marked it out. Kept after "back in stock", so the
+  /// back-in-stock email reaches those who asked while it was out.
+  manualOutOfStockAt DateTime?
 
   isDefault Boolean       @default(false)
   position  Int           @default(0)

@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
 
+import { DevicesPicker, PeriodPicker } from './term-pickers';
+
 /**
  * A new product, and the one variant that makes it a product.
  *
@@ -21,7 +23,6 @@ import { api } from '../../lib/api';
  */
 
 const KINDS = ['KEY', 'ACCOUNT', 'PANEL', 'BUNDLE', 'SERVICE'] as const;
-const PERIOD_UNITS = ['LIFETIME', 'YEAR', 'MONTH', 'DAY'] as const;
 const SUPPLY = ['ON_DEMAND', 'FROM_STOCK', 'MANUAL_SETUP'] as const;
 
 /**
@@ -63,7 +64,8 @@ export function NewProductForm({
   const [sku, setSku] = useState('');
   const [priceUsd, setPriceUsd] = useState('');
   const [unit, setUnit] = useState<CreateVariant['licensePeriodUnit']>('LIFETIME');
-  const [periodValue, setPeriodValue] = useState(1);
+  const [periodValue, setPeriodValue] = useState<number | null>(null);
+  const [devices, setDevices] = useState<number | null>(1);
   const [supply, setSupply] = useState<CreateVariant['fulfillmentMode']>('ON_DEMAND');
 
   const [lists, setLists] = useState<Pick<ProductIdentity, 'brands' | 'categories'> | null>(null);
@@ -107,8 +109,8 @@ export function NewProductForm({
           sku: sku.trim().toUpperCase(),
           priceUsd: priceUsd.trim(),
           licensePeriodUnit: unit,
-          licensePeriodValue: unit === 'LIFETIME' ? null : periodValue,
-          deviceCount: 1,
+          licensePeriodValue: periodValue,
+          deviceCount: devices,
           platform: 'WINDOWS',
           activationMethod: 'RETAIL_ONLINE',
           fulfillmentMode: supply,
@@ -252,35 +254,16 @@ export function NewProductForm({
           />
         </label>
 
-        <label>
-          <span>{t('periodUnit')}</span>
-          <select
-            id="new-unit"
-            value={unit}
-            onChange={(event) => setUnit(event.target.value as CreateVariant['licensePeriodUnit'])}
-          >
-            {PERIOD_UNITS.map((value) => (
-              <option key={value} value={value}>
-                {t(`unit_${value}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {unit === 'LIFETIME' ? null : (
-          <label>
-            <span>{t('periodValue')}</span>
-            <input
-              id="new-period"
-              type="number"
-              min={1}
-              max={120}
-              dir="ltr"
-              value={periodValue}
-              onChange={(event) => setPeriodValue(Number(event.target.value))}
-            />
-          </label>
-        )}
+        <PeriodPicker
+          id="new-period"
+          unit={unit}
+          value={periodValue}
+          onChange={(nextUnit, nextValue) => {
+            setUnit(nextUnit);
+            setPeriodValue(nextValue);
+          }}
+        />
+        <DevicesPicker id="new-devices" value={devices} onChange={setDevices} />
 
         <label>
           <span>{t('supplyMode')}</span>

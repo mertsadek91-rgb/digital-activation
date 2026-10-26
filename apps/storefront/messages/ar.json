@@ -91,6 +91,7 @@
       "CROSS_PLATFORM": "متعدد المنصّات"
     },
     "devicesUnlimited": "غير محدود",
+    "standard": "الإصدار القياسي",
     "devices": "{count, plural, zero {{count, number, latn} جهاز} one {جهاز واحد} two {جهازان} few {{count, number, latn} أجهزة} many {{count, number, latn} جهازاً} other {{count, number, latn} جهاز}}",
     "delivery": {
       "instant": "تسليم فوري",

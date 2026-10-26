@@ -132,11 +132,14 @@ enum ContactStatus {
   @@schema("public")
 }
 
+/// UNSPECIFIED: the product does not state a term (TASK-0134) — a game key or
+/// an account with no end date. Shown without a term, and never "renewed".
 enum LicensePeriodUnit {
   DAY
   MONTH
   YEAR
   LIFETIME
+  UNSPECIFIED
 
   @@schema("public")
 }
