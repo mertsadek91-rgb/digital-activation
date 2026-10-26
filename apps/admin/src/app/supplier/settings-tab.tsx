@@ -1,7 +1,12 @@
 'use client';
 
-import type { SupplierRounding, SupplierSourceView, SupplierSyncResult } from '@da/contracts';
-import { useState } from 'react';
+import {
+  SUPPLIER_UPLOAD_MAX_BYTES,
+  type SupplierRounding,
+  type SupplierSourceView,
+  type SupplierSyncResult,
+} from '@da/contracts';
+import { useRef, useState } from 'react';
 
 import { useAdminLocale, useT } from '../../i18n/provider';
 import { supplierApi } from '../../lib/supplier-api';
@@ -28,10 +33,12 @@ export function SettingsTab({
   const [markup, setMarkup] = useState(source ? String(Number(source.markupPercent)) : '50');
   const [rounding, setRounding] = useState<SupplierRounding>(source?.rounding ?? 'CENTS');
   const [autoSync, setAutoSync] = useState(source?.autoSync ?? true);
-  const [busy, setBusy] = useState<'save' | 'sync' | null>(null);
+  const [busy, setBusy] = useState<'save' | 'sync' | 'upload' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [refused, setRefused] = useState(false);
+  const [lastFile, setLastFile] = useState<{ fileName: string; data: string } | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -57,13 +64,45 @@ export function SettingsTab({
 
   async function sync(force = false) {
     if (force && !window.confirm(t('confirmForce'))) return;
+    if (!force) setLastFile(null);
     setBusy('sync');
     setError(null);
     setNote(null);
     try {
-      const result = await supplierApi.sync(force);
+      // A refused upload is applied by sending the same file again with force.
+      const result =
+        force && lastFile
+          ? await supplierApi.upload({ ...lastFile, force: true })
+          : await supplierApi.sync(force);
       setRefused(result.status === 'REFUSED');
-      const message = describeSync(result, t);
+      const message = describeSync(result, t, force && lastFile !== null);
+      if (result.status === 'OK' || result.status === 'UNCHANGED') setNote(message);
+      else setError(message);
+      onSynced();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** The supplier list as an .xlsx file, read exactly like the sheet (TASK-0133). */
+  async function upload(file: File) {
+    setError(null);
+    setNote(null);
+    setRefused(false);
+    setLastFile(null);
+    if (file.size > SUPPLIER_UPLOAD_MAX_BYTES) {
+      setError(t('uploadTooLarge', { max: Math.round(SUPPLIER_UPLOAD_MAX_BYTES / 1024) }));
+      return;
+    }
+    setBusy('upload');
+    try {
+      const sent = { fileName: file.name, data: await toBase64(file) };
+      const result = await supplierApi.upload({ ...sent, force: false });
+      if (result.status === 'REFUSED') setLastFile(sent);
+      setRefused(result.status === 'REFUSED');
+      const message = describeSync(result, t, true);
       if (result.status === 'OK' || result.status === 'UNCHANGED') setNote(message);
       else setError(message);
       onSynced();
@@ -174,6 +213,8 @@ export function SettingsTab({
                   {source.lastSyncError}
                 </p>
               ) : null}
+              <p className="meta">{t('uploadHint')}</p>
+              {source.autoSync ? <p className="meta">{t('uploadAutoSyncOn')}</p> : null}
             </div>
             <div className="supplier-actions">
               <a className="as-button ghost" href={source.url} target="_blank" rel="noreferrer">
@@ -182,7 +223,30 @@ export function SettingsTab({
               <button type="button" disabled={busy !== null} onClick={() => void sync()}>
                 {busy === 'sync' ? t('syncing') : t('syncNow')}
               </button>
-              {isAdmin && (refused || source.lastSyncStatus === 'REFUSED') ? (
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                hidden
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  // Cleared so choosing the same file again still fires.
+                  event.target.value = '';
+                  if (file) void upload(file);
+                }}
+              />
+              <button
+                type="button"
+                className="ghost"
+                disabled={busy !== null}
+                onClick={() => fileInput.current?.click()}
+              >
+                {busy === 'upload' ? t('uploading') : t('uploadFile')}
+              </button>
+              {/* Only for a refusal seen on this page: after a reload the page no longer
+                  knows whether it was the sheet or a file, and forcing would re-read the
+                  sheet. Read or upload again to see the reason and force it. */}
+              {isAdmin && refused ? (
                 <button
                   type="button"
                   className="btn-danger-soft"
@@ -228,7 +292,24 @@ export function statusPill(status: string): string {
   return 'pill-danger';
 }
 
-function describeSync(result: SupplierSyncResult, t: ReturnType<typeof useT<'supplier'>>): string {
+/** A file's bytes as plain base64 (no `data:` prefix). */
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = typeof reader.result === 'string' ? reader.result : '';
+      resolve(url.slice(url.indexOf(',') + 1));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function describeSync(
+  result: SupplierSyncResult,
+  t: ReturnType<typeof useT<'supplier'>>,
+  fromFile = false,
+): string {
   const params = {
     rows: result.rowCount,
     added: result.added,
@@ -237,5 +318,8 @@ function describeSync(result: SupplierSyncResult, t: ReturnType<typeof useT<'sup
     switched: result.stockSwitched,
     error: result.error ?? '',
   };
+  if (fromFile && (result.status === 'OK' || result.status === 'UNCHANGED')) {
+    return t(`file${result.status}`, params);
+  }
   return t(`sync${result.status}`, params);
 }

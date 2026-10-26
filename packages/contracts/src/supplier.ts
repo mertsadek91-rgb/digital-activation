@@ -72,6 +72,24 @@ export type SupplierSourceView = z.infer<typeof supplierSourceSchema>;
 /** "Sync now". `force` (ADMIN only) applies a read the safety checks refused. */
 export const supplierSyncInputSchema = z.object({ force: z.boolean().default(false) });
 
+/**
+ * The supplier list uploaded as an .xlsx instead of read from Google
+ * (TASK-0133). The bytes travel as base64 in JSON, like the media uploads,
+ * so the API keeps one body parser; 1.4 MiB of file fits its 2 MiB body.
+ * The same sync runs on it, with the same `force` rule.
+ */
+export const SUPPLIER_UPLOAD_MAX_BYTES = Math.floor(1.4 * 1024 * 1024);
+
+export const supplierUploadInputSchema = z.object({
+  fileName: z.string().trim().min(1).max(200),
+  data: z
+    .string()
+    .max(Math.ceil(SUPPLIER_UPLOAD_MAX_BYTES / 3) * 4 + 4, 'الملف أكبر من الحد.')
+    .regex(/^[A-Za-z0-9+/]*={0,2}$/, 'محتوى الملف ليس base64.'),
+  force: z.boolean().default(false),
+});
+export type SupplierUploadInput = z.infer<typeof supplierUploadInputSchema>;
+
 export const supplierSyncResultSchema = z.object({
   status: z.enum(['OK', 'UNCHANGED', 'FAILED', 'REFUSED', 'BUSY']),
   error: z.string().nullable(),

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
+import { strToU8, zipSync } from 'fflate';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { SheetCell, SheetGrid } from '../supplier/sheet-parse.js';
@@ -228,5 +229,85 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet sync run', () => {
     ).toBe(0);
     const source = await harness.db.supplierSource.findUniqueOrThrow({ where: { id: sourceId } });
     expect(source.lastSyncStatus).toBe('FAILED');
+  });
+
+  it('records a missing Google API key as FAILED, naming the key', async () => {
+    delete process.env.GOOGLE_SHEETS_API_KEY;
+    try {
+      const result = await sync.sync(sourceId, null);
+      expect(result.status).toBe('FAILED');
+      expect(result.error).toMatch(/GOOGLE_SHEETS_API_KEY/);
+    } finally {
+      process.env.GOOGLE_SHEETS_API_KEY = 'test-key';
+    }
+  });
+
+  let uploader = '';
+
+  /** The current `sheet` as an .xlsx, struck names in a struck font (TASK-0133). */
+  function workbook(): Uint8Array {
+    const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const inline = (ref: string, text: string, style = 0) =>
+      `<c r="${ref}" t="inlineStr" s="${String(style)}"><is><t>${escape(text)}</t></is></c>`;
+    const rows = [
+      `<row r="1">${inline('A1', 'Price list')}${inline('B1', 'Update Date: 2026-10-24')}</row>`,
+      `<row r="2">${inline('A2', 'Product category')}${inline('B2', 'Product name')}${inline('C2', 'Unit price')}</row>`,
+      ...sheet.map((line, i) => {
+        const r = String(i + 3);
+        return `<row r="${r}">${inline(`A${r}`, 'Test')}${inline(`B${r}`, line.name, line.struck ? 1 : 0)}${inline(`C${r}`, line.price)}</row>`;
+      }),
+    ];
+    return zipSync({
+      'xl/workbook.xml': strToU8(
+        '<workbook xmlns:r="r"><sheets><sheet name="List" sheetId="1" r:id="rId1"/></sheets></workbook>',
+      ),
+      'xl/_rels/workbook.xml.rels': strToU8(
+        '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>',
+      ),
+      'xl/styles.xml': strToU8(
+        '<styleSheet><fonts><font/><font><strike/></font></fonts><cellXfs><xf fontId="0"/><xf fontId="1"/></cellXfs></styleSheet>',
+      ),
+      'xl/worksheets/sheet1.xml': strToU8(
+        `<worksheet><sheetData>${rows.join('')}</sheetData></worksheet>`,
+      ),
+    });
+  }
+
+  it('reads an uploaded .xlsx through the same run: costs, strikes and availability', async () => {
+    const staff = await harness.db.staffUser.create({
+      data: {
+        email: `upload-${catalogue.run}@example.test`,
+        name: 'Upload test',
+        passwordHash: 'not-a-real-hash',
+        role: 'CATALOG',
+      },
+    });
+    // Google is gone; the file must not need it.
+    broken = true;
+    sheet = names.map((name, i) => ({
+      name,
+      price: `$${String(i + 1)}.00`,
+      struck: name === 'Sync Line 2',
+    }));
+    sheet[0] = { name: 'Sync Line 1', price: '$9.00', struck: false };
+
+    uploader = staff.id;
+    const result = await sync.syncFromFile(sourceId, staff.id, workbook());
+    expect(result.status).toBe('OK');
+    expect(result.rowCount).toBe(24);
+    expect((await item('Sync Line 1')).costUsd?.toFixed(2)).toBe('9.00');
+    expect((await item('Sync Line 2')).outOfStock).toBe(true);
+    const source = await harness.db.supplierSource.findUniqueOrThrow({ where: { id: sourceId } });
+    expect(source).toMatchObject({ lastSyncStatus: 'OK', sheetUpdatedLabel: '2026-10-24' });
+
+    // The same refusal as a Google read: a file that lost most rows changes nothing.
+    sheet = sheet.slice(0, 5);
+    expect((await sync.syncFromFile(sourceId, staff.id, workbook())).status).toBe('REFUSED');
+  });
+
+  it('records an unreadable upload as FAILED with the reason', async () => {
+    const result = await sync.syncFromFile(sourceId, uploader, strToU8('a,b'));
+    expect(result.status).toBe('FAILED');
+    expect(result.error).toMatch(/xlsx/);
   });
 });

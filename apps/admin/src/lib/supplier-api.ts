@@ -28,6 +28,7 @@ import type {
   SupplierPrices,
   SupplierSourceView,
   SupplierSyncResult,
+  SupplierUploadInput,
 } from '@da/contracts';
 
 import { request } from './api';
@@ -51,6 +52,12 @@ export const supplierApi = {
     request<SupplierSyncResult>('/admin/supplier/sync', {
       method: 'POST',
       body: JSON.stringify({ force }),
+    }),
+  /** The supplier list as an uploaded .xlsx (base64), synced like the sheet. */
+  upload: (input: SupplierUploadInput) =>
+    request<SupplierSyncResult>('/admin/supplier/upload', {
+      method: 'POST',
+      body: JSON.stringify(input),
     }),
   items: (filter: SupplierItemFilter, q?: string) =>
     request<SupplierItems>(`/admin/supplier/items${query({ filter, q })}`),

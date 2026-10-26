@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   type ApplySupplierPrices,
@@ -14,6 +16,8 @@ import {
   type SupplierPriceRow,
   type SupplierPrices,
   type SupplierSourceView,
+  type SupplierSyncResult,
+  type SupplierUploadInput,
   parseSheetUrl,
   supplierSkipKey,
   supplierSkipListSchema,
@@ -161,6 +165,40 @@ export class SupplierService {
       });
     }
     return this.sync.sync(source.id, actor.staffId, { force });
+  }
+
+  /**
+   * The supplier list from an uploaded .xlsx (TASK-0133). Every upload is
+   * audited with the file's name, size and hash, so a price or stock change
+   * can be traced to the exact file that caused it.
+   */
+  async uploadNow(actor: Actor, input: SupplierUploadInput): Promise<SupplierSyncResult> {
+    const source = await this.requirePrimary();
+    const bytes = Buffer.from(input.data, 'base64');
+    let result: SupplierSyncResult | undefined;
+    try {
+      result = await this.sync.syncFromFile(source.id, actor.staffId, bytes, {
+        force: input.force,
+      });
+      return result;
+    } finally {
+      // Also when the run throws (a busy lock, a database error): the file is still on record.
+      await this.audit.record({
+        actorId: actor.staffId,
+        entity: 'SupplierSource',
+        entityId: source.id,
+        action: input.force ? 'supplier.file_forced' : 'supplier.file_uploaded',
+        after: {
+          fileName: input.fileName,
+          bytes: bytes.byteLength,
+          sha256: crypto.createHash('sha256').update(bytes).digest('hex'),
+          status: result?.status ?? 'ERROR',
+          rowCount: result?.rowCount ?? null,
+        },
+        ip: actor.ip,
+        userAgent: actor.userAgent,
+      });
+    }
   }
 
   // --- items ----------------------------------------------------------------
