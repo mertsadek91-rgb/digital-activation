@@ -237,11 +237,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 7,
+      "reviews_recorded": 9,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-06T07:16:55Z"
+      "last_activity": "2026-10-26T14:14:26Z"
     },
     {
       "id": "interaction-designer",
@@ -314,12 +314,13 @@
       "current_task": null,
       "assignments": [],
       "supporting": [
-        "TASK-0129"
+        "TASK-0129",
+        "TASK-0135"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 1,
       "blockers": [],
       "last_activity": "2026-10-24T08:08:33Z"
     },
@@ -340,12 +341,13 @@
         "TASK-0129"
       ],
       "supporting": [
-        "TASK-0004"
+        "TASK-0004",
+        "TASK-0135"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4.5,
+      "workload": 5,
       "blockers": [],
       "last_activity": "2026-10-10T11:15:57Z"
     },
@@ -411,16 +413,18 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "state": "WORKING",
+      "current_task": "TASK-0135",
+      "assignments": [
+        "TASK-0135"
+      ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-26T06:50:40Z"
+      "last_activity": "2026-10-26T14:17:43Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -699,11 +703,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 32,
+      "reviews_recorded": 34,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-26T10:25:33Z"
+      "last_activity": "2026-10-26T14:15:10Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -774,11 +778,11 @@
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 31,
+      "reviews_recorded": 32,
       "opportunities": [],
       "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-26T10:01:08Z"
+      "last_activity": "2026-10-26T14:01:43Z"
     },
     {
       "id": "performance-engineer",

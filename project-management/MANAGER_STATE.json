@@ -31,7 +31,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-06T12:28:46Z"
+      "last_activity": "2026-10-26T13:15:52Z"
     },
     {
       "id": "pm-01",
@@ -100,12 +100,14 @@
       "active_tasks": [
         "TASK-0101",
         "TASK-0128",
-        "TASK-0129"
+        "TASK-0129",
+        "TASK-0135"
       ],
       "owned_tasks": [
         "TASK-0101",
         "TASK-0128",
-        "TASK-0129"
+        "TASK-0129",
+        "TASK-0135"
       ],
       "reviews": [
         "TASK-0128"
@@ -117,7 +119,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-26T10:00:27Z"
+      "last_activity": "2026-10-26T14:15:37Z"
     },
     {
       "id": "pm-04",
@@ -241,7 +243,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-26T10:04:54Z"
+      "last_activity": "2026-10-26T14:15:22Z"
     },
     {
       "id": "pm-07",

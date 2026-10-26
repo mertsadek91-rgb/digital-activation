@@ -177,8 +177,20 @@ export function shade(hex: string, amount: number): string {
  * saturated colour (a black wordmark), so the caller can fall back.
  */
 export async function logoColor(logo: Buffer): Promise<string | null> {
+  return (await logoPalette(logo, 1))[0] ?? null;
+}
+
+/**
+ * A logo's main colours, most used first, at most `max` (CR-0007); the first
+ * is the colour `logoColor` returns. Colours too close to one already taken
+ * are skipped, so a logo drawn in two shades of one blue gives one blue and
+ * its accent, not two blues.
+ */
+export async function logoPalette(logo: Buffer, max = 3): Promise<string[]> {
   const { data, info } = await sharp(logo)
-    .resize(64, 64, { fit: 'inside' })
+    // Nearest neighbour: averaging pixels on the way down would invent the
+    // pale blends along every edge as colours of their own.
+    .resize(64, 64, { fit: 'inside', kernel: 'nearest' })
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -189,9 +201,9 @@ export async function logoColor(logo: Buffer): Promise<string | null> {
     const b = data[i + 2] ?? 0;
     const a = data[i + 3] ?? 255;
     if (a < 128) continue;
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    if (max - min < 40 || max < 50) continue; // grey, white or black
+    const high = Math.max(r, g, b);
+    const low = Math.min(r, g, b);
+    if (high - low < 40 || high < 50) continue; // grey, white or black
     const key = `${String(r >> 5)}-${String(g >> 5)}-${String(b >> 5)}`;
     const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
     bucket.count += 1;
@@ -200,9 +212,23 @@ export async function logoColor(logo: Buffer): Promise<string | null> {
     bucket.b += b;
     buckets.set(key, bucket);
   }
-  const best = [...buckets.values()].sort((a, b) => b.count - a.count)[0];
-  if (!best || best.count < 8) return null;
-  return rgbToHex({ r: best.r / best.count, g: best.g / best.count, b: best.b / best.count });
+  const picked: { r: number; g: number; b: number }[] = [];
+  const sorted = [...buckets.values()].sort((a, b) => b.count - a.count);
+  // An accent has to be a real part of the mark: a tenth of the main colour.
+  const floor = Math.max(8, (sorted[0]?.count ?? 0) / 10);
+  for (const bucket of sorted) {
+    if (bucket.count < floor || picked.length >= max) break;
+    const colour = {
+      r: bucket.r / bucket.count,
+      g: bucket.g / bucket.count,
+      b: bucket.b / bucket.count,
+    };
+    const near = picked.some(
+      (other) => Math.hypot(colour.r - other.r, colour.g - other.g, colour.b - other.b) < 60,
+    );
+    if (!near) picked.push(colour);
+  }
+  return picked.map(rgbToHex);
 }
 
 // --- the card ----------------------------------------------------------------------

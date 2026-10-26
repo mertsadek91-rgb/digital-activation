@@ -1,0 +1,356 @@
+/* The product agent (CR-0007). Built on the panel's tokens and classes. */
+
+.agent-banner {
+  margin-block: 8px;
+}
+
+.agent-model {
+  margin-block: 4px 0;
+}
+
+.agent-tabs {
+  margin-block: 16px;
+}
+
+/* The list beside its options; the options drop below it on narrow screens. */
+.agent-picker {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .agent-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.agent-list {
+  min-inline-size: 0;
+}
+
+.agent-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-block-end: 10px;
+}
+
+.agent-search {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+}
+
+.agent-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-filters .chip {
+  min-block-size: 44px;
+}
+
+.agent-selectbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin-block-end: 10px;
+}
+
+.agent-table-wrap {
+  max-block-size: 70vh;
+  overflow: auto;
+}
+
+.agent-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+  background: var(--color-card);
+}
+
+.agent-table td {
+  vertical-align: top;
+}
+
+/* The shared .num face is Latin mono; an Arabic header keeps the page's font. */
+.agent-table thead th.num {
+  font-family: inherit;
+}
+
+.agent-table tr.is-selected td {
+  background: var(--color-brand-soft);
+}
+
+.agent-tick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  margin: -12px -8px;
+  cursor: pointer;
+}
+
+.agent-tick input {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+.agent-missing {
+  color: var(--color-warning-ink);
+}
+
+.agent-flag {
+  margin-inline-start: 6px;
+}
+
+.agent-run {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+/* --- options ---------------------------------------------------------------- */
+
+.agent-options {
+  position: sticky;
+  inset-block-start: 16px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+@media (max-width: 1100px) {
+  .agent-options {
+    position: static;
+  }
+}
+
+.agent-options h2 {
+  margin: 0;
+  font-size: var(--text-lg, 1.125rem);
+}
+
+.agent-option {
+  align-items: flex-start;
+}
+
+.agent-option span,
+.agent-field {
+  display: grid;
+  gap: 4px;
+}
+
+.agent-option small,
+.agent-field small {
+  color: var(--color-ink-secondary);
+  font-size: var(--text-sm);
+}
+
+.agent-sub {
+  margin-inline-start: 26px;
+}
+
+.agent-field > span {
+  font-weight: 600;
+}
+
+.agent-field textarea {
+  resize: vertical;
+}
+
+.agent-start {
+  inline-size: 100%;
+}
+
+/* --- batches ---------------------------------------------------------------- */
+
+.agent-batches {
+  display: grid;
+  gap: 14px;
+}
+
+.agent-batch {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.agent-batch-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.agent-batch-head h2 {
+  margin: 0;
+  font-size: var(--text-lg, 1.125rem);
+}
+
+.agent-batch-head p {
+  margin: 2px 0 0;
+}
+
+.agent-progress {
+  block-size: 8px;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+
+.agent-progress span {
+  display: block;
+  block-size: 100%;
+  background: var(--color-brand);
+  transition: inline-size 0.4s ease;
+}
+
+.agent-counts {
+  margin: 0;
+}
+
+.agent-batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agent-items {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.agent-item {
+  display: grid;
+  gap: 6px;
+  padding-block: 12px;
+  border-block-end: 1px solid var(--color-border-soft);
+}
+
+.agent-item.is-running {
+  border-inline-start: 4px solid var(--color-info);
+  padding-inline-start: 10px;
+}
+
+.agent-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agent-item-no {
+  flex: none;
+  inline-size: 2.2em;
+  color: var(--color-ink-secondary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+}
+
+.agent-item-name {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.agent-outcome {
+  margin: 0;
+  padding-inline-start: calc(2.2em + 10px);
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-body);
+}
+
+.agent-card-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-swatch {
+  display: inline-block;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 4px;
+  /* Visible around a near-black or near-white colour, in both themes. */
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-ink) 45%, transparent);
+}
+
+.agent-ok {
+  color: var(--color-success-ink);
+}
+
+.agent-warn {
+  color: var(--color-warning-ink);
+}
+
+.agent-item-error {
+  margin: 0;
+  padding-inline-start: calc(2.2em + 10px);
+}
+
+.agent-item-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding-inline-start: calc(2.2em + 10px);
+}
+
+.agent-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.agent-log summary {
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--color-brand-ink);
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.agent-log ol {
+  margin: 6px 0 0;
+  padding-inline-start: 1.2em;
+  display: grid;
+  gap: 3px;
+  font-size: var(--text-sm);
+  color: var(--color-ink-secondary);
+  overflow-wrap: anywhere;
+}
+
+.agent-log li.is-warn {
+  color: var(--color-warning-ink);
+}
+
+.agent-log li.is-error {
+  color: var(--color-danger-ink);
+}
+
+.agent-log time {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 480px) {
+  .agent-outcome,
+  .agent-item-error,
+  .agent-item-foot {
+    padding-inline-start: 0;
+  }
+}

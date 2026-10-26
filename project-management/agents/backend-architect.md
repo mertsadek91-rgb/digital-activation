@@ -59,3 +59,4 @@
 ## Supporting
 
 - TASK-0004 — Corrected re-audit — separate legacy WordPress, migration data, and the new Node.js application (MANAGER_REVIEW, 80%)
+- TASK-0135 — Product agent: DB-backed batch queue worked one product at a time with a cooldown, AI category decision, bilingual copy saved through the existing editors, logo discovery with SSRF guard and colour-matched card, auto-publish when the gate passes, per-item undo, admin screen to pick products/supplier lines and follow batches (IN_PROGRESS, 90%)

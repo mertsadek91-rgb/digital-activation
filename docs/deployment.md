@@ -316,6 +316,13 @@ confirming a bank transfer sends the keys at once.
 sweeps. `off` is for an API that is only being measured, such as the Lighthouse
 CI job; the API refuses to boot with it in production. Never set it in Coolify.
 
+**`PRODUCT_AGENT`** (optional, default `on`) runs the AI product agent's worker
+(CR-0007, `docs/product-agent.md`). It checks for queued products every 10 s and
+works one at a time with the batch's cooldown between them. `off` stops it on
+that API: batches can still be started but wait until a worker runs. It needs
+the `20261026140000_product_agent` migration; until that is applied the worker
+logs the missing tables once an hour and does nothing.
+
 Stocked lines are sent automatically on payment (BUG-0021), so `/health/delivery`
 fires only when a send fails or an order is held for risk; on-demand and
 manual-setup lines carry their own, longer delivery promise.

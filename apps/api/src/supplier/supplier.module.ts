@@ -19,6 +19,6 @@ import { SupplierService } from './supplier.service.js';
   imports: [AuthModule, MediaModule],
   controllers: [SupplierController, SupplierAiController, CardController],
   providers: [SupplierService, SupplierSyncService, SupplierAiService, CardService],
-  exports: [SupplierService, SupplierSyncService, SupplierAiService],
+  exports: [SupplierService, SupplierSyncService, SupplierAiService, CardService],
 })
 export class SupplierModule {}

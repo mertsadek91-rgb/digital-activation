@@ -44,6 +44,7 @@ type NavKey =
   | 'contentBlog'
   | 'contentBrands'
   | 'supplier'
+  | 'agent'
   | 'contentStudio';
 
 type NavItem = {
@@ -293,6 +294,7 @@ export function Nav({
         { key: 'categories', label: t('categories'), icon: 'categories', path: 'categories' },
         { key: 'vault', label: t('vault'), icon: 'vault', path: 'vault' },
         { key: 'supplier', label: t('supplier'), icon: 'supplier', path: 'supplier' },
+        { key: 'agent', label: t('agent'), icon: 'agent', path: 'agent' },
       ],
     },
     {
