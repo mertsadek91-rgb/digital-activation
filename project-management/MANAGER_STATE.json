@@ -117,7 +117,7 @@
       ],
       "opportunities": [],
       "risks": [],
-      "last_activity": "2026-10-07T06:34:27Z"
+      "last_activity": "2026-10-26T06:16:50Z"
     },
     {
       "id": "pm-04",
@@ -243,7 +243,7 @@
       "risks": [
         "BUG-0014"
       ],
-      "last_activity": "2026-10-24T07:55:58Z"
+      "last_activity": "2026-10-26T06:15:41Z"
     },
     {
       "id": "pm-07",

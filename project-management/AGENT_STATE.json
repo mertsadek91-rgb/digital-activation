@@ -422,7 +422,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-05T12:34:59Z"
+      "last_activity": "2026-10-26T06:50:40Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -701,11 +701,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 28,
+      "reviews_recorded": 30,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-24T08:03:36Z"
+      "last_activity": "2026-10-26T06:43:12Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -777,11 +777,11 @@
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 27,
+      "reviews_recorded": 30,
       "opportunities": [],
       "workload": 8.5,
       "blockers": [],
-      "last_activity": "2026-10-24T08:03:43Z"
+      "last_activity": "2026-10-26T06:50:08Z"
     },
     {
       "id": "performance-engineer",

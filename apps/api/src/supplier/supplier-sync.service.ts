@@ -11,13 +11,16 @@ import { say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 import { diffLine, supplierUnavailable, suspiciousOutage, suspiciousShrink } from './diff.js';
-import { SheetShapeError, parseSheet, type SupplierLine } from './sheet-parse.js';
+import { SheetShapeError, parseSheet, type ParsedSheet, type SupplierLine } from './sheet-parse.js';
 import { SheetFetchError, fetchSheetGrid } from './sheet-reader.js';
+import { XlsxReadError, readXlsx } from './xlsx-reader.js';
 
 /**
  * Reads the supplier's sheet and brings our copy of it up to date.
  *
- * Hourly for every source with auto-sync on, and on demand from the admin.
+ * Hourly for every source with auto-sync on, on demand from the admin, and
+ * from an uploaded .xlsx of the same list (TASK-0133), which goes through
+ * every step below exactly as a Google read does.
  * One run at a time across replicas (advisory lock). Each run:
  *
  *  1. fetches and parses the sheet — refusing a sheet whose header changed,
@@ -81,8 +84,54 @@ export class SupplierSyncService {
     staffId: string | null,
     options: { force?: boolean } = {},
   ): Promise<SupplierSyncResult> {
+    return this.locked(sourceId, staffId, options, async (source) => {
+      const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+      if (!apiKey) {
+        throw new SheetFetchError(
+          say(
+            'مفتاح GOOGLE_SHEETS_API_KEY غير مضبوط على الخادم.',
+            'GOOGLE_SHEETS_API_KEY is not set on the API.',
+          ),
+        );
+      }
+      return parseSheet(await fetchSheetGrid(source.spreadsheetId, apiKey), source.sheetGid);
+    });
+  }
+
+  /**
+   * The same sync from an uploaded .xlsx instead of the Google Sheet
+   * (TASK-0133). The source's gid means nothing in a file, so the first tab
+   * whose header can be found is the one read.
+   */
+  async syncFromFile(
+    sourceId: string,
+    staffId: string,
+    bytes: Uint8Array,
+    options: { force?: boolean } = {},
+  ): Promise<SupplierSyncResult> {
+    return this.locked(sourceId, staffId, options, () => {
+      const grid = readXlsx(bytes);
+      let firstError: SheetShapeError | null = null;
+      for (const sheet of grid.sheets ?? []) {
+        try {
+          return Promise.resolve(parseSheet(grid, sheet.properties?.sheetId ?? 0));
+        } catch (error) {
+          if (!(error instanceof SheetShapeError)) throw error;
+          firstError ??= error;
+        }
+      }
+      throw firstError ?? new SheetShapeError('The file has no sheets.');
+    });
+  }
+
+  private async locked(
+    sourceId: string,
+    staffId: string | null,
+    options: { force?: boolean },
+    read: (source: { spreadsheetId: string; sheetGid: number }) => Promise<ParsedSheet>,
+  ): Promise<SupplierSyncResult> {
     const result = await withAdvisoryLock(this.prisma.client, LOCK_KEY, () =>
-      this.run(sourceId, staffId, options.force === true && staffId !== null),
+      this.run(sourceId, staffId, options.force === true && staffId !== null, read),
     );
     return result.ran
       ? result.value
@@ -102,31 +151,23 @@ export class SupplierSyncService {
     sourceId: string,
     staffId: string | null,
     force: boolean,
+    read: (source: { spreadsheetId: string; sheetGid: number }) => Promise<ParsedSheet>,
   ): Promise<SupplierSyncResult> {
     const source = await this.prisma.client.supplierSource.findUniqueOrThrow({
       where: { id: sourceId },
     });
 
-    const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
-    if (!apiKey) {
-      return this.finish(sourceId, staffId, {
-        status: 'FAILED',
-        error: say(
-          'مفتاح GOOGLE_SHEETS_API_KEY غير مضبوط على الخادم.',
-          'GOOGLE_SHEETS_API_KEY is not set on the API.',
-        ),
-        ...EMPTY,
-      });
-    }
-
     let lines: SupplierLine[];
     let updatedLabel: string | null;
     let warnings: string[];
     try {
-      const grid = await fetchSheetGrid(source.spreadsheetId, apiKey);
-      ({ lines, updatedLabel, warnings } = parseSheet(grid, source.sheetGid));
+      ({ lines, updatedLabel, warnings } = await read(source));
     } catch (error) {
-      if (error instanceof SheetShapeError || error instanceof SheetFetchError) {
+      if (
+        error instanceof SheetShapeError ||
+        error instanceof SheetFetchError ||
+        error instanceof XlsxReadError
+      ) {
         return this.finish(sourceId, staffId, {
           status: error instanceof SheetShapeError ? 'REFUSED' : 'FAILED',
           error: error.message,

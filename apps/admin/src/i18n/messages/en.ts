@@ -1577,6 +1577,13 @@ export const en: AdminMessages = {
     adminOnly: 'Changing the sheet and markup, and applying prices, is for admins only.',
     syncNow: 'Read the sheet now',
     syncing: 'Reading…',
+    uploadFile: 'Upload Excel file',
+    uploading: 'Reading the file…',
+    uploadHint:
+      'Or upload the supplier list as an .xlsx file: it is read exactly like the sheet, struck-through names included.',
+    uploadAutoSyncOn:
+      'Automatic reading from Google is still on. If the sheet is gone, a failed read is logged every hour; turn it off in the settings once you rely on uploads.',
+    uploadTooLarge: 'The file is over the limit ({max} KB).',
     syncForce: 'Apply this read anyway',
     confirmForce:
       'This read was refused because it looks abnormal. Applying it may change the availability of many products at once. Continue?',
@@ -1587,6 +1594,9 @@ export const en: AdminMessages = {
     syncOK:
       'Sheet read: {rows} rows, {added} new, {changed} changed, {removed} gone, {switched} availability switches.',
     syncUNCHANGED: 'Sheet read, nothing changed ({rows} rows).',
+    fileOK:
+      'File read: {rows} rows, {added} new, {changed} changed, {removed} gone, {switched} availability switches.',
+    fileUNCHANGED: 'File read, nothing changed ({rows} rows).',
     syncFAILED: 'Read failed: {error}',
     syncREFUSED: 'Read refused, nothing changed: {error}',
     syncBUSY: 'A read is already running. Try again in a minute.',

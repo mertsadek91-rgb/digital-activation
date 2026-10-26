@@ -26,6 +26,7 @@ import {
   type SupplierPrices,
   type SupplierSourceView,
   type SupplierSyncResult,
+  type SupplierUploadInput,
   applySupplierPricesSchema,
   linkBySkuSchema,
   setSupplierLinkSchema,
@@ -34,6 +35,7 @@ import {
   supplierLogQuerySchema,
   supplierMappingQuerySchema,
   supplierSyncInputSchema,
+  supplierUploadInputSchema,
 } from '@da/contracts';
 
 import { Roles, StaffGuard, type StaffRequest } from '../auth/staff.guard.js';
@@ -91,6 +93,20 @@ export class SupplierController {
       throw new ForbiddenException('Only an admin can apply a refused read.');
     }
     return this.supplier.syncNow(actor(request), body.force);
+  }
+
+  @Post('upload')
+  @ApiOperation({ summary: 'Read the supplier list from an uploaded .xlsx (base64)' })
+  upload(
+    @Body(new ZodPipe(supplierUploadInputSchema)) body: SupplierUploadInput,
+    @Req() request: StaffRequest,
+  ): Promise<SupplierSyncResult> {
+    // The same rule as the sync: only an admin applies a refused read.
+    const role = request.staff?.role;
+    if (body.force && role !== 'ADMIN' && role !== 'OWNER') {
+      throw new ForbiddenException('Only an admin can apply a refused read.');
+    }
+    return this.supplier.uploadNow(actor(request), body);
   }
 
   @Get('items')

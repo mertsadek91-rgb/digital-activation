@@ -90,6 +90,8 @@ catalog:
   # apps/api/src/infra/error-reporter.ts; off until SENTRY_DSN is set.
   '@sentry/node': ^11.5.0
   fast-xml-parser: ^5.11.1
+  # Unzips an uploaded .xlsx (the supplier price list, TASK-0133). No dependencies.
+  fflate: ^0.8.3
   resend: ^6.26.0
   # SMTP for development (mailpit) and for any host that gives you SMTP
   # rather than an API. Resend is the production transport.

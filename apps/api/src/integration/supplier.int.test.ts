@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -192,6 +192,28 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
     await supplier.setSkipped(id, false, actor);
     const back = await supplier.mapping({ filter: 'unlinked' });
     expect(back.rows.some((row) => row.variantId === id)).toBe(true);
+  });
+
+  it('audits every uploaded file with its name, size and hash, even one it cannot read', async () => {
+    const supplier = harness.get(SupplierService);
+    const bytes = Buffer.from(`not a workbook ${catalogue.run}`);
+    const result = await supplier.uploadNow(actor, {
+      fileName: `list-${catalogue.run}.xlsx`,
+      data: bytes.toString('base64'),
+      force: false,
+    });
+    expect(result.status).toBe('FAILED');
+
+    const audit = await harness.db.auditLog.findFirst({
+      where: { action: 'supplier.file_uploaded', actorId: actor.staffId },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit?.after).toMatchObject({
+      fileName: `list-${catalogue.run}.xlsx`,
+      bytes: bytes.byteLength,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+      status: 'FAILED',
+    });
   });
 
   it('refuses to skip a linked variant', async () => {
