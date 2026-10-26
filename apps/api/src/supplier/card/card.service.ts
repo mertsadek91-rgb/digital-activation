@@ -12,6 +12,7 @@ import {
 import { Locale } from '@da/db';
 import { z } from 'zod';
 
+import { termsForPrompt } from '../../common/licence-term.js';
 import { say } from '../../common/panel-locale.js';
 import { UnreadableImageError, decodeDataUrl } from '../../media/image.js';
 import { MediaService } from '../../media/media.service.js';
@@ -115,9 +116,7 @@ export class CardService {
     const product = await this.product(slug);
     const names = product.translations.map((t) => `${t.locale}: ${t.name}`).join('; ');
     const variant = product.variants[0];
-    const terms = variant
-      ? `Terms: ${variant.licensePeriodUnit === 'LIFETIME' ? 'lifetime' : `${String(variant.licensePeriodValue ?? 1)} ${variant.licensePeriodUnit}`}, ${String(variant.deviceCount)} device(s)`
-      : '';
+    const terms = variant ? `Terms: ${termsForPrompt(variant)}` : '';
     const answer = suggestionSchema.parse(
       await this.ai.completeJson(
         SUGGEST_SYSTEM,

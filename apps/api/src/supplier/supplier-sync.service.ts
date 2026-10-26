@@ -411,8 +411,10 @@ export class SupplierSyncService {
   /**
    * Makes `supplierOutOfStock` agree with the sheet for linked variants that
    * follow it, and turns the flag off for variants that stopped following
-   * (or were unlinked). Returns how many variants switched. Audited per
-   * variant, because it decides whether a product can be bought.
+   * (or were unlinked). A variant a person marked out of stock by hand stays
+   * out whatever the sheet says (TASK-0134). Returns how many variants
+   * switched. Audited per variant, because it decides whether a product can
+   * be bought.
    */
   async reconcileStock(
     scope: { sourceId?: string; variantIds?: string[] },
@@ -425,13 +427,16 @@ export class SupplierSyncService {
       },
       include: {
         item: { select: { outOfStock: true, missingSince: true, name: true } },
-        variant: { select: { id: true, sku: true, supplierOutOfStock: true } },
+        variant: {
+          select: { id: true, sku: true, supplierOutOfStock: true, manualOutOfStock: true },
+        },
       },
     });
 
     const switches: { id: string; sku: string; to: boolean; item: string }[] = [];
     for (const link of links) {
-      const want = link.followStock && supplierUnavailable(link.item);
+      const want =
+        link.variant.manualOutOfStock || (link.followStock && supplierUnavailable(link.item));
       if (link.variant.supplierOutOfStock !== want) {
         switches.push({
           id: link.variant.id,
@@ -442,19 +447,24 @@ export class SupplierSyncService {
       }
     }
 
-    // A variant flagged out of stock that no longer has a link must not stay
-    // unbuyable forever with nothing left that could clear it.
+    // A variant with no link is out only if a person said so. One flagged by
+    // the sheet that has lost its link must not stay unbuyable forever with
+    // nothing left that could clear it.
     if (scope.variantIds) {
       const linked = new Set(links.map((link) => link.variantId));
-      const orphans = await this.prisma.client.variant.findMany({
-        where: {
-          id: { in: scope.variantIds.filter((id) => !linked.has(id)) },
-          supplierOutOfStock: true,
-        },
-        select: { id: true, sku: true },
+      const unlinked = await this.prisma.client.variant.findMany({
+        where: { id: { in: scope.variantIds.filter((id) => !linked.has(id)) } },
+        select: { id: true, sku: true, supplierOutOfStock: true, manualOutOfStock: true },
       });
-      for (const orphan of orphans) {
-        switches.push({ id: orphan.id, sku: orphan.sku, to: false, item: '' });
+      for (const variant of unlinked) {
+        if (variant.supplierOutOfStock !== variant.manualOutOfStock) {
+          switches.push({
+            id: variant.id,
+            sku: variant.sku,
+            to: variant.manualOutOfStock,
+            item: '',
+          });
+        }
       }
     }
 

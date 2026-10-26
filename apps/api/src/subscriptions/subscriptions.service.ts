@@ -123,6 +123,7 @@ export class SubscriptionsService {
           select: {
             fulfillmentMode: true,
             supplierLink: { select: { createdAt: true } },
+            manualOutOfStockAt: true,
             inventory: { select: { onHand: true, reserved: true } },
             product: {
               select: { slug: true, translations: { select: { locale: true, name: true } } },
@@ -138,12 +139,14 @@ export class SubscriptionsService {
       if (!variant) continue;
       const stocked = variant.fulfillmentMode === FulfillmentMode.FROM_STOCK;
       // A made-to-order alert counts only if it was asked for after the
-      // variant was linked to the supplier sheet — the one way such a line can
-      // have been out. Alerts older than that (asked of a line that was never
-      // out) are left alone rather than emailed on the first sweep.
-      if (!stocked && (!variant.supplierLink || alert.createdAt < variant.supplierLink.createdAt)) {
-        continue;
-      }
+      // variant was linked to the supplier sheet, or after a person marked it
+      // out by hand (TASK-0134) — the only ways such a line can have been out.
+      // Alerts older than that (asked of a line that was never out) are left
+      // alone rather than emailed on the first sweep.
+      const outSince = [variant.supplierLink?.createdAt, variant.manualOutOfStockAt].filter(
+        (date): date is Date => date instanceof Date,
+      );
+      if (!stocked && !outSince.some((since) => alert.createdAt >= since)) continue;
       const available = stocked
         ? (variant.inventory?.onHand ?? 0) - (variant.inventory?.reserved ?? 0)
         : 1;

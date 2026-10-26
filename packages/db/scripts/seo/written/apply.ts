@@ -30,6 +30,7 @@ import { Locale, prisma, PublishStatus } from '../../../src/index.js';
 
 import { type Block, buildBody } from '../body.js';
 import type { ProductFacts } from '../copy.js';
+import { statedVariants } from '../copy.js';
 import { EN_WRITTEN } from './en.js';
 
 const BODY_MIN_WORDS = 120;
@@ -92,7 +93,7 @@ async function main(): Promise<void> {
       name: english.name.trim().replace(/[\s–-]+$/, ''),
       brand: product.brand?.name ?? null,
       hasGoldenWarranty: product.hasGoldenWarranty,
-      variants: product.variants.map((variant) => ({
+      variants: statedVariants(product.variants).map((variant) => ({
         licensePeriodValue: variant.licensePeriodValue,
         licensePeriodUnit: variant.licensePeriodUnit,
         deviceCount: variant.deviceCount,
@@ -103,6 +104,8 @@ async function main(): Promise<void> {
         warrantyDays: variant.warrantyDays,
       })),
     };
+    // No variant states both a term and a device count (TASK-0134): nothing true to write.
+    if (facts.variants.length === 0) continue;
 
     // The heading and the table it introduces, lifted together so the written
     // prose gains a specification section without restating a single fact.

@@ -6,7 +6,8 @@
  * arithmetic would, sooner or later, tell a customer two different dates.
  */
 
-export type LicencePeriodUnit = 'DAY' | 'MONTH' | 'YEAR' | 'LIFETIME';
+/** UNSPECIFIED: the product states no term (TASK-0134); like LIFETIME, it never ends. */
+export type LicencePeriodUnit = 'DAY' | 'MONTH' | 'YEAR' | 'LIFETIME' | 'UNSPECIFIED';
 
 /**
  * The end of a licence term.
@@ -22,7 +23,7 @@ export function addTerm(from: Date, unit: LicencePeriodUnit, value: number): Dat
     end.setUTCDate(end.getUTCDate() + value);
     return end;
   }
-  if (unit === 'LIFETIME') return end;
+  if (unit === 'LIFETIME' || unit === 'UNSPECIFIED') return end;
 
   const months = unit === 'MONTH' ? value : value * 12;
   const day = end.getUTCDate();
@@ -33,7 +34,7 @@ export function addTerm(from: Date, unit: LicencePeriodUnit, value: number): Dat
   return end;
 }
 
-const UNITS = new Set<LicencePeriodUnit>(['DAY', 'MONTH', 'YEAR', 'LIFETIME']);
+const UNITS = new Set<LicencePeriodUnit>(['DAY', 'MONTH', 'YEAR', 'LIFETIME', 'UNSPECIFIED']);
 
 /**
  * The term a bought line was sold with.
@@ -70,6 +71,49 @@ export function licenceExpiry(
   deliveredAt: Date,
   term: { unit: LicencePeriodUnit; value: number | null } | null,
 ): Date | null {
-  if (!term || term.unit === 'LIFETIME' || term.value === null || term.value <= 0) return null;
+  if (
+    !term ||
+    term.unit === 'LIFETIME' ||
+    term.unit === 'UNSPECIFIED' ||
+    term.value === null ||
+    term.value <= 0
+  ) {
+    return null;
+  }
   return addTerm(deliveredAt, term.unit, term.value);
+}
+
+/**
+ * The stored count for a term: none beside LIFETIME or UNSPECIFIED (three of
+ * nothing renders as "lifetime for 3 years"), at least 1 otherwise.
+ */
+export function termValue(
+  unit: LicencePeriodUnit,
+  value: number | null | undefined,
+): number | null {
+  if (unit === 'LIFETIME' || unit === 'UNSPECIFIED') return null;
+  return value ?? 1;
+}
+
+/** "1 year, 2 device(s)" in English, for a model prompt; what is not stated is left out. */
+export function termsForPrompt(variant: {
+  licensePeriodUnit: string;
+  licensePeriodValue: number | null;
+  deviceCount: number | null;
+}): string {
+  const period =
+    variant.licensePeriodUnit === 'UNSPECIFIED'
+      ? null
+      : variant.licensePeriodUnit === 'LIFETIME'
+        ? 'lifetime licence'
+        : `${String(variant.licensePeriodValue ?? 1)} ${variant.licensePeriodUnit.toLowerCase()}(s)`;
+  const devices =
+    variant.deviceCount === null
+      ? null
+      : variant.deviceCount === 0
+        ? 'unlimited devices'
+        : `${String(variant.deviceCount)} device(s)`;
+  return (
+    [period, devices].filter((part) => part !== null).join(', ') || 'no term or device count stated'
+  );
 }

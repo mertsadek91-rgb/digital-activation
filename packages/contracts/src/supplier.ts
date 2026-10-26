@@ -223,6 +223,31 @@ export const supplierMappingQuerySchema = z.object({
 });
 export type SupplierMappingQuery = z.infer<typeof supplierMappingQuerySchema>;
 
+/**
+ * The years and devices read from a sheet line's name (TASK-0134), compared
+ * with our variant's own. The supplier writes them freely — "Key 3 Device 2
+ * Year", "1PC 1Y", "Unlimited Devices" — so a part not found is UNKNOWN, never
+ * a guess.
+ */
+export const TERM_MATCHES = ['MATCH', 'DIFFERENT', 'UNKNOWN'] as const;
+export const termMatchSchema = z.enum(TERM_MATCHES);
+export type TermMatch = z.infer<typeof termMatchSchema>;
+
+export const lineTermsSchema = z.object({
+  /** 0 means unlimited; null when the name states no device count. */
+  devices: z.number().int().min(0).nullable(),
+  /** Null when the name states no term. */
+  period: z
+    .object({
+      unit: z.enum(['DAY', 'MONTH', 'YEAR', 'LIFETIME']),
+      value: z.number().int().nullable(),
+    })
+    .nullable(),
+  devicesMatch: termMatchSchema,
+  periodMatch: termMatchSchema,
+});
+export type LineTerms = z.infer<typeof lineTermsSchema>;
+
 const itemRefSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -230,6 +255,8 @@ const itemRefSchema = z.object({
   costUsd: z.string().nullable(),
   outOfStock: z.boolean(),
   missingSince: z.string().nullable(),
+  /** The line's years and devices against this row's variant. */
+  terms: lineTermsSchema,
 });
 
 export const supplierMappingRowSchema = z.object({
@@ -241,6 +268,8 @@ export const supplierMappingRowSchema = z.object({
   terms: z.string(),
   priceUsd: z.string(),
   supplierOutOfStock: z.boolean(),
+  /** A person marked it out of stock here; only "back in stock" clears it. */
+  manualOutOfStock: z.boolean(),
   /** Marked as not sold by this supplier, so not to be linked. */
   skipped: z.boolean(),
   link: z
@@ -250,7 +279,11 @@ export const supplierMappingRowSchema = z.object({
       followStock: z.boolean(),
     })
     .nullable(),
-  /** Up to three closest sheet lines, best first — for an unlinked or broken row. */
+  /**
+   * Up to three closest sheet lines for an unlinked or broken row, by name,
+   * raised a little when the years and devices match and lowered when they
+   * differ.
+   */
   suggestions: z.array(itemRefSchema.extend({ score: z.number() })),
 });
 export type SupplierMappingRow = z.infer<typeof supplierMappingRowSchema>;
@@ -278,6 +311,10 @@ export const setSupplierLinkSchema = z.object({
   followStock: z.boolean().default(true),
 });
 export type SetSupplierLink = z.infer<typeof setSupplierLinkSchema>;
+
+/** Mark a variant out of stock by hand, or back in stock (TASK-0134). */
+export const setManualStockSchema = z.object({ outOfStock: z.boolean() });
+export type SetManualStock = z.infer<typeof setManualStockSchema>;
 
 // --- prices -----------------------------------------------------------------
 

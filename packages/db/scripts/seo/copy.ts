@@ -31,6 +31,25 @@ export interface VariantFacts {
   warrantyDays: number | null;
 }
 
+/**
+ * The variants whose term and device count are both stated (TASK-0134). The
+ * copy below writes sentences about both, so a variant that leaves either one
+ * "not specified" is left out of the facts, and a product left with none gets
+ * no copy (the loaders skip it).
+ */
+export function statedVariants<V extends { licensePeriodUnit: string; deviceCount: number | null }>(
+  variants: V[],
+): (V & { licensePeriodUnit: VariantFacts['licensePeriodUnit']; deviceCount: number })[] {
+  return variants.filter(
+    (
+      variant,
+    ): variant is V & {
+      licensePeriodUnit: VariantFacts['licensePeriodUnit'];
+      deviceCount: number;
+    } => variant.licensePeriodUnit !== 'UNSPECIFIED' && variant.deviceCount !== null,
+  );
+}
+
 export interface ProductFacts {
   slug: string;
   kind: 'KEY' | 'ACCOUNT' | 'PANEL' | 'BUNDLE' | 'SERVICE';

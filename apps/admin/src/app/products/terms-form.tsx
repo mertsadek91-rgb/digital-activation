@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
 
+import { DevicesPicker, PeriodPicker } from './term-pickers';
+
 /**
  * Price and licence terms, per variant.
  *
@@ -20,7 +22,6 @@ import { api } from '../../lib/api';
  * mistake.
  */
 
-const PERIOD_UNITS = ['LIFETIME', 'YEAR', 'MONTH', 'DAY'] as const;
 const PLATFORMS = ['WINDOWS', 'MAC', 'LINUX', 'CROSS_PLATFORM'] as const;
 const ACTIVATION = [
   'RETAIL_ONLINE',
@@ -126,7 +127,8 @@ function NewVariant({
   const [sku, setSku] = useState('');
   const [priceUsd, setPriceUsd] = useState('');
   const [unit, setUnit] = useState<CreateVariant['licensePeriodUnit']>('LIFETIME');
-  const [periodValue, setPeriodValue] = useState(1);
+  const [periodValue, setPeriodValue] = useState<number | null>(null);
+  const [devices, setDevices] = useState<number | null>(1);
   const [supply, setSupply] = useState<CreateVariant['fulfillmentMode']>('ON_DEMAND');
 
   if (!open) {
@@ -145,8 +147,8 @@ function NewVariant({
           sku: sku.trim().toUpperCase(),
           priceUsd: priceUsd.trim(),
           licensePeriodUnit: unit,
-          licensePeriodValue: unit === 'LIFETIME' ? null : periodValue,
-          deviceCount: 1,
+          licensePeriodValue: periodValue,
+          deviceCount: devices,
           platform: 'WINDOWS',
           activationMethod: 'RETAIL_ONLINE',
           fulfillmentMode: supply,
@@ -193,34 +195,16 @@ function NewVariant({
             onChange={(event) => setPriceUsd(event.target.value)}
           />
         </label>
-        <label>
-          <span>{t('periodUnit')}</span>
-          <select
-            id={`new-variant-unit-${slug}`}
-            value={unit}
-            onChange={(event) => setUnit(event.target.value as CreateVariant['licensePeriodUnit'])}
-          >
-            {PERIOD_UNITS.map((value) => (
-              <option key={value} value={value}>
-                {t(`unit_${value}`)}
-              </option>
-            ))}
-          </select>
-        </label>
-        {unit === 'LIFETIME' ? null : (
-          <label>
-            <span>{t('periodValue')}</span>
-            <input
-              id={`new-variant-period-${slug}`}
-              type="number"
-              min={1}
-              max={120}
-              dir="ltr"
-              value={periodValue}
-              onChange={(event) => setPeriodValue(Number(event.target.value))}
-            />
-          </label>
-        )}
+        <PeriodPicker
+          id={`new-variant-period-${slug}`}
+          unit={unit}
+          value={periodValue}
+          onChange={(nextUnit, nextValue) => {
+            setUnit(nextUnit);
+            setPeriodValue(nextValue);
+          }}
+        />
+        <DevicesPicker id={`new-variant-devices-${slug}`} value={devices} onChange={setDevices} />
         <label>
           <span>{t('supplyMode')}</span>
           <select
@@ -306,7 +290,6 @@ function VariantCard({
   }
 
   const dirty = Object.keys(patch()).length > 0;
-  const lifetime = draft.licensePeriodUnit === 'LIFETIME';
 
   async function save(): Promise<void> {
     setSaving(true);
@@ -381,56 +364,26 @@ function VariantCard({
           <small>{t('costHint')}</small>
         </label>
 
-        <label>
-          <span>{t('periodUnit')}</span>
-          <select
-            id={`unit-${variant.id}`}
-            value={draft.licensePeriodUnit}
-            disabled={!canWrite}
-            onChange={(event) =>
-              set('licensePeriodUnit', event.target.value as VariantTerms['licensePeriodUnit'])
-            }
-          >
-            {PERIOD_UNITS.map((unit) => (
-              <option key={unit} value={unit}>
-                {t(`unit_${unit}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <PeriodPicker
+          id={`period-${variant.id}`}
+          unit={draft.licensePeriodUnit}
+          value={draft.licensePeriodValue}
+          disabled={!canWrite}
+          onChange={(unit, value) =>
+            setDraft((current) => ({
+              ...current,
+              licensePeriodUnit: unit,
+              licensePeriodValue: value,
+            }))
+          }
+        />
 
-        {/* Hidden for a lifetime licence rather than disabled: "3" beside
-            "lifetime" is three of nothing, and the server normalises it away
-            anyway, so showing the box would be showing a value that is about
-            to be discarded. */}
-        {lifetime ? null : (
-          <label>
-            <span>{t('periodValue')}</span>
-            <input
-              id={`period-${variant.id}`}
-              type="number"
-              min={1}
-              max={120}
-              dir="ltr"
-              value={draft.licensePeriodValue ?? 1}
-              disabled={!canWrite}
-              onChange={(event) => set('licensePeriodValue', Number(event.target.value))}
-            />
-          </label>
-        )}
-
-        <label>
-          <span>{t('deviceCount')}</span>
-          <input
-            id={`devices-${variant.id}`}
-            type="number"
-            min={1}
-            dir="ltr"
-            value={draft.deviceCount}
-            disabled={!canWrite}
-            onChange={(event) => set('deviceCount', Number(event.target.value))}
-          />
-        </label>
+        <DevicesPicker
+          id={`devices-${variant.id}`}
+          value={draft.deviceCount}
+          disabled={!canWrite}
+          onChange={(value) => set('deviceCount', value)}
+        />
 
         <label>
           <span>{t('platform')}</span>

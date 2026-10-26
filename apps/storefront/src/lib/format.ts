@@ -59,8 +59,10 @@ export function formatWholeAmount(amount: string, currency: string): string {
  * agreements, and getting this wrong is immediately visible: "3 سنة" instead
  * of "3 سنوات", or "11 أشهر" where it should be "11 شهراً".
  */
-export function formatLicensePeriod(variant: LicenceTerm, t: FormatT): string {
+export function formatLicensePeriod(variant: LicenceTerm, t: FormatT): string | null {
   const unit = variant.licensePeriodUnit;
+  // The product states no term (TASK-0134): say nothing rather than invent one.
+  if (unit === 'UNSPECIFIED') return null;
   if (unit === 'LIFETIME') return t('lifetime');
 
   const value = variant.licensePeriodValue ?? 1;
@@ -78,7 +80,9 @@ export function formatPlatform(platform: CatalogVariant['platform'], t: FormatT)
   return t(`platform.${platform}`);
 }
 
-export function formatDevices(count: number, t: FormatT): string {
+export function formatDevices(count: number | null, t: FormatT): string | null {
+  // Null: the product states no device count (TASK-0134).
+  if (count === null) return null;
   // Zero is how the catalog writes "no limit", not a count of nothing.
   if (count === 0) return t('devicesUnlimited');
   return t('devices', { count });
@@ -190,8 +194,14 @@ export function formatLineState(
 }
 
 /** Short label for a variant picker button, or for a cart line. */
-export function variantLabel(variant: LicenceTerm & { deviceCount: number }, t: FormatT): string {
-  return `${formatLicensePeriod(variant, t)} · ${formatDevices(variant.deviceCount, t)}`;
+export function variantLabel(
+  variant: LicenceTerm & { deviceCount: number | null },
+  t: FormatT,
+): string {
+  const parts = [formatLicensePeriod(variant, t), formatDevices(variant.deviceCount, t)].filter(
+    (part): part is string => part !== null,
+  );
+  return parts.length > 0 ? parts.join(' · ') : t('standard');
 }
 
 /**

@@ -378,11 +378,15 @@ export async function renderCard(spec: CardSpec): Promise<RenderedCard> {
 export function defaultRibbon(input: {
   licensePeriodUnit: string;
   licensePeriodValue: number | null;
-  deviceCount: number;
+  /** 0 means unlimited; null means not stated. */
+  deviceCount: number | null;
 }): string[] {
-  if (input.deviceCount > 1)
+  if (input.deviceCount === 0) return ['أجهزة', 'غير محدودة'];
+  if (input.deviceCount !== null && input.deviceCount > 1)
     return [String(input.deviceCount), input.deviceCount <= 10 ? 'أجهزة' : 'جهاز'];
   if (input.licensePeriodUnit === 'LIFETIME') return ['مدى', 'الحياة'];
+  // States neither a device count nor a term (TASK-0134): the store's own promise.
+  if (input.licensePeriodUnit === 'UNSPECIFIED') return ['مفتاح', 'أصلي'];
   const n = input.licensePeriodValue ?? 1;
   if (input.licensePeriodUnit === 'YEAR')
     return n === 1 ? ['سنة', 'واحدة'] : [String(n), n <= 10 ? 'سنوات' : 'سنة'];

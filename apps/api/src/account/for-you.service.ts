@@ -107,7 +107,14 @@ export class ForYouService {
       const variant = line.variant;
       const deliveredAt = line.deliveredAt;
       if (!variant || !deliveredAt) continue;
-      if (variant.licensePeriodUnit === 'LIFETIME' || variant.licensePeriodValue === null) continue;
+      // No end date to renew before: lifetime, or no term stated (TASK-0134).
+      if (
+        variant.licensePeriodUnit === 'LIFETIME' ||
+        variant.licensePeriodUnit === 'UNSPECIFIED' ||
+        variant.licensePeriodValue === null
+      ) {
+        continue;
+      }
 
       // The most recent purchase of a product wins: buying a second year in
       // March does not leave last March's expiry on the page.

@@ -118,14 +118,25 @@
   padding-inline-start: 1.2em;
 }
 
-.mapping-cell {
+.supplier-table td.mapping-cell {
   min-inline-size: 18rem;
+  /* A long line name ("… 1TB Lifetime Account+Password") wraps here rather
+     than widening the table past its scroll box. */
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .mapping-picker,
 .mapping-linked {
   display: grid;
   gap: 8px;
+}
+
+/* The shared .notice does not wrap; in this column a sentence must, or it
+   sets the table's width (seen at 1024 px with the "no matching line" note). */
+.mapping-picker .notice,
+.mapping-linked .notice {
+  white-space: normal;
 }
 
 .mapping-suggestions {
@@ -138,6 +149,41 @@
 .mapping-suggestions .chip {
   white-space: normal;
   text-align: start;
+  /* Several lines now (name, price, terms): a card corner, not a pill end,
+     so nothing sits against the curve (REV-0194). */
+  border-radius: var(--radius-md);
+  padding-block: 6px;
+  /* The line's name over its terms, wrapping inside the column. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Years and devices read from a line's name (TASK-0134). Logical gaps and
+   bdi-free text, so the order reads right in RTL and LTR. */
+.terms-check {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* The term pickers in the create-from-line form: 44 px like every other control. */
+.create-from-line .field select,
+.create-from-line .field input {
+  min-block-size: 44px;
+}
+
+.term-ok {
+  color: var(--color-success-ink);
+}
+
+.term-diff {
+  color: var(--color-danger-ink);
 }
 
 .mapping-matches {

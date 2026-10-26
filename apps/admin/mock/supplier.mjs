@@ -80,6 +80,28 @@ const items = [
   item('it_7', null, 'Kaspersky Standard 1 Device 1 Year', 'Kaspersky', '6.00', {
     missingSince: days(3),
   }),
+  // The owner's case (TASK-0134): our variant is 3 years · 2 devices.
+  item(
+    'it_8',
+    130,
+    'ESET HOME Security Essential/Internet Security Key 3 Device 2 Year',
+    'ESET',
+    '50.00',
+  ),
+  item(
+    'it_9',
+    131,
+    'ESET HOME Security Essential/Internet Security Key 3 Device 3 Year',
+    'ESET',
+    '70.00',
+  ),
+  item(
+    'it_10',
+    132,
+    'ESET HOME Security Essential/Internet Security Key 2 Device 3 Year',
+    'ESET',
+    '46.00',
+  ),
 ];
 
 const counts = {
@@ -92,13 +114,24 @@ const counts = {
   changed: items.filter((i) => i.changedAt).length,
 };
 
-const ref = (i) => ({
+/** A line against a variant: what its name states, and whether it agrees. */
+const lineTerms = (devices, period, devicesMatch, periodMatch) => ({
+  devices,
+  period,
+  devicesMatch,
+  periodMatch,
+});
+const year = (value) => ({ unit: 'YEAR', value });
+const LIFETIME = { unit: 'LIFETIME', value: null };
+
+const ref = (i, terms = lineTerms(null, null, 'UNKNOWN', 'UNKNOWN')) => ({
   id: i.id,
   name: i.name,
   category: i.category,
   costUsd: i.costUsd,
   outOfStock: i.outOfStock,
   missingSince: i.missingSince,
+  terms,
 });
 
 const mappingRows = [
@@ -110,8 +143,13 @@ const mappingRows = [
     terms: 'مدى الحياة · 1 جهاز',
     priceUsd: '2.00',
     supplierOutOfStock: false,
+    manualOutOfStock: false,
     skipped: false,
-    link: { item: ref(items[0]), markupPercent: null, followStock: true },
+    link: {
+      item: ref(items[0], lineTerms(1, null, 'MATCH', 'UNKNOWN')),
+      markupPercent: null,
+      followStock: true,
+    },
     suggestions: [],
   },
   {
@@ -122,8 +160,13 @@ const mappingRows = [
     terms: '1 سنة · 1 جهاز',
     priceUsd: '5.99',
     supplierOutOfStock: false,
+    manualOutOfStock: false,
     skipped: false,
-    link: { item: ref(items[5]), markupPercent: '40.00', followStock: true },
+    link: {
+      item: ref(items[5], lineTerms(1, year(1), 'MATCH', 'MATCH')),
+      markupPercent: '40.00',
+      followStock: true,
+    },
     suggestions: [],
   },
   {
@@ -134,8 +177,13 @@ const mappingRows = [
     terms: 'مدى الحياة · 5 جهاز',
     priceUsd: '9.00',
     supplierOutOfStock: true,
+    manualOutOfStock: false,
     skipped: false,
-    link: { item: ref(items[3]), markupPercent: null, followStock: true },
+    link: {
+      item: ref(items[3], lineTerms(5, LIFETIME, 'MATCH', 'MATCH')),
+      markupPercent: null,
+      followStock: true,
+    },
     suggestions: [],
   },
   {
@@ -146,11 +194,12 @@ const mappingRows = [
     terms: 'مدى الحياة · 5 جهاز',
     priceUsd: '49.00',
     supplierOutOfStock: false,
+    manualOutOfStock: false,
     skipped: false,
     link: null,
     suggestions: [
-      { ...ref(items[1]), score: 0.86 },
-      { ...ref(items[0]), score: 0.55 },
+      { ...ref(items[1], lineTerms(5, null, 'MATCH', 'UNKNOWN')), score: 0.86 },
+      { ...ref(items[0], lineTerms(1, null, 'DIFFERENT', 'UNKNOWN')), score: 0.55 },
     ],
   },
   {
@@ -161,15 +210,53 @@ const mappingRows = [
     terms: '1 سنة · 1 جهاز',
     priceUsd: '9.00',
     supplierOutOfStock: true,
+    manualOutOfStock: false,
     skipped: false,
-    link: { item: ref(items[6]), markupPercent: null, followStock: true },
-    suggestions: [{ ...ref(items[5]), score: 0.31 }],
+    link: {
+      item: ref(items[6], lineTerms(1, year(1), 'MATCH', 'MATCH')),
+      markupPercent: null,
+      followStock: true,
+    },
+    suggestions: [{ ...ref(items[5], lineTerms(1, year(1), 'MATCH', 'MATCH')), score: 0.31 }],
+  },
+  {
+    variantId: 'v_6',
+    sku: 'ESET-INTERNET-SECURITY-NOD32-3Y-2PC',
+    productSlug: 'eset-internet-security-nod32-3y-2pc',
+    productName: 'أشتراك نود 32 انتي فايروس انترنت سيكورتي ESET Internet Security/NOD32',
+    terms: '3 سنة · جهازان',
+    priceUsd: '48.95',
+    supplierOutOfStock: false,
+    manualOutOfStock: false,
+    skipped: false,
+    link: null,
+    suggestions: [
+      { ...ref(items[9], lineTerms(2, year(3), 'MATCH', 'MATCH')), score: 0.58 },
+      { ...ref(items[7], lineTerms(3, year(2), 'DIFFERENT', 'DIFFERENT')), score: 0.61 },
+      { ...ref(items[8], lineTerms(3, year(3), 'DIFFERENT', 'MATCH')), score: 0.6 },
+    ],
+  },
+  {
+    variantId: 'v_7',
+    sku: 'ESET-INTERNET-SECURITY-NOD32-3Y-2PC-2',
+    productSlug: 'eset-internet-security-nod32-3y-2pc',
+    productName: 'أشتراك نود 32 انتي فايروس انترنت سيكورتي ESET Internet Security/NOD32',
+    terms: '3 سنة · 4 أجهزة',
+    priceUsd: '47.95',
+    supplierOutOfStock: true,
+    manualOutOfStock: true,
+    skipped: false,
+    link: null,
+    suggestions: [
+      { ...ref(items[8], lineTerms(3, year(3), 'DIFFERENT', 'MATCH')), score: 0.6 },
+      { ...ref(items[9], lineTerms(2, year(3), 'DIFFERENT', 'MATCH')), score: 0.58 },
+    ],
   },
 ];
 
 const mapping = {
   rows: mappingRows,
-  counts: { all: 5, linked: 3, unlinked: 1, broken: 1, skipped: 0 },
+  counts: { all: 7, linked: 3, unlinked: 3, broken: 1, skipped: 0 },
 };
 
 const prices = {
@@ -623,6 +710,16 @@ export const supplierDynamic = [
       const row = mappingRows.find((entry) => entry.variantId === match[2]) ?? mappingRows[0];
       row.skipped = match[1] === 'PUT';
       mapping.counts.skipped = mappingRows.filter((entry) => entry.skipped).length;
+      return row;
+    },
+  ],
+  [
+    // Marked by hand (TASK-0134). The fixture server sees no body, so it toggles.
+    /^PUT \/v1\/admin\/supplier\/stock\/([^/]+)$/,
+    (match) => {
+      const row = mappingRows.find((entry) => entry.variantId === match[1]) ?? mappingRows[0];
+      row.manualOutOfStock = !row.manualOutOfStock;
+      row.supplierOutOfStock = row.manualOutOfStock;
       return row;
     },
   ],

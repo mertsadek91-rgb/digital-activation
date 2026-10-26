@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { useT } from '../../i18n/provider';
 import { api } from '../../lib/api';
 import { supplierAiApi } from '../../lib/supplier-api';
+import { DevicesPicker, PeriodPicker } from '../products/term-pickers';
 
 /**
  * A new draft product from one sheet line.
@@ -148,14 +149,30 @@ export function CreateFromLine({
                 onChange={(event) => set('priceUsd', event.target.value)}
               />
             </label>
+            {/* Read from the line's name; correct them here before creating (TASK-0134). */}
+            <PeriodPicker
+              id={`create-period-${item.id}`}
+              labelClassName="field"
+              unit={draft.licensePeriodUnit}
+              value={draft.licensePeriodValue}
+              onChange={(unit, value) =>
+                setDraft((current) =>
+                  current
+                    ? { ...current, licensePeriodUnit: unit, licensePeriodValue: value }
+                    : current,
+                )
+              }
+            />
+            <DevicesPicker
+              id={`create-devices-${item.id}`}
+              labelClassName="field"
+              value={draft.deviceCount}
+              onChange={(value) => set('deviceCount', value)}
+            />
           </div>
           <p className="meta">
-            {p(`kind_${draft.kind}`)} ·{' '}
-            {draft.licensePeriodUnit === 'LIFETIME'
-              ? p('unit_LIFETIME')
-              : `${String(draft.licensePeriodValue ?? 1)} ${p(`unit_${draft.licensePeriodUnit}`)}`}{' '}
-            · {t('createDevices', { count: draft.deviceCount })} · {p(`platform_${draft.platform}`)}{' '}
-            · {p(`activation_${draft.activationMethod}`)} · <bdi dir="ltr">{draft.model}</bdi>
+            {p(`kind_${draft.kind}`)} · {p(`platform_${draft.platform}`)} ·{' '}
+            {p(`activation_${draft.activationMethod}`)} · <bdi dir="ltr">{draft.model}</bdi>
           </p>
           <p className="meta">{t('createTermsHint')}</p>
           <div className="supplier-actions">

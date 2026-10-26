@@ -28,6 +28,7 @@ import { AuditService } from '../auth/audit.service.js';
 import { panelLocale, say } from '../common/panel-locale.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+import { compareTerms, parseLineTerms, termsWeight } from './line-terms.js';
 import { nameSimilarity } from './names.js';
 import { isLargeChange, priceChange, proposePrice } from './pricing.js';
 import { SupplierSyncService } from './supplier-sync.service.js';
@@ -376,13 +377,22 @@ export class SupplierService {
         : Promise.resolve([]),
     ]);
 
-    const ref = (item: (typeof items)[number]) => ({
+    // Each line's name read once, not once per variant it is compared with.
+    const parsed = new Map(items.map((item) => [item.id, parseLineTerms(item.name)]));
+    const ref = (
+      item: Pick<
+        (typeof items)[number],
+        'id' | 'name' | 'category' | 'costUsd' | 'outOfStock' | 'missingSince'
+      >,
+      variant: (typeof variants)[number],
+    ) => ({
       id: item.id,
       name: item.name,
       category: item.category,
       costUsd: item.costUsd?.toFixed(2) ?? null,
       outOfStock: item.outOfStock,
       missingSince: item.missingSince?.toISOString() ?? null,
+      terms: compareTerms(parsed.get(item.id) ?? parseLineTerms(item.name), variant),
     });
 
     const rows: SupplierMappingRow[] = variants.map((variant) => {
@@ -390,16 +400,27 @@ export class SupplierService {
       const en = variant.product.translations.find((t) => t.locale === Locale.EN)?.name;
       const link = variant.supplierLink;
       const broken = link !== null && link.item.missingSince !== null;
-      // Matched against the English name: the sheet is in English.
-      const probe = `${en ?? ar ?? variant.product.slug} ${String(variant.deviceCount)} PC ${termsEn(variant)}`;
+      // The product name against the line's name with its years and devices
+      // taken out (TASK-0134), weighted by the terms: the sibling with the
+      // same years and devices first, one that differs well below. Matched
+      // against the English name: the sheet is in English.
+      const probe = en ?? ar ?? variant.product.slug;
       const suggestions =
         (link === null || broken) && !skippedIds.has(variant.id)
           ? items
-              .map((item) => ({ item, score: nameSimilarity(probe, item.name) }))
-              .sort((a, b) => b.score - a.score)
+              .map((item) => {
+                const entry = ref(item, variant);
+                const rest = parsed.get(item.id)?.rest ?? item.name;
+                const score = nameSimilarity(probe, rest);
+                return { entry, score, rank: score * termsWeight(entry.terms) };
+              })
+              .filter((candidate) => candidate.score > 0.2)
+              .sort((a, b) => b.rank - a.rank)
               .slice(0, 3)
-              .filter((entry) => entry.score > 0.2)
-              .map((entry) => ({ ...ref(entry.item), score: Math.round(entry.score * 100) / 100 }))
+              .map((candidate) => ({
+                ...candidate.entry,
+                score: Math.round(candidate.score * 100) / 100,
+              }))
           : [];
       return {
         variantId: variant.id,
@@ -410,17 +431,12 @@ export class SupplierService {
         terms: terms(variant),
         priceUsd: variant.priceUsd.toFixed(2),
         supplierOutOfStock: variant.supplierOutOfStock,
+        manualOutOfStock: variant.manualOutOfStock,
         skipped: skippedIds.has(variant.id),
         link: link
           ? {
-              item: {
-                id: link.item.id,
-                name: link.item.name,
-                category: link.item.category,
-                costUsd: link.item.costUsd?.toFixed(2) ?? null,
-                outOfStock: link.item.outOfStock,
-                missingSince: link.item.missingSince?.toISOString() ?? null,
-              },
+              // A linked line's terms too, so a wrong sibling linked by hand shows.
+              item: ref(link.item, variant),
               markupPercent: link.markupPercent?.toFixed(2) ?? null,
               followStock: link.followStock,
             }
@@ -530,6 +546,47 @@ export class SupplierService {
         userAgent: actor.userAgent,
       });
     }
+    return this.mappingRow(variantId);
+  }
+
+  /**
+   * Marks a variant out of stock by hand, or back in stock (TASK-0134): the
+   * supplier no longer offers it, or it has gone from the list. The flag
+   * feeds `supplierOutOfStock` through the same reconciliation the sync uses,
+   * so the product page, cart, checkout and the back-in-stock email follow
+   * it, and the sync never clears it.
+   */
+  async setManualStock(
+    variantId: string,
+    outOfStock: boolean,
+    actor: Actor,
+  ): Promise<SupplierMappingRow> {
+    const variant = await this.prisma.client.variant.findUnique({
+      where: { id: variantId },
+      select: { sku: true, manualOutOfStock: true },
+    });
+    if (!variant)
+      throw new NotFoundException(say('لا يوجد متغيّر بهذا المعرّف.', 'No such variant.'));
+    if (variant.manualOutOfStock !== outOfStock) {
+      await this.prisma.client.variant.update({
+        where: { id: variantId },
+        data: {
+          manualOutOfStock: outOfStock,
+          ...(outOfStock ? { manualOutOfStockAt: new Date() } : {}),
+        },
+      });
+      await this.audit.record({
+        actorId: actor.staffId,
+        entity: 'Variant',
+        entityId: variantId,
+        action: outOfStock ? 'variant.marked_out_of_stock' : 'variant.marked_in_stock',
+        before: { sku: variant.sku, manualOutOfStock: variant.manualOutOfStock },
+        after: { sku: variant.sku, manualOutOfStock: outOfStock },
+        ip: actor.ip,
+        userAgent: actor.userAgent,
+      });
+    }
+    await this.sync.reconcileStock({ variantIds: [variantId] }, actor.staffId);
     return this.mappingRow(variantId);
   }
 
@@ -787,19 +844,27 @@ export class SupplierService {
 type TermsVariant = {
   licensePeriodValue: number | null;
   licensePeriodUnit: string;
-  deviceCount: number;
+  deviceCount: number | null;
 };
 
+/** "3 سنة · جهازان"; a part the product does not state is left out (TASK-0134). */
 function terms(variant: TermsVariant): string {
   const period =
-    variant.licensePeriodUnit === 'LIFETIME'
-      ? say('مدى الحياة', 'lifetime')
-      : `${String(variant.licensePeriodValue ?? 1)} ${unitLabel(variant.licensePeriodUnit)}`;
-  return `${period} · ${devices(variant.deviceCount)}`;
+    variant.licensePeriodUnit === 'UNSPECIFIED'
+      ? null
+      : variant.licensePeriodUnit === 'LIFETIME'
+        ? say('مدى الحياة', 'lifetime')
+        : `${String(variant.licensePeriodValue ?? 1)} ${unitLabel(variant.licensePeriodUnit)}`;
+  const parts = [period, devices(variant.deviceCount)].filter((part) => part !== null);
+  return parts.length > 0
+    ? parts.join(' · ')
+    : say('بلا مدة أو عدد أجهزة', 'no term or device count');
 }
 
 /** "1 جهاز", "2 جهازان", "5 أجهزة", "20 جهازاً" — the Arabic count agrees with its noun. */
-function devices(n: number): string {
+function devices(n: number | null): string | null {
+  if (n === null) return null;
+  if (n === 0) return say('أجهزة غير محدودة', 'unlimited devices');
   if (panelLocale() === 'en') return `${String(n)} ${n === 1 ? 'device' : 'devices'}`;
   if (n === 1) return 'جهاز واحد';
   if (n === 2) return 'جهازان';
@@ -816,17 +881,6 @@ function unitLabel(unit: string): string {
     default:
       return say('سنة', 'year(s)');
   }
-}
-
-function termsEn(variant: TermsVariant): string {
-  if (variant.licensePeriodUnit === 'LIFETIME') return 'Lifetime';
-  const unit =
-    variant.licensePeriodUnit === 'MONTH'
-      ? 'Month'
-      : variant.licensePeriodUnit === 'DAY'
-        ? 'Day'
-        : 'Year';
-  return `${String(variant.licensePeriodValue ?? 1)} ${unit}`;
 }
 
 function stateOrder(state: SupplierPriceRow['state']): number {

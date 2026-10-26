@@ -208,7 +208,7 @@ export const draftProductSchema = z.object({
   sku: z.string(),
   licensePeriodUnit: licensePeriodUnitSchema,
   licensePeriodValue: z.number().int().nullable(),
-  deviceCount: z.number().int(),
+  deviceCount: z.number().int().nullable(),
   platform: platformSchema,
   activationMethod: activationMethodSchema,
   /** Cost × markup, from the source's settings. */

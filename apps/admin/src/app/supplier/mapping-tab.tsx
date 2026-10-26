@@ -1,6 +1,11 @@
 'use client';
 
-import type { SupplierItemView, SupplierMapping, SupplierMappingRow } from '@da/contracts';
+import type {
+  LineTerms,
+  SupplierItemView,
+  SupplierMapping,
+  SupplierMappingRow,
+} from '@da/contracts';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
@@ -15,7 +20,9 @@ type Filter = (typeof FILTERS)[number];
 /**
  * Our variants on one side, the sheet's lines on the other. A person picks
  * the line once; the link is saved and every later sync uses it. The API
- * offers the three nearest names as suggestions and never links on its own.
+ * offers the three nearest lines as suggestions, those with the same years and
+ * devices first, and never links on its own. A variant the supplier no longer
+ * has can be marked out of stock here by hand (TASK-0134).
  */
 export function MappingTab() {
   const t = useT('supplier');
@@ -66,6 +73,8 @@ export function MappingTab() {
   return (
     <section>
       <p className="lede-sm">{t('mappingLede')}</p>
+      {/* Said on the page, not only in a tooltip that touch and keyboard users never see. */}
+      <p className="meta">{t('stockOutHint')}</p>
       <div className="supplier-toolbar">
         <div className="supplier-filters" role="group">
           {FILTERS.map((key) => (
@@ -138,6 +147,18 @@ export function MappingTab() {
                       (saved) => t('unlinked', { sku: saved.sku }),
                     )
                   }
+                  onStock={(out) =>
+                    void act(
+                      () => supplierApi.setStock(row.variantId, out),
+                      (saved) =>
+                        out
+                          ? t('markedOut', { sku: saved.sku })
+                          : // The hand mark is off, but a followed sheet line can still hold it out.
+                            saved.supplierOutOfStock
+                            ? t('markedInStillOut', { sku: saved.sku })
+                            : t('markedIn', { sku: saved.sku }),
+                    )
+                  }
                   onSkip={(skip) =>
                     void act(
                       () => supplierApi.setSkipped(row.variantId, skip),
@@ -169,12 +190,15 @@ function MappingRowView({
   lines,
   onLink,
   onUnlink,
+  onStock,
   onSkip,
 }: {
   row: SupplierMappingRow;
   lines: SupplierItemView[];
   onLink: (itemId: string, markup: string, followStock: boolean) => void;
   onUnlink: () => void;
+  /** true marks it out of stock by hand, false puts it back. */
+  onStock: (out: boolean) => void;
   /** true skips (not sold by this supplier), false puts it back. */
   onSkip: (skip: boolean) => void;
 }) {
@@ -205,7 +229,21 @@ function MappingRowView({
         <div className="meta" dir="ltr">
           {row.sku}
         </div>
-        {row.supplierOutOfStock ? <span className="pill pill-danger">{t('outBadge')}</span> : null}
+        {row.manualOutOfStock ? (
+          <span className="pill pill-danger">{t('manualOutBadge')}</span>
+        ) : row.supplierOutOfStock ? (
+          <span className="pill pill-danger">{t('outBadge')}</span>
+        ) : null}
+        <div className="supplier-actions">
+          <button
+            type="button"
+            className="ghost btn-sm"
+            title={t('stockOutHint')}
+            onClick={() => onStock(!row.manualOutOfStock)}
+          >
+            {row.manualOutOfStock ? t('stockBack') : t('stockOut')}
+          </button>
+        </div>
       </td>
       <td>{row.terms}</td>
       <td className="num" dir="ltr">
@@ -226,6 +264,11 @@ function MappingRowView({
             <div dir="ltr" className={row.link.item.outOfStock ? 'supplier-struck' : undefined}>
               {row.link.item.name}
             </div>
+            <TermsCheck terms={row.link.item.terms} />
+            {row.link.item.terms.devicesMatch === 'DIFFERENT' ||
+            row.link.item.terms.periodMatch === 'DIFFERENT' ? (
+              <p className="notice">{t('linkedDiffers')}</p>
+            ) : null}
             <div className="meta" dir="ltr">
               {usd(row.link.item.costUsd)}
               {row.link.markupPercent ? ` · ${String(Number(row.link.markupPercent))}%` : ''}
@@ -243,6 +286,10 @@ function MappingRowView({
         ) : (
           <div className="mapping-picker">
             {broken ? <p className="notice">{t('broken')}</p> : null}
+            {row.suggestions.length > 0 &&
+            row.suggestions.every((entry) => differs(entry.terms)) ? (
+              <p className="notice">{t('noExactLine')}</p>
+            ) : null}
             {row.suggestions.length > 0 ? (
               <div className="mapping-suggestions">
                 <span className="meta">{t('suggestions')}</span>
@@ -252,10 +299,12 @@ function MappingRowView({
                     type="button"
                     className={`chip${itemId === suggestion.id ? ' is-active' : ''}`}
                     onClick={() => setItemId(suggestion.id)}
-                    dir="ltr"
                     title={`${String(Math.round(suggestion.score * 100))}%`}
                   >
-                    {suggestion.name} · {usd(suggestion.costUsd)}
+                    <span dir="ltr">
+                      {suggestion.name} · {usd(suggestion.costUsd)}
+                    </span>
+                    <TermsCheck terms={suggestion.terms} />
                   </button>
                 ))}
               </div>
@@ -355,4 +404,51 @@ function MappingRowView({
       </td>
     </tr>
   );
+}
+
+/** Both the years and the devices agree with this variant. */
+function exact(terms: LineTerms | undefined): boolean {
+  return terms?.devicesMatch === 'MATCH' && terms.periodMatch === 'MATCH';
+}
+
+/**
+ * What a line's name states, part by part, against the variant: ✓ where it
+ * agrees, ≠ where it differs, nothing where the name states nothing.
+ */
+function TermsCheck({ terms }: { terms: LineTerms }) {
+  const t = useT('supplier');
+  const parts: { key: string; text: string; ok: boolean }[] = [];
+  if (terms.devices !== null && terms.devicesMatch !== 'UNKNOWN') {
+    parts.push({
+      key: 'devices',
+      text: terms.devices === 0 ? t('lineUnlimited') : t('lineDevices', { count: terms.devices }),
+      ok: terms.devicesMatch === 'MATCH',
+    });
+  }
+  if (terms.period !== null && terms.periodMatch !== 'UNKNOWN') {
+    parts.push({
+      key: 'period',
+      text:
+        terms.period.unit === 'LIFETIME'
+          ? t('line_LIFETIME')
+          : t(`line_${terms.period.unit}`, { count: terms.period.value ?? 1 }),
+      ok: terms.periodMatch === 'MATCH',
+    });
+  }
+  if (parts.length === 0) return null;
+  return (
+    <span className="terms-check">
+      {exact(terms) ? <span className="term-ok">✓ {t('termMatch')}</span> : null}
+      {parts.map((part) => (
+        <span key={part.key} className={part.ok ? 'term-ok' : 'term-diff'}>
+          {part.ok ? '✓' : '≠'} {part.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The years or the devices disagree with this variant. */
+function differs(terms: LineTerms): boolean {
+  return terms.devicesMatch === 'DIFFERENT' || terms.periodMatch === 'DIFFERENT';
 }
