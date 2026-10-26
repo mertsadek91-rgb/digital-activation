@@ -459,3 +459,123 @@
   display: grid;
   gap: 4px;
 }
+
+/* --- prices: standing against cost, own markup (TASK-0135) ---------------- */
+
+.price-standing {
+  margin-block-end: 12px;
+}
+
+/* "Below cost" draws the eye only while something sits in it. */
+.supplier-filters .chip.is-danger:not(.is-active) {
+  border-color: var(--color-danger-ink);
+  color: var(--color-danger-ink);
+}
+
+/* Words in a numbers cell: the panel's text face, not the figures' spacing.
+   It wraps, so it never widens the table (REV-0200); the amount stays whole. */
+.cost-standing {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  letter-spacing: normal;
+  white-space: normal;
+}
+
+.cost-standing bdi {
+  white-space: nowrap;
+}
+
+.cost-standing.is-below {
+  color: var(--color-danger-ink);
+  font-weight: 700;
+}
+
+.cost-standing.is-at {
+  color: var(--color-warning-ink);
+}
+
+.markup-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 32px;
+  padding-inline: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.markup-edit:hover,
+.markup-edit.is-open {
+  border-color: var(--color-brand);
+}
+
+.markup-edit-icon {
+  color: var(--color-ink-secondary);
+}
+
+.supplier-table tr.markup-editor-row td {
+  background: var(--color-card-alt);
+  white-space: normal;
+}
+
+/* Held at the visible edge while the wide table scrolls sideways, and no
+   wider than the screen, so a phone never has to scroll to reach a field. */
+.markup-editor {
+  position: sticky;
+  inset-inline-start: 0;
+  box-sizing: border-box;
+  display: grid;
+  gap: 10px;
+  inline-size: min(40rem, calc(100vw - 72px));
+  /* Off the scroll box's edge, so nothing at the start is clipped (REV-0200). */
+  padding-inline: 8px;
+}
+
+.markup-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+
+.markup-editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 12rem));
+  gap: 12px;
+}
+
+.markup-editor-fields input {
+  min-block-size: 44px;
+  inline-size: 100%;
+}
+
+.markup-preview {
+  margin: 0;
+}
+
+/* Over 30%: the same warning ink as the "large change" badge's text. */
+.markup-preview.is-large {
+  color: var(--color-danger-ink);
+  font-weight: 700;
+}
+
+.markup-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .markup-edit,
+  .markup-editor-actions button {
+    min-block-size: 44px;
+  }
+
+  .markup-editor-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}

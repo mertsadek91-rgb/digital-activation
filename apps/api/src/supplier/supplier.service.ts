@@ -6,6 +6,8 @@ import {
   type ApplySupplierPricesResult,
   type SetSupplierLink,
   type SetSupplierSource,
+  type SetVariantMarkup,
+  type SetVariantMarkupResult,
   type SupplierItemFilter,
   type SupplierItems,
   type SupplierItemsQuery,
@@ -30,7 +32,13 @@ import { PrismaService } from '../prisma/prisma.service.js';
 
 import { compareTerms, parseLineTerms, termsWeight } from './line-terms.js';
 import { nameSimilarity } from './names.js';
-import { isLargeChange, priceChange, proposePrice } from './pricing.js';
+import {
+  costStanding,
+  isLargeChange,
+  markupForPrice,
+  priceChange,
+  proposePrice,
+} from './pricing.js';
 import { SupplierSyncService } from './supplier-sync.service.js';
 
 /** How recent a change has to be for the line to count as "changed". */
@@ -697,19 +705,10 @@ export class SupplierService {
 
   async prices(): Promise<SupplierPrices> {
     const source = await this.primary();
-    if (!source) return { rows: [], pending: 0 };
+    if (!source) return { rows: [], pending: 0, rounding: 'CENTS' };
     const links = await this.prisma.client.variantSupplierLink.findMany({
       where: { item: { sourceId: source.id } },
-      include: {
-        item: true,
-        variant: {
-          include: {
-            product: {
-              select: { slug: true, translations: { select: { locale: true, name: true } } },
-            },
-          },
-        },
-      },
+      include: PRICE_LINK_INCLUDE,
     });
 
     const rows = links
@@ -719,7 +718,103 @@ export class SupplierService {
           stateOrder(a.state) - stateOrder(b.state) ||
           Math.abs(b.change ?? 0) - Math.abs(a.change ?? 0),
       );
-    return { rows, pending: rows.filter((row) => row.state === 'PENDING').length };
+    return {
+      rows,
+      pending: rows.filter((row) => row.state === 'PENDING').length,
+      rounding: source.rounding,
+    };
+  }
+
+  /**
+   * One variant's own markup, from the prices tab (TASK-0135). A typed price
+   * becomes the markup that gives it back from today's cost (as near as the
+   * rounding rule allows), so it keeps tracking the cost on later syncs. With
+   * `apply`, the new proposal goes through `applyPrices` and its guards —
+   * never below cost, never a missing line.
+   */
+  async setMarkup(
+    variantId: string,
+    input: SetVariantMarkup,
+    actor: Actor,
+  ): Promise<SetVariantMarkupResult> {
+    const source = await this.requirePrimary();
+    const link = await this.prisma.client.variantSupplierLink.findUnique({
+      where: { variantId },
+      include: PRICE_LINK_INCLUDE,
+    });
+    if (!link || link.item.sourceId !== source.id) {
+      throw new NotFoundException(
+        say('هذا المنتج غير مربوط بسطر من الشيت.', 'This variant is not linked to a sheet line.'),
+      );
+    }
+
+    let markup: Prisma.Decimal | null;
+    let target: Prisma.Decimal | null = null;
+    if (input.targetPriceUsd !== undefined) {
+      const cost = link.item.costUsd;
+      if (cost === null || cost.lessThanOrEqualTo(0)) {
+        throw new BadRequestException(
+          say(
+            'لا تكلفة لهذا السطر في الشيت، فلا تُحسب نسبة من السعر.',
+            'The sheet line has no cost to work the markup out from.',
+          ),
+        );
+      }
+      target = new Prisma.Decimal(input.targetPriceUsd).toDecimalPlaces(2);
+      if (target.lessThanOrEqualTo(cost)) {
+        throw new BadRequestException(
+          say(
+            // The amount isolated, or Arabic shows it as "130.00$" (REV-0200).
+            `السعر يجب أن يكون أعلى من التكلفة (\u2066$${cost.toFixed(2)}\u2069).`,
+            `The price must be above the cost ($${cost.toFixed(2)}).`,
+          ),
+        );
+      }
+      markup = markupForPrice(cost, target, source.rounding);
+      if (markup === null) {
+        throw new BadRequestException(
+          say(
+            'لا توجد نسبة حتى 1000% تعطي سعراً قريباً من هذا وأعلى من التكلفة.',
+            'No markup up to 1000% gives a price near that and above cost.',
+          ),
+        );
+      }
+    } else {
+      markup =
+        input.markupPercent === null || input.markupPercent === undefined
+          ? null
+          : new Prisma.Decimal(input.markupPercent).toDecimalPlaces(2);
+    }
+
+    await this.prisma.client.variantSupplierLink.update({
+      where: { id: link.id },
+      data: { markupPercent: markup },
+    });
+    await this.audit.record({
+      actorId: actor.staffId,
+      entity: 'Variant',
+      entityId: variantId,
+      action: 'supplier.markup_set',
+      before: { sku: link.variant.sku, markupPercent: link.markupPercent?.toFixed(2) ?? null },
+      after: {
+        sku: link.variant.sku,
+        markupPercent: markup?.toFixed(2) ?? null,
+        ...(target ? { targetPriceUsd: target.toFixed(2) } : {}),
+        costUsd: link.item.costUsd?.toFixed(2) ?? null,
+      },
+      ip: actor.ip,
+      userAgent: actor.userAgent,
+    });
+
+    // The owner looked at this row and asked for it: no second confirmation.
+    const applied = input.apply
+      ? await this.applyPrices({ variantIds: [variantId], confirmLarge: true }, actor)
+      : null;
+    const fresh = await this.prisma.client.variantSupplierLink.findUniqueOrThrow({
+      where: { id: link.id },
+      include: PRICE_LINK_INCLUDE,
+    });
+    return { row: priceRow(fresh, source), applied };
   }
 
   /**
@@ -887,16 +982,18 @@ function stateOrder(state: SupplierPriceRow['state']): number {
   return { PENDING: 0, MISSING: 1, NO_COST: 2, CURRENT: 3 }[state];
 }
 
-type PriceLink = Prisma.VariantSupplierLinkGetPayload<{
-  include: {
-    item: true;
-    variant: {
-      include: {
-        product: { select: { slug: true; translations: { select: { locale: true; name: true } } } };
-      };
-    };
-  };
-}>;
+const PRICE_LINK_INCLUDE = {
+  item: true,
+  variant: {
+    include: {
+      product: {
+        select: { slug: true, translations: { select: { locale: true, name: true } } },
+      },
+    },
+  },
+} satisfies Prisma.VariantSupplierLinkInclude;
+
+type PriceLink = Prisma.VariantSupplierLinkGetPayload<{ include: typeof PRICE_LINK_INCLUDE }>;
 
 function priceRow(
   link: PriceLink,
@@ -936,5 +1033,6 @@ function priceRow(
     change,
     large: proposed !== null && isLargeChange(change, current),
     state,
+    costStanding: costStanding(current, cost),
   };
 }

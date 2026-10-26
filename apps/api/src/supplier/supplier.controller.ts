@@ -18,6 +18,8 @@ import {
   type SetManualStock,
   type SetSupplierLink,
   type SetSupplierSource,
+  type SetVariantMarkup,
+  type SetVariantMarkupResult,
   type SupplierItems,
   type SupplierItemsQuery,
   type SupplierLog,
@@ -33,6 +35,7 @@ import {
   setManualStockSchema,
   setSupplierLinkSchema,
   setSupplierSourceSchema,
+  setVariantMarkupSchema,
   supplierItemsQuerySchema,
   supplierLogQuerySchema,
   supplierMappingQuerySchema,
@@ -204,6 +207,17 @@ export class SupplierController {
   @ApiOperation({ summary: 'Price proposals from cost × (1 + markup)' })
   prices(): Promise<SupplierPrices> {
     return this.supplier.prices();
+  }
+
+  @Put('prices/:variantId/markup')
+  @Roles('ADMIN')
+  @ApiOperation({ summary: "Set a variant's own markup, from a percentage or a wanted price" })
+  setMarkup(
+    @Param('variantId') variantId: string,
+    @Body(new ZodPipe(setVariantMarkupSchema)) body: SetVariantMarkup,
+    @Req() request: StaffRequest,
+  ): Promise<SetVariantMarkupResult> {
+    return this.supplier.setMarkup(variantId, body, actor(request));
   }
 
   @Post('prices/apply')
