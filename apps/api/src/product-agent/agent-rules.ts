@@ -138,10 +138,12 @@ export function hasBody(body: unknown): boolean {
  * a person would type (REV-0196).
  */
 export function plainName(name: string): string {
-  return name
-    // Markup, control characters, and the invisible marks that reorder text.
-    .replace(/[<>\p{Cc}\u200b-\u200f\u202a-\u202e\u2066-\u2069]/gu, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 200);
+  return (
+    name
+      // Markup, control characters, and the invisible marks that reorder text.
+      .replace(/[<>\p{Cc}\u200b-\u200f\u202a-\u202e\u2066-\u2069]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 200)
+  );
 }
