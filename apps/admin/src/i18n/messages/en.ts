@@ -1688,6 +1688,7 @@ export const en: AdminMessages = {
     relink: 'Change line',
     linked: 'Linked {sku}.',
     unlinked: 'Unlinked {sku}.',
+    unlinkAdminOnly: 'It has its own markup, so only an admin can unlink it.',
     markupOverride: 'Own markup (%)',
     markupDefault: 'Default',
     followStock: 'Follows the sheet when out',

@@ -3,8 +3,10 @@ import { createHash, randomBytes } from 'node:crypto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import type { StaffRequest } from '../auth/staff.guard.js';
 import { SupplierSyncService } from '../supplier/supplier-sync.service.js';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service.js';
+import { SupplierController } from '../supplier/supplier.controller.js';
 import { SupplierService } from '../supplier/supplier.service.js';
 
 import {
@@ -236,7 +238,7 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
       ).supplierOutOfStock,
     ).toBe(true);
 
-    await supplier.removeLink(catalogue.madeToOrder.variantId, actor);
+    await supplier.removeLink(catalogue.madeToOrder.variantId, actor, { mayChangeMarkup: true });
     expect(
       (
         await harness.db.variant.findUniqueOrThrow({
@@ -319,7 +321,7 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
         where: { entityId: id, action: 'variant.marked_out_of_stock' },
       }),
     ).toBe(1);
-    await supplier.removeLink(id, actor);
+    await supplier.removeLink(id, actor, { mayChangeMarkup: true });
   });
 
   it('emails the people who asked while it was marked out, once it is back', async () => {
@@ -380,6 +382,125 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
       actor,
     );
     await expect(supplier.setSkipped(catalogue.stocked.variantId, true, actor)).rejects.toThrow();
-    await supplier.removeLink(catalogue.stocked.variantId, actor);
+    await supplier.removeLink(catalogue.stocked.variantId, actor, { mayChangeMarkup: true });
+  });
+
+  // A variant's own markup is money (TASK-0137): catalogue staff link and
+  // re-link, but neither set nor clear the markup an admin pinned.
+  it('keeps an admin-set markup when catalogue staff re-link, and refuses them clearing it', async () => {
+    const supplier = harness.get(SupplierService);
+    const controller = harness.get(SupplierController);
+    const catalogStaff = await harness.db.staffUser.create({
+      data: {
+        email: `supplier-catalog-${catalogue.run}@example.test`,
+        name: 'Supplier catalogue test',
+        passwordHash: 'not-a-real-hash',
+        role: 'CATALOG',
+      },
+    });
+    const as = (role: 'ADMIN' | 'CATALOG', sub: string) =>
+      ({ staff: { sub, role }, ip: undefined, headers: {} }) as unknown as StaffRequest;
+    const variantId = catalogue.stocked.variantId;
+    const markupOf = async () =>
+      (
+        await harness.db.variantSupplierLink.findUniqueOrThrow({ where: { variantId } })
+      ).markupPercent?.toFixed(2) ?? null;
+
+    await controller.setLink(
+      variantId,
+      { itemId, markupPercent: 35, followStock: true },
+      as('ADMIN', actor.staffId),
+    );
+    expect(await markupOf()).toBe('35.00');
+
+    // Re-link without a markup: the admin's stays.
+    const relinked = await controller.setLink(
+      variantId,
+      { itemId, followStock: false },
+      as('CATALOG', catalogStaff.id),
+    );
+    expect(relinked.link?.markupPercent).toBe('35.00');
+    expect(relinked.link?.followStock).toBe(false);
+    expect(await markupOf()).toBe('35.00');
+
+    // Clearing (null or blank) and setting are all markup changes: refused.
+    // The controller throws before it returns a promise, hence the async wrapper.
+    for (const markupPercent of [null, '', 20] as const) {
+      await expect(
+        (async () =>
+          controller.setLink(
+            variantId,
+            { itemId, markupPercent, followStock: true },
+            as('CATALOG', catalogStaff.id),
+          ))(),
+      ).rejects.toMatchObject({ status: 403 });
+    }
+    expect(await markupOf()).toBe('35.00');
+
+    // An admin may still clear it back to the source's markup.
+    const cleared = await controller.setLink(
+      variantId,
+      { itemId, markupPercent: null, followStock: true },
+      as('ADMIN', actor.staffId),
+    );
+    expect(cleared.link?.markupPercent).toBeNull();
+    await supplier.removeLink(variantId, actor, { mayChangeMarkup: true });
+  });
+
+  // Unlinking drops the link's own markup, and a re-link starts from the
+  // source's, so catalogue staff cannot unlink one an admin pinned (TASK-0138).
+  it('refuses catalogue staff unlinking a variant with its own markup, and audits what an unlink drops', async () => {
+    const controller = harness.get(SupplierController);
+    const catalogStaff = await harness.db.staffUser.create({
+      data: {
+        email: `supplier-unlink-${catalogue.run}@example.test`,
+        name: 'Supplier unlink test',
+        passwordHash: 'not-a-real-hash',
+        role: 'CATALOG',
+      },
+    });
+    const as = (role: 'ADMIN' | 'CATALOG', sub: string) =>
+      ({ staff: { sub, role }, ip: undefined, headers: {} }) as unknown as StaffRequest;
+    const variantId = catalogue.stocked.variantId;
+    const linkOf = () => harness.db.variantSupplierLink.findUnique({ where: { variantId } });
+    const lastUnlinkAudit = () =>
+      harness.db.auditLog.findFirst({
+        where: { entityId: variantId, action: 'supplier.link_removed' },
+        orderBy: { createdAt: 'desc' },
+      });
+
+    await controller.setLink(
+      variantId,
+      { itemId, markupPercent: 35, followStock: false },
+      as('ADMIN', actor.staffId),
+    );
+    await expect(
+      (async () => controller.removeLink(variantId, as('CATALOG', catalogStaff.id)))(),
+    ).rejects.toMatchObject({ status: 403 });
+    expect((await linkOf())?.markupPercent?.toFixed(2)).toBe('35.00');
+
+    // An admin may unlink it, and the audit keeps what the unlink dropped.
+    const unlinked = await controller.removeLink(variantId, as('ADMIN', actor.staffId));
+    expect(unlinked.link).toBeNull();
+    expect(await linkOf()).toBeNull();
+    expect((await lastUnlinkAudit())?.before).toMatchObject({
+      itemId,
+      markupPercent: '35.00',
+      followStock: false,
+    });
+
+    // Without its own markup, unlinking stays catalogue work.
+    await controller.setLink(
+      variantId,
+      { itemId, followStock: true },
+      as('CATALOG', catalogStaff.id),
+    );
+    await controller.removeLink(variantId, as('CATALOG', catalogStaff.id));
+    expect(await linkOf()).toBeNull();
+    expect((await lastUnlinkAudit())?.before).toMatchObject({
+      itemId,
+      markupPercent: null,
+      followStock: true,
+    });
   });
 });
