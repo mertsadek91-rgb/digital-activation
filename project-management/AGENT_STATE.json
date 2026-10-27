@@ -213,18 +213,14 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "REVIEWING",
+      "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0140"
-      ],
-      "reviews": [
-        "TASK-0140"
-      ],
+      "supporting": [],
+      "reviews": [],
       "reviews_recorded": 22,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-27T10:24:45Z"
     },
@@ -315,19 +311,17 @@
       "executor": "main",
       "squads": [],
       "state": "AVAILABLE",
-      "current_task": "TASK-0140",
-      "assignments": [
-        "TASK-0140"
-      ],
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0129"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-27T10:29:19Z"
+      "last_activity": "2026-10-27T10:31:05Z"
     },
     {
       "id": "backend-architect",

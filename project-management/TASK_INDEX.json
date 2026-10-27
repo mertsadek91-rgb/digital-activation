@@ -3932,10 +3932,10 @@
       "id": "TASK-0140",
       "title": "Product images fill their frame: square, unpadded image boxes on the product page gallery and on product cards (rails, listings)",
       "type": "improvement",
-      "status": "QA",
-      "stage": "IMPLEMENTATION",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
       "priority": "MEDIUM",
-      "progress": 90,
+      "progress": 100,
       "authority_level": 2,
       "risk": "LOW",
       "primary_agent": "frontend-engineer",
@@ -3972,7 +3972,7 @@
       "created_at": "2026-10-27",
       "updated_at": "2026-10-27",
       "reaudit": null,
-      "file": "tasks/qa/TASK-0140.md"
+      "file": "tasks/completed/TASK-0140.md"
     }
   ]
 }

@@ -55,7 +55,7 @@
 
 ## Current tasks
 
-- TASK-0140 — Product images fill their frame: square, unpadded image boxes on the product page gallery and on product cards (rails, listings) (QA, 90%)
+- none
 
 ## Supporting
 
