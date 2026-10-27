@@ -11,7 +11,7 @@
 | Max authority | Level 2 |
 | Executes as | subagent:visual-qa |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | REVIEWING |
 
 ## Responsibilities
 
@@ -49,3 +49,11 @@
 ## Current tasks
 
 - none
+
+## Supporting
+
+- TASK-0140 — Product images fill their frame: square, unpadded image boxes on the product page gallery and on product cards (rails, listings) (QA, 90%)
+
+## Pending reviews
+
+- TASK-0140 — Product images fill their frame: square, unpadded image boxes on the product page gallery and on product cards (rails, listings) (QA, 90%)

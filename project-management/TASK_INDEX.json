@@ -3927,6 +3927,52 @@
       "updated_at": "2026-10-26",
       "reaudit": null,
       "file": "tasks/completed/TASK-0135.md"
+    },
+    {
+      "id": "TASK-0140",
+      "title": "Product images fill their frame: square, unpadded image boxes on the product page gallery and on product cards (rails, listings)",
+      "type": "improvement",
+      "status": "QA",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 90,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/store/[slug]",
+        "/",
+        "/collections/[slug]",
+        "/brands/[slug]",
+        "/search"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/catalog.css",
+        "apps/storefront/src/components/product-gallery.tsx",
+        "apps/storefront/src/components/product-card.tsx"
+      ],
+      "created_at": "2026-10-27",
+      "updated_at": "2026-10-27",
+      "reaudit": null,
+      "file": "tasks/qa/TASK-0140.md"
     }
   ]
 }

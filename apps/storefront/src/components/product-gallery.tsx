@@ -40,7 +40,7 @@ export function ProductGallery({
             alt={main.alt}
             fill
             priority={index === 0}
-            sizes="(max-width: 900px) 100vw, 480px"
+            sizes="(max-width: 767px) 220px, (max-width: 899px) 400px, 560px"
           />
         ) : (
           /* A drawing rather than the words "no image yet", which on a live

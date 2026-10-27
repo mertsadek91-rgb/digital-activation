@@ -213,16 +213,20 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "REVIEWING",
       "current_task": null,
       "assignments": [],
-      "supporting": [],
-      "reviews": [],
-      "reviews_recorded": 21,
+      "supporting": [
+        "TASK-0140"
+      ],
+      "reviews": [
+        "TASK-0140"
+      ],
+      "reviews_recorded": 22,
       "opportunities": [],
-      "workload": 0,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-26T14:19:52Z"
+      "last_activity": "2026-10-27T10:24:45Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -311,17 +315,19 @@
       "executor": "main",
       "squads": [],
       "state": "AVAILABLE",
-      "current_task": null,
-      "assignments": [],
+      "current_task": "TASK-0140",
+      "assignments": [
+        "TASK-0140"
+      ],
       "supporting": [
         "TASK-0129"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 1.5,
       "blockers": [],
-      "last_activity": "2026-10-24T08:08:33Z"
+      "last_activity": "2026-10-27T10:29:19Z"
     },
     {
       "id": "backend-architect",
