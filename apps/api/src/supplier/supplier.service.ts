@@ -1,6 +1,11 @@
 import crypto from 'node:crypto';
 
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   type ApplySupplierPrices,
   type ApplySupplierPricesResult,
@@ -607,16 +612,22 @@ export class SupplierService {
     if (!item)
       throw new NotFoundException(say('لا يوجد سطر بهذا المعرّف في الشيت.', 'No such sheet line.'));
 
+    // Omitted keeps the link's own markup (a re-link by catalogue staff must
+    // not wipe one an admin pinned); blank or null clears it to the source's.
     const markup =
-      input.markupPercent === undefined ||
-      input.markupPercent === '' ||
-      input.markupPercent === null
-        ? null
-        : new Prisma.Decimal(input.markupPercent);
+      input.markupPercent === undefined
+        ? (variant.supplierLink?.markupPercent ?? null)
+        : input.markupPercent === '' || input.markupPercent === null
+          ? null
+          : new Prisma.Decimal(input.markupPercent);
     const data = { itemId: item.id, markupPercent: markup, followStock: input.followStock };
     await this.prisma.client.variantSupplierLink.upsert({
       where: { variantId },
-      update: data,
+      // Omitted is not written back, so a markup an admin sets meanwhile stays.
+      update:
+        input.markupPercent === undefined
+          ? { itemId: item.id, followStock: input.followStock }
+          : data,
       create: { variantId, linkedById: actor.staffId, ...data },
     });
     await this.audit.record({
@@ -661,19 +672,60 @@ export class SupplierService {
     return this.setLink(variant.id, { itemId, followStock: true }, actor);
   }
 
-  async removeLink(variantId: string, actor: Actor): Promise<SupplierMappingRow> {
+  /**
+   * Unlinking drops the link's own markup with it, and a re-link starts from
+   * the source's, so only staff who may change a markup (ADMIN/OWNER) can
+   * unlink a variant that has one (TASK-0138).
+   */
+  async removeLink(
+    variantId: string,
+    actor: Actor,
+    options: { mayChangeMarkup: boolean },
+  ): Promise<SupplierMappingRow> {
     const link = await this.prisma.client.variantSupplierLink.findUnique({
       where: { variantId },
       include: { variant: { select: { sku: true } }, item: { select: { name: true } } },
     });
+    let removed = false;
     if (link) {
-      await this.prisma.client.variantSupplierLink.delete({ where: { variantId } });
+      const refuse = () =>
+        new ForbiddenException(
+          say(
+            'لهذا المنتج نسبة ربح خاصة؛ فك الربط للمدير فقط.',
+            'This variant has its own markup: only an admin can unlink it.',
+          ),
+        );
+      if (link.markupPercent !== null && !options.mayChangeMarkup) throw refuse();
+      // Without the right, delete only while there is still no markup, so one
+      // an admin sets between the read and the delete is not lost.
+      const { count } = await this.prisma.client.variantSupplierLink.deleteMany({
+        where: options.mayChangeMarkup ? { variantId } : { variantId, markupPercent: null },
+      });
+      removed = count > 0;
+      // Nothing deleted: refused if the link is still there (it gained a
+      // markup), a no-op if someone else unlinked it first.
+      if (
+        !removed &&
+        !options.mayChangeMarkup &&
+        (await this.prisma.client.variantSupplierLink.count({ where: { variantId } })) > 0
+      ) {
+        throw refuse();
+      }
+    }
+    // Audited only when this call removed it, not when someone else got there first.
+    if (link && removed) {
       await this.audit.record({
         actorId: actor.staffId,
         entity: 'Variant',
         entityId: variantId,
         action: 'supplier.link_removed',
-        before: { sku: link.variant.sku, itemId: link.itemId, itemName: link.item.name },
+        before: {
+          sku: link.variant.sku,
+          itemId: link.itemId,
+          itemName: link.item.name,
+          markupPercent: link.markupPercent?.toFixed(2) ?? null,
+          followStock: link.followStock,
+        },
         ip: actor.ip,
         userAgent: actor.userAgent,
       });

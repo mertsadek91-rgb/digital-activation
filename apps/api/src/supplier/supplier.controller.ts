@@ -143,12 +143,12 @@ export class SupplierController {
     @Req() request: StaffRequest,
   ): Promise<SupplierMappingRow> {
     // Linking is catalogue work; a variant's own markup is money, like the
-    // source's markup, so it is ADMIN's (OWNER passes).
-    const markupSet =
-      body.markupPercent !== undefined && body.markupPercent !== null && body.markupPercent !== '';
+    // source's markup, so it is ADMIN's (OWNER passes). Sending a markup at
+    // all, a number or a blank that clears one, changes it; omitting it keeps
+    // the link's markup as it is (TASK-0137).
     const role = request.staff?.role;
-    if (markupSet && role !== 'ADMIN' && role !== 'OWNER') {
-      throw new ForbiddenException('Only an admin can set a markup.');
+    if (body.markupPercent !== undefined && role !== 'ADMIN' && role !== 'OWNER') {
+      throw new ForbiddenException('Only an admin can set or clear a markup.');
     }
     return this.supplier.setLink(variantId, body, actor(request));
   }
@@ -169,7 +169,12 @@ export class SupplierController {
     @Param('variantId') variantId: string,
     @Req() request: StaffRequest,
   ): Promise<SupplierMappingRow> {
-    return this.supplier.removeLink(variantId, actor(request));
+    // Unlinking drops the link's own markup, so with one it is ADMIN's
+    // (OWNER passes), like changing it (TASK-0138).
+    const role = request.staff?.role;
+    return this.supplier.removeLink(variantId, actor(request), {
+      mayChangeMarkup: role === 'ADMIN' || role === 'OWNER',
+    });
   }
 
   @Put('skips/:variantId')

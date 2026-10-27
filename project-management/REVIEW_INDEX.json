@@ -2268,6 +2268,62 @@
       "ts": "2026-10-26T10:25:33Z",
       "actor": "qa-lead",
       "event": "E20261026102533-120ee7"
+    },
+    {
+      "review_id": "REV-0196",
+      "reviewer": "security-engineer",
+      "executor": "subagent:security-reviewer",
+      "review_type": "SECURITY",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "NODEJS_BACKEND. Change is sound: controller checks the ZodPipe output, and setSupplierLinkSchema (union ''|null|coerced percent, optional) yields undefined only when the key is absent, so any markupPercent key (number, numeric string, null, '') from CATALOG gets 403; unknown keys are stripped; linkBySku passes no markup so keeps the existing one; sync never writes prices; prices/apply and PUT source stay ADMIN. Residual (MEDIUM, pre-existing, same bug class): DELETE /admin/supplier/links/:variantId is open to CATALOG and deletes the VariantSupplierLink row including its markupPercent (supplier.service.ts:666-683), so unlink then re-link drops an ADMIN-pinned markup to the source default in two steps; the link_removed audit before-image (service.ts:678) omits markupPercent, so the lost value is not recoverable from the audit log. Price itself only changes when ADMIN applies proposals. Suggest: refuse removeLink for non-ADMIN when link.markupPercent is set (or keep markup), and add markupPercent/followStock to the audit before-image. LOW: re-link to a different sheet line keeps the pinned percent against a new cost (by design, note only).",
+      "round": 1,
+      "target": "TASK-0137",
+      "ts": "2026-10-27T06:32:15Z",
+      "actor": "security-engineer",
+      "event": "E20261027063215-d73520"
+    },
+    {
+      "review_id": "REV-0197",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "QA",
+      "result": "PASS",
+      "independent": true,
+      "findings": "All 5 criteria met. Service keeps the existing link markup when markupPercent is omitted (supplier.service.ts:612-617); controller refuses any sent markupPercent (number, null or blank) for non-ADMIN/OWNER with 403 (supplier.controller.ts:150); Mapping tab hides the markup field and omits markupPercent unless isAdmin (OWNER or ADMIN, page.tsx:87); contract doc updated; new int test passes on a disposable PGlite DB covering CATALOG re-link keeps 35.00, CATALOG null/blank/20 each 403, admin set and clear still work. Regression check: linkBySku now also keeps an existing markup when re-linking an already-linked variant (previously reset to null) - consistent with intent, INFO only. Not run: full supplier.int.test.ts on real Postgres (PGlite advisory-lock hang, filtered run only); admin UI not rendered, criterion 3 verified by code reading. No scope creep: code changes limited to affected_files.",
+      "round": 1,
+      "target": "TASK-0137",
+      "ts": "2026-10-27T06:34:12Z",
+      "actor": "qa-lead",
+      "event": "E20261027063412-682b88"
+    },
+    {
+      "review_id": "REV-0198",
+      "reviewer": "security-engineer",
+      "executor": "subagent:security-reviewer",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "NODEJS_BACKEND/NODEJS_FRONTEND. Fix is correct: DELETE /admin/supplier/links/:variantId now refuses non-ADMIN/OWNER (403) when the link has its own markup (supplier.service.ts:693), and the non-admin delete is conditional deleteMany where markupPercent null (:696-699) so an admin markup set between read and delete is not lost: race-safe. Role comes from StaffGuard claims after a live-session lookup (staff.guard.ts:92); StaffRole enum OWNER/ADMIN/CATALOG/MARKETING/SUPPORT/FULFILLMENT/READONLY; class @Roles(ADMIN,CATALOG) admits only CATALOG besides ADMIN/OWNER; mayChangeMarkup = ADMIN||OWNER (controller:174-177) matches setLink/sync/upload. Audit before now carries markupPercent (toFixed 2 or null) and followStock (:704-711). No other path drops or resets a link markup for CATALOG: setLink/linkBySku omit markup and keep the existing one (TASK-0137), skips refuse a linked variant, stock/sync/upload do not delete links, applyPrices is ADMIN-only and only updates lastApplied, no app code deletes Variant or SupplierItem rows (the Cascade FKs are unreachable from the API). UI hides unlink and shows unlinkAdminOnly for non-admins with a markup (mapping-tab.tsx:290-298); server is the enforcement. LOW-1 (this task): admin path deleteMany is unconditional and audits even when count is 0 (concurrent unlink) and the audit before is from the pre-read, so a concurrent change could make it slightly stale or duplicate (service.ts:696-711). LOW-2 (this task): non-admin path throws the markup 403 when count is 0 because the link was concurrently removed, a misleading message, not a bypass (:700). LOW-3 (separate, TASK-0137 setLink): CATALOG re-link reads the existing markup and writes it back in the upsert (service.ts:617-628), so an admin markup change landing between that read and the upsert is reverted; fix by leaving markupPercent out of the update data when omitted. Not exploitable on demand; separate BUG suggested.",
+      "round": 1,
+      "target": "TASK-0138",
+      "ts": "2026-10-27T08:35:37Z",
+      "actor": "security-engineer",
+      "event": "E20261027083537-822ac1"
+    },
+    {
+      "review_id": "REV-0199",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "QA",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Verified against supplier.service.ts sha1 41fe21bf (the post-REV-0198 version: audit only when this call deleted the row, non-admin no-op when already unlinked, setLink omitted markup not written back). AC1-4 PASS by integration test on fresh in-memory PGlite: CATALOG unlink of a 35.00 own-markup link -> 403 and markup stays 35.00; ADMIN unlinks it; CATALOG unlinks a link without markup; supplier.link_removed before carries markupPercent 35.00/null and followStock false/true. AC2 OWNER path verified by code reading only (controller passes mayChangeMarkup for ADMIN or OWNER), not by test - LOW gap. AC5 by code reading only, UI not rendered: Unlink hidden and unlinkAdminOnly note shown for non-admins when row.link.markupPercent is set (a nullable string, so 0.00 is truthy and matches the API null check); ar and en strings present; page.tsx passes isAdmin. AC6 PASS: new test sits after the TASK-0137 test and only removeLink call-site signatures changed elsewhere. LOW: on the admin path the audit before uses the read-time markup, so a markup changed between read and delete is audited stale. INFO: one earlier wider int run showed 4 failures that did not reproduce in three later runs (two on a fresh DB); it coincided with the implementer editing the service mid-review, error output was not captured. Scope: page.tsx and packages/contracts are outside affected_files but belong to TASK-0137 (isAdmin prop pass-through to MappingTab is used by both). Upload/sync int tests not run (hang on PGlite).",
+      "round": 1,
+      "target": "TASK-0138",
+      "ts": "2026-10-27T08:39:32Z",
+      "actor": "qa-lead",
+      "event": "E20261027083932-68b7d1"
     }
   ],
   "invalidated_reviews": [
