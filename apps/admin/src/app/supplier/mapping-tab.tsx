@@ -24,7 +24,7 @@ type Filter = (typeof FILTERS)[number];
  * devices first, and never links on its own. A variant the supplier no longer
  * has can be marked out of stock here by hand (TASK-0134).
  */
-export function MappingTab() {
+export function MappingTab({ isAdmin }: { isAdmin: boolean }) {
   const t = useT('supplier');
   const c = useT('common');
   const [filter, setFilter] = useState<Filter>('unlinked');
@@ -130,12 +130,17 @@ export function MappingTab() {
                   key={row.variantId}
                   row={row}
                   lines={lines}
+                  isAdmin={isAdmin}
                   onLink={(itemId, markup, followStock) =>
                     void act(
                       () =>
                         supplierApi.setLink(row.variantId, {
                           itemId,
-                          markupPercent: markup === '' ? null : Number(markup),
+                          // A markup is money: other staff never send one, so a
+                          // re-link keeps the one an admin set (TASK-0137).
+                          ...(isAdmin
+                            ? { markupPercent: markup === '' ? null : Number(markup) }
+                            : {}),
                           followStock,
                         }),
                       (saved) => t('linked', { sku: saved.sku }),
@@ -188,6 +193,7 @@ export function MappingTab() {
 function MappingRowView({
   row,
   lines,
+  isAdmin,
   onLink,
   onUnlink,
   onStock,
@@ -195,6 +201,8 @@ function MappingRowView({
 }: {
   row: SupplierMappingRow;
   lines: SupplierItemView[];
+  /** Only admins see and send the variant's own markup, or unlink a variant that has one. */
+  isAdmin: boolean;
   onLink: (itemId: string, markup: string, followStock: boolean) => void;
   onUnlink: () => void;
   /** true marks it out of stock by hand, false puts it back. */
@@ -278,10 +286,16 @@ function MappingRowView({
               <button type="button" className="ghost btn-sm" onClick={() => setPicking(true)}>
                 {t('relink')}
               </button>
-              <button type="button" className="ghost btn-sm" onClick={onUnlink}>
-                {t('unlink')}
-              </button>
+              {/* Unlinking drops the link's own markup, which is money (TASK-0138). */}
+              {isAdmin || !row.link.markupPercent ? (
+                <button type="button" className="ghost btn-sm" onClick={onUnlink}>
+                  {t('unlink')}
+                </button>
+              ) : null}
             </div>
+            {!isAdmin && row.link.markupPercent ? (
+              <p className="meta">{t('unlinkAdminOnly')}</p>
+            ) : null}
           </div>
         ) : (
           <div className="mapping-picker">
@@ -344,19 +358,21 @@ function MappingRowView({
               </p>
             ) : null}
             <div className="mapping-options">
-              <label className="field">
-                <span>{t('markupOverride')}</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={1000}
-                  step="0.01"
-                  dir="ltr"
-                  placeholder={t('markupDefault')}
-                  value={markup}
-                  onChange={(event) => setMarkup(event.target.value)}
-                />
-              </label>
+              {isAdmin ? (
+                <label className="field">
+                  <span>{t('markupOverride')}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={1000}
+                    step="0.01"
+                    dir="ltr"
+                    placeholder={t('markupDefault')}
+                    value={markup}
+                    onChange={(event) => setMarkup(event.target.value)}
+                  />
+                </label>
+              ) : null}
               <label className="check">
                 <input
                   type="checkbox"
