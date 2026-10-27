@@ -55,7 +55,7 @@
 
 ## Current tasks
 
-- none
+- TASK-0145 — Sticky storefront header: the shop bar (logo, all-products menu, search, account, cart) stays on screen while scrolling, with a compact pinned menu+search row on phones (QA, 90%)
 
 ## Supporting
 

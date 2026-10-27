@@ -43,6 +43,16 @@ import { SearchBox } from './search-box';
  * Under 768px the navigation row goes and the drawer takes over: categories,
  * pages, licences, WhatsApp and the language switch, thumb-friendly, behind a
  * menu button in the shop row. The search box drops to a row of its own.
+ *
+ * The header stays on screen while the page scrolls (TASK-0145), by CSS
+ * alone: `<header>` is `position: sticky` with a negative top, so the
+ * announcement bar scrolls away and the shop row pins. That is why the
+ * "all products" menu sits in the shop row, and why the navigation row, the
+ * drawer and its backdrop are siblings of `<header>` rather than inside it:
+ * the row scrolls away with the page, and the drawer is not held inside the
+ * header's stacking context. On phones the pinned part is the second line of
+ * the shop row, menu button and search; the logo, account and cart line
+ * scrolls away (the bottom bar carries account and cart).
  */
 export interface HeaderCollection {
   slug: string;
@@ -131,21 +141,16 @@ export function SiteHeader({
    * The page behind the drawer is inert while it is open, so the dialog is
    * modal in fact and not only by `aria-modal`: Tab from its last control
    * cannot land on the hero behind the backdrop, and a screen reader cannot
-   * wander out of it (REV-0126). Everything on the page except the drawer
-   * itself and its backdrop — the header's own rows, the main content, the
+   * wander out of it (REV-0126). Everything in the body except the drawer
+   * and its backdrop — the header, the navigation row, the main content, the
    * footer and the floating WhatsApp button — gets `inert`, and loses it
    * again when the drawer closes or the header unmounts.
    */
   useEffect(() => {
     if (!drawerOpen) return;
-    const header = drawerRef.current?.parentElement;
-    const outside = [
-      ...(header ? Array.from(header.children) : []),
-      ...Array.from(document.body.children),
-    ].filter(
+    const outside = Array.from(document.body.children).filter(
       (element): element is HTMLElement =>
         element instanceof HTMLElement &&
-        element !== header &&
         !element.classList.contains('drawer-panel') &&
         !element.classList.contains('drawer-overlay') &&
         element.tagName !== 'SCRIPT',
@@ -167,7 +172,10 @@ export function SiteHeader({
       drawerRef.current?.querySelector<HTMLElement>('.drawer-body a')?.focus();
     } else if (wasOpen.current) {
       wasOpen.current = false;
-      drawerButtonRef.current?.focus();
+      // Without `preventScroll` the browser scrolled the page to "reveal" a
+      // button that is pinned and already on screen, and the shopper lost
+      // their place on every close (TASK-0145).
+      drawerButtonRef.current?.focus({ preventScroll: true });
     }
   }, [drawerOpen]);
 
@@ -177,6 +185,13 @@ export function SiteHeader({
 
     const onKey = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') {
+        // Closing the product menu from one of its links would drop focus
+        // to the page; it goes back to the button instead.
+        if (menuRef.current?.contains(document.activeElement)) {
+          menuRef.current
+            .querySelector<HTMLElement>('.mega-button')
+            ?.focus({ preventScroll: true });
+        }
         setMenuOpen(false);
         setDrawerOpen(false);
       }
@@ -208,114 +223,127 @@ export function SiteHeader({
   const navCategories = collections.slice(0, NAV_CATEGORIES);
 
   return (
-    <header className="site-header">
-      {/* The announcement bar: one sentence about the shop, and the two
+    <>
+      <header className="site-header">
+        {/* The announcement bar: one sentence about the shop, and the two
           controls that change what every page says — language and currency. */}
-      <div className="topbar">
-        <div className="topbar-inner">
-          <p className="topbar-text">{t('tagline')}</p>
-          <div className="topbar-controls">
-            <LocaleLink
-              prefetch={false}
-              href={localePath}
-              locale={otherLocale}
-              className="topbar-link"
-              hrefLang={otherLocale}
-              lang={otherLocale}
-            >
-              <GlobeIcon size={15} />
-              <span>{t('otherLanguage')}</span>
-            </LocaleLink>
-            <CurrencySwitcher className="topbar-link currency-switcher" />
+        <div className="topbar">
+          <div className="topbar-inner">
+            <p className="topbar-text">{t('tagline')}</p>
+            <div className="topbar-controls">
+              <LocaleLink
+                prefetch={false}
+                href={localePath}
+                locale={otherLocale}
+                className="topbar-link"
+                hrefLang={otherLocale}
+                lang={otherLocale}
+              >
+                <GlobeIcon size={15} />
+                <span>{t('otherLanguage')}</span>
+              </LocaleLink>
+              <CurrencySwitcher className="topbar-link currency-switcher" />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* The shop row. */}
-      <div className="header-main">
-        <div className="header-main-inner">
-          <button
-            ref={drawerButtonRef}
-            type="button"
-            className="icon-button mobile-menu-btn"
-            aria-label={t('openMenu')}
-            aria-expanded={drawerOpen}
-            aria-controls={DRAWER_ID}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <MenuIcon />
-          </button>
-
-          <Link href={`${prefix}${ROUTES.home}`} className="logo" aria-label={brandName}>
-            <BrandLogo locale={locale} width={120} priority />
-          </Link>
-
-          <div className="header-search">
-            <SearchBox locale={locale} />
-          </div>
-
-          <div className="header-actions">
-            <Link
-              href={`${prefix}${ROUTES.licenses}`}
-              className="icon-button"
-              aria-label={t('myLicences')}
-              title={t('myLicences')}
+        {/* The shop row. */}
+        <div className="header-main">
+          <div className="header-main-inner">
+            <button
+              ref={drawerButtonRef}
+              type="button"
+              className="icon-button mobile-menu-btn"
+              aria-label={t('openMenu')}
+              aria-expanded={drawerOpen}
+              aria-controls={DRAWER_ID}
+              onClick={() => setDrawerOpen(true)}
             >
-              <UserIcon />
+              <MenuIcon />
+            </button>
+
+            <Link href={`${prefix}${ROUTES.home}`} className="logo" aria-label={brandName}>
+              <BrandLogo locale={locale} width={120} priority />
             </Link>
-            <Link
-              href={`${prefix}${ROUTES.cart}`}
-              className="icon-button cart-link"
-              aria-label={t('cart')}
-              title={t('cart')}
-            >
-              <CartIcon />
-              {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
-            </Link>
+
+            {/* Pinned with the shop row, so the product menu is one click away
+              at any depth of the page. */}
+            {collections.length > 0 ? (
+              <div
+                className="mega"
+                ref={menuRef}
+                // Tabbing out of the menu closes it, so an open panel never
+                // sits over the field that focus moved on to.
+                onBlur={(event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) setMenuOpen(false);
+                }}
+              >
+                <button
+                  type="button"
+                  className={`mega-button${menuOpen ? ' is-open' : ''}`}
+                  aria-expanded={menuOpen}
+                  aria-controls="mega-panel"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                >
+                  <MenuIcon />
+                  <span>{t('allProducts')}</span>
+                  <ChevronIcon />
+                </button>
+
+                {menuOpen ? (
+                  <div className="mega-panel" id="mega-panel">
+                    <ul>
+                      {collections.map((collection) => (
+                        <li key={collection.slug}>
+                          <Link href={`${prefix}${ROUTES.collection(collection.slug)}`}>
+                            <CategoryMark slug={collection.slug} />
+                            <span className="mega-name">{collection.name}</span>
+                            {collection.productCount > 0 ? (
+                              <span className="mega-count">{collection.productCount}</span>
+                            ) : null}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
+                      {t('browseAll')}
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="header-search">
+              <SearchBox locale={locale} />
+            </div>
+
+            <div className="header-actions">
+              <Link
+                href={`${prefix}${ROUTES.licenses}`}
+                className="icon-button"
+                aria-label={t('myLicences')}
+                title={t('myLicences')}
+              >
+                <UserIcon />
+              </Link>
+              <Link
+                href={`${prefix}${ROUTES.cart}`}
+                className="icon-button cart-link"
+                aria-label={t('cart')}
+                title={t('cart')}
+              >
+                <CartIcon />
+                {count !== null && count > 0 ? <span className="cart-count">{count}</span> : null}
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* The navigation row: the menu button, the categories, the pages. */}
+      {/* The navigation row: the categories and the pages. Outside the header,
+          so it scrolls away with the page under the pinned shop row. */}
       <nav className="header-nav" aria-label={t('drawer')}>
         <div className="header-nav-inner">
-          {collections.length > 0 ? (
-            <div className="mega" ref={menuRef}>
-              <button
-                type="button"
-                className={`mega-button${menuOpen ? ' is-open' : ''}`}
-                aria-expanded={menuOpen}
-                aria-controls="mega-panel"
-                onClick={() => setMenuOpen(!menuOpen)}
-              >
-                <MenuIcon />
-                <span>{t('allProducts')}</span>
-                <ChevronIcon />
-              </button>
-
-              {menuOpen ? (
-                <div className="mega-panel" id="mega-panel">
-                  <ul>
-                    {collections.map((collection) => (
-                      <li key={collection.slug}>
-                        <Link href={`${prefix}${ROUTES.collection(collection.slug)}`}>
-                          <CategoryMark slug={collection.slug} />
-                          <span className="mega-name">{collection.name}</span>
-                          {collection.productCount > 0 ? (
-                            <span className="mega-count">{collection.productCount}</span>
-                          ) : null}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link className="mega-all" href={`${prefix}${ROUTES.store}`}>
-                    {t('browseAll')}
-                  </Link>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
           <ul className="site-nav">
             {navCategories.map((collection) => (
               <li key={collection.slug}>
@@ -485,6 +513,6 @@ export function SiteHeader({
           </div>
         </div>
       </aside>
-    </header>
+    </>
   );
 }
