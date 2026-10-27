@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 19,
+      "reviews_recorded": 21,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-26T10:17:02Z"
+      "last_activity": "2026-10-26T14:19:52Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -315,7 +315,7 @@
       "assignments": [],
       "supporting": [
         "TASK-0129",
-        "TASK-0135"
+        "TASK-0136"
       ],
       "reviews": [],
       "reviews_recorded": 0,
@@ -342,7 +342,7 @@
       ],
       "supporting": [
         "TASK-0004",
-        "TASK-0135"
+        "TASK-0136"
       ],
       "reviews": [],
       "reviews_recorded": 0,
@@ -414,9 +414,9 @@
       "executor": "main",
       "squads": [],
       "state": "WORKING",
-      "current_task": "TASK-0135",
+      "current_task": "TASK-0136",
       "assignments": [
-        "TASK-0135"
+        "TASK-0136"
       ],
       "supporting": [],
       "reviews": [],
@@ -424,7 +424,7 @@
       "opportunities": [],
       "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-26T14:17:43Z"
+      "last_activity": "2026-10-26T14:30:17Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -703,11 +703,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 34,
+      "reviews_recorded": 38,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-26T14:15:10Z"
+      "last_activity": "2026-10-26T14:30:15Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -778,7 +778,7 @@
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 32,
+      "reviews_recorded": 33,
       "opportunities": [],
       "workload": 8,
       "blockers": [],

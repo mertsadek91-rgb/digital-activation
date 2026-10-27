@@ -1,4 +1,4 @@
--- Product agent (CR-0007, TASK-0135): batches of products the AI rewrites, or
+-- Product agent (CR-0007, TASK-0136): batches of products the AI rewrites, or
 -- supplier lines it turns into new products, worked one at a time by a worker
 -- inside the API with a pause between products. AgentItem keeps each
 -- product's log, outcome and, for a rewrite, a snapshot of what it replaced

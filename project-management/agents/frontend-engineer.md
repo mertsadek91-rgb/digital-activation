@@ -60,4 +60,4 @@
 ## Supporting
 
 - TASK-0129 — Read a licence from the order page; list a variant stock keys in the vault with read, revoke and replace - each with a reason and a fresh TOTP challenge; the reason is stored in the audit log and shown in the key history; a revoke recounts stock (IN_PROGRESS, 85%)
-- TASK-0135 — Product agent: DB-backed batch queue worked one product at a time with a cooldown, AI category decision, bilingual copy saved through the existing editors, logo discovery with SSRF guard and colour-matched card, auto-publish when the gate passes, per-item undo, admin screen to pick products/supplier lines and follow batches (IN_PROGRESS, 90%)
+- TASK-0136 — Product agent: DB-backed batch queue worked one product at a time with a cooldown, AI category decision, bilingual copy saved through the existing editors, logo discovery with SSRF guard and colour-matched card, auto-publish when the gate passes, per-item undo, admin screen to pick products/supplier lines and follow batches (IN_PROGRESS, 90%)

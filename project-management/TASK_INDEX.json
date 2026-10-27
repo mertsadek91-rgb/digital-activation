@@ -3872,6 +3872,64 @@
     },
     {
       "id": "TASK-0135",
+      "title": "Supplier prices tab: filter rows by current price against cost (below, at, above), and set a variant's markup in place from a percentage or a typed price, with pin-only and pin-and-apply",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "api-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-engineer"
+      ],
+      "required_reviewers": [
+        "security-engineer",
+        "qa-lead",
+        "responsive-design-specialist",
+        "pm-03",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0004",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "contracts",
+        "api/supplier",
+        "admin/supplier"
+      ],
+      "affected_pages": [
+        "/supplier"
+      ],
+      "affected_files": [
+        "apps/admin/mock/supplier.mjs",
+        "apps/admin/src/app/supplier/prices-tab.tsx",
+        "apps/admin/src/app/supplier/supplier.css",
+        "apps/admin/src/i18n/messages/ar.ts",
+        "apps/admin/src/i18n/messages/en.ts",
+        "apps/admin/src/lib/supplier-api.ts",
+        "apps/api/src/integration/supplier.int.test.ts",
+        "apps/api/src/supplier/contracts.test.ts",
+        "apps/api/src/supplier/pricing.test.ts",
+        "apps/api/src/supplier/pricing.ts",
+        "apps/api/src/supplier/supplier.controller.ts",
+        "apps/api/src/supplier/supplier.service.ts",
+        "packages/contracts/src/supplier.ts"
+      ],
+      "created_at": "2026-10-26",
+      "updated_at": "2026-10-26",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0135.md"
+    },
+    {
+      "id": "TASK-0136",
       "title": "Product agent: DB-backed batch queue worked one product at a time with a cooldown, AI category decision, bilingual copy saved through the existing editors, logo discovery with SSRF guard and colour-matched card, auto-publish when the gate passes, per-item undo, admin screen to pick products/supplier lines and follow batches",
       "type": "feature",
       "status": "IN_PROGRESS",
@@ -3936,7 +3994,7 @@
       "created_at": "2026-10-26",
       "updated_at": "2026-10-26",
       "reaudit": null,
-      "file": "tasks/active/TASK-0135.md"
+      "file": "tasks/active/TASK-0136.md"
     }
   ]
 }
