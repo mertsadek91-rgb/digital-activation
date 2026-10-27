@@ -3975,6 +3975,51 @@
       "file": "tasks/completed/TASK-0140.md"
     },
     {
+      "id": "TASK-0142",
+      "title": "Product card: the Golden Warranty badge moves onto the picture (alone in the top end corner; instant and discount tags to the bottom corners) to shorten the card body",
+      "type": "improvement",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "MEDIUM",
+      "progress": 100,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "/",
+        "/collections/[slug]",
+        "/brands/[slug]",
+        "/search",
+        "/store"
+      ],
+      "affected_files": [
+        "apps/storefront/src/app/catalog.css",
+        "apps/storefront/src/components/product-card.tsx"
+      ],
+      "created_at": "2026-10-27",
+      "updated_at": "2026-10-27",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0142.md"
+    },
+    {
       "id": "TASK-0145",
       "title": "Sticky storefront header: the shop bar (logo, all-products menu, search, account, cart) stays on screen while scrolling, with a compact pinned menu+search row on phones",
       "type": "improvement",

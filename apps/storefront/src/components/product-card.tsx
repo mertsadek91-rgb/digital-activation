@@ -46,6 +46,7 @@ export function ProductCard({
     card.available <= LOW_STOCK_THRESHOLD;
 
   const discount = card.price.discountPercent;
+  const instant = card.fulfillmentMode === 'FROM_STOCK' && card.inStock;
 
   return (
     <article className="card">
@@ -72,10 +73,21 @@ export function ProductCard({
             </span>
           ) : null}
 
-          {card.fulfillmentMode === 'FROM_STOCK' && card.inStock ? (
+          {instant ? (
             <span className="card-instant-tag">
               <BoltIcon size={12} />
               <span>{t('instant')}</span>
+            </span>
+          ) : null}
+
+          {/* The Golden Warranty sat in the body under the name and lengthened
+              every card that carries it; the owner put it on the picture, alone
+              in the top corner, with the instant and discount tags moved to the
+              bottom corners so the product's logo stays clear (TASK-0142). */}
+          {card.hasGoldenWarranty ? (
+            <span className="card-warranty-tag">
+              <ShieldCheckIcon size={12} />
+              <span>{tc('goldenWarranty')}</span>
             </span>
           ) : null}
         </div>
@@ -86,12 +98,6 @@ export function ProductCard({
           {card.shortDesc ? <p className="card-desc">{card.shortDesc}</p> : null}
 
           <div className="card-badges">
-            {card.hasGoldenWarranty ? (
-              <span className="badge badge-warranty">
-                <ShieldCheckIcon size={13} />
-                <span>{tc('goldenWarranty')}</span>
-              </span>
-            ) : null}
             {card.variantCount > 1 ? (
               <span className="badge badge-options">
                 {t('options', { count: card.variantCount })}
