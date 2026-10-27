@@ -150,7 +150,7 @@ export class ProductAgentRunner {
 
     try {
       // Cancelled while this product ran: back in the queue it would never
-      // run again, and could not be retried either (REV-0208).
+      // run again, and could not be retried either (REV-0210).
       if (status === AgentItemStatus.QUEUED) {
         const now = await this.prisma.client.agentBatch.findUnique({
           where: { id: batch.id },
@@ -272,7 +272,7 @@ export class ProductAgentRunner {
     // product that fails halfway can be put back. A later attempt of the same
     // item (a rate-limit requeue, a retry) keeps the first attempt's snapshot:
     // the product as it is now may already hold this item's own writes, and
-    // undo must restore the original, not those (REV-0208).
+    // undo must restore the original, not those (REV-0210).
     const kept = agentSnapshotSchema.safeParse(item.snapshot);
     const snapshot: AgentSnapshot = kept.success
       ? kept.data
