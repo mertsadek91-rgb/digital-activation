@@ -20,9 +20,14 @@
   .contact-layout {
     grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
   }
+}
+/* The form follows the reading only where all of it fits under the pinned
+   header (about 720px of form below an 80px bar): on a 720px-tall laptop a
+   stuck form would hold its send button below the fold (TASK-0145). */
+@media (min-width: 64rem) and (min-height: 52rem) {
   .contact-form-col {
     position: sticky;
-    inset-block-start: var(--spacing-1);
+    inset-block-start: calc(var(--header-pinned, 0px) + var(--spacing-1));
   }
 }
 .contact-info {
