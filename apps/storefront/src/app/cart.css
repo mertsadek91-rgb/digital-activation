@@ -552,7 +552,7 @@ a.cart-line-name:hover {
   border-radius: var(--radius-md);
   padding: var(--spacing-2);
   position: sticky;
-  inset-block-start: var(--spacing-1);
+  inset-block-start: calc(var(--header-pinned, 0px) + var(--spacing-1));
 }
 .cart-summary h2 {
   margin: 0 0 var(--spacing-1);
