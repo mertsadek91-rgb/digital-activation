@@ -166,7 +166,7 @@ export default function SupplierPage() {
             }}
           />
         ) : tab === 'mapping' ? (
-          <MappingTab key={version} />
+          <MappingTab key={version} isAdmin={isAdmin} />
         ) : tab === 'prices' ? (
           <PricesTab key={version} isAdmin={isAdmin} />
         ) : tab === 'ai' ? (
