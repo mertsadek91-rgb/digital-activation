@@ -56,7 +56,7 @@ export function ProductCard({
               src={card.image.url}
               alt={card.image.alt}
               fill
-              sizes="(max-width: 700px) 50vw, 260px"
+              sizes="(max-width: 700px) 50vw, 280px"
               priority={priority}
             />
           ) : (
@@ -68,7 +68,7 @@ export function ProductCard({
               className="card-discount-tag"
               aria-label={t('discountLabel', { percent: String(discount) })}
             >
-              {`-${String(discount)}%`}
+              <span dir="ltr">{`-${String(discount)}%`}</span>
             </span>
           ) : null}
 

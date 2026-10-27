@@ -337,7 +337,7 @@ describe('start batch contract', () => {
   });
 });
 
-describe('review fixes (REV-0205)', () => {
+describe('review fixes (REV-0206)', () => {
   it('refuses the IPv6 ranges that carry or hide an IPv4 address', () => {
     for (const address of [
       '::7f00:1',

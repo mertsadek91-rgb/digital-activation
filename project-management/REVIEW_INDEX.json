@@ -2270,7 +2270,7 @@
       "event": "E20261026102533-120ee7"
     },
     {
-      "review_id": "REV-0205",
+      "review_id": "REV-0206",
       "reviewer": "security-engineer",
       "executor": "subagent:security-reviewer",
       "review_type": "SECURITY",
@@ -2284,7 +2284,7 @@
       "event": "E20261026140143-ac9866"
     },
     {
-      "review_id": "REV-0206",
+      "review_id": "REV-0207",
       "reviewer": "rtl-localization-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
@@ -2298,7 +2298,7 @@
       "event": "E20261026140247-62c7f1"
     },
     {
-      "review_id": "REV-0207",
+      "review_id": "REV-0208",
       "reviewer": "qa-lead",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -2312,13 +2312,13 @@
       "event": "E20261026140253-463daf"
     },
     {
-      "review_id": "REV-0208",
+      "review_id": "REV-0209",
       "reviewer": "rtl-localization-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Re-check of REV-0206 items 1-5, all resolved: (1) ar th.num header font-family now Tajawal (inherit), letters joined; (2) ar batch meta, log time and Last-run pill dates use Latin digits (26 أكتوبر، 05:36 م), consistent with counts; (3) .agent-filters .chip and .agent-log summary measure 44px tall; (4) outcome values (Section/Content/Not published) wrapped in bdi in ar and en; (5) swatch ring is 1px box-shadow from ink at 45%: dark mode composite rgb(117,126,129), 3.9:1 vs card bg and 4.2:1 vs #1a1a1a, light mode dark ring. No overflow (scrollWidth==clientWidth), no console errors. Item 6 accepted by coordinator as out of scope.",
+      "findings": "Re-check of REV-0207 items 1-5, all resolved: (1) ar th.num header font-family now Tajawal (inherit), letters joined; (2) ar batch meta, log time and Last-run pill dates use Latin digits (26 أكتوبر، 05:36 م), consistent with counts; (3) .agent-filters .chip and .agent-log summary measure 44px tall; (4) outcome values (Section/Content/Not published) wrapped in bdi in ar and en; (5) swatch ring is 1px box-shadow from ink at 45%: dark mode composite rgb(117,126,129), 3.9:1 vs card bg and 4.2:1 vs #1a1a1a, light mode dark ring. No overflow (scrollWidth==clientWidth), no console errors. Item 6 accepted by coordinator as out of scope.",
       "round": 2,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:14:26Z",
@@ -2326,13 +2326,13 @@
       "event": "E20261026141426-42ea6c"
     },
     {
-      "review_id": "REV-0209",
+      "review_id": "REV-0210",
       "reviewer": "qa-lead",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Re-check of REV-0207 findings 1-4, all fixed. 1: runner.ts process() keeps an existing item.snapshot (agentSnapshotSchema.safeParse) and saves only when none exists, so addedLocales/addedMediaIds from the first attempt survive; plan judges live sections. New int test reproduces my probe (X->Y + EN added, 429, DONE, revert -> X, AR only, original seoTitle) and passes. 2: a transient outcome in a batch cancelled meanwhile becomes CANCELLED (retryable). 3: CREATE carry-on path links the line via linkBySku with the default variant when still unlinked. 4: runner.work fails the item if the outcome save throws; worker fails a still-RUNNING item when runner.work rejects. Resume restricted to ADMIN/OWNER in the controller. No remaining defect found in the re-checked scope; panel render AC still not verified by me.",
+      "findings": "Re-check of REV-0208 findings 1-4, all fixed. 1: runner.ts process() keeps an existing item.snapshot (agentSnapshotSchema.safeParse) and saves only when none exists, so addedLocales/addedMediaIds from the first attempt survive; plan judges live sections. New int test reproduces my probe (X->Y + EN added, 429, DONE, revert -> X, AR only, original seoTitle) and passes. 2: a transient outcome in a batch cancelled meanwhile becomes CANCELLED (retryable). 3: CREATE carry-on path links the line via linkBySku with the default variant when still unlinked. 4: runner.work fails the item if the outcome save throws; worker fails a still-RUNNING item when runner.work rejects. Resume restricted to ADMIN/OWNER in the controller. No remaining defect found in the re-checked scope; panel render AC still not verified by me.",
       "round": 2,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:15:10Z",
@@ -2340,7 +2340,7 @@
       "event": "E20261026141510-8ddf56"
     },
     {
-      "review_id": "REV-0210",
+      "review_id": "REV-0211",
       "reviewer": "pm-06",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -2354,13 +2354,13 @@
       "event": "E20261026141522-f3c8a7"
     },
     {
-      "review_id": "REV-0211",
+      "review_id": "REV-0212",
       "reviewer": "pm-03",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Manager review (responsible manager). Delivers CR-0007 as asked: rewrite + create-from-supplier-line batches, tick-box pickers (200 cap), confirmed start, ar+en copy, section keep/assign/create (reuse by name), logo search with SSRF guard + palette card, auto-publish only via AdminService.setStatus gate, per-item undo (created products go to draft, never deleted), 90s default cooldown + 5 min backoff. No scope widening: changes to existing files are additive (facts() made public, CardService exported, logoPalette with logoColor kept; PRODUCT_AGENT env). No owner-only decision taken: migration 20261026140000 is additive (3 enums, 2 new tables) and its staging apply is left to the owner; owner asked for auto-approval and delegated the operating choices. Start/retry/resume ADMIN-only (resume check in controller). REV-0207 fixes present: runner keeps an existing snapshot (agentSnapshotSchema.safeParse(item.snapshot)), cancelled batch -> CANCELLED not QUEUED, CREATE carry-on relinks, outcome-save failure fails the item; int tests added for both. REV-0205 LOWs and REV-0206 lows also addressed. Open: no qa-lead re-check recorded after REV-0207 FAIL (needed before COMPLETED); pm-06 review pending; work is uncommitted - commit once reviewed.",
+      "findings": "Manager review (responsible manager). Delivers CR-0007 as asked: rewrite + create-from-supplier-line batches, tick-box pickers (200 cap), confirmed start, ar+en copy, section keep/assign/create (reuse by name), logo search with SSRF guard + palette card, auto-publish only via AdminService.setStatus gate, per-item undo (created products go to draft, never deleted), 90s default cooldown + 5 min backoff. No scope widening: changes to existing files are additive (facts() made public, CardService exported, logoPalette with logoColor kept; PRODUCT_AGENT env). No owner-only decision taken: migration 20261026140000 is additive (3 enums, 2 new tables) and its staging apply is left to the owner; owner asked for auto-approval and delegated the operating choices. Start/retry/resume ADMIN-only (resume check in controller). REV-0208 fixes present: runner keeps an existing snapshot (agentSnapshotSchema.safeParse(item.snapshot)), cancelled batch -> CANCELLED not QUEUED, CREATE carry-on relinks, outcome-save failure fails the item; int tests added for both. REV-0206 LOWs and REV-0207 lows also addressed. Open: no qa-lead re-check recorded after REV-0208 FAIL (needed before COMPLETED); pm-06 review pending; work is uncommitted - commit once reviewed.",
       "round": 1,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:15:37Z",
@@ -2492,6 +2492,20 @@
       "ts": "2026-10-26T14:30:15Z",
       "actor": "qa-lead",
       "event": "E20261026143015-f99f13"
+    },
+    {
+      "review_id": "REV-0205",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Core fix verified: on home rail, /collections/windows, /search and the product gallery, ar+en at 1440/1024/768/390/360, every .card-media and .gallery is square and its img box equals the frame (0 mismatches measured), no second background band, scrollWidth == viewport everywhere, hover scale 1.04 is clipped by overflow hidden, tokens only (no hex), CLS-safe via aspect-ratio. Arabic discount pill now sits inline-start (right) beside the instant pill instead of under it (pre-existing bug fixed). Phone price position unchanged vs old CSS (790-823px at 390/360; old-CSS emulation gives identical values); 768 price at 1028px is the same as before (pre-existing). sizes sensible: cards 280px vs 132-281px rendered, gallery 220/400/560 vs 220/400/472-560 rendered. CONCERN 1 (minor) catalog.css:597-610: at 360 in English the -25% pill (51px) and Instant pill (74px) still overlap by 6px on a 132px picture (gap -6; ar gap 9px, en 390 gap 9px) - the task record claims they fit side by side. Tighten further (e.g. gap 2px plus padding 3px 6px, or hide the bolt icon below ~380px). CONCERN 2 (minor, latent) catalog.css:712-714: .gallery-thumbs justify-content center together with overflow-x auto makes the first thumbnails unreachable once they overflow (5+ images at 360/390, 10+ at 768): injected 7 thumbs at 360 put the first at x=-74 (en) / beyond the right edge (ar) with no way to scroll to it. Use justify-content: safe center. No-image ProductGlyph reasoned from CSS: 86% of a square card / 48% of the gallery, still fine.",
+      "round": 1,
+      "target": "TASK-0140",
+      "ts": "2026-10-27T10:24:45Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261027102445-38dd64"
     }
   ],
   "invalidated_reviews": [
