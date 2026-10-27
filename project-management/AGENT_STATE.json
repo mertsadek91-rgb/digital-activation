@@ -213,18 +213,14 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "REVIEWING",
+      "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0145"
-      ],
-      "reviews": [
-        "TASK-0145"
-      ],
+      "supporting": [],
+      "reviews": [],
       "reviews_recorded": 25,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-27T12:36:20Z"
     },
@@ -274,18 +270,14 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "REVIEWING",
+      "state": "AVAILABLE",
       "current_task": null,
       "assignments": [],
-      "supporting": [
-        "TASK-0145"
-      ],
-      "reviews": [
-        "TASK-0145"
-      ],
+      "supporting": [],
+      "reviews": [],
       "reviews_recorded": 4,
       "opportunities": [],
-      "workload": 1,
+      "workload": 0,
       "blockers": [],
       "last_activity": "2026-10-27T13:23:25Z"
     },
@@ -319,19 +311,17 @@
       "executor": "main",
       "squads": [],
       "state": "AVAILABLE",
-      "current_task": "TASK-0145",
-      "assignments": [
-        "TASK-0145"
-      ],
+      "current_task": null,
+      "assignments": [],
       "supporting": [
         "TASK-0129"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1.5,
+      "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-27T13:23:29Z"
+      "last_activity": "2026-10-27T14:15:40Z"
     },
     {
       "id": "backend-architect",
