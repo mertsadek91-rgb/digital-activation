@@ -2394,6 +2394,20 @@
       "ts": "2026-10-26T14:30:15Z",
       "actor": "qa-lead",
       "event": "E20261026143015-f99f13"
+    },
+    {
+      "review_id": "REV-0205",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Core fix verified: on home rail, /collections/windows, /search and the product gallery, ar+en at 1440/1024/768/390/360, every .card-media and .gallery is square and its img box equals the frame (0 mismatches measured), no second background band, scrollWidth == viewport everywhere, hover scale 1.04 is clipped by overflow hidden, tokens only (no hex), CLS-safe via aspect-ratio. Arabic discount pill now sits inline-start (right) beside the instant pill instead of under it (pre-existing bug fixed). Phone price position unchanged vs old CSS (790-823px at 390/360; old-CSS emulation gives identical values); 768 price at 1028px is the same as before (pre-existing). sizes sensible: cards 280px vs 132-281px rendered, gallery 220/400/560 vs 220/400/472-560 rendered. CONCERN 1 (minor) catalog.css:597-610: at 360 in English the -25% pill (51px) and Instant pill (74px) still overlap by 6px on a 132px picture (gap -6; ar gap 9px, en 390 gap 9px) - the task record claims they fit side by side. Tighten further (e.g. gap 2px plus padding 3px 6px, or hide the bolt icon below ~380px). CONCERN 2 (minor, latent) catalog.css:712-714: .gallery-thumbs justify-content center together with overflow-x auto makes the first thumbnails unreachable once they overflow (5+ images at 360/390, 10+ at 768): injected 7 thumbs at 360 put the first at x=-74 (en) / beyond the right edge (ar) with no way to scroll to it. Use justify-content: safe center. No-image ProductGlyph reasoned from CSS: 86% of a square card / 48% of the gallery, still fine.",
+      "round": 1,
+      "target": "TASK-0140",
+      "ts": "2026-10-27T10:24:45Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261027102445-38dd64"
     }
   ],
   "invalidated_reviews": [
