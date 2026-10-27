@@ -338,6 +338,15 @@ export const SUPPLIER_PRICE_STATES = [
 ] as const;
 export const supplierPriceStateSchema = z.enum(SUPPLIER_PRICE_STATES);
 
+/**
+ * Where the price customers pay today stands against the supplier's cost
+ * (TASK-0135): selling at a loss, at cost, or with a margin. Null when the
+ * line has no usable cost.
+ */
+export const COST_STANDINGS = ['BELOW', 'AT', 'ABOVE'] as const;
+export const costStandingSchema = z.enum(COST_STANDINGS);
+export type CostStanding = z.infer<typeof costStandingSchema>;
+
 export const supplierPriceRowSchema = z.object({
   variantId: z.string(),
   sku: z.string(),
@@ -355,12 +364,16 @@ export const supplierPriceRowSchema = z.object({
   change: z.number().nullable(),
   large: z.boolean(),
   state: supplierPriceStateSchema,
+  /** The current price against the cost (not the proposal). */
+  costStanding: costStandingSchema.nullable(),
 });
 export type SupplierPriceRow = z.infer<typeof supplierPriceRowSchema>;
 
 export const supplierPricesSchema = z.object({
   rows: z.array(supplierPriceRowSchema),
   pending: z.number().int(),
+  /** The source's rounding rule, so the panel can preview a markup's price (TASK-0135). */
+  rounding: supplierRoundingSchema,
 });
 export type SupplierPrices = z.infer<typeof supplierPricesSchema>;
 
@@ -389,3 +402,37 @@ export const applySupplierPricesResultSchema = z.object({
   ),
 });
 export type ApplySupplierPricesResult = z.infer<typeof applySupplierPricesResultSchema>;
+
+/**
+ * One variant's own markup, set on the prices tab (TASK-0135): either the
+ * percentage itself, or the price wanted — the API works out the percentage
+ * from the line's cost and pins that. `markupPercent: null` goes back to the
+ * sheet's markup. With `apply`, the new proposal is applied at once.
+ */
+export const setVariantMarkupSchema = z
+  .object({
+    // Plain JSON numbers, not coerced: "" or " " would otherwise pin 0% (REV-0197).
+    markupPercent: z
+      .number()
+      .min(0, 'النسبة لا تكون سالبة.')
+      .max(1000, 'النسبة أكبر من المعقول.')
+      .nullable()
+      .optional(),
+    targetPriceUsd: z
+      .number()
+      .positive('السعر يجب أن يكون أكبر من صفر.')
+      .max(1_000_000, 'السعر أكبر من المعقول.')
+      .optional(),
+    apply: z.boolean().default(false),
+  })
+  .refine((value) => (value.markupPercent !== undefined) !== (value.targetPriceUsd !== undefined), {
+    message: 'أرسل النسبة أو السعر، لا الاثنين.',
+  });
+export type SetVariantMarkup = z.infer<typeof setVariantMarkupSchema>;
+
+export const setVariantMarkupResultSchema = z.object({
+  row: supplierPriceRowSchema,
+  /** Present when the request asked to apply. */
+  applied: applySupplierPricesResultSchema.nullable(),
+});
+export type SetVariantMarkupResult = z.infer<typeof setVariantMarkupResultSchema>;

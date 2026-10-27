@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import type { StaffRequest } from '../auth/staff.guard.js';
@@ -122,6 +123,75 @@ describe.skipIf(!HAS_DATABASE)('supplier sheet links, prices and availability', 
       actor,
     );
     expect(again.skipped[0]?.reason).toBe('CURRENT');
+  });
+
+  // TASK-0135: the owner types a price on the prices tab; the markup it
+  // implies is pinned to the variant, and applied only when asked.
+  it('pins the markup a typed price implies, and applies it only when asked', async () => {
+    const supplier = harness.get(SupplierService);
+    const id = catalogue.madeToOrder.variantId;
+    const source = await harness.db.supplierSource.findFirstOrThrow({
+      orderBy: { createdAt: 'asc' },
+    });
+    const before = await harness.db.variant.findUniqueOrThrow({ where: { id } });
+
+    const pinned = await supplier.setMarkup(id, { targetPriceUsd: 13.37, apply: false }, actor);
+    expect(pinned.applied).toBeNull();
+    expect(pinned.row.markupFromLink).toBe(true);
+    if (source.rounding === 'CENTS') {
+      expect(pinned.row.markupPercent).toBe('33.70');
+      expect(pinned.row.proposedPriceUsd).toBe('13.37');
+    }
+    // Pinned, not applied: the store price has not moved.
+    const untouched = await harness.db.variant.findUniqueOrThrow({ where: { id } });
+    expect(untouched.priceUsd.toFixed(2)).toBe(before.priceUsd.toFixed(2));
+    const audit = await harness.db.auditLog.findFirst({
+      where: { entityId: id, action: 'supplier.markup_set' },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(audit?.after).toMatchObject({ targetPriceUsd: '13.37', costUsd: '10.00' });
+
+    const applied = await supplier.setMarkup(id, { markupPercent: 20, apply: true }, actor);
+    expect(applied.row.markupPercent).toBe('20.00');
+    expect(applied.applied?.applied[0]?.to).toBe(applied.row.proposedPriceUsd);
+    const after = await harness.db.variant.findUniqueOrThrow({ where: { id } });
+    expect(after.priceUsd.toFixed(2)).toBe(applied.row.proposedPriceUsd);
+    expect(applied.row.costStanding).toBe('ABOVE');
+
+    // Pinning the markup it already has and applying: nothing to apply, and it says so.
+    const again = await supplier.setMarkup(id, { markupPercent: 20, apply: true }, actor);
+    expect(again.applied?.applied).toHaveLength(0);
+    expect(again.applied?.skipped[0]?.reason).toBe('CURRENT');
+
+    const reset = await supplier.setMarkup(id, { markupPercent: null, apply: false }, actor);
+    expect(reset.row.markupFromLink).toBe(false);
+    expect(reset.row.markupPercent).toBe(source.markupPercent.toFixed(2));
+  });
+
+  it('refuses a typed price at or under cost, and says where today’s price stands', async () => {
+    const supplier = harness.get(SupplierService);
+    const id = catalogue.madeToOrder.variantId;
+    await expect(
+      supplier.setMarkup(id, { targetPriceUsd: 10, apply: false }, actor),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    // Only a markup over 1000% would make it.
+    await expect(
+      supplier.setMarkup(id, { targetPriceUsd: 500, apply: false }, actor),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      supplier.setMarkup(catalogue.stocked.variantId, { markupPercent: 10, apply: false }, actor),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    const standing = async (price: string) => {
+      await harness.db.variant.update({ where: { id }, data: { priceUsd: price } });
+      const prices = await supplier.prices();
+      return prices.rows.find((entry) => entry.variantId === id)?.costStanding;
+    };
+    const original = await harness.db.variant.findUniqueOrThrow({ where: { id } });
+    expect(await standing('9.50')).toBe('BELOW');
+    expect(await standing('10.00')).toBe('AT');
+    expect(await standing('10.01')).toBe('ABOVE');
+    await harness.db.variant.update({ where: { id }, data: { priceUsd: original.priceUsd } });
   });
 
   it('makes a struck line unbuyable, refuses it in the cart, and clears when it returns', async () => {

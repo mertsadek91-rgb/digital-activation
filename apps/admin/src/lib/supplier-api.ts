@@ -20,6 +20,8 @@ import type {
   ApplySupplierPricesResult,
   SetSupplierLink,
   SetSupplierSource,
+  SetVariantMarkup,
+  SetVariantMarkupResult,
   SupplierItemFilter,
   SupplierItems,
   SupplierLog,
@@ -86,6 +88,12 @@ export const supplierApi = {
       ...(skip ? { body: '{}' } : {}),
     }),
   prices: () => request<SupplierPrices>('/admin/supplier/prices'),
+  /** A variant's own markup, from a percentage or a wanted price (TASK-0135). */
+  setMarkup: (variantId: string, input: Partial<SetVariantMarkup>) =>
+    request<SetVariantMarkupResult>(
+      `/admin/supplier/prices/${encodeURIComponent(variantId)}/markup`,
+      { method: 'PUT', body: JSON.stringify(input) },
+    ),
   applyPrices: (input: ApplySupplierPrices) =>
     request<ApplySupplierPricesResult>('/admin/supplier/prices/apply', {
       method: 'POST',

@@ -415,12 +415,16 @@ a.pagination-step:hover {
   text-decoration: none;
   color: inherit;
 }
+/* Square and unpadded (TASK-0140): every catalogue picture is a square render
+   with its own background, so the box is the picture. The kit's 200px box with
+   20px of padding showed the picture as a smaller square floating on a second,
+   lighter background. The gradient is left for the drawing shown when a
+   product has no picture. */
 .card-media {
   position: relative; /* next/image fill positions against this */
-  block-size: 200px;
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
-  padding: 20px;
   background: linear-gradient(145deg, var(--color-surface), var(--color-media-tint));
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -428,8 +432,7 @@ a.pagination-step:hover {
 .card-media img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 20px;
+  object-fit: cover;
   transition: transform 300ms var(--ease-out);
 }
 .card:hover .card-media img {
@@ -440,37 +443,48 @@ a.pagination-step:hover {
   font-size: var(--text-xs);
 }
 
-/* The kit's badges: pills, 13px bold, a soft tint with its own ink. */
-.card-discount-tag {
+/*
+ * The kit's badges on the picture: pills, 13px bold, a soft tint with its own
+ * ink. One per corner (TASK-0142, the owner's choice): the Golden Warranty
+ * alone at the top end (in Arabic it covers the box art's ribbon); the
+ * instant and discount tags at the bottom, over the art's own "instant
+ * delivery / genuine key" strip, so the product's logo is never covered.
+ */
+.card-discount-tag,
+.card-instant-tag,
+.card-warranty-tag {
   position: absolute;
-  inset-block-start: 8px;
-  inset-inline-start: 8px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  padding: 5px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  font-family: var(--font-latin);
-  font-weight: 700;
-  font-size: var(--text-xs);
-  direction: ltr;
-}
-.card-instant-tag {
-  position: absolute;
-  inset-block-start: 8px;
-  inset-inline-end: 8px;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 5px 12px;
   border-radius: var(--radius-pill);
-  background: var(--color-success-soft);
-  color: var(--color-success);
   font-weight: 700;
   font-size: var(--text-xs);
+  white-space: nowrap;
+}
+.card-warranty-tag {
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  background: var(--color-gold-soft);
+  color: var(--color-gold-ink);
+}
+.card-instant-tag {
+  inset-block-end: 8px;
+  inset-inline-end: 8px;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.card-discount-tag {
+  inset-block-end: 8px;
+  inset-inline-start: 8px;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-latin);
+  /* No `direction: ltr` here: it also flipped the logical inset, so in Arabic
+     the tag sat under the instant tag (TASK-0140). The number is isolated
+     left-to-right by its own span instead. */
 }
 
 .card-body {
@@ -550,10 +564,6 @@ a.pagination-step:hover {
   background: var(--color-brand-soft);
   color: var(--color-brand-ink);
 }
-.badge-warranty {
-  background: var(--color-gold-soft);
-  color: var(--color-gold-ink);
-}
 .badge-options {
   background: var(--color-surface-2);
   color: var(--color-ink-muted);
@@ -589,13 +599,6 @@ a.pagination-step:hover {
     padding: 12px;
     gap: 10px;
   }
-  .card-media {
-    block-size: 150px;
-    padding: 10px;
-  }
-  .card-media img {
-    padding: 10px;
-  }
   .card-title {
     font-size: var(--text-sm);
     line-height: 1.5;
@@ -617,6 +620,36 @@ a.pagination-step:hover {
   .badge {
     font-size: 0.6875rem;
     padding: 3px 8px;
+  }
+}
+/* On a picture under about 200px (phones, and 768px, three cards to a row)
+   full-size pills overlapped each other and covered the product's logo;
+   tighter ones fit side by side. */
+@media (max-width: 48rem) {
+  /* The 11px of the card's other badges on a phone (`.badge` below). */
+  .card-discount-tag,
+  .card-instant-tag,
+  .card-warranty-tag {
+    padding: 2px 6px;
+    gap: 2px;
+    font-size: 0.6875rem;
+  }
+  .card-warranty-tag {
+    inset-block-start: 5px;
+    inset-inline-end: 5px;
+  }
+  .card-instant-tag {
+    inset-block-end: 5px;
+    inset-inline-end: 5px;
+  }
+  .card-discount-tag {
+    inset-block-end: 5px;
+    inset-inline-start: 5px;
+  }
+  /* "Golden Warranty" with its shield was wider than a 132px picture; the
+     gold pill says warranty without the icon. */
+  .card-warranty-tag svg {
+    display: none;
   }
 }
 
@@ -665,13 +698,17 @@ a.pagination-step:hover {
   min-inline-size: 0;
 }
 
-/* The kit's `product-image`: a tall soft gradient box, 12px radius. */
+/* The kit's `product-image`, made the picture's own square (TASK-0140): the
+   400px-tall padded panel showed the square render small, on a second
+   background, with wide empty bands. Now the box is the picture, the column's
+   full width beside the buy box. The gradient is for the no-picture drawing. */
 .gallery {
   position: relative; /* next/image fill positions against this */
   display: grid;
   place-items: center;
-  block-size: 400px;
-  padding: 24px;
+  inline-size: 100%;
+  aspect-ratio: 1;
+  margin-inline: auto;
   border-radius: var(--radius-md);
   background: linear-gradient(145deg, var(--color-surface), var(--color-media-tint));
   overflow: hidden;
@@ -679,18 +716,28 @@ a.pagination-step:hover {
 .gallery img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  padding: 24px;
+  object-fit: cover;
 }
 .gallery .product-glyph {
   inline-size: 48%;
 }
-/* Shorter on a phone than the kit's 280px (TASK-0122): with a real, long
-   product name under it, 280px left the price below the first screen. */
+/* One column below 900px: a full-width square would push the price a screen
+   down, so the square is capped and centred, the thumbnails under it. */
+@media (max-width: 899.98px) {
+  .gallery {
+    inline-size: min(100%, 400px);
+  }
+  /* `safe`: once the row overflows, it starts at the edge so every thumbnail
+     can still be scrolled to. */
+  .gallery-thumbs {
+    justify-content: safe center;
+  }
+}
+/* 220px on a phone, as before (TASK-0122): with a real, long product name
+   under it, more left the price below the first screen. */
 @media (max-width: 767.98px) {
   .gallery {
-    block-size: 220px;
-    padding: 16px;
+    inline-size: min(100%, 220px);
   }
 }
 
@@ -719,6 +766,7 @@ a.pagination-step:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
+  overflow: hidden;
   cursor: pointer;
   transition: border-color 160ms var(--ease-out);
 }
@@ -727,10 +775,9 @@ a.pagination-step:hover {
   border-color: var(--color-brand);
 }
 .thumb-item img {
-  object-fit: contain;
+  object-fit: cover;
   width: 100%;
   height: 100%;
-  padding: 4px;
 }
 
 /* --- the shop's promises under the picture, as the kit's cards ------------- */

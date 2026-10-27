@@ -260,8 +260,28 @@ const mapping = {
 };
 
 const prices = {
-  pending: 2,
+  pending: 3,
+  rounding: 'CENTS',
   rows: [
+    // Sold under cost (TASK-0135): the filter's "below cost".
+    {
+      variantId: 'v_6',
+      sku: 'ESET-HOME-3Y-5D',
+      productSlug: 'eset-home-security',
+      productName: 'إيسيت هوم سيكيورتي',
+      terms: '3 سنة · 5 أجهزة',
+      itemName: 'ESET HOME Security Essential Key 5 Device 3 Year',
+      costUsd: '130.00',
+      lastAppliedCostUsd: '110.00',
+      markupPercent: '50.00',
+      markupFromLink: false,
+      currentPriceUsd: '119.90',
+      proposedPriceUsd: '195.00',
+      change: 0.6264,
+      large: true,
+      state: 'PENDING',
+      costStanding: 'BELOW',
+    },
     {
       variantId: 'v_1',
       sku: 'WIN11-PRO-1PC',
@@ -278,6 +298,7 @@ const prices = {
       change: 0.125,
       large: false,
       state: 'PENDING',
+      costStanding: 'ABOVE',
     },
     {
       variantId: 'v_2',
@@ -295,6 +316,7 @@ const prices = {
       change: 0.4,
       large: true,
       state: 'PENDING',
+      costStanding: 'AT',
     },
     {
       variantId: 'v_3',
@@ -312,6 +334,7 @@ const prices = {
       change: 0,
       large: false,
       state: 'CURRENT',
+      costStanding: 'ABOVE',
     },
     {
       variantId: 'v_5',
@@ -329,6 +352,7 @@ const prices = {
       change: 0,
       large: false,
       state: 'MISSING',
+      costStanding: 'ABOVE',
     },
   ],
 };
@@ -721,6 +745,18 @@ export const supplierDynamic = [
       row.manualOutOfStock = !row.manualOutOfStock;
       row.supplierOutOfStock = row.manualOutOfStock;
       return row;
+    },
+  ],
+  [
+    // A row's own markup (TASK-0135). No body here, so it pins 53.84% and
+    // reports the proposal 199.99; the real API works it out from the request.
+    /^PUT \/v1\/admin\/supplier\/prices\/([^/]+)\/markup$/,
+    (match) => {
+      const row = prices.rows.find((entry) => entry.variantId === match[1]) ?? prices.rows[0];
+      row.markupPercent = '53.84';
+      row.markupFromLink = true;
+      row.proposedPriceUsd = (Number(row.costUsd) * 1.5384).toFixed(2);
+      return { row, applied: null };
     },
   ],
   [
