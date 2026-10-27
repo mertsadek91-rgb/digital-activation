@@ -303,9 +303,13 @@ export type SupplierMapping = z.infer<typeof supplierMappingSchema>;
 export const setSupplierLinkSchema = z.object({
   itemId: z.string().min(1),
   /**
-   * Blank, null or omitted uses the source's markup. Blank and null are tried
-   * first: `percentSchema` coerces, and Number('') and Number(null) are both 0,
-   * which would save a 0% markup in place of "use the default".
+   * The variant's own markup, which is money: ADMIN/OWNER only. Omitted keeps
+   * the existing link's markup (none on a new link), so catalogue staff link
+   * and re-link without sending it. A number sets it; blank or null clears it
+   * back to the source's markup, and is refused for other roles like setting.
+   * Blank and null are tried first: `percentSchema` coerces, and Number('')
+   * and Number(null) are both 0, which would save a 0% markup in place of
+   * "use the default".
    */
   markupPercent: z.union([z.literal(''), z.null(), percentSchema]).optional(),
   followStock: z.boolean().default(true),

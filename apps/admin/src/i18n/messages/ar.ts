@@ -1703,6 +1703,7 @@ export const ar = {
     relink: 'غيّر السطر',
     linked: 'رُبط {sku}.',
     unlinked: 'فُك ربط {sku}.',
+    unlinkAdminOnly: 'له نسبة ربح خاصة، لذا فك الربط للمدير فقط.',
     markupOverride: 'نسبة خاصة (%)',
     markupDefault: 'الافتراضي',
     followStock: 'يتبع النفاد في الشيت',

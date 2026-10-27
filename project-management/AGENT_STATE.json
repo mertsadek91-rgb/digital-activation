@@ -382,7 +382,7 @@
       "opportunities": [],
       "workload": 2.5,
       "blockers": [],
-      "last_activity": "2026-09-30T12:03:43Z"
+      "last_activity": "2026-10-27T08:40:34Z"
     },
     {
       "id": "database-architect",
@@ -709,7 +709,7 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 38,
+      "reviews_recorded": 40,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
@@ -784,7 +784,7 @@
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 33,
+      "reviews_recorded": 35,
       "opportunities": [],
       "workload": 8,
       "blockers": [],
