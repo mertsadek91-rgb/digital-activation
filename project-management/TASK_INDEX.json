@@ -4018,6 +4018,52 @@
       "updated_at": "2026-10-27",
       "reaudit": null,
       "file": "tasks/completed/TASK-0142.md"
+    },
+    {
+      "id": "TASK-0145",
+      "title": "Sticky storefront header: the shop bar (logo, all-products menu, search, account, cart) stays on screen while scrolling, with a compact pinned menu+search row on phones",
+      "type": "improvement",
+      "status": "QA",
+      "stage": "IMPLEMENTATION",
+      "priority": "MEDIUM",
+      "progress": 90,
+      "authority_level": 2,
+      "risk": "LOW",
+      "primary_agent": "frontend-engineer",
+      "responsible_manager": "pm-04",
+      "supporting_agents": [
+        "responsive-design-specialist",
+        "accessibility-specialist"
+      ],
+      "required_reviewers": [
+        "responsive-design-specialist",
+        "accessibility-specialist"
+      ],
+      "related_change_request": null,
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "apps/storefront"
+      ],
+      "affected_pages": [
+        "all storefront pages"
+      ],
+      "affected_files": [
+        "apps/storefront/src/components/site-header.tsx",
+        "apps/storefront/src/app/header.css",
+        "apps/storefront/src/app/account.css",
+        "apps/storefront/src/app/cart.css",
+        "apps/storefront/src/app/contact.css"
+      ],
+      "created_at": "2026-10-27",
+      "updated_at": "2026-10-27",
+      "reaudit": null,
+      "file": "tasks/qa/TASK-0145.md"
     }
   ]
 }

@@ -7,15 +7,80 @@
  * specifies; the smallest touch target is 44px.
  */
 
+/*
+ * The pinned header (TASK-0145).
+ *
+ * `position: sticky` with a negative top, and no scroll listener: the header
+ * scrolls with the page until all but its last row is gone, then holds. On
+ * wide screens what scrolls away is the announcement bar; on phones it is the
+ * bar and the shop row's first line (logo, account, cart), leaving the menu
+ * button and the search box. The heights are fixed so the offsets are exact,
+ * and nothing in the header changes size on scroll, so nothing below it
+ * shifts.
+ *
+ * `--header-scroll-away` is how much of the header leaves the screen,
+ * `--header-pinned` how much stays: the page keeps that much room at the top
+ * for anchors, focus and its own sticky columns. The navigation row is a
+ * sibling after the header and scrolls away under it.
+ */
+:root {
+  --header-scroll-away: var(--utility-height);
+  /* 12 + the logo's 55 + 12 + the 1px rule */
+  --header-pinned: 80px;
+}
+/*
+ * Room under the bar for whatever the page scrolls to: an anchor's target,
+ * or a control that takes keyboard focus (WCAG 2.4.11). A margin on the
+ * targets rather than `scroll-padding` on the page, because with the padding
+ * the browser also treated the pinned controls as hidden and scrolled the
+ * page on every Tab across the bar; it cannot move them, so the shopper only
+ * lost their place. The header's own controls are left out.
+ */
+:is(a[href], button, input, select, textarea, summary, [tabindex], [id]):not(.site-header *) {
+  scroll-margin-block-start: calc(var(--header-pinned) + var(--spacing-1));
+}
+
 .site-header {
+  position: sticky;
+  inset-block-start: calc(-1 * var(--header-scroll-away));
+  /* Above the buy bar (40), the cart bar (44) and the tab bar (45); under
+     the dialogs (60 and up) and the drawer. */
+  z-index: 50;
   background: var(--color-bg);
   border-block-end: 1px solid var(--color-border);
+}
+
+/*
+ * Keyboard focus and the pinned header (WCAG 2.4.11, TASK-0145).
+ *
+ * The browser cannot scroll a control inside a stuck header into view, so a
+ * focused control in the part that has scrolled away (the announcement bar;
+ * on phones also the logo, account and cart line) would sit above the
+ * screen. While one of them has focus the whole header comes down. A sticky
+ * offset moves only the header, never the page under it.
+ */
+.site-header:has(.topbar :focus) {
+  inset-block-start: 0;
+}
+
+/* A shadow once the bar has pinned, where the browser can tell (scroll-state
+   container queries). Elsewhere the rule alone separates it from the page. */
+@supports (container-type: scroll-state) {
+  .site-header {
+    container-type: scroll-state;
+  }
+  @container scroll-state(stuck: top) {
+    .header-main {
+      box-shadow: var(--shadow-md);
+    }
+  }
 }
 
 /* --- the announcement bar ------------------------------------------------- */
 
 .topbar {
-  min-block-size: var(--utility-height);
+  block-size: var(--utility-height);
+  overflow: hidden;
   background: var(--color-brand);
   color: var(--color-ink-inverse);
   font-size: var(--text-xs);
@@ -23,8 +88,8 @@
 .topbar-inner {
   max-inline-size: var(--container-max);
   margin-inline: auto;
-  padding: 8px var(--spacing-1);
-  min-block-size: var(--utility-height);
+  padding: 0 var(--spacing-1);
+  block-size: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,10 +149,10 @@
 .header-main-inner {
   max-inline-size: var(--container-max);
   margin-inline: auto;
-  padding: 20px var(--spacing-1) 16px;
+  padding: 12px var(--spacing-1);
   display: flex;
   align-items: center;
-  gap: var(--spacing-3);
+  gap: var(--spacing-2);
 }
 .logo {
   display: inline-flex;
@@ -220,10 +285,15 @@
 
 /* --- the navigation row ---------------------------------------------------- */
 
+/* After the header, not in it: it scrolls away under the pinned shop row. */
+.header-nav {
+  background: var(--color-bg);
+  border-block-end: 1px solid var(--color-border);
+}
 .header-nav-inner {
   max-inline-size: var(--container-max);
   margin-inline: auto;
-  padding: 0 var(--spacing-1) 16px;
+  padding: 2px var(--spacing-1);
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
@@ -240,7 +310,7 @@
 .site-nav a {
   display: inline-flex;
   align-items: center;
-  min-block-size: 32px;
+  min-block-size: 44px;
   color: var(--color-ink);
   text-decoration: none;
   font-size: var(--text-sm);
@@ -387,28 +457,62 @@
   .topbar-controls {
     display: none;
   }
+  /*
+   * Two fixed lines: logo, account and cart, then the menu button and the
+   * search box. The first line scrolls away with the announcement bar; the
+   * second pins, which is the part a phone shopper reaches for mid-page (the
+   * bottom bar already holds account and cart).
+   */
+  :root {
+    /* the bar + 8px padding + the 44px first line */
+    --header-scroll-away: calc(var(--utility-height) + 52px);
+    /* the 8px gap + the 48px second line + 8px padding + the 1px rule */
+    --header-pinned: 65px;
+  }
+  /* The product page already holds two fixed bars on a phone, the buy bar
+     and the tab bar, which carry the purchase, search and the categories.
+     A third would take a quarter of the screen, so there the whole header
+     scrolls away. */
+  :root:has(.buy-bar) {
+    /* the bar + 8 + 44 + 8 + 48 + 8 + the 1px rule */
+    --header-scroll-away: calc(var(--utility-height) + 117px);
+    --header-pinned: 0px;
+  }
+  /* The lines that scroll away here come back down while they hold focus
+     (see the focus rules above); on the product page that is all of it. */
+  .site-header:has(.logo:focus, .header-actions :focus),
+  :root:has(.buy-bar) .site-header:focus-within {
+    inset-block-start: 0;
+  }
   .header-main-inner {
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px var(--spacing-1);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-rows: 44px var(--control-height);
+    grid-template-areas:
+      'logo logo actions'
+      'menu search search';
+    align-items: center;
+    gap: 8px;
+    padding: 8px var(--spacing-1);
   }
   .mobile-menu-btn {
     display: inline-grid;
-    order: 0;
+    grid-area: menu;
   }
   .logo {
-    order: 1;
-    margin-inline-end: auto;
+    grid-area: logo;
   }
   .header-actions {
-    order: 2;
+    grid-area: actions;
   }
   .header-search {
-    order: 3;
-    flex-basis: 100%;
+    grid-area: search;
   }
-  .icon-button {
+  /* The drawer lists the categories on phones. */
+  .header-main .mega {
+    display: none;
+  }
+  .header-actions .icon-button {
     inline-size: 44px;
     block-size: 44px;
   }

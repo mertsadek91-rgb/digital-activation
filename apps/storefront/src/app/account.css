@@ -41,7 +41,11 @@
 @media (min-width: 60rem) {
   .account-side {
     position: sticky;
-    inset-block-start: var(--spacing-1);
+    inset-block-start: calc(var(--header-pinned, 0px) + var(--spacing-1));
+    /* Never taller than the room under the pinned header, so its last link
+       stays reachable on a short screen (TASK-0145). */
+    max-block-size: calc(100dvh - var(--header-pinned, 0px) - 2 * var(--spacing-1));
+    overflow-y: auto;
   }
 }
 .account-who {
