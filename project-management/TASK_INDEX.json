@@ -3973,6 +3973,68 @@
       "updated_at": "2026-10-27",
       "reaudit": null,
       "file": "tasks/completed/TASK-0140.md"
+    },
+    {
+      "id": "TASK-0150",
+      "title": "Supplier sheet: one-click AI product creation (draft, link, full ar/en copy) per line and a sequential, resumable, cancellable batch for selected lines",
+      "type": "feature",
+      "status": "COMPLETED",
+      "stage": "COMPLETED",
+      "priority": "HIGH",
+      "progress": 100,
+      "authority_level": 4,
+      "risk": "MEDIUM",
+      "primary_agent": "api-architect",
+      "responsible_manager": "pm-03",
+      "supporting_agents": [
+        "frontend-engineer"
+      ],
+      "required_reviewers": [
+        "security-engineer",
+        "qa-lead",
+        "responsive-design-specialist",
+        "pm-03",
+        "pm-06"
+      ],
+      "related_change_request": "CR-0004",
+      "related_issue": null,
+      "related_consensus": null,
+      "related_epic": null,
+      "related_milestone": null,
+      "related_opportunity": null,
+      "dependencies": [],
+      "blocks": [],
+      "affected_modules": [
+        "contracts",
+        "api/supplier",
+        "api/admin",
+        "admin/supplier"
+      ],
+      "affected_pages": [
+        "/supplier"
+      ],
+      "affected_files": [
+        "apps/admin/mock/supplier.mjs",
+        "apps/admin/src/app/supplier/ai-batch.tsx",
+        "apps/admin/src/app/supplier/items-tab.tsx",
+        "apps/admin/src/app/supplier/supplier.css",
+        "apps/admin/src/i18n/messages/ar.ts",
+        "apps/admin/src/i18n/messages/en.ts",
+        "apps/admin/src/lib/supplier-api.ts",
+        "apps/api/src/admin/admin.module.ts",
+        "apps/api/src/app.module.ts",
+        "apps/api/src/integration/supplier-batch.int.test.ts",
+        "apps/api/src/supplier/ai/supplier-ai.service.ts",
+        "apps/api/src/supplier/batch/supplier-batch.controller.ts",
+        "apps/api/src/supplier/batch/supplier-batch.module.ts",
+        "apps/api/src/supplier/batch/supplier-batch.service.ts",
+        "apps/api/src/supplier/contracts.test.ts",
+        "packages/contracts/src/supplier-ai.ts"
+      ],
+      "created_at": "2026-10-27",
+      "updated_at": "2026-10-27",
+      "reaudit": null,
+      "file": "tasks/completed/TASK-0150.md"
     }
   ]
 }
