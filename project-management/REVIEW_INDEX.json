@@ -2408,6 +2408,48 @@
       "ts": "2026-10-27T10:24:45Z",
       "actor": "responsive-design-specialist",
       "event": "E20261027102445-38dd64"
+    },
+    {
+      "review_id": "REV-0220",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "CONCERN",
+      "independent": true,
+      "findings": "Fresh-context headless-Chrome QA at 1440/1024/768/390/360, ar+en, home/product/collection/cart/contact/account, top/scrolled/mega/drawer. Pass: pin geometry matches --header-pinned (80 / 65px), CLS 0, no horizontal overflow, nothing paints over the bar, bottom stack on phones clear, product anchors (#about/#activation/#faq/#reviews) and Shift+Tab focus land below the bar, cart summary and contact column stick at 96px, mega-menu attached while scrolled and mirrored in RTL, drawer above bar and bottom nav with page inert. Findings: (1) medium, regression: stuck contact form (694-717px) clipped its send button at 1280x720/1366x720; (2) medium, design: on phone product pages pinned row + buy bar + tab bar took ~25-30% of the screen, and the row duplicates the tab bar's search/categories; (3) low: phone pinned row has no brand mark; (4) info: Next LCP hint on the header logo, drawer also inerts the route announcer (pre-existing). Account side column unverified (mock is logged out).",
+      "round": 1,
+      "target": "TASK-0145",
+      "ts": "2026-10-27T12:14:57Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261027121457-db3d50"
+    },
+    {
+      "review_id": "REV-0221",
+      "reviewer": "accessibility-specialist",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "ACCESSIBILITY",
+      "result": "BLOCKING_OBJECTION",
+      "independent": true,
+      "findings": "Fresh-context headless-Chrome review with real key events, ar+en, 1440/768/390. Blocking: F1 (2.4.11 AA) focus lands on header controls that have scrolled away (topbar language link and currency at >=768; logo, licences, cart at 390; the whole header on phone product pages) at 0/15 visible; F2 (2.4.3/3.2.1) focusing a pinned control scrolls the page because of html scroll-padding (Tab across the bar 1500->584->126->0), and closing the drawer jumps the page. Non-blocking: F3 Escape inside the mega panel drops focus to body and the panel stays open when tabbing out (pre-existing); F4 English tagline truncated at 320/390 (pre-existing nowrap+ellipsis); F5 bottom tab bar and buy bar can hide focused footer/add-to-cart (pre-existing, out of scope); F6 nav row label reuses the drawer's label (pre-existing). Pass: banner landmark exposed, one labelled header nav, main content never hidden, anchors clear the bar, mega keyboard + aria correct, drawer modal and inert, 44px targets in the bar, reflow/zoom 11-21% of height, reduced motion, contrast.",
+      "round": 1,
+      "target": "TASK-0145",
+      "ts": "2026-10-27T12:44:12Z",
+      "actor": "accessibility-specialist",
+      "event": "E20261027124412-39659e"
+    },
+    {
+      "review_id": "REV-0222",
+      "reviewer": "accessibility-specialist",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "ACCESSIBILITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Re-check of F1-F3 after fixes, headless Chrome with real key/mouse events, ar+en. F1 PASS: full Tab/Shift+Tab sweep (18 runs: home, /store, product at 1440/768/390, reduced motion, from y=1200) shows no header control hidden and no content covered by the header; remaining covers are the pre-existing bottom bars (F5), visually hidden variant radios and a clipped chip unrelated to the header. F2 PASS: Tab across the pinned bar and drawer Escape/close keep scrollY 1500 at 1440/768/390 in reduced and smooth modes; one-off 1500->1013 on first Tab into the phone logo (en, reduced only) judged acceptable, focus stays visible; anchors still clear the bar after scroll-padding was replaced by scroll-margin. F3 PASS: Escape from a panel link closes and returns focus to the button; tabbing out closes the panel. Open, low/pre-existing: F4 English tagline truncation at 320/390, F5 bottom bars hide focus, F6 nav label reuse.",
+      "round": 2,
+      "target": "TASK-0145",
+      "ts": "2026-10-27T13:23:25Z",
+      "actor": "accessibility-specialist",
+      "event": "E20261027132325-21eac1"
     }
   ],
   "invalidated_reviews": [

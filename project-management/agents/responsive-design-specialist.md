@@ -11,7 +11,7 @@
 | Max authority | Level 2 |
 | Executes as | subagent:visual-qa |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | REVIEWING |
 
 ## Responsibilities
 
@@ -49,3 +49,11 @@
 ## Current tasks
 
 - none
+
+## Supporting
+
+- TASK-0145 — Sticky storefront header: the shop bar (logo, all-products menu, search, account, cart) stays on screen while scrolling, with a compact pinned menu+search row on phones (QA, 90%)
+
+## Pending reviews
+
+- TASK-0145 — Sticky storefront header: the shop bar (logo, all-products menu, search, account, cart) stays on screen while scrolling, with a compact pinned menu+search row on phones (QA, 90%)
