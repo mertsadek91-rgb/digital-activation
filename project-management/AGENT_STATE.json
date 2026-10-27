@@ -218,11 +218,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 19,
+      "reviews_recorded": 21,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-26T10:17:02Z"
+      "last_activity": "2026-10-26T14:19:52Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -420,7 +420,7 @@
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-26T06:50:40Z"
+      "last_activity": "2026-10-26T14:30:17Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -699,11 +699,11 @@
         "TASK-0060"
       ],
       "reviews": [],
-      "reviews_recorded": 32,
+      "reviews_recorded": 36,
       "opportunities": [],
       "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-26T10:25:33Z"
+      "last_activity": "2026-10-26T14:30:15Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -774,11 +774,11 @@
       "reviews": [
         "TASK-0128"
       ],
-      "reviews_recorded": 31,
+      "reviews_recorded": 32,
       "opportunities": [],
       "workload": 8,
       "blockers": [],
-      "last_activity": "2026-10-26T10:01:08Z"
+      "last_activity": "2026-10-26T13:36:24Z"
     },
     {
       "id": "performance-engineer",
