@@ -30,6 +30,7 @@ import { RetentionModule } from './retention/retention.module.js';
 import { ReviewsModule } from './reviews/reviews.module.js';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module.js';
 import { StudioModule } from './studio/studio.module.js';
+import { SupplierBatchModule } from './supplier/batch/supplier-batch.module.js';
 import { SupplierModule } from './supplier/supplier.module.js';
 import { VaultModule } from './vault/vault.module.js';
 import { WhatsappModule } from './whatsapp/whatsapp.module.js';
@@ -103,6 +104,7 @@ import { WhatsappModule } from './whatsapp/whatsapp.module.js';
     WhatsappModule,
     AnalyticsModule,
     SupplierModule,
+    SupplierBatchModule,
     StudioModule,
   ],
   controllers: [HealthController],

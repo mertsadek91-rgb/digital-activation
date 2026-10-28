@@ -1,8 +1,11 @@
 import {
+  AI_BATCH_MAX_LINES,
+  aiBatchSchema,
   applySupplierPricesSchema,
   parseSheetUrl,
   setSupplierLinkSchema,
   setVariantMarkupSchema,
+  startAiBatchSchema,
 } from '@da/contracts';
 import { describe, expect, it } from 'vitest';
 
@@ -67,5 +70,45 @@ describe('setVariantMarkupSchema', () => {
   it('refuses a negative markup and a price of zero', () => {
     expect(setVariantMarkupSchema.safeParse({ markupPercent: -5 }).success).toBe(false);
     expect(setVariantMarkupSchema.safeParse({ targetPriceUsd: 0 }).success).toBe(false);
+  });
+});
+
+describe('startAiBatchSchema (TASK-0150)', () => {
+  it('takes one line up to the batch limit, and no empty ids', () => {
+    expect(startAiBatchSchema.safeParse({ itemIds: [] }).success).toBe(false);
+    expect(startAiBatchSchema.safeParse({ itemIds: [' '] }).success).toBe(false);
+    expect(startAiBatchSchema.safeParse({ itemIds: ['a'] }).success).toBe(true);
+    const ids = (n: number) => Array.from({ length: n }, (_, i) => `i${String(i)}`);
+    expect(startAiBatchSchema.safeParse({ itemIds: ids(AI_BATCH_MAX_LINES) }).success).toBe(true);
+    expect(startAiBatchSchema.safeParse({ itemIds: ids(AI_BATCH_MAX_LINES + 1) }).success).toBe(
+      false,
+    );
+  });
+
+  it('reads a stored batch back, and refuses an unknown line status', () => {
+    const line = {
+      itemId: 'i',
+      itemName: 'Line',
+      status: 'QUEUED',
+      draft: null,
+      productSlug: null,
+      sku: null,
+      error: null,
+      notes: [],
+      startedAt: null,
+      finishedAt: null,
+    };
+    const batch = {
+      id: 'b',
+      status: 'RUNNING',
+      startedById: 's',
+      startedAt: '2026-10-27T00:00:00Z',
+      finishedAt: null,
+      lines: [line],
+    };
+    expect(aiBatchSchema.safeParse(batch).success).toBe(true);
+    expect(
+      aiBatchSchema.safeParse({ ...batch, lines: [{ ...line, status: 'PUBLISHED' }] }).success,
+    ).toBe(false);
   });
 });
