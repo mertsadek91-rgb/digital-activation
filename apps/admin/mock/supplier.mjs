@@ -598,7 +598,94 @@ const editorContent = {
   bodyMinWords: 120,
 };
 
+/** The one-click AI batch (TASK-0150), caught mid-run: one line of each state. */
+const batchLine = (itemId, status, extra = {}) => ({
+  itemId,
+  itemName: items.find((i) => i.id === itemId)?.name ?? itemId,
+  status,
+  draft: null,
+  productSlug: null,
+  sku: null,
+  error: null,
+  notes: [],
+  startedAt: status === 'QUEUED' ? null : days(0.01),
+  finishedAt: null,
+  ...extra,
+});
+const batchDraft = (slug, nameAr, nameEn, priceUsd) => ({
+  model: 'claude-sonnet-5-5',
+  slug,
+  nameAr,
+  nameEn,
+  kind: 'KEY',
+  sku: slug.toUpperCase(),
+  licensePeriodUnit: 'YEAR',
+  licensePeriodValue: 2,
+  deviceCount: 3,
+  platform: 'WINDOWS',
+  activationMethod: 'RETAIL_ONLINE',
+  priceUsd,
+  brandId: null,
+  categoryIds: [],
+  notes: [],
+});
+const aiBatch = {
+  batch: {
+    id: 'batch-1',
+    status: 'RUNNING',
+    startedById: 'staff_owner',
+    startedAt: days(0.02),
+    finishedAt: null,
+    lines: [
+      batchLine('it_8', 'DONE', {
+        draft: batchDraft(
+          'eset-home-security-essential-3-device-2-year',
+          'ESET HOME Security Essential لثلاثة أجهزة لمدة سنتين',
+          'ESET HOME Security Essential 3 Devices 2 Years',
+          '75.00',
+        ),
+        productSlug: 'eset-home-security-essential-3-device-2-year',
+        sku: 'ESET-HOME-SECURITY-ESSENTIAL-3-DEVICE-2-YEAR',
+        notes: ['Brand "ESET" is not in the catalogue yet.'],
+        finishedAt: days(0.01),
+      }),
+      batchLine('it_3', 'FAILED', {
+        error: 'Writing the copy: OpenCode 429 for claude-sonnet-5-5 (messages): rate limited',
+        draft: batchDraft(
+          'office-2021-professional-plus-bind-key',
+          'Office 2021 Professional Plus مفتاح مرتبط بحساب',
+          'Office 2021 Professional Plus Bind Key',
+          '0.00',
+        ),
+        productSlug: 'office-2021-professional-plus-bind-key',
+        sku: 'OFFICE-2021-PROFESSIONAL-PLUS-BIND-KEY',
+        finishedAt: days(0.005),
+      }),
+      batchLine('it_9', 'WRITING', {
+        draft: batchDraft(
+          'eset-home-security-essential-3-device-3-year',
+          'ESET HOME Security Essential لثلاثة أجهزة لمدة 3 سنوات',
+          'ESET HOME Security Essential 3 Devices 3 Years',
+          '105.00',
+        ),
+        productSlug: 'eset-home-security-essential-3-device-3-year',
+        sku: 'ESET-HOME-SECURITY-ESSENTIAL-3-DEVICE-3-YEAR',
+      }),
+      batchLine('it_10', 'QUEUED'),
+      batchLine('it_5', 'SKIPPED', {
+        error: 'The line is already linked to a product; nothing was created.',
+        finishedAt: days(0.004),
+      }),
+    ],
+  },
+};
+
 export const supplierRoutes = [
+  ['GET /v1/admin/supplier/ai/batch', aiBatch],
+  ['POST /v1/admin/supplier/ai/batch', aiBatch],
+  ['POST /v1/admin/supplier/ai/batch/cancel', aiBatch],
+  ['POST /v1/admin/supplier/ai/batch/retry', aiBatch],
+  ['DELETE /v1/admin/supplier/ai/batch', { batch: null }],
   ['POST /v1/admin/supplier/card/logo-color', { color: '#e8410a' }],
   ['GET /v1/admin/products/windows-11-pro', editorRow],
   ['GET /v1/admin/products/windows-11-pro/readiness', editorReadiness],
