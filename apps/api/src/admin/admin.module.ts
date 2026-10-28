@@ -72,7 +72,8 @@ import { TaxonomyService } from './taxonomy.service.js';
     DashboardService,
   ],
   // The article studio writes drafts through the blog editor's own service;
-  // the product agent (CR-0007) writes products through the editors' services.
+  // the product agent (CR-0007) and the supplier AI batch (TASK-0150) create
+  // and write products through the editors' own services.
   exports: [
     ContentArticlesService,
     AdminService,

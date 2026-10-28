@@ -5,14 +5,16 @@
   "current_milestone": "MILESTONE-0001",
   "current_milestone_progress": 93,
   "progress": 84,
-  "health": "HEALTHY",
-  "health_reasons": [],
-  "total_tasks": 95,
+  "health": "ATTENTION_REQUIRED",
+  "health_reasons": [
+    "1 governance validation problem(s)"
+  ],
+  "total_tasks": 96,
   "active_tasks": 11,
   "blocked_tasks": 0,
   "review_tasks": 5,
-  "qa_tasks": 1,
-  "completed_tasks": 68,
+  "qa_tasks": 0,
+  "completed_tasks": 70,
   "open_bugs": 2,
   "legacy_and_migration_issues": 2,
   "legacy_and_migration_by_severity": {
@@ -34,12 +36,12 @@
   "opportunities_open": 2,
   "opportunities_ready_for_decision": 1,
   "watchlist": 1,
-  "reviews_recorded": 188,
-  "independent_reviews": 188,
+  "reviews_recorded": 197,
+  "independent_reviews": 197,
   "owner_attention": 23,
-  "active_agents": 10,
+  "active_agents": 8,
   "file_collisions": 0,
-  "validation_problems": 0,
-  "canonical_events": 950,
-  "last_activity": "2026-10-27T13:23:29Z"
+  "validation_problems": 1,
+  "canonical_events": 969,
+  "last_activity": "2026-10-27T14:15:40Z"
 }

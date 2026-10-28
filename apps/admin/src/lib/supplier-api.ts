@@ -1,6 +1,7 @@
 'use client';
 
 import type {
+  AiBatchView,
   AiCopyJob,
   AiSectionJob,
   GenerateSection,
@@ -17,6 +18,7 @@ import type {
   SupplierAiSettings,
   SupplierAiStatus,
   SupplierAiTest,
+  StartAiBatch,
   ApplySupplierPricesResult,
   SetSupplierLink,
   SetSupplierSource,
@@ -128,6 +130,19 @@ export const supplierAiApi = {
       method: 'POST',
       body: '{}',
     }),
+  /** The one-click batch (TASK-0150): the current one, or none. */
+  batch: () => request<AiBatchView>('/admin/supplier/ai/batch'),
+  /** Queues lines; each is drafted, created as a draft, linked and written in turn. */
+  startBatch: (input: StartAiBatch) =>
+    request<AiBatchView>('/admin/supplier/ai/batch', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
+  cancelBatch: () =>
+    request<AiBatchView>('/admin/supplier/ai/batch/cancel', { method: 'POST', body: '{}' }),
+  retryBatch: () =>
+    request<AiBatchView>('/admin/supplier/ai/batch/retry', { method: 'POST', body: '{}' }),
+  dismissBatch: () => request<AiBatchView>('/admin/supplier/ai/batch', { method: 'DELETE' }),
   linkBySku: (itemId: string, sku: string) =>
     request<SupplierMappingRow>(`/admin/supplier/items/${encodeURIComponent(itemId)}/link-sku`, {
       method: 'PUT',

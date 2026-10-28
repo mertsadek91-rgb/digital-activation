@@ -135,7 +135,7 @@ export function hasBody(body: unknown): boolean {
  * A model-written product name as plain text: no markup characters, no
  * control characters, one space between words. The name is rendered as text
  * everywhere, but it is a public field the model wrote, so it is held to what
- * a person would type (REV-0223).
+ * a person would type (REV-0232).
  */
 export function plainName(name: string): string {
   return (

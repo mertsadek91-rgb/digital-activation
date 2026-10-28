@@ -148,6 +148,12 @@ export class SupplierAiService {
     return this.status();
   }
 
+  /** Throws what a generation would fail on first: no key on the API, or no model chosen. */
+  async assertReady(): Promise<void> {
+    this.client();
+    this.protocol(await this.settings());
+  }
+
   private protocol(settings: SupplierAiSettings): ResolvedProtocol {
     if (!settings.model)
       throw new BadRequestException(say('اختر نموذجاً أولاً.', 'Choose a model first.'));

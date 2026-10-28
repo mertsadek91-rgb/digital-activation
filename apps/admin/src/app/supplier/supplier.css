@@ -579,3 +579,108 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+/* --- one-click AI products (TASK-0150) ------------------------------------- */
+
+.supplier-pick {
+  inline-size: 44px;
+  text-align: center;
+}
+
+.ai-batch-bar {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card-alt);
+}
+
+.ai-batch {
+  margin-block-end: 16px;
+}
+
+.ai-batch progress {
+  inline-size: 8rem;
+  vertical-align: middle;
+  accent-color: var(--color-brand, #087f70);
+  /* Chromium ignores accent-color on <progress>; draw it ourselves. */
+  appearance: none;
+  block-size: 8px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-border);
+}
+
+.ai-batch progress::-webkit-progress-bar {
+  background: var(--color-border);
+}
+
+.ai-batch progress::-webkit-progress-value {
+  background: var(--color-brand, #087f70);
+}
+
+.ai-batch progress::-moz-progress-bar {
+  background: var(--color-brand, #087f70);
+}
+
+.supplier-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-inline-size: 11rem;
+  white-space: normal;
+}
+
+.ai-batch-lines {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.ai-batch-line {
+  display: grid;
+  gap: 4px;
+  padding-block: 10px;
+  border-block-start: 1px solid var(--color-border);
+  min-inline-size: 0;
+}
+
+.ai-batch-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.ai-batch-head .pill {
+  flex: none;
+}
+
+/* Supplier names run long and unbroken ("MOQ:10pcs,Free-Delivery"). */
+.ai-batch-name {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+/* Each name keeps its own direction; the grid places both at the page's start edge. */
+.ai-batch-product {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+
+.ai-batch-product,
+.ai-batch-line .error,
+.ai-batch-line > .meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.ai-batch-notes {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}

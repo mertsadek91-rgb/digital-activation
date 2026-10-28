@@ -221,6 +221,77 @@ export type DraftProduct = z.infer<typeof draftProductSchema>;
 
 export const linkBySkuSchema = z.object({ sku: z.string().trim().min(1) });
 
+// --- one-click products from sheet lines, in sequence (TASK-0150) ---------------
+
+/**
+ * The most lines one batch holds waiting at a time. Each line is usually three
+ * model calls (the draft, then Arabic and English copy) on the owner's OpenCode
+ * balance. A rejected answer is asked for again (twice per language at most),
+ * and an answer cut off by its token budget is re-sent with a larger one, so a
+ * line can cost several times that; this cap is the only bound on spend.
+ */
+export const AI_BATCH_MAX_LINES = 20;
+
+/**
+ * Where one line is. `DRAFTING` → `CREATING` → `WRITING` → `DONE` is the
+ * path; a line already linked to a variant is `SKIPPED`, never created twice.
+ */
+export const AI_BATCH_LINE_STATUSES = [
+  'QUEUED',
+  'DRAFTING',
+  'CREATING',
+  'WRITING',
+  'DONE',
+  'SKIPPED',
+  'FAILED',
+  'CANCELLED',
+] as const;
+export const aiBatchLineStatusSchema = z.enum(AI_BATCH_LINE_STATUSES);
+export type AiBatchLineStatus = z.infer<typeof aiBatchLineStatusSchema>;
+
+export const aiBatchLineSchema = z.object({
+  itemId: z.string(),
+  itemName: z.string(),
+  status: aiBatchLineStatusSchema,
+  /** Who queued (or last retried) the line: its product and saves are audited as theirs. */
+  requestedById: z.string().nullable().default(null),
+  /** The model's proposal, kept so a resumed line creates what it drafted. */
+  draft: draftProductSchema.nullable(),
+  /** Set once the product exists; a retry then only writes the copy. */
+  productSlug: z.string().nullable(),
+  sku: z.string().nullable(),
+  error: z.string().nullable(),
+  notes: z.array(z.string()),
+  startedAt: z.string().nullable(),
+  finishedAt: z.string().nullable(),
+});
+export type AiBatchLine = z.infer<typeof aiBatchLineSchema>;
+
+export const AI_BATCH_STATUSES = ['RUNNING', 'DONE', 'CANCELLED'] as const;
+export const aiBatchSchema = z.object({
+  id: z.string(),
+  status: z.enum(AI_BATCH_STATUSES),
+  /** The staff member who started it; a line without its own requester is audited as theirs. */
+  startedById: z.string(),
+  startedAt: z.string(),
+  finishedAt: z.string().nullable(),
+  lines: z.array(aiBatchLineSchema),
+});
+export type AiBatch = z.infer<typeof aiBatchSchema>;
+
+/** The batch the panel shows, or none. */
+export const aiBatchViewSchema = z.object({ batch: aiBatchSchema.nullable() });
+export type AiBatchView = z.infer<typeof aiBatchViewSchema>;
+
+export const startAiBatchSchema = z.object({
+  itemIds: z.array(z.string().trim().min(1)).min(1).max(AI_BATCH_MAX_LINES),
+});
+export type StartAiBatch = z.infer<typeof startAiBatchSchema>;
+
+/** The Setting keys a batch is kept under, and the one pointing at the current batch. */
+export const aiBatchKey = (id: string): string => `supplier.ai.batch.${id}`;
+export const AI_BATCH_CURRENT_KEY = 'supplier.ai.batch-current';
+
 // --- product card image ---------------------------------------------------------
 
 export const CARD_ICONS = ['key', 'bolt', 'shield', 'user', 'clock'] as const;
