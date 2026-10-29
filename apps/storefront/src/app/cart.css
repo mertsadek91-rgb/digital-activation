@@ -301,6 +301,28 @@ a.cart-line-name:hover {
   border-radius: var(--radius-sm);
   display: inline-block;
 }
+/* A line the shop no longer sells (TASK-0151): said beside the line, and the
+   checkout buttons wait until it is removed. */
+.cart-line-unavailable,
+.cart-blocked-note {
+  margin: 4px 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger-ink);
+  background: var(--color-danger-soft);
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+}
+.cart-line-unavailable {
+  display: inline-block;
+}
+.cart-blocked-note {
+  margin-block-end: 12px;
+  font-size: var(--text-sm);
+}
+.cart-line.is-unavailable .cart-line-media,
+.cart-line.is-unavailable .cart-line-price {
+  opacity: 0.55;
+}
 .cart-line-sale {
   display: flex;
   flex-wrap: wrap;

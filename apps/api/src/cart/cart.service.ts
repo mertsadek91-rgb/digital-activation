@@ -530,6 +530,11 @@ export class CartService {
         fromCrossSell: item.fromCrossSell,
         sale: sale && item.saleId === sale.id ? saleBadge(sale, query.locale) : null,
         saleEnded: saleEnded.has(item.id),
+        // The same three conditions the checkout refuses on.
+        unavailable:
+          variant.status !== PublishStatus.PUBLISHED ||
+          variant.product.status !== PublishStatus.PUBLISHED ||
+          variant.supplierOutOfStock,
       };
     });
 

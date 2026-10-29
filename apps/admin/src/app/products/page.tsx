@@ -10,6 +10,7 @@ import { useT } from '../../i18n/provider';
 import { api, ApiError } from '../../lib/api';
 import { Nav } from '../nav';
 import { NewProductForm } from './new-product-form';
+import { ProductActions } from './product-actions';
 
 /**
  * Product list.
@@ -45,6 +46,12 @@ const FILTERS = [
   { key: 'published', label: 'filterPublished' },
   { key: 'out-of-stock', label: 'filterOutOfStock' },
   { key: 'blocked', label: 'filterBlocked' },
+  /**
+   * Retired products (TASK-0151). Out of every other chip, `all` included, so
+   * archiving — the way out for a product whose history refuses a delete —
+   * actually takes it off the screen.
+   */
+  { key: 'archived', label: 'filterArchived' },
 ] as const;
 
 /**
@@ -66,6 +73,7 @@ export default function ProductsPage() {
   const [filter, setFilter] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   /**
    * Which language the gate is being read in.
@@ -193,7 +201,9 @@ export default function ProductsPage() {
                     ? data.counts.published
                     : entry.key === 'out-of-stock'
                       ? data.counts.outOfStock
-                      : data.counts.blocked
+                      : entry.key === 'archived'
+                        ? data.counts.archived
+                        : data.counts.blocked
             : null;
 
           return (
@@ -233,6 +243,11 @@ export default function ProductsPage() {
       </nav>
 
       {error ? <p className="error">{error}</p> : null}
+      {note ? (
+        <p className="notice" role="status">
+          {note}
+        </p>
+      ) : null}
 
       {!canWrite ? <p className="notice">{t('roleReadonly', { role: me.role })}</p> : null}
 
@@ -264,7 +279,21 @@ export default function ProductsPage() {
           </thead>
           <tbody>
             {(data?.rows ?? []).map((row) => (
-              <ProductRow key={row.slug} row={row} />
+              <ProductRow
+                key={row.slug}
+                row={row}
+                role={me.role}
+                locale={locale}
+                onChanged={async (message) => {
+                  setError(null);
+                  setNote(message);
+                  await load();
+                }}
+                onError={(message) => {
+                  setNote(null);
+                  setError(message);
+                }}
+              />
             ))}
           </tbody>
         </table>
@@ -278,7 +307,19 @@ export default function ProductsPage() {
   );
 }
 
-function ProductRow({ row }: { row: AdminProductRow }) {
+function ProductRow({
+  row,
+  role,
+  locale,
+  onChanged,
+  onError,
+}: {
+  row: AdminProductRow;
+  role: string;
+  locale: 'ar' | 'en';
+  onChanged: (note: string) => Promise<void>;
+  onError: (message: string) => void;
+}) {
   const t = useT('products');
   const c = useT('common');
   const href = productHref(row.slug);
@@ -304,7 +345,9 @@ function ProductRow({ row }: { row: AdminProductRow }) {
             ? t('statusPublished')
             : row.status === 'DRAFT'
               ? t('statusDraft')
-              : row.status}
+              : row.status === 'ARCHIVED'
+                ? t('statusArchived')
+                : row.status}
         </span>
       </td>
       <td className="num">{row.variantCount}</td>
@@ -340,6 +383,16 @@ function ProductRow({ row }: { row: AdminProductRow }) {
         <Link href={href} className="button-link">
           {c('edit')}
         </Link>
+        <ProductActions
+          slug={row.slug}
+          name={row.nameAr}
+          status={row.status}
+          role={role}
+          locale={locale}
+          onChanged={onChanged}
+          onDeleted={() => onChanged(t('deletedNote', { name: row.nameAr }))}
+          onError={onError}
+        />
       </td>
     </tr>
   );

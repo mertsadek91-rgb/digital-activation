@@ -561,6 +561,9 @@ function cartLine(p, qty, locale, currency) {
     fromCrossSell: false,
     sale: null,
     saleEnded: false,
+    // Unpublished since it was added (TASK-0151): the line is flagged and the
+    // checkout buttons wait until it is removed. Remove it to see them return.
+    unavailable: p.slug === 'office-2021-professional',
   };
 }
 

@@ -704,6 +704,22 @@ export class VaultService {
     }));
   }
 
+  /**
+   * Whether the vault holds anything for these variants, in any state.
+   *
+   * Counts only. Asked before a product is deleted: the vault keys a licence
+   * by variant id with no foreign key across the schema line, so a delete in
+   * `public` would leave its keys pointing at nothing rather than fail.
+   */
+  async historyCount(variantIds: string[]): Promise<{ licenseKeys: number; keyImports: number }> {
+    if (variantIds.length === 0) return { licenseKeys: 0, keyImports: 0 };
+    const [licenseKeys, keyImports] = await Promise.all([
+      this.vault.client.licenseKey.count({ where: { variantId: { in: variantIds } } }),
+      this.vault.client.keyImportBatch.count({ where: { variantId: { in: variantIds } } }),
+    ]);
+    return { licenseKeys, keyImports };
+  }
+
   /** Exposed so the doctor script can prove the isolation still holds. */
   async selfTest(): Promise<{ reachable: boolean }> {
     await this.vault.client.$queryRaw`SELECT 1`;
