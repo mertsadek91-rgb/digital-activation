@@ -3988,11 +3988,10 @@
         "apps/admin/src/i18n/messages/ar.ts",
         "apps/admin/src/i18n/messages/en.ts",
         "apps/admin/mock/agent.mjs",
-        "apps/admin/mock/api.mjs",
         "docs/product-agent.md"
       ],
       "created_at": "2026-10-26",
-      "updated_at": "2026-10-26",
+      "updated_at": "2026-10-30",
       "reaudit": null,
       "file": "tasks/active/TASK-0136.md"
     },

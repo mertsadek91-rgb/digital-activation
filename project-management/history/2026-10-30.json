@@ -1,0 +1,47 @@
+{
+  "project_name": "Digital Activation — platform rebuild",
+  "project_type": "E-commerce platform rebuild (WordPress/WooCommerce → Next.js + NestJS), Arabic-first, licence-key delivery",
+  "current_phase": "Staging live on Coolify (new./admin./api.digital-activation.com); legacy WordPress still serves the apex; validation before production cutover",
+  "current_milestone": "MILESTONE-0001",
+  "current_milestone_progress": 93,
+  "progress": 84,
+  "health": "ATTENTION_REQUIRED",
+  "health_reasons": [
+    "2 governance validation problem(s)"
+  ],
+  "total_tasks": 97,
+  "active_tasks": 11,
+  "blocked_tasks": 0,
+  "review_tasks": 6,
+  "qa_tasks": 0,
+  "completed_tasks": 70,
+  "open_bugs": 2,
+  "legacy_and_migration_issues": 2,
+  "legacy_and_migration_by_severity": {
+    "CRITICAL": 0,
+    "HIGH": 1,
+    "MEDIUM": 1,
+    "LOW": 0
+  },
+  "security_findings": 5,
+  "security_by_severity": {
+    "CRITICAL": 0,
+    "HIGH": 0,
+    "MEDIUM": 2,
+    "LOW": 3
+  },
+  "active_change_requests": 7,
+  "pending_decisions": 3,
+  "pending_consensus": 2,
+  "opportunities_open": 2,
+  "opportunities_ready_for_decision": 1,
+  "watchlist": 1,
+  "reviews_recorded": 204,
+  "independent_reviews": 204,
+  "owner_attention": 23,
+  "active_agents": 10,
+  "file_collisions": 2,
+  "validation_problems": 2,
+  "canonical_events": 986,
+  "last_activity": "2026-10-30T06:33:48Z"
+}

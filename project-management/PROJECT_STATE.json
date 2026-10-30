@@ -7,7 +7,7 @@
   "progress": 84,
   "health": "ATTENTION_REQUIRED",
   "health_reasons": [
-    "3 governance validation problem(s)"
+    "2 governance validation problem(s)"
   ],
   "total_tasks": 97,
   "active_tasks": 11,
@@ -40,8 +40,8 @@
   "independent_reviews": 204,
   "owner_attention": 23,
   "active_agents": 10,
-  "file_collisions": 3,
-  "validation_problems": 3,
-  "canonical_events": 984,
-  "last_activity": "2026-10-29T08:05:20Z"
+  "file_collisions": 2,
+  "validation_problems": 2,
+  "canonical_events": 986,
+  "last_activity": "2026-10-30T06:33:48Z"
 }
