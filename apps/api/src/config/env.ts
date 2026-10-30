@@ -36,6 +36,8 @@ const envSchema = z.object({
   SUPPLIER_SYNC: z.string().optional(),
   OPENCODE_API_KEY: z.string().optional(),
   OPENCODE_BASE_URL: z.string().optional(),
+  /** The product agent's worker (CR-0007); `off` stops it working batches on this API. */
+  PRODUCT_AGENT: z.string().optional(),
   /** The product card's font folder and family; default apps/api/assets/fonts, Tajawal. */
   CARD_FONT_DIR: z.string().optional(),
   CARD_FONT_FAMILY: z.string().optional(),

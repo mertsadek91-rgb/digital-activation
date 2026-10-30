@@ -239,11 +239,11 @@
       "assignments": [],
       "supporting": [],
       "reviews": [],
-      "reviews_recorded": 7,
+      "reviews_recorded": 9,
       "opportunities": [],
       "workload": 0,
       "blockers": [],
-      "last_activity": "2026-10-06T07:16:55Z"
+      "last_activity": "2026-10-26T14:14:26Z"
     },
     {
       "id": "interaction-designer",
@@ -317,12 +317,13 @@
       "assignments": [],
       "supporting": [
         "TASK-0129",
+        "TASK-0136",
         "TASK-0151"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-10-27T14:15:40Z"
     },
@@ -343,12 +344,13 @@
         "TASK-0129"
       ],
       "supporting": [
-        "TASK-0004"
+        "TASK-0004",
+        "TASK-0136"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 4.5,
+      "workload": 5,
       "blockers": [],
       "last_activity": "2026-10-10T11:15:57Z"
     },
@@ -414,18 +416,19 @@
       "staffed": true,
       "executor": "main",
       "squads": [],
-      "state": "AVAILABLE",
-      "current_task": "TASK-0151",
+      "state": "WORKING",
+      "current_task": "TASK-0136",
       "assignments": [
+        "TASK-0136",
         "TASK-0151"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-29T08:05:20Z"
+      "last_activity": "2026-10-30T06:34:27Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -706,7 +709,7 @@
       "reviews": [
         "TASK-0151"
       ],
-      "reviews_recorded": 41,
+      "reviews_recorded": 43,
       "opportunities": [],
       "workload": 1,
       "blockers": [],
@@ -782,7 +785,7 @@
         "TASK-0128",
         "TASK-0151"
       ],
-      "reviews_recorded": 36,
+      "reviews_recorded": 37,
       "opportunities": [],
       "workload": 8.5,
       "blockers": [],

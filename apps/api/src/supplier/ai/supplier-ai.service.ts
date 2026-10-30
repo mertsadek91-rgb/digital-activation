@@ -603,7 +603,8 @@ export class SupplierAiService {
     );
   }
 
-  private async facts(slug: string): Promise<ProductFacts> {
+  /** What the prompts are told about a product; the product agent's plan reads it too. */
+  async facts(slug: string): Promise<ProductFacts> {
     const product = await this.prisma.client.product.findUnique({
       where: { slug },
       include: {

@@ -1,0 +1,102 @@
+// ---------------------------------------------------------------------------
+// The product agent (CR-0007): batches of products the AI rewrites, or
+// supplier lines it turns into new products, worked one at a time by a worker
+// inside the API with a pause between products.
+//
+// A batch is the person's choice and its options; an item is one product's
+// run, with its own log, its outcome, and — for a rewrite — a snapshot of
+// what it replaced, so the owner can undo one product without touching the
+// rest. Products and supplier lines are referenced by id without a foreign
+// key: a product deleted later must not take the history of what was done to
+// it with it, and an item is a record, not a link.
+// ---------------------------------------------------------------------------
+
+enum AgentBatchKind {
+  /// Rewrite products already in the catalogue.
+  REWRITE
+  /// Create products from supplier lines.
+  CREATE
+
+  @@schema("public")
+}
+
+enum AgentBatchStatus {
+  RUNNING
+  PAUSED
+  DONE
+  CANCELLED
+
+  @@schema("public")
+}
+
+enum AgentItemStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  SKIPPED
+  CANCELLED
+  /// Undone by a person; the snapshot was put back.
+  REVERTED
+
+  @@schema("public")
+}
+
+model AgentBatch {
+  id              String           @id @default(cuid())
+  kind            AgentBatchKind
+  status          AgentBatchStatus @default(RUNNING)
+  /// `AgentOptions` in @da/contracts.
+  options         Json
+  /// Seconds the worker waits after one product before starting the next.
+  cooldownSeconds Int              @default(90)
+  /// The earliest the next item may start: now + cooldown after each one.
+  nextRunAt       DateTime         @default(now())
+  /// The panel language of the person who started it ("ar" | "en"), for the
+  /// messages the services write while the worker runs it.
+  locale          String           @default("ar")
+  createdById     String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  finishedAt      DateTime?
+
+  items AgentItem[]
+
+  @@index([status, nextRunAt])
+  @@schema("public")
+}
+
+model AgentItem {
+  id             String          @id @default(cuid())
+  batch          AgentBatch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId        String
+  position       Int
+  status         AgentItemStatus @default(QUEUED)
+  /// The product's or line's name when the batch was started.
+  label          String
+  productId      String?
+  productSlug    String?
+  supplierItemId String?
+  /// The step running now, for the panel.
+  step           String?
+  attempts       Int             @default(0)
+  /// `AgentLogEntry[]` in @da/contracts.
+  log            Json            @default("[]")
+  /// `AgentSnapshot`: what a rewrite replaced.
+  snapshot       Json?
+  /// `AgentItemResult`.
+  result         Json?
+  error          String?
+  startedAt      DateTime?
+  /// Touched at every step; a RUNNING item that stops touching it has died.
+  heartbeatAt    DateTime?
+  finishedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([batchId, status, position])
+  @@index([status, heartbeatAt])
+  @@index([productId])
+  @@index([supplierItemId])
+  @@schema("public")
+}

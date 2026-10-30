@@ -27,6 +27,7 @@ export type IconName =
   | 'marketing'
   | 'redirects'
   | 'supplier'
+  | 'agent'
   | 'studio'
   | 'pages'
   | 'blog'
@@ -72,6 +73,9 @@ const PATHS: Record<IconName, string> = {
   // A pen with a spark: articles written with AI.
   studio: 'M4 20l4-1 10-10-3-3L5 16zM14 7l3 3M18 3v4M16 5h4',
   supplier: 'M4 3h10l6 6v12H4zM14 3v6h6M8 13h8M8 17h5M17 15a3 3 0 1 1-1-2.2M17 12v2h-2',
+  // A robot head: the product agent working through a batch (CR-0007).
+  agent:
+    'M12 3v3M7 6h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3zM9 11.5h.01M15 11.5h.01M9 15.5h6M2 12v2M22 12v2',
   pages:
     'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
   blog: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',

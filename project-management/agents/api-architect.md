@@ -11,7 +11,7 @@
 | Max authority | Level 4 |
 | Executes as | main |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | WORKING |
 
 ## Responsibilities
 
@@ -48,4 +48,5 @@
 
 ## Current tasks
 
+- TASK-0136 — Product agent: DB-backed batch queue worked one product at a time with a cooldown, AI category decision, bilingual copy saved through the existing editors, logo discovery with SSRF guard and colour-matched card, auto-publish when the gate passes, per-item undo, admin screen to pick products/supplier lines and follow batches (IN_PROGRESS, 90%)
 - TASK-0151 — Admin Products: unpublish, archive and safe delete from the list and the edit page; storefront cart flags unavailable lines (MANAGER_REVIEW, 90%)

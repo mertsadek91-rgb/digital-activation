@@ -64,6 +64,8 @@ const blank = [
   'AWS_ACCESS_KEY_ID',
   'AWS_SECRET_ACCESS_KEY',
   'SENTRY_DSN',
+  // The owner's AI account: suites that touch AI replace the calls themselves.
+  'OPENCODE_API_KEY',
 ];
 
 for (const [key, value] of Object.entries(fixed)) process.env[key] = value;

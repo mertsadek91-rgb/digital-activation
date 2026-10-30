@@ -14,6 +14,7 @@
  */
 import { createServer } from 'node:http';
 
+import { agentDynamic, agentRoutes } from './agent.mjs';
 import {
   supplierDynamic,
   supplierRoutes,
@@ -872,6 +873,7 @@ const dynamic = [
   ...supplierDynamic,
   ...supplierSectionDynamic,
   ...studioDynamic,
+  ...agentDynamic,
   [/^GET \/v1\/admin\/orders\/([^/]+)$/, (m) => orderDetail(decodeURIComponent(m[1]))],
   [
     /^GET \/v1\/admin\/fulfillment\/orders\/([^/]+)\/keys$/,
@@ -933,6 +935,7 @@ const routes = new Map([
   ['GET /v1/admin/marketing/settings', marketing],
   ...supplierRoutes,
   ...supplierSectionRoutes,
+  ...agentRoutes,
 ]);
 
 createServer(async (req, res) => {
