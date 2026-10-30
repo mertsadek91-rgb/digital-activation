@@ -1080,6 +1080,41 @@ export const en: AdminMessages = {
     gapNoImages: 'no images',
     gapNoSteps: 'no activation steps',
 
+    filterArchived: 'Archived',
+    statusArchived: 'Archived',
+    moreActions: 'More actions: {name}',
+    actionUnpublish: 'Unpublish (back to draft)',
+    actionArchive: 'Archive',
+    actionRestore: 'Restore as draft',
+    actionDelete: 'Delete…',
+    actionFailed: 'The action could not be completed.',
+    confirmUnpublish:
+      'Unpublish “{name}”?\n\nIt becomes a draft: its page leaves the store (404), the sitemap and search, and it cannot be bought. Carts already holding it show it as “no longer available”. “Notify me” alerts are kept and sent if it is published again.',
+    confirmArchive:
+      'Archive “{name}”?\n\nIt is hidden from the store like a draft and leaves every list except “Archived”. Orders, keys and reviews stay as they are, and it can be restored later.',
+    confirmRestore: 'Restore “{name}” as a draft? It stays off the store until you publish it.',
+    unpublishedRowNote: '“{name}” is unpublished. It is a draft now.',
+    archivedNote: '“{name}” is archived.',
+    restoredNote: '“{name}” is restored as a draft.',
+    deletedNote: '“{name}” was deleted for good.',
+    deleteTitle: 'Delete “{name}”',
+    deleteLede:
+      'A permanent delete that cannot be undone: the product goes with its variants, copy and image links. The image files stay in the library.',
+    deleteTypeSlug: 'To confirm, type the product slug exactly:',
+    deleteForever: 'Delete for good',
+    deleteRefused:
+      'This product cannot be deleted for good because it has history that must stay — orders are the customer’s and the accounts’ record:',
+    deleteRefusedArchive:
+      'Archiving hides it from the store and from the list entirely, and keeps every record intact.',
+    archiveInstead: 'Archive it instead',
+    historyOrders: 'Order lines',
+    historyKeys: 'Keys in the vault',
+    historyReviews: 'Customer reviews',
+    removesVariants: 'Variants',
+    removesCartLines: 'Lines in open carts',
+    removesStockAlerts: 'Pending “notify me” alerts',
+    removesSupplierLinks: 'Supplier links',
+
     bulkReadyLede:
       '{count} complete products are waiting on a decision — priced, described and categorised, and the store is not showing them.',
     bulkPublishAll: 'Publish all the ready ones',

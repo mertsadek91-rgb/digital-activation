@@ -68,3 +68,4 @@
 ## Pending reviews
 
 - TASK-0128 — One-off tool to clear staging test data before launch: delete every order (payments, lines, reviews, coupon usages) and customer, revoke every licence key, take revoked stock off onHand; report-only by default, writes only with the exact reported counts (MANAGER_REVIEW, 80%)
+- TASK-0151 — Admin Products: unpublish, archive and safe delete from the list and the edit page; storefront cart flags unavailable lines (MANAGER_REVIEW, 90%)

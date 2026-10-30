@@ -1074,6 +1074,40 @@ export const ar = {
     gapNoImages: 'بلا صور',
     gapNoSteps: 'بلا خطوات تفعيل',
 
+    filterArchived: 'مؤرشفة',
+    statusArchived: 'مؤرشف',
+    moreActions: 'إجراءات أخرى: {name}',
+    actionUnpublish: 'إلغاء النشر (إرجاع لمسودة)',
+    actionArchive: 'أرشفة',
+    actionRestore: 'استعادة كمسودة',
+    actionDelete: 'حذف…',
+    actionFailed: 'تعذّر تنفيذ الإجراء.',
+    confirmUnpublish:
+      'إلغاء نشر «{name}»؟\n\nيعود مسودة: تختفي صفحته من المتجر (404) ومن خريطة الموقع والبحث، ولا يمكن شراؤه. يبقى في السلال الحالية موسوماً «لم يعد متاحاً». تنبيهات «أعلمني» تبقى وتُرسَل إن نُشر من جديد.',
+    confirmArchive:
+      'أرشفة «{name}»؟\n\nيُخفى من المتجر كمسودة، ويخرج من كل القوائم إلا «مؤرشفة». الطلبات والمفاتيح والتقييمات تبقى كما هي، ويمكن استعادته لاحقاً.',
+    confirmRestore: 'استعادة «{name}» كمسودة؟ لن يظهر في المتجر حتى تنشره.',
+    unpublishedRowNote: 'أُلغي نشر «{name}». هو مسودة الآن.',
+    archivedNote: 'أُرشف «{name}».',
+    restoredNote: 'استُعيد «{name}» كمسودة.',
+    deletedNote: 'حُذف «{name}» نهائياً.',
+    deleteTitle: 'حذف «{name}»',
+    deleteLede:
+      'حذف نهائي لا يمكن التراجع عنه: يُزال المنتج بمتغيّراته ونصوصه وصوره المرتبطة. ملفات الصور نفسها تبقى في المكتبة.',
+    deleteTypeSlug: 'للتأكيد اكتب رابط المنتج كما هو:',
+    deleteForever: 'احذف نهائياً',
+    deleteRefused:
+      'لا يمكن حذف هذا المنتج نهائياً لأن له سجلاً يجب أن يبقى — الطلبات سجلّ العميل والمحاسبة:',
+    deleteRefusedArchive: 'الأرشفة تخفيه من المتجر ومن القائمة بالكامل، مع إبقاء كل السجلات سليمة.',
+    archiveInstead: 'أرشفه بدلاً من ذلك',
+    historyOrders: 'سطور في طلبات',
+    historyKeys: 'مفاتيح في الخزنة',
+    historyReviews: 'تقييمات عملاء',
+    removesVariants: 'متغيّرات',
+    removesCartLines: 'سطور في سلال مفتوحة',
+    removesStockAlerts: 'تنبيهات «أعلمني» معلّقة',
+    removesSupplierLinks: 'روابط بالمورّد',
+
     bulkReadyLede:
       '{count} منتجاً مكتملاً ينتظر قراراً — مسعّرة وموصوفة ومصنّفة، والمتجر لا يعرضها.',
     bulkPublishAll: 'انشر الجاهزة كلها',

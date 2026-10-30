@@ -91,6 +91,13 @@ export const cartLineSchema = z.object({
    */
   sale: saleBadgeSchema.nullable().default(null),
   saleEnded: z.boolean().default(false),
+  /**
+   * The line can no longer be bought: its product was unpublished or archived
+   * since it was added, or the supplier struck it through (CR-0004). The
+   * checkout refuses such a cart, so the line says so beside its remove button
+   * rather than leaving the shopper to find out on the payment step.
+   */
+  unavailable: z.boolean().default(false),
 });
 export type CartLine = z.infer<typeof cartLineSchema>;
 

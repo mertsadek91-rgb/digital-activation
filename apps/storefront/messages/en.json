@@ -333,6 +333,8 @@
     "priceChanged": "The current price is <bdi>{price}</bdi> — you keep the price you added at.",
     "quantity": "Quantity",
     "removeLine": "Remove",
+    "lineUnavailable": "This product is no longer available — remove it to complete your order.",
+    "unavailableBlocks": "Your cart holds a product that is no longer available. Remove it to check out.",
     "restored": "Here is your cart as you left it.",
     "restoredWithCode": "Here is your cart as you left it, with the discount applied.",
     "restoreExpired": "That cart link has expired or its order is complete. This is your current cart.",

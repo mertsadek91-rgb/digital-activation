@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   type AdminProductList,
   type AdminProductQuery,
   type AdminProductRow,
   type ProductCopy,
+  type ProductDeletion,
   type Readiness,
   type SetProductCopy,
   adminProductQuerySchema,
+  deleteProductSchema,
+  productDeletionSchema,
   setActivationStepsSchema,
   setCredentialKindSchema,
   setInventorySchema,
@@ -87,6 +90,32 @@ export class AdminController {
     @Req() request: StaffRequest,
   ) {
     return this.admin.setStatus(slug, body.status, body.locale, request.staff?.sub ?? '', {
+      ip: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+  }
+
+  /**
+   * What a delete would remove and what would stop it. ADMIN and OWNER only,
+   * like the delete itself: CATALOG unpublishes and archives (owner, 2026-10-29).
+   */
+  @Roles('ADMIN')
+  @Get('products/:slug/deletion')
+  @ZodResponse(productDeletionSchema)
+  @ApiOperation({ summary: 'Whether a product can be hard-deleted, and what goes with it' })
+  deletion(@Param('slug') slug: string): Promise<ProductDeletion> {
+    return this.admin.deletion(slug);
+  }
+
+  @Roles('ADMIN')
+  @Delete('products/:slug')
+  @ApiOperation({ summary: 'Delete a product with no history. Typed slug confirmation.' })
+  deleteProduct(
+    @Param('slug') slug: string,
+    @Body(new ZodPipe(deleteProductSchema)) body: z.infer<typeof deleteProductSchema>,
+    @Req() request: StaffRequest,
+  ) {
+    return this.admin.deleteProduct(slug, body.confirmSlug, request.staff?.sub ?? '', {
       ip: request.ip,
       userAgent: request.headers['user-agent'],
     });

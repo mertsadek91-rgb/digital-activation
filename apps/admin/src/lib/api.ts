@@ -12,6 +12,7 @@
 import { ADMIN_LOCALE_COOKIE, DEFAULT_ADMIN_LOCALE, toAdminLocale } from '../i18n/locale';
 
 import type {
+  ProductDeletion,
   ArticleHeroUpload,
   MarketingFeature,
   MarketingSettings,
@@ -384,6 +385,17 @@ export const api = {
         body: JSON.stringify({ status, locale }),
       },
     ),
+
+  /** What a delete would remove, and whether the product's history refuses it. */
+  productDeletion: (slug: string) =>
+    request<ProductDeletion>(`/admin/products/${encodeURIComponent(slug)}/deletion`),
+
+  /** Hard delete; the typed slug is the confirmation, checked again by the API. */
+  deleteProduct: (slug: string, confirmSlug: string) =>
+    request<{ deleted: true; slug: string }>(`/admin/products/${encodeURIComponent(slug)}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmSlug }),
+    }),
 
   /** The copy the publish gate reads, for the locale being assessed. */
   productCopy: (slug: string, locale: 'ar' | 'en') =>

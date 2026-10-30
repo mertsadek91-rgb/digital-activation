@@ -2270,7 +2270,7 @@
       "event": "E20261026102533-120ee7"
     },
     {
-      "review_id": "REV-0232",
+      "review_id": "REV-0239",
       "reviewer": "security-engineer",
       "executor": "subagent:security-reviewer",
       "review_type": "SECURITY",
@@ -2284,7 +2284,7 @@
       "event": "E20261026140143-ac9866"
     },
     {
-      "review_id": "REV-0233",
+      "review_id": "REV-0240",
       "reviewer": "rtl-localization-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
@@ -2298,7 +2298,7 @@
       "event": "E20261026140247-62c7f1"
     },
     {
-      "review_id": "REV-0234",
+      "review_id": "REV-0241",
       "reviewer": "qa-lead",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -2312,13 +2312,13 @@
       "event": "E20261026140253-463daf"
     },
     {
-      "review_id": "REV-0235",
+      "review_id": "REV-0242",
       "reviewer": "rtl-localization-specialist",
       "executor": "subagent:visual-qa",
       "review_type": "VISUAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Re-check of REV-0233 items 1-5, all resolved: (1) ar th.num header font-family now Tajawal (inherit), letters joined; (2) ar batch meta, log time and Last-run pill dates use Latin digits (26 أكتوبر، 05:36 م), consistent with counts; (3) .agent-filters .chip and .agent-log summary measure 44px tall; (4) outcome values (Section/Content/Not published) wrapped in bdi in ar and en; (5) swatch ring is 1px box-shadow from ink at 45%: dark mode composite rgb(117,126,129), 3.9:1 vs card bg and 4.2:1 vs #1a1a1a, light mode dark ring. No overflow (scrollWidth==clientWidth), no console errors. Item 6 accepted by coordinator as out of scope.",
+      "findings": "Re-check of REV-0240 items 1-5, all resolved: (1) ar th.num header font-family now Tajawal (inherit), letters joined; (2) ar batch meta, log time and Last-run pill dates use Latin digits (26 أكتوبر، 05:36 م), consistent with counts; (3) .agent-filters .chip and .agent-log summary measure 44px tall; (4) outcome values (Section/Content/Not published) wrapped in bdi in ar and en; (5) swatch ring is 1px box-shadow from ink at 45%: dark mode composite rgb(117,126,129), 3.9:1 vs card bg and 4.2:1 vs #1a1a1a, light mode dark ring. No overflow (scrollWidth==clientWidth), no console errors. Item 6 accepted by coordinator as out of scope.",
       "round": 2,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:14:26Z",
@@ -2326,13 +2326,13 @@
       "event": "E20261026141426-42ea6c"
     },
     {
-      "review_id": "REV-0236",
+      "review_id": "REV-0243",
       "reviewer": "qa-lead",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Re-check of REV-0234 findings 1-4, all fixed. 1: runner.ts process() keeps an existing item.snapshot (agentSnapshotSchema.safeParse) and saves only when none exists, so addedLocales/addedMediaIds from the first attempt survive; plan judges live sections. New int test reproduces my probe (X->Y + EN added, 429, DONE, revert -> X, AR only, original seoTitle) and passes. 2: a transient outcome in a batch cancelled meanwhile becomes CANCELLED (retryable). 3: CREATE carry-on path links the line via linkBySku with the default variant when still unlinked. 4: runner.work fails the item if the outcome save throws; worker fails a still-RUNNING item when runner.work rejects. Resume restricted to ADMIN/OWNER in the controller. No remaining defect found in the re-checked scope; panel render AC still not verified by me.",
+      "findings": "Re-check of REV-0241 findings 1-4, all fixed. 1: runner.ts process() keeps an existing item.snapshot (agentSnapshotSchema.safeParse) and saves only when none exists, so addedLocales/addedMediaIds from the first attempt survive; plan judges live sections. New int test reproduces my probe (X->Y + EN added, 429, DONE, revert -> X, AR only, original seoTitle) and passes. 2: a transient outcome in a batch cancelled meanwhile becomes CANCELLED (retryable). 3: CREATE carry-on path links the line via linkBySku with the default variant when still unlinked. 4: runner.work fails the item if the outcome save throws; worker fails a still-RUNNING item when runner.work rejects. Resume restricted to ADMIN/OWNER in the controller. No remaining defect found in the re-checked scope; panel render AC still not verified by me.",
       "round": 2,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:15:10Z",
@@ -2340,7 +2340,7 @@
       "event": "E20261026141510-8ddf56"
     },
     {
-      "review_id": "REV-0237",
+      "review_id": "REV-0244",
       "reviewer": "pm-06",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
@@ -2354,13 +2354,13 @@
       "event": "E20261026141522-f3c8a7"
     },
     {
-      "review_id": "REV-0238",
+      "review_id": "REV-0245",
       "reviewer": "pm-03",
       "executor": "subagent:independent-reviewer",
       "review_type": "TECHNICAL",
       "result": "PASS",
       "independent": true,
-      "findings": "Manager review (responsible manager). Delivers CR-0007 as asked: rewrite + create-from-supplier-line batches, tick-box pickers (200 cap), confirmed start, ar+en copy, section keep/assign/create (reuse by name), logo search with SSRF guard + palette card, auto-publish only via AdminService.setStatus gate, per-item undo (created products go to draft, never deleted), 90s default cooldown + 5 min backoff. No scope widening: changes to existing files are additive (facts() made public, CardService exported, logoPalette with logoColor kept; PRODUCT_AGENT env). No owner-only decision taken: migration 20261026140000 is additive (3 enums, 2 new tables) and its staging apply is left to the owner; owner asked for auto-approval and delegated the operating choices. Start/retry/resume ADMIN-only (resume check in controller). REV-0234 fixes present: runner keeps an existing snapshot (agentSnapshotSchema.safeParse(item.snapshot)), cancelled batch -> CANCELLED not QUEUED, CREATE carry-on relinks, outcome-save failure fails the item; int tests added for both. REV-0232 LOWs and REV-0233 lows also addressed. Open: no qa-lead re-check recorded after REV-0234 FAIL (needed before COMPLETED); pm-06 review pending; work is uncommitted - commit once reviewed.",
+      "findings": "Manager review (responsible manager). Delivers CR-0007 as asked: rewrite + create-from-supplier-line batches, tick-box pickers (200 cap), confirmed start, ar+en copy, section keep/assign/create (reuse by name), logo search with SSRF guard + palette card, auto-publish only via AdminService.setStatus gate, per-item undo (created products go to draft, never deleted), 90s default cooldown + 5 min backoff. No scope widening: changes to existing files are additive (facts() made public, CardService exported, logoPalette with logoColor kept; PRODUCT_AGENT env). No owner-only decision taken: migration 20261026140000 is additive (3 enums, 2 new tables) and its staging apply is left to the owner; owner asked for auto-approval and delegated the operating choices. Start/retry/resume ADMIN-only (resume check in controller). REV-0241 fixes present: runner keeps an existing snapshot (agentSnapshotSchema.safeParse(item.snapshot)), cancelled batch -> CANCELLED not QUEUED, CREATE carry-on relinks, outcome-save failure fails the item; int tests added for both. REV-0239 LOWs and REV-0240 lows also addressed. Open: no qa-lead re-check recorded after REV-0241 FAIL (needed before COMPLETED); pm-06 review pending; work is uncommitted - commit once reviewed.",
       "round": 1,
       "target": "TASK-0136",
       "ts": "2026-10-26T14:15:37Z",
@@ -2758,6 +2758,104 @@
       "ts": "2026-10-27T12:36:20Z",
       "actor": "responsive-design-specialist",
       "event": "E20261027123620-26ef6d"
+    },
+    {
+      "review_id": "REV-0232",
+      "reviewer": "security-engineer",
+      "executor": "subagent:security-reviewer",
+      "review_type": "SECURITY",
+      "result": "PASS",
+      "independent": true,
+      "findings": "NODEJS_BACKEND. PASS. Authz: GET deletion and DELETE products/:slug are @Roles('ADMIN') under class StaffGuard (deny-by-default, OWNER passes); int test proves CATALOG gets 403 on both; READONLY/FULFILLMENT likewise excluded. Vault isolation kept: historyCount lives in vault.service, uses vault client, returns counts only; no vaultPrisma import outside src/vault. Input: confirmSlug via zod slugSchema, exact-match with path slug; path slug only reaches Prisma findUnique (parameterised). Audit: product.deleted with actor, ip, UA, slug/status/names/skus/removed counts - no secrets or PII. Destructive safety: OrderItem.variantId is Restrict so a racing order fails the delete; order lines re-checked in tx. Low residuals (non-blocking): (1) vault and review counts are not re-checked inside the tx - a key import landing between check and delete would orphan vault rows by variantId (keys remain, da_vault has no DELETE); Review cascades with product. Re-check vault count immediately before tx or lock product row. (2) audit stores skus but not variantIds, the only join key to orphaned vault rows - add variantIds. (3) audit.record runs after commit, outside the tx - a failure leaves an unaudited delete; move inside tx or same client. Integration suite admin-products.int.test.ts 5/5 pass on disposable Postgres :55432.",
+      "round": 1,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T07:43:25Z",
+      "actor": "security-engineer",
+      "event": "E20261029074325-a63e41"
+    },
+    {
+      "review_id": "REV-0233",
+      "reviewer": "qa-lead",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "PASS. Verified: typecheck api/admin/storefront clean; int suite 68/68 on disposable PG incl. admin-products 5/5 (delete w/ cart line+alert+supplier link, CATALOG 403, sold->409+archive, vault keys->409, cart unavailable flag toggles). FK audit of schema: every Product/Variant FK is Cascade except CartItem/OrderItem (Restrict); CartItem deleted in tx, OrderItem blocks; Review cascades but is counted; vault LicenseKey/KeyImportBatch (no FK) counted; RenewalReminder implies an order line. Soft refs left stale but harmless: Article.relatedProductIds, Promotion.rules.productIds, analytics productId. Cart unavailable == checkout unsellable predicate (checkout.service.ts:122-129). Roles UI (OWNER/ADMIN/CATALOG status, OWNER/ADMIN delete) match API. i18n: 29 admin keys and 2 storefront keys added in both locales. Low findings: (1) product-actions.tsx menu placement uses window.innerWidth (incl. scrollbar) for fixed right offset in LTR - shifts menu by scrollbar width; use documentElement.clientWidth; 'above' placement assumes 200px height. (2) first open: focus effect runs before the layout-effect re-render sets place, so first item not focused on first open; menu has no arrow-key nav. (3) edit page duplicates Unpublish (existing button + menu) and passes nameAr in en UI. (4) archived filter hides archived products from new-product-form api.products({perPage:1}) lookup - edge only. (5) vault/review re-check outside tx (already noted by security review). Unit suite: 2 unrelated timeouts (panel-locale, sentry) on this machine. ar/en rendered UI not visually verified by this review.",
+      "round": 1,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T07:49:03Z",
+      "actor": "qa-lead",
+      "event": "E20261029074903-78df20"
+    },
+    {
+      "review_id": "REV-0234",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "FAIL",
+      "independent": true,
+      "findings": "Rendered admin /products, /products/windows-11-pro (ar+en, light+dark) and storefront /cart, /en/cart at 1440/1024/768/390/360 via headless Chrome against fixture APIs. No horizontal overflow anywhere; list row menu opens beside its trigger at every width in both directions; Archived chip and pill render; cart unavailable note, summary note and disabled checkout (summary + phone bar) correct in ar/en. Defects: (1) Delete dialog on the list is not centred: pinned to the inline-start edge and 3px from the top at all widths/locales because .products-table td.actions > * {margin-block:3px} and the TASK-0151 rule .admin-table td.actions > .confirm-dialog {margin-inline-start:0} override the UA margin:auto (fix: margin:auto with higher specificity, or render the dialog outside the td). (2) Edit-page menu at 360 overflows the viewport (en: x -159..81; ar: x 279..519) since placement has no viewport clamp; clamp insetInlineEnd so the 240px menu stays within 8px of the edges. (3) Menu divider is an inline span so it draws no line and leaves an empty line-box gap before Delete; give .row-menu .menu__divider display:block. Minor: list trigger 40x34 and menu items 34px tall (<44 touch target, inherited from td.actions button rules); edit menu repeats Unpublish already shown as a header button.",
+      "round": 1,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T07:53:32Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261029075332-9256b1"
+    },
+    {
+      "review_id": "REV-0235",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "FAIL",
+      "independent": true,
+      "findings": "Re-shot admin /products and /products/windows-11-pro, ar+en, 1440/1024/768/390/360 (-recheck PNGs + metrics-recheck.json). (1) PASS: delete dialog centred in both states at all widths/locales (e.g. 1440: x 460-980, y 219; 360: x 17-343). (2) PASS: edit-page menu inside 8px at 360/390 (en-360 x 8-248; ar-360 x 112-352). (3) PASS: divider is display:block, 1px line, no gap. (4) FAIL: menu items 44px and edit-page trigger 44x44, but the list-row trigger computes 44x34 because .actions button {min-block-size:34px} (0,1,1) out-specifies .row-menu-trigger (0,1,0); fix with .actions .row-menu-trigger or button.row-menu-trigger. (5) PASS: edit-page menu shows only Archive and Delete. Keyboard (real input in browser pane): Tab to trigger shows 2px teal focus-visible ring; Enter opens the menu and focuses the first item; ArrowDown moves to the next item with the ring. No horizontal overflow, no console errors.",
+      "round": 2,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T07:59:29Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261029075929-51306b"
+    },
+    {
+      "review_id": "REV-0236",
+      "reviewer": "responsive-design-specialist",
+      "executor": "subagent:visual-qa",
+      "review_type": "VISUAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Item 4 now PASS: list-row trigger measured on /products at 1440 and 360, ar and en: all 12 triggers getBoundingClientRect 44x44, computed min-block-size 44px (.actions button.row-menu-trigger wins). Row layout intact at 360 in both locales (Edit 60x36 and trigger vertically centred together, rows 104px, no page overflow: scrollWidth = viewport). Items 1, 2, 3 and 5 passed in REV-0235, so the overall visual verdict for TASK-0151 is PASS. Cosmetic note only: at 360 the trigger sits flush against the table card's inline-end edge when the table is scrolled to the end (no trailing cell padding).",
+      "round": 3,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T08:01:59Z",
+      "actor": "responsive-design-specialist",
+      "event": "E20261029080159-936c67"
+    },
+    {
+      "review_id": "REV-0237",
+      "reviewer": "pm-03",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "TECHNICAL",
+      "result": "PASS",
+      "independent": true,
+      "findings": "Manager review (pm-03). PASS. Fit: unpublish, archive (with restore) and delete from the list row menu and the edit page; matches owner answers 2 (delete OWNER/ADMIN, CATALOG status only), 3 (cart line flagged unavailable, removable, excluded from checkout) and 4 (404 via existing goneOrRedirect, no new redirect logic). Answer 1 is narrowed: owner said delete regardless of sales; built as hard delete only when there is no history (orders, vault keys, reviews), otherwise refused with counts and Archive offered. This is the conservative, reversible choice (order lines FK Restrict; hard-deleting customer order and key history is a legal/money call that is the owner's), and the narrowing is recorded honestly in the task note - but it MUST be stated plainly to the owner at hand-off, with the option to ask for a forced delete as a separate decision. Scope: no migration (packages/db untouched), no unasked features; ARCHIVED enum already existed; Archived chip added because the existing chip meant readiness-blocked. Specialist findings: security #1/#2 fixed, #3 (audit after commit) left with a stated reason consistent with other admin writes; QA items fixed except the archived-seed edge case, recorded; visual FAIL x2 re-shot to PASS. UX: Arabic copy is clear on consequences (404, sitemap, carts, alerts, irreversibility); type-the-slug confirm; refused dialog renders RTL at 1440 and 360 correctly. Residual: soft refs (articles, promotions) go stale on delete - harmless, note for later.",
+      "round": 1,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T08:04:17Z",
+      "actor": "pm-03",
+      "event": "E20261029080417-48b6ae"
+    },
+    {
+      "review_id": "REV-0238",
+      "reviewer": "pm-06",
+      "executor": "subagent:independent-reviewer",
+      "review_type": "RELEASE",
+      "result": "PASS",
+      "independent": true,
+      "findings": "PASS (pm-06 risk/release lens; MANAGER is not a valid type, recorded as RELEASE). Delete safety: Roles ADMIN (OWNER passes) on GET deletion and DELETE; typed slug matched server-side; refuses on order lines, vault keys/import batches and reviews; vault re-checked just before the tx, order lines+reviews re-checked inside it; OrderItem FK Restrict is a backstop; audit product.deleted carries skus+variantIds, no secrets. Irreversibility: owner answered delete scope, roles, cart behaviour and 404 in chat (recorded note); products with history are only archivable, so no customer record is destroyed. Deploy: no migration; contracts additive; cart unavailable is default(false) and storefront parses with cartSchema, so either deploy order is safe. Admin uses request<T> without parsing: new admin on old API shows a blank Archived count and the archived filter 400s until the API lands - deploy API first (one Coolify push makes this transient). Tests: re-ran admin-products.int 5/5 on docker da-int-0151 postgres:18 127.0.0.1:55432; integration guard refuses non-local/non-test URLs and env.ts overrides DATABASE_URL, so .env was not touched. Residuals recorded honestly: audit written after commit (an audit failure leaves an unaudited delete, same as other admin writes), small vault-import race between re-check and commit, stale soft refs (articles, promotions, analytics). Accepted as LOW.",
+      "round": 1,
+      "target": "TASK-0151",
+      "ts": "2026-10-29T08:04:52Z",
+      "actor": "pm-06",
+      "event": "E20261029080452-5a0465"
     }
   ],
   "invalidated_reviews": [

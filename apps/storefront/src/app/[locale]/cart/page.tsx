@@ -184,6 +184,8 @@ export default function CartPage() {
     );
   }
 
+  const blocked = cart.lines.some((line) => line.unavailable);
+
   if (cart.lines.length === 0) {
     return (
       <>
@@ -374,10 +376,25 @@ export default function CartPage() {
               would be invented urgency. */}
             {cart.reservationExpiresAt ? <p className="hold-note">{t('holdNote')}</p> : null}
 
-            <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary btn-wide">
-              {t('checkout')}
-              <ArrowIcon size={18} />
-            </Link>
+            {/* The checkout refuses a cart holding a line nobody can buy, so the
+                button waits until that line is removed instead of failing a
+                step later (owner, 2026-10-29; TASK-0151). */}
+            {blocked ? (
+              <>
+                <p className="cart-blocked-note" role="status">
+                  {t('unavailableBlocks')}
+                </p>
+                <button type="button" className="btn btn-primary btn-wide" disabled>
+                  {t('checkout')}
+                  <ArrowIcon size={18} />
+                </button>
+              </>
+            ) : (
+              <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary btn-wide">
+                {t('checkout')}
+                <ArrowIcon size={18} />
+              </Link>
+            )}
 
             <p className="secure-note">
               <LockIcon size={20} />
@@ -415,10 +432,17 @@ export default function CartPage() {
             <Link href={`${prefix}${ROUTES.store}?onSale=1`} className="btn btn-outline">
               {t('browseOffers')}
             </Link>
-            <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
-              {t('checkout')}
-              <ArrowIcon size={18} />
-            </Link>
+            {blocked ? (
+              <button type="button" className="btn btn-primary" disabled>
+                {t('checkout')}
+                <ArrowIcon size={18} />
+              </button>
+            ) : (
+              <Link href={`${prefix}${ROUTES.checkout}`} className="btn btn-primary">
+                {t('checkout')}
+                <ArrowIcon size={18} />
+              </Link>
+            )}
           </div>
         </div>
       </main>
@@ -533,7 +557,10 @@ function Line({
   const maxQty = Math.min(MAX_LINE_QTY, line.qty + line.availableToAdd);
 
   return (
-    <li className="cart-line" aria-busy={busy || undefined}>
+    <li
+      className={line.unavailable ? 'cart-line is-unavailable' : 'cart-line'}
+      aria-busy={busy || undefined}
+    >
       <div className="cart-line-media">
         {line.image ? (
           <Image src={line.image.url} alt={line.image.alt} fill sizes="64px" />
@@ -553,6 +580,11 @@ function Line({
           {formatDelivery(line.deliverySlaSeconds, tf, line.fulfillmentMode)} ·{' '}
           {formatFulfillment(line.fulfillmentMode, tf)}
         </p>
+        {line.unavailable ? (
+          <p className="cart-line-unavailable" role="status">
+            {t('lineUnavailable')}
+          </p>
+        ) : null}
         {line.requiresActivationEmail ? (
           <p className="cart-line-note">{t('activationEmailNote')}</p>
         ) : null}
@@ -609,7 +641,7 @@ function Line({
           <button
             type="button"
             onClick={() => onQty(line.qty + 1)}
-            disabled={busy || line.qty >= maxQty}
+            disabled={busy || line.unavailable || line.qty >= maxQty}
             aria-label={t('increase')}
           >
             <PlusIcon />

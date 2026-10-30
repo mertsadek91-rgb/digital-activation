@@ -415,7 +415,15 @@ const products = {
   total: 73,
   page: 1,
   perPage: 50,
-  counts: { all: 73, draft: 41, published: 30, outOfStock: 2, blocked: 11, ready: 30 },
+  counts: {
+    all: 73,
+    draft: 41,
+    published: 30,
+    outOfStock: 2,
+    blocked: 11,
+    ready: 30,
+    archived: 3,
+  },
 };
 
 const categories = {
@@ -789,6 +797,34 @@ const variantKeys = () => [
 
 /** Paths with a parameter in them, matched after the exact table above. */
 const dynamic = [
+  // Delete, archive and unpublish (TASK-0151). A slug containing "sold" has
+  // history and is refused; any other can be deleted.
+  [
+    /^GET \/v1\/admin\/products\/([^/]+)\/deletion$/,
+    (match) => {
+      // Every other fixture row has history, so both dialogs can be seen.
+      const sold = /sold|office|kaspersky|[13579]$/.test(match[1]);
+      return {
+        slug: match[1],
+        deletable: !sold,
+        history: {
+          orderLines: sold ? 14 : 0,
+          licenseKeys: sold ? 3 : 0,
+          keyImports: 0,
+          reviews: sold ? 2 : 0,
+        },
+        removes: { variants: 2, cartLines: 1, stockAlerts: 3, supplierLinks: 1 },
+      };
+    },
+  ],
+  [/^DELETE \/v1\/admin\/products\/([^/]+)$/, (match) => ({ deleted: true, slug: match[1] })],
+  [
+    /^PATCH \/v1\/admin\/products\/([^/]+)\/status$/,
+    (_match, body) => ({
+      status: body?.status ?? 'DRAFT',
+      readiness: { locale: 'ar', publishable: true, checks: [] },
+    }),
+  ],
   [/^GET \/v1\/admin\/fulfillment\/vault\/stock$/, () => vaultStock],
   [/^GET \/v1\/admin\/fulfillment\/vault\/stock\/([^/]+)\/keys$/, () => variantKeys()],
   [

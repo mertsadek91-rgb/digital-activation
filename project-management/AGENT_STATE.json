@@ -213,16 +213,18 @@
       "staffed": true,
       "executor": "subagent:visual-qa",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "REVIEWING",
       "current_task": null,
       "assignments": [],
       "supporting": [],
-      "reviews": [],
-      "reviews_recorded": 27,
+      "reviews": [
+        "TASK-0151"
+      ],
+      "reviews_recorded": 30,
       "opportunities": [],
-      "workload": 0,
+      "workload": 0.5,
       "blockers": [],
-      "last_activity": "2026-10-27T13:18:02Z"
+      "last_activity": "2026-10-29T08:01:59Z"
     },
     {
       "id": "rtl-localization-specialist",
@@ -315,12 +317,13 @@
       "assignments": [],
       "supporting": [
         "TASK-0129",
-        "TASK-0136"
+        "TASK-0136",
+        "TASK-0151"
       ],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 1.5,
       "blockers": [],
       "last_activity": "2026-10-27T14:15:40Z"
     },
@@ -416,15 +419,16 @@
       "state": "WORKING",
       "current_task": "TASK-0136",
       "assignments": [
-        "TASK-0136"
+        "TASK-0136",
+        "TASK-0151"
       ],
       "supporting": [],
       "reviews": [],
       "reviews_recorded": 0,
       "opportunities": [],
-      "workload": 1,
+      "workload": 2,
       "blockers": [],
-      "last_activity": "2026-10-27T14:04:14Z"
+      "last_activity": "2026-10-29T08:05:20Z"
     },
     {
       "id": "auth-rbac-specialist",
@@ -696,18 +700,20 @@
       "staffed": true,
       "executor": "subagent:independent-reviewer",
       "squads": [],
-      "state": "AVAILABLE",
+      "state": "REVIEWING",
       "current_task": null,
       "assignments": [],
       "supporting": [
         "TASK-0060"
       ],
-      "reviews": [],
-      "reviews_recorded": 42,
+      "reviews": [
+        "TASK-0151"
+      ],
+      "reviews_recorded": 43,
       "opportunities": [],
-      "workload": 0.5,
+      "workload": 1,
       "blockers": [],
-      "last_activity": "2026-10-27T13:16:02Z"
+      "last_activity": "2026-10-29T07:49:03Z"
     },
     {
       "id": "functional-qa-engineer",
@@ -776,13 +782,14 @@
         "TASK-0100"
       ],
       "reviews": [
-        "TASK-0128"
+        "TASK-0128",
+        "TASK-0151"
       ],
-      "reviews_recorded": 36,
+      "reviews_recorded": 37,
       "opportunities": [],
-      "workload": 8,
+      "workload": 8.5,
       "blockers": [],
-      "last_activity": "2026-10-27T13:00:47Z"
+      "last_activity": "2026-10-29T07:43:25Z"
     },
     {
       "id": "performance-engineer",
