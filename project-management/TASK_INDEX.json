@@ -3985,8 +3985,6 @@
         "apps/admin/src/lib/agent-api.ts",
         "apps/admin/src/app/nav.tsx",
         "apps/admin/src/app/icons.tsx",
-        "apps/admin/src/i18n/messages/ar.ts",
-        "apps/admin/src/i18n/messages/en.ts",
         "apps/admin/mock/agent.mjs",
         "docs/product-agent.md"
       ],
