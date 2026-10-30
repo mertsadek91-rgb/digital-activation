@@ -48,4 +48,4 @@
 
 ## Current tasks
 
-- none
+- TASK-0151 — Admin Products: unpublish, archive and safe delete from the list and the edit page; storefront cart flags unavailable lines (MANAGER_REVIEW, 90%)

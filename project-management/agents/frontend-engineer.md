@@ -60,3 +60,4 @@
 ## Supporting
 
 - TASK-0129 — Read a licence from the order page; list a variant stock keys in the vault with read, revoke and replace - each with a reason and a fresh TOTP challenge; the reason is stored in the audit log and shown in the key history; a revoke recounts stock (IN_PROGRESS, 85%)
+- TASK-0151 — Admin Products: unpublish, archive and safe delete from the list and the edit page; storefront cart flags unavailable lines (MANAGER_REVIEW, 90%)

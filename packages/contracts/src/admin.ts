@@ -158,6 +158,13 @@ export const adminProductListSchema = z.object({
      * and nothing answered what needs a decision.
      */
     ready: z.number().int(),
+    /**
+     * Retired products, kept out of every other chip — `all` included. An
+     * archived product is one the owner took off the catalog, often in place of
+     * a delete its order history would not allow, and counting it among the
+     * live work is the clutter the archive exists to remove.
+     */
+    archived: z.number().int(),
   }),
 });
 export type AdminProductList = z.infer<typeof adminProductListSchema>;
@@ -165,7 +172,9 @@ export type AdminProductList = z.infer<typeof adminProductListSchema>;
 export const adminProductQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   perPage: z.coerce.number().int().min(1).max(100).default(50),
-  status: z.enum(['all', 'draft', 'published', 'out-of-stock', 'blocked', 'ready']).default('all'),
+  status: z
+    .enum(['all', 'draft', 'published', 'out-of-stock', 'blocked', 'ready', 'archived'])
+    .default('all'),
   q: z.string().trim().max(120).optional(),
   locale: localeSchema.default('ar'),
 });
@@ -178,6 +187,43 @@ export const setStatusSchema = z.object({
   /** The locale whose readiness is checked when publishing. */
   locale: localeSchema.default('ar'),
 });
+
+/**
+ * What stands between a product and a hard delete.
+ *
+ * A delete removes the product with its variants, translations, media links,
+ * stock rows, supplier links, pending stock alerts and any cart lines holding
+ * it. It refuses while the product has history somebody may still need: an
+ * order line (the order is the customer's record, and the variant is its
+ * foreign key), a licence key or key import in the vault, or a customer
+ * review. Those products are archived instead — off the shop and out of the
+ * default list, with every record intact.
+ */
+export const productDeletionSchema = z.object({
+  slug: slugSchema,
+  deletable: z.boolean(),
+  history: z.object({
+    orderLines: z.number().int().min(0),
+    licenseKeys: z.number().int().min(0),
+    keyImports: z.number().int().min(0),
+    reviews: z.number().int().min(0),
+  }),
+  /** Removed with the product, so the confirmation can say what goes. */
+  removes: z.object({
+    variants: z.number().int().min(0),
+    cartLines: z.number().int().min(0),
+    stockAlerts: z.number().int().min(0),
+    supplierLinks: z.number().int().min(0),
+  }),
+});
+export type ProductDeletion = z.infer<typeof productDeletionSchema>;
+
+/**
+ * The typed confirmation: the slug, exactly. A dialog with an OK button gets
+ * clicked through; a slug has to be read to be typed.
+ */
+export const deleteProductSchema = z.object({ confirmSlug: slugSchema });
+export type DeleteProduct = z.infer<typeof deleteProductSchema>;
 
 /**
  * How a variant is delivered.

@@ -11,7 +11,7 @@
 | Max authority | Level 2 |
 | Executes as | subagent:visual-qa |
 | Staffed on this project | Yes |
-| Current state | AVAILABLE |
+| Current state | REVIEWING |
 
 ## Responsibilities
 
@@ -49,3 +49,7 @@
 ## Current tasks
 
 - none
+
+## Pending reviews
+
+- TASK-0151 — Admin Products: unpublish, archive and safe delete from the list and the edit page; storefront cart flags unavailable lines (MANAGER_REVIEW, 90%)

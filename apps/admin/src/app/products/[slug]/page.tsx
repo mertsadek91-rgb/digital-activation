@@ -17,6 +17,7 @@ import { IdentityForm } from '../identity-form';
 import { ProductImageGenerator } from '../image-generator';
 import { ImagesForm } from '../images-form';
 import { LinksForm } from '../links-form';
+import { ProductActions } from '../product-actions';
 import { ReadinessChecks } from '../readiness-checks';
 import { StockForm } from '../stock-form';
 import { TermsForm } from '../terms-form';
@@ -229,7 +230,9 @@ export default function ProductEditPage() {
                   ? t('statusPublished')
                   : row.status === 'DRAFT'
                     ? t('statusDraft')
-                    : row.status}
+                    : row.status === 'ARCHIVED'
+                      ? t('statusArchived')
+                      : row.status}
               </span>
               {row.blockers > 0 ? (
                 <a href="#section-readiness" className="pill pill-blocked">
@@ -291,6 +294,26 @@ export default function ProductEditPage() {
             >
               {busy ? c('busy') : published ? t('unpublish') : t('publish')}
             </button>
+          ) : null}
+          {row ? (
+            <ProductActions
+              slug={slug}
+              name={row.nameAr}
+              status={row.status}
+              role={me.role}
+              locale={locale}
+              onChanged={async (message) => {
+                setError(null);
+                setNote(message);
+                await refresh();
+              }}
+              onDeleted={() => router.push('/products')}
+              hideUnpublish
+              onError={(message) => {
+                setNote(null);
+                setError(message);
+              }}
+            />
           ) : null}
         </div>
       </header>

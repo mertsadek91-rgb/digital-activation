@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   type AdminProductList,
   type AdminProductQuery,
@@ -6,6 +11,7 @@ import {
   countBodyWords,
   type CredentialKind,
   type ProductCopy,
+  type ProductDeletion,
   type Readiness,
   type SetProductCopy,
 } from '@da/contracts';
@@ -89,7 +95,10 @@ export class AdminService {
         ? { status: PublishStatus.DRAFT }
         : query.status === 'published'
           ? { status: PublishStatus.PUBLISHED }
-          : {};
+          : query.status === 'archived'
+            ? { status: PublishStatus.ARCHIVED }
+            : // Every other view is the live catalog; the archive has its own chip.
+              { status: { not: PublishStatus.ARCHIVED } };
 
     const where: Prisma.ProductWhereInput = { AND: [search, statusWhere] };
     const postFilter =
@@ -141,9 +150,13 @@ export class AdminService {
       where: search,
       include: this.include,
     });
-    const rows = all.map((product) => this.toRow(product, locale));
+    const archived = all.filter((product) => product.status === PublishStatus.ARCHIVED).length;
+    const rows = all
+      .filter((product) => product.status !== PublishStatus.ARCHIVED)
+      .map((product) => this.toRow(product, locale));
 
     return {
+      archived,
       all: rows.length,
       draft: rows.filter((row) => row.status === 'DRAFT').length,
       published: rows.filter((row) => row.status === 'PUBLISHED').length,
@@ -309,6 +322,163 @@ export class AdminService {
     });
 
     return { status: updated.status, readiness };
+  }
+
+  /**
+   * What deleting this product would remove, and what would stop it.
+   *
+   * Asked by the panel before it shows the confirmation, and asked again inside
+   * `deleteProduct` — the answer the dialog showed may be minutes old.
+   */
+  async deletion(slug: string): Promise<ProductDeletion> {
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      select: { id: true, variants: { select: { id: true } } },
+    });
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
+    return this.deletionOf(
+      slug,
+      product.id,
+      product.variants.map((variant) => variant.id),
+    );
+  }
+
+  private async deletionOf(
+    slug: string,
+    productId: string,
+    variantIds: string[],
+  ): Promise<ProductDeletion> {
+    const db = this.prisma.client;
+    const [orderLines, reviews, cartLines, stockAlerts, supplierLinks, vault] = await Promise.all([
+      db.orderItem.count({ where: { variantId: { in: variantIds } } }),
+      db.review.count({ where: { productId } }),
+      db.cartItem.count({ where: { variantId: { in: variantIds } } }),
+      db.stockAlert.count({
+        where: { OR: [{ productId }, { variantId: { in: variantIds } }] },
+      }),
+      db.variantSupplierLink.count({ where: { variantId: { in: variantIds } } }),
+      this.vault.historyCount(variantIds),
+    ]);
+    const history = {
+      orderLines,
+      licenseKeys: vault.licenseKeys,
+      keyImports: vault.keyImports,
+      reviews,
+    };
+    return {
+      slug,
+      deletable: Object.values(history).every((count) => count === 0),
+      history,
+      removes: { variants: variantIds.length, cartLines, stockAlerts, supplierLinks },
+    };
+  }
+
+  /**
+   * Deletes a product that has no history, for good.
+   *
+   * For the product created by mistake or no longer sold. One with history —
+   * an order line, a key in the vault, a review — is refused with the counts,
+   * and the panel offers the archive instead: the order is the customer's
+   * record and its line points at the variant, so removing the variant would
+   * either fail on the foreign key or orphan a licence in the vault.
+   *
+   * Cart lines are the one dependent removed by hand: `CartItem` restricts the
+   * variant's delete, and a line for a product that no longer exists is not
+   * something a shopper can buy anyway. Everything else — variants,
+   * translations, media links, stock rows, supplier links, pending stock
+   * alerts — goes with the product by cascade.
+   */
+  async deleteProduct(
+    slug: string,
+    confirmSlug: string,
+    actorId: string,
+    context: { ip?: string | undefined; userAgent?: string | undefined },
+  ): Promise<{ deleted: true; slug: string }> {
+    if (confirmSlug !== slug)
+      throw new BadRequestException(
+        say('الرابط المكتوب لا يطابق رابط المنتج.', 'The typed slug does not match the product.'),
+      );
+
+    const product = await this.prisma.client.product.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        status: true,
+        variants: { select: { id: true, sku: true } },
+        translations: { select: { locale: true, name: true } },
+      },
+    });
+    if (!product)
+      throw new NotFoundException(
+        say(`لا يوجد منتج بالرابط "${slug}"`, `No product with the slug "${slug}"`),
+      );
+
+    const variantIds = product.variants.map((variant) => variant.id);
+    const check = await this.deletionOf(slug, product.id, variantIds);
+    if (!check.deletable)
+      throw new ConflictException({
+        message: say(
+          'لهذا المنتج سجلّ (طلبات أو مفاتيح أو تقييمات) فلا يُحذف نهائياً. أرشفه بدلاً من ذلك.',
+          'This product has history (orders, keys or reviews) and cannot be deleted. Archive it instead.',
+        ),
+        history: check.history,
+      });
+
+    // The vault is another client and cannot join the transaction below, so it
+    // is asked again as late as it can be: a key imported since the check
+    // would otherwise be left keyed to a variant that no longer exists.
+    const vault = await this.vault.historyCount(variantIds);
+    if (vault.licenseKeys + vault.keyImports > 0)
+      throw new ConflictException(
+        say(
+          'أُضيفت مفاتيح لهذا المنتج للتو؛ أرشفه بدلاً من حذفه.',
+          'Keys were just added to this product; archive it instead.',
+        ),
+      );
+
+    await this.prisma.client.$transaction(async (tx) => {
+      // Re-checked under the transaction: an order placed between the check
+      // and here would otherwise fail the delete on its foreign key — which is
+      // safe, but this says why — and a review would be cascaded away.
+      const [lines, reviews] = await Promise.all([
+        tx.orderItem.count({ where: { variantId: { in: variantIds } } }),
+        tx.review.count({ where: { productId: product.id } }),
+      ]);
+      if (lines + reviews > 0)
+        throw new ConflictException(
+          say(
+            'بيع هذا المنتج أو قُيّم للتو؛ أرشفه بدلاً من حذفه.',
+            'This product just sold or was reviewed; archive it instead.',
+          ),
+        );
+      await tx.cartItem.deleteMany({ where: { variantId: { in: variantIds } } });
+      await tx.product.delete({ where: { id: product.id } });
+    });
+
+    await this.audit.record({
+      actorId,
+      entity: 'Product',
+      entityId: product.id,
+      action: 'product.deleted',
+      // Enough to know what was removed; the content itself is gone.
+      before: {
+        slug,
+        status: product.status,
+        names: product.translations,
+        skus: product.variants.map((variant) => variant.sku),
+        // The vault keys licences by variant id; this is what would tie a
+        // stray vault row back to the product it belonged to.
+        variantIds,
+        removed: check.removes,
+      },
+      ip: context.ip,
+      userAgent: context.userAgent,
+    });
+
+    return { deleted: true, slug };
   }
 
   /**
